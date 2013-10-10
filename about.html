@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<!-- -*- mode: HTML; indent-tabs-mode: nil -*- -->
+<!-- Copyright 2010 Will Scullin -->
+<html>
+  <head>
+    <base href="/apple" />
+    <meta charset="utf-8" />
+    <meta name="keywords" content="apple2,apple,ii,javascript,emulator,html5" />
+    <link rel="shortcut icon" href="logoicon.png" />
+    <link rel="stylesheet" type="text/css" href="css/apple2.css" />
+    <title>About Apple ][js/Apple //jse</title>
+    <script type="text/javascript">
+      
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-19205057-1']);
+      _gaq.push(['_trackPageview']);
+      
+      (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+      
+    </script>
+    <meta property="og:title" content="About Apple ][js" />
+    <meta property="og:type" content="website" />
+    <meta property="og:description" content="Apple ][js is an Apple ][ (or Apple II or Apple2) emulator written using only JavaScript and HTML5." />
+    <meta property="og:url" content="http://www.scullinsteel.com/apple2/about.html" />
+    <meta property="og:image" content="http://www.scullinsteel.com/apple2/img/image.png" />
+    <meta property="fb:admins" content="700585391" />
+  </head>
+  <body id="about">
+    <div style="text-align: center">
+      <span class="motter" style="font-size: 2em">Apple ][js and //jse</span>
+    </div>
+    <div style="max-width: 800px; margin: auto">
+    <h2>What is this?</h2>
+    <span class="motter"><a href="../apple2/">Apple ][js</a></span> and 
+    <span class="motter"><a href="../apple//e">Apple //jse</a></span>
+    are Apple ][ and Apple //e emulators written entirely in JavaScript
+    and HTML5.
+    <h2>Updates (2013-07-04)</h2>
+    <ul>
+      <li><h3>RAMFactor Emulation (//jse)</h3>
+        I now simulate having a 1 Megabyte RAMFactor card in slot 2.
+      <li><h3>Thunderclock Emulation (//jse)</h3>
+        There is cursory emulation of the Thunderclock card, enough
+        to keep ProDOS applications from asking you to enter the date 
+        all the time. ProDOS attempts to guess the year from the month,
+        the day and the day of the week, something that needs to be
+        patched every 6 years. This means newer versions think it's 1996, 
+        older versions are stuck in the 80s.
+      <li><h3>Firefox Nightly Joystick Support</h3>
+        Joystick support has yet to officially land, but the latest
+        nightlies support the gamepad API.
+      </li>
+    </ul>
+    <h2>Updates (2013-03-20)</h2>
+    <ul>
+      <li><h3>Animation Frames</h3>
+        I've switched from using setInterval() to requestAnimationFrame() where
+        supported. This, in conjunction with the graphics re-write, seems
+        to smooth performance and provide a more stable CPU speed.
+      <li><h3>Graphics Re-Write</h3>
+        This (third) re-write of the graphics system should improve performance
+        with graphics intensive programs. Rather than rendering each graphics
+        update as it happens, updates are rendered each animation frame.
+      </li>
+    </ul>
+    <h2>Updates (2013-03-12)</h2>
+    <ul>
+      <li><h3>Apple //e</h3>
+        After much flailing, and much staring at MMU emulation code in
+        despair, I've finally published my Apple //e emulator. It's probably
+        a little more rough than I'd hoped, but it has a lot of features
+        that I really wanted to get into it, like basic double hires support,
+        and it uses the enhanced Apple //e ROMs.
+      </li>
+    </ul>
+    <h2>Updates (2013-02-25)</h2>
+    <ul>
+      <li><h3>Joystick Support</h3>
+        Chrome only so far, the nascent gamepad API has finally allowed me
+        to add basic joystick support. I can now re-live my glory days
+        of Skyfox.
+      </li>
+      <li><h3>Re-written CPU emulator</h3>
+        I finally got around to applying some of the many lessons I learned
+        along the way writing my first CPU emulator in Javascript. The
+        last re-working gave me about a 100% performance gain.
+      </li>
+      <li><h3>Finally Fixed Oregon Trail</h3>
+        This seems to have been a major disappointment for many people.
+        I was able to make it as a banker, but I'm embarassed to reveal my
+        score.
+      </li>
+      <li><h3>Competition</h3>
+        Now in addition to 
+        <a href="http://www.megidish.net/apple2js/">Gil Megidish's</a>
+        Apple2JS, there's a couple of new kids on the block, including
+        <a href="http://porkrind.org/a2/">David Caldwell's</a> Apple II+
+        emulator where he's put a lot more thought into the graphics rendering
+        than I have, and
+        <a href="https://github.com/nicholasbs/appletoo">appletoo</a>,
+        which I just stumbled across while looking for David's emulator and
+        haven't had much time to look at.
+      </li>
+    </ul>
+    <h2>Requirements</h2>
+    <ul>
+      <li><h3>A Browser with HTML5 Support</h3>
+        The most recent versions of
+        <a href="http://www.google.com/chrome/" target="_blank">
+          Google Chrome</a>,
+        <a href="http://www.apple.com/safari/" target="_blank">
+          Safari</a>,
+        <a href="http://www.firefox.com/" target="_blank" >
+          Firefox</a>, and
+        <a href="http://www.opera.com/" target="_blank">
+          Opera</a>
+        all seem to work reasonably well these days, although
+        variations in HTML5 support pop up, and occasionally a major release
+        will move things around out from under me.
+        IE prior to 9 lacks canvas tag support and is unsupported.
+        <a href="http://windows.microsoft.com/ie9">IE 9+</a> renders nicely on
+        a modern machine.<br/>
+        <br />
+        In updating this section I realized just how long
+        I've been doing this, since I used to have to specify Firefox 3+ and
+        Google Chrome 5+, and I'm now running Chrome 23 and Firefox 19.
+      </li>
+      <li><h3>Basic Knowledge of the Apple ][</h3>
+        If you don't know how to use an Apple ][, this won't be much fun for
+        you.
+      </li>
+    </ul>
+    <h2>Known Limitations</h2>
+    <ul>
+      <li><h3>Lame Audio</h3>
+        <span class="motter">Apple ][js</span>
+        is written entirely using HTML5 and JavaScript, so I've avoiding using
+        any Flash audio plugins. Most reputable browsers
+        now provide some sort of audio API, but no standard really seems to have
+        emerged. I should probably add a volume control.
+      </li>
+      <li><h3>Poor Printer Support</h3>
+        I currently only support sending text characters to a separate window.
+      </li>
+    </ul>
+    <h2>Acknowlegements</h2>
+    <ul>
+      <li>
+    <h3>I'm using the following libraries:</h3>
+    <ul>
+      <li>
+        <a href="http://jquery.com">jQuery</a> and
+        <a href="http://jqueryui.com">jQuery UI</a>
+      </li>
+      <li>
+        Base64 Utilities via 
+        <a href="http://kevin.vanzonneveld.net/">KvZ</a>
+      </li>
+      <li>
+        LED graphics from <a href="http://modernl.com/">Modern Life</a>.
+      </li>
+    </ul>
+      </li>
+      <li>
+    <h3>I heavily referenced:</h3>
+    <ul>
+      <li>
+        <a href="http://www.scribd.com/doc/200679/Beneath-Apple-DOS-By-Don-Worth-and-Pieter-Lechner">
+          <i>Beneath Apple DOS</i>
+        </a>
+        by Don Worth and Pieter Lechner
+      </li>    
+      <li>
+        <i>Inside the Apple //e</i> by Gary B. Little
+      </li>
+      <li>
+        <a href="http://apple2.org.za/gswv/a2zine/GS.WorldView/Resources/DOS.3.3.ANATOMY/">
+          <i>DOS 3.3 Anatomy</i>
+        </a>
+      </li>
+      <li>
+        <a href="http://www.doc.ic.ac.uk/~ih/doc/stepper/others/example3/diskii_specs.html">
+          <i>Apple II Disk Drive Article</i>
+        </a>
+        by Neil Parker
+      </li>
+      <li>
+        <a href="http://6502.org/">6502.org</a>
+      </li>
+      <li>
+        The
+        <a href="http://www.faqs.org/faqs/apple2/programmerfaq/part1/">
+          comp.sys.apple2.programmer
+        </a>
+        FAQ
+      </li>
+    </ul>
+      </li>
+      <li>
+    <h3>And special thanks to:</h3>
+    <ul>
+      <li>
+        <a href="http://adtpro.sourceforge.net/">ADTPro</a>
+        for allowing me to pull some of my circa
+        1980 programming efforts off some ancient floppies.
+      </li>
+      <li>
+        <a href="http://kegs.sourceforge.net/">KEGS</a>, because at some
+        point I got so tired of futzing with ADC/SBC code I just ported
+        the KEGS C code for those opcodes to Javascript so I could stop
+        worrying about it.
+      </li>
+      <li>
+        <a href="http://apple2history.org/">Apple II History</a>,
+        for a lovely, informative site.
+      </li>
+      <li>
+        <a href="http://www.megidish.net/apple2js/">Gil Megidish</a>,
+        for the kick in the pants to finally post my version, once I
+        realized there was, in fact, another apple2js in the world.
+      </li>
+    </ul>
+      </li>    
+    <h2>Contact</h2>
+    <ul>
+      <li>
+    <a href="mailto:apple2js@scullinsteel.com">apple2js@scullinsteel.com</a>
+      </li>
+    </ul>
+  </div>
+  </body>
+</html>

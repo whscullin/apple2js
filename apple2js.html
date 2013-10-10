@@ -1,0 +1,1076 @@
+<!DOCTYPE html><!-- -*- mode: HTML; indent-tabs-mode: nil -*- -->
+<!-- 
+ Copyright 2010-2013 Will Scullin <scullin@scullinsteel.com>
+ 
+ Permission to use, copy, modify, distribute, and sell this software and its
+ documentation for any purpose is hereby granted without fee, provided that
+ the above copyright notice appear in all copies and that both that
+ copyright notice and this permission notice appear in supporting
+ documentation.  No representations are made about the suitability of this
+ software for any purpose.  It is provided "as is" without express or
+ implied warranty.
+-->
+<html>
+<head>
+
+<title>Apple ][js - An Apple 2 Emulator in JavaScript</title>
+
+<meta name="viewport" content="width=device-width user-scalable=0" />
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta charset="utf-8" />
+<meta name="description" content="Apple ][js is an Apple ][ (or Apple II or Apple2) emulator written using only JavaScript and HTML5. It has color display, sound and disk support. It works best in the Chrome and Safari browsers." />
+<meta name="keywords" content="apple2,apple,ii,javascript,emulator,html5" />
+
+<link rel="apple-touch-icon" href="img/webapp-iphone.png" />
+<link rel="apple-touch-icon" size="72x72" href="img/webapp-ipad.png" />
+<link rel="shortcut icon" href="logoicon.png" />
+<link rel="stylesheet" type="text/css" href="css/apple2.css" />
+<link rel="stylesheet" type="text/css" 
+      href="http://code.jquery.com/ui/1.10.3/themes/mint-choc/jquery-ui.css" />
+
+<meta property="og:title" content="Apple ][js" />
+<meta property="og:type" content="website" />
+<meta property="og:description" content="Apple ][js is an Apple ][ (or Apple II or Apple2) emulator written using only JavaScript and HTML5." />
+<meta property="og:url" content="http://www.scullinsteel.com/apple2/" />
+<meta property="og:image" content="http://www.scullinsteel.com/apple2/img/image.png" />
+<meta property="fb:admins" content="700585391" />
+
+<!-- jQuery -->
+<script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.js">
+</script>
+<script type="text/javascript" src="http://code.jquery.com/ui/1.10.3/jquery-ui.js">
+</script>
+
+<!-- Emulator Scripts -->
+<script type="text/javascript" src="js/all.min.js?rel=2013-10-09">
+</script>
+<script type="text/javascript" src="js/ui/ui-all.min.js?rel=2013-10-09">
+</script>
+<script type="text/javascript" src="json/disks/index.js">
+</script>
+
+<script type="text/javascript">
+
+var focused = false;
+var startTime = Date.now();
+var lastCycles = 0;
+var frames = 0, lastFrames = 0;
+var paused = false;
+var sound = true;
+
+var gamepadSupportAvailable = !!navigator.webkitGetGamepads;
+var gamepad, button0 = false, button1 = false, buttonStart = false;
+
+window.addEventListener("gamepadconnected", function(e) {
+    gamepad = e.gamepad;
+});
+
+var hashtag;
+
+var disk_categories = {'Local Saves': []};
+var disk_sets = {}
+var disk_cur_name = [];
+var disk_cur_cat = [];
+
+function DriveLights()
+{
+    return {
+        driveLight: function(drive, on) {
+            $("#disk" + drive).css("background-image", 
+                                    on ? "url(css/red-on-16.png)" : 
+                                         "url(css/red-off-16.png)");
+        },
+        dirty: function(drive, dirty) {
+            $("#disksave" + drive).button("option", "disabled", !dirty);
+        },
+        label: function(drive, label) {
+            $("#disklabel" + drive).text(label);
+        }
+    }
+}
+
+var _saveDrive = 1;
+var _loadDrive = 1;
+
+function openLoad(drive, event)
+{
+    _loadDrive = drive;
+    if (event.metaKey) {
+        openLoadJSON(drive);
+    } else if (event.altKey) {
+        openLoadLocal(drive);
+    } else {
+        if (disk_cur_cat[drive]) {
+            $("#category_select").val(disk_cur_cat[drive]).change();
+        }
+        $("#load").dialog("open");
+    }
+}
+
+function openSave(drive, event)
+{
+    _saveDrive = drive;
+    if (event.metaKey) {
+        dumpDisk(drive);
+    } else {
+        $("#save_name").val($("#disklabel" + drive).text());
+        $("#save").dialog("open");
+    }
+}
+
+var loading = false;
+
+function loadAjax(url) {
+    loading = true;
+    $("#loading").dialog("open");
+
+    $.ajax({ url: url,
+             cache: false,
+             dataType: "jsonp",
+             jsonp: false,
+             global: false
+           });
+}
+
+function doLoad() {
+    var urls = $("#disk_select").val(), url;
+    if (urls.length) {
+        if (typeof(urls) == "string") {
+            url = urls;
+        } else {
+            url = urls[0];
+        }
+    }
+    
+    if (url) {
+        var filename;
+        $("#load").dialog("close");
+        if (url.substr(0,6) == "local:") {
+            filename = url.substr(6);
+            if (filename == "__manage") {
+                openManage();
+            } else if (name == "__setjson") {
+                openLoadJSON(_loadDrive);
+            } else if (name == "__getjson") {
+                dumpDisk(_loadDrive);
+            } else {
+                loadLocalStorage(_loadDrive, filename);
+            }
+        } else {
+            var r1 = /json\/disks\/(.*).json$/.exec(url);
+            if (r1 && _loadDrive == 1) {
+                filename = r1[1];
+                document.location.hash = filename;
+            }
+            loadAjax(url);
+        }
+    }
+}
+
+function doSave() {
+    var name = $("#save_name").val();
+    saveLocalStorage(_saveDrive, name);
+    $("#save").dialog("close");
+}
+
+function doDelete(name) {
+    if (confirm("Delete " + name + "?")) {
+        deleteLocalStorage(name);
+    }
+}
+
+function openLoadJSON(drive) {
+    _saveDrive = drive;
+    $("#json_input").val("");
+    $("#json").dialog("open");
+}
+
+function doLoadJSON() {
+    if (disk2.setJSON(_saveDrive, $("#json_input").val())) {
+        $("#json").dialog("close");
+    }
+}
+
+function doLoadLocal() {
+    var files = $("#local_file").prop("files")
+    if (files.length == 1) {
+        var file = files[0];
+        var fileReader = new FileReader();
+        fileReader.onload = function(event) {
+            var parts = file.name.split(".");
+            var name = parts[0], ext = parts[parts.length - 1].toLowerCase();
+            if (disk2.setBinary(_saveDrive, name, ext, this.result)) {
+                $("#local").dialog("close");
+            }
+        }
+        fileReader.readAsArrayBuffer(file);
+    }
+}
+
+function openLoadLocal(drive) {
+    _saveDrive = drive;
+    $("#local").dialog("open");
+}
+
+function openManage() {
+    $("#manage").dialog("open");
+}
+
+var prefs = new Prefs();
+var runTimer = null;
+var cpu = new CPU6502();
+
+var ram1 = new RAM(0x00, 0x03),
+    ram2 = new RAM(0x0C, 0x1F),
+    ram3 = new RAM(0x60, 0xBF);
+
+var hgr = new HiresPage(1);
+var hgr2 = new HiresPage(2);
+var gr = new LoresPage(1);
+var gr2 = new LoresPage(2);
+
+var rom = new Apple2ROM();
+var vm = new VideoModes(gr, hgr, gr2, hgr2);
+var mmu = {
+    auxRom: function(slot, rom) {
+        cpu.addPageHandler(rom);
+    }
+};
+
+var drivelights = new DriveLights();
+var io = new Apple2IO(cpu, vm);
+var keyboard = new KeyBoard(io);
+var parallel = new Parallel(io, new Printer(), 1);
+var disk2 = new DiskII(io, drivelights, 6);
+var slinky = new RAMFactor(mmu, io, 2, 1024 * 1024);
+var lc = new LanguageCard(io, rom);
+
+cpu.addPageHandler(ram1);
+cpu.addPageHandler(gr);
+cpu.addPageHandler(gr2);
+cpu.addPageHandler(ram2);
+cpu.addPageHandler(hgr);
+cpu.addPageHandler(hgr2);
+cpu.addPageHandler(ram3);
+
+cpu.addPageHandler(lc);
+cpu.addPageHandler(io);
+cpu.addPageHandler(parallel);
+cpu.addPageHandler(slinky);
+cpu.addPageHandler(disk2);
+
+var showFPS = false;
+
+function updateKHz() {
+    var now = Date.now();
+    var ms = now - startTime;
+    var cycles = cpu.cycles();
+    var delta;
+
+    if (showFPS) {
+        delta = frames - lastFrames;
+        var fps = parseInt(delta/(ms/1000));
+        $("#khz").text( fps + "fps");
+    } else {
+        delta = cycles - lastCycles;
+        khz = parseInt(delta/ms);
+        $("#khz").text( khz + "KHz");
+    }
+
+    startTime = now;
+    lastCycles = cycles;
+    lastFrames = frames;
+}
+
+/*
+ * Audio Handling
+ */
+
+// 8000 = 0x1f40 = 64, 31
+// 16000 = 0x3e80 = 128, 62
+
+var wavHeader = 
+    ['R','I','F','F',68 ,3  ,0  ,0  ,'W','A','V','E','f','m','t',' ',
+     16 ,0  ,0  ,0  ,1  ,0  ,1  ,0  ,128,62 ,0  ,0  ,128,62 ,0  ,0  ,
+     1  ,0  ,8  ,0  ,'d','a','t','a',32 ,3  ,0  ,0  ];
+
+function percentEncode(ary) {
+    var buf = "";
+    for (var idx = 0; idx < ary.length; idx++) {
+        buf += "%" + toHex(ary[idx])
+    }
+    return buf;
+}
+
+wavHeader = $.map(wavHeader, function(n, i) {
+                      return typeof(n) == "string" ? n.charCodeAt(0) : n;
+                  });
+
+wavHeaderStr = percentEncode(wavHeader);
+
+var audioAPI = false;
+var audioMoz = false;
+var audioContext;
+var audioNode;
+var audio, audio2;
+
+if (typeof webkitAudioContext != "undefined") {
+    debug("Using Web Audio API");
+
+    audioAPI = true;
+    audioContext = new webkitAudioContext();
+    audioNode = audioContext.createJavaScriptNode(4096, 1, 1);
+    io.floatAudio(audioContext.sampleRate);
+
+    audioNode.onaudioprocess = function(event) {
+        var data = event.outputBuffer.getChannelData(0);
+        var sample = io.getSample();
+        for (var idx = 0; idx < data.length; idx++) {
+            if (idx < sample.length) {
+                data[idx] = sample[idx];
+            } else {
+                data[idx] = 0;
+            }
+        }
+    }
+} else {
+    audio = document.createElement("audio");
+
+    if (audio.mozSetup) {
+        debug("Using Mozilla Audio API");
+        audio.mozSetup(1, 16000);
+        io.floatAudio(16000);
+        audioMoz = true;
+    } else {
+        audio2 = document.createElement("audio");
+    }
+}
+
+function playSample() {
+    // [audio,audio2] = [audio2,audio];
+
+    var sample = io.getSample();
+
+    if (audioMoz) {
+        audio.mozWriteAudio(sample);
+        return;
+    }
+
+    var tmp = audio;
+    audio = audio2;
+    audio2 = tmp;
+
+    if (sample && sample.length) {
+        var len = sample.length,
+            buf = sample.join(""),
+            o1 = percentEncode([(len + 36) & 0xff, (len + 36) >> 8]),
+            o2 = percentEncode([len & 0xff, len >> 8]),
+            header = wavHeaderStr.replace("%44%03",o1).replace("%20%03", o2); 
+
+        audio.src = "data:audio/x-wav," + header + buf;
+        // debug(audio.src);
+        audio.play();
+    }
+}
+
+function updateSound()
+{
+    var sound = $("#enable_sound").attr("checked");
+    if (audioAPI) {
+        if (sound) {
+            audioNode.connect(audioContext.destination);
+        } else {
+            audioNode.disconnect();
+        }
+    } else {
+        if (sound) {
+            if (audio) audio.volume = 0.5;
+            if (audio2) audio2.volume = 0.5;
+        } else {
+            io.getSample(false);
+        }
+    }
+}
+
+function dumpDisk(drive) {
+    var wind = window.open("", "_blank");
+    wind.document.title = $("#disklabel" + drive).text();
+    wind.document.write("<pre>");
+    wind.document.write(disk2.getJSON(drive, true));
+    wind.document.write("</pre>");
+    wind.document.close();
+}
+
+function step()
+{
+    if (runTimer) {
+        clearInterval(runTimer);
+    }
+    runTimer = null;
+
+    cpu.step(function() {
+        debug(cpu.dumpRegisters());
+        debug(cpu.dumpPC());
+    });
+}
+
+var running = false;
+var throttling = true;
+
+function toggleSpeed()
+{
+    throttling = $("#speed_toggle").prop("checked");
+    if (runTimer) {
+        run();
+    }
+}
+
+var _requestAnimationFrame =
+    window.requestAnimationFrame || 
+    window.mozRequestAnimationFrame ||
+    window.webkitRequestAnimationFrame || 
+    window.msRequestAnimationFrame;
+
+function run(pc) {
+    if (runTimer) {
+        clearInterval(runTimer);
+    }
+
+    if (pc) {
+        cpu.setPC(pc);
+    }
+
+    var ival = 30, step = 1023 * ival, stepMax = step;
+
+    if (!throttling) {
+        ival = 1;
+    }
+
+    var now, last = Date.now(), lastSample = last;
+    var runFn = function() { 
+        now = Date.now();
+        frames++;
+        if (_requestAnimationFrame) {
+            step = (now - last) * 1023;
+            last = now;
+            if (step > stepMax) {
+                step = stepMax;
+            }
+        }
+        if (document.location.hash != hashtag) {
+            hashtag = document.location.hash;
+            filename = hup()
+            if (filename) {
+                loadAjax("json/disks/" + filename + ".json");
+            }
+        } 
+        if (!loading) {
+            running = true;
+            cpu.stepCycles(step);
+            running = false;
+            vm.blit();
+            if (now - lastSample >= 200) {
+                if (!audioAPI && sound) {
+                    playSample();
+                }
+                lastSample = now;
+            }
+        }
+
+        if (gamepadSupportAvailable) {
+            gamepad = navigator.webkitGetGamepads()[0];
+        }
+        if (gamepad) {
+            x = (gamepad.axes[0] * 1.414 + 1) / 2.0; 
+            y = (gamepad.axes[1] * 1.414 + 1) / 2.0; 
+            io.paddle(0, flipX ? 1.0 - x : x);
+            io.paddle(1, flipY ? 1.0 - y : y);
+            if (gamepad.buttons[0]) {
+                if (!button0) {
+                    io.buttonDown(0);
+                    button0 = true;
+                }
+            } else {
+                if (button0) {
+                    io.buttonUp(0);
+                    button0 = false;
+                }
+            }
+            if (gamepad.buttons[1]) {
+                if (!button1) {
+                    io.buttonDown(1);
+                    button1 = true;
+                }
+            } else {
+                if (button1) {
+                    io.buttonUp(1);
+                    button1 = false;
+                }
+            }
+            if (gamepad.buttons[9]) {
+                if (!buttonStart) {
+                    io.keyDown(0x1B);
+                    buttonStart = true;
+                }
+            } else {
+                if (buttonStart) {
+                    io.keyUp();
+                    buttonStart = false;
+                }
+            }
+        }
+        if (!paused && _requestAnimationFrame) {
+            _requestAnimationFrame(runFn);
+        }
+    };
+    if (_requestAnimationFrame) {
+        _requestAnimationFrame(runFn);
+    } else {
+        runTimer = setInterval(runFn, ival);
+    }
+}
+
+function stop() {
+    if (runTimer) {
+        clearInterval(runTimer);
+    }
+    runTimer = null;
+}
+
+function reset()
+{
+    cpu.reset();
+}
+
+function loadBinary(bin) {
+   stop();
+   for (var idx = 0; idx < bin.length; idx++) {
+       var pos = bin.start + idx;
+       cpu.write(pos >> 8, pos & 0xff, bin.data[idx]);
+   }
+   run(bin.start);
+}
+
+function selectCategory(event) {
+    $("#disk_select").empty();
+    var cat = disk_categories[$("#category_select").val()];
+    if (cat) {
+        for (var idx = 0; idx < cat.length; idx++) {
+            var file = cat[idx], name = file.name;
+            if (file.disk) {
+                name += " - " + file.disk;
+            }
+            var option = $("<option />").val(file.filename).text(name)
+                .appendTo("#disk_select");
+            if (disk_cur_name[_loadDrive] == name) {
+                option.attr("selected", "selected");
+            }
+        }
+    }
+}
+
+function selectDisk(event) {
+    // Maybe display some info.
+}
+
+function clickDisk(event) {
+    doLoad();    
+}
+
+function loadDisk(disk) {
+    var name = disk.name;
+    var category = disk.category;
+
+    if (disk.disk) {
+        name += " - " + disk.disk;
+    }
+
+    disk_cur_cat[_loadDrive] = category;
+    disk_cur_name[_loadDrive] = name;
+
+    $("#disklabel" + _loadDrive).text(name);
+    disk2.setDisk(_loadDrive, disk);
+}
+
+function loadJSON(data) {
+    if (data.type == "binary") {
+        loadBinary(data);
+    } else if ($.inArray(data.type, ["dsk","po","raw","nib"]) >= 0) {
+        loadDisk(data);
+    }
+    $("#loading").dialog("close");
+    loading = false;
+}
+
+/* 
+ *  LocalStorage Disk Storage 
+ */
+               
+function updateLocalStorage() {
+    var diskIndex = JSON.parse(window.localStorage.diskIndex || "{}");
+    var names = [], name, cat, idx;
+
+    for (name in diskIndex) {
+        if (diskIndex.hasOwnProperty(name)) {
+            names.push(name);
+        }
+    }
+
+    cat = disk_categories['Local Saves'] = [];
+    for (name in diskIndex) {
+        cat.push({'category': 'Local Saves',
+                  'name': name,
+                  'filename': 'local:' + name}); 
+    }
+    cat.push({'category': 'Local Saves', 
+              'name': 'Manage Saves...',
+              'filename': 'local:__manage'});
+    
+    $("#manage").empty();                   
+    for (idx in names) {
+        $("#manage").before("<span class='local_save'>" + names[idx] + " <a href='#' onclick='doDelete(\"" + names[idx] + "\")'>Delete</a><br /></span>");
+    }
+}
+
+function saveLocalStorage(drive, name) {
+    var diskIndex = JSON.parse(window.localStorage.diskIndex || "{}");
+    
+    var json = disk2.getJSON(drive);
+    diskIndex[name] = json;
+    
+    window.localStorage.diskIndex = JSON.stringify(diskIndex);
+    
+    window.alert("Saved");
+    
+    drivelights.label(drive, name);
+    drivelights.dirty(drive, false);
+    updateLocalStorage();
+}
+ 
+function deleteLocalStorage(name) {
+    var diskIndex = JSON.parse(window.localStorage.diskIndex || "{}");
+    if (diskIndex[name]) {
+        delete diskIndex[name];
+        window.alert("Deleted");
+    }
+    window.localStorage.diskIndex = JSON.stringify(diskIndex);
+}
+
+function loadLocalStorage(drive, name) {
+    var diskIndex = JSON.parse(window.localStorage.diskIndex || "{}");
+    if (diskIndex[name]) {
+        disk2.setJSON(drive, diskIndex[name]);
+        drivelights.label(drive, name);
+        drivelights.dirty(drive, false);
+    }
+}
+
+/*
+ * Keyboard/Gamepad routines
+ */
+
+var _key;
+function _keydown(evt) {
+    if (evt.keyCode === 112) { // F1 - Reset
+        cpu.reset();
+    } else if (evt.keyCode === 113) { // F2 - Full Screen
+        var elem = document.getElementById("screen");
+        if (document.webkitCancelFullScreen) {
+            if (document.webkitIsFullScreen) {
+                document.webkitCancelFullScreen();
+            } else {
+                if (Element.ALLOW_KEYBOARD_INPUT) {
+                    elem.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+                } else {
+                    elem.webkitRequestFullScreen();
+                }
+            }
+        } else if (document.mozCancelFullScreen) {
+            if (document.mozIsFullScreen) {
+                document.mozCancelFullScreen();
+            } else {
+                elem.mozRequestFullScreen();
+            }
+        }
+    } else if (!focused && (!evt.metaKey || evt.ctrlKey)) {
+        evt.preventDefault();
+        
+        var key = keyboard.mapKeyEvent(evt);
+        if (key != 0xff) {
+            if (_key != 0xff) io.keyUp();
+            io.keyDown(key);
+            _key = key;
+        }
+    }
+}
+
+function _keyup(evt) {
+    _key = 0xff;
+
+    if (!focused) 
+        io.keyUp();
+}
+
+function updateScreen() {
+    var green = $("#green_screen").prop("checked");
+    var scanlines = $("#show_scanlines").prop("checked");
+
+    vm.green(green);
+    $("#scanlines").toggle(scanlines);
+}
+
+var flipX = false;
+var flipY = false;
+var swapXY = false;
+
+function updateJoystick() {
+    flipX = $("#flip_x").prop("checked");
+    flipY = $("#flip_y").prop("checked");
+    swapXY = $("#swap_x_y").prop("checked");
+}
+
+function _mousemove(evt) {
+    if (gamepad) {
+        return;
+    }
+    var x = evt.offsetX / $(this).width(),
+        y = evt.offsetY / $(this).height(),
+        z = x;
+
+    if (swapXY) {
+        x = y;
+        y = z;
+    }
+
+    io.paddle(0, flipX ? 1 - x : x);
+    io.paddle(1, flipY ? 1 - y : y);
+}
+
+var paused = false;
+function pauseRun(b) {
+    if (paused) {
+        run();
+        b.value = "Pause";
+    } else {
+        stop();
+        b.value = "Run";
+    }
+    paused = !paused;
+}
+
+$(function() {
+    hashtag = document.location.hash;
+
+    $("button,input[type=button],a.button").button();
+
+    var canvas = document.getElementById("screen");
+    var context = canvas.getContext('2d');
+
+    vm.setContext(context);
+
+    /*
+     * Input Handling
+     */
+
+    $(window).keydown(_keydown);
+    $(window).keyup(_keyup);
+
+    $("canvas,#scanlines,#joystick").mousedown(function(evt) {
+        if (!gamepad) {
+            io.buttonDown(evt.which == 1 ? 0 : 1);
+        }
+        evt.preventDefault();
+      })
+      .mouseup(function(evt) {
+          if (!gamepad) {
+              io.buttonUp(evt.which == 1 ? 0 : 1);
+          }
+      })
+      .mousemove(_mousemove)
+      .bind("contextmenu", function(e) { e.preventDefault(); });
+
+    $("input,textarea").focus(function() { focused = true; });
+    $("input,textarea").blur(function() { focused = false; });
+
+    keyboard.create($("#keyboard"));
+    
+    if (prefs.havePrefs()) {
+        $("input[type=checkbox]").each(function() {
+            var val = prefs.readPref(this.id);
+            if (val != null)
+                this.checked = JSON.parse(val);                    
+        });
+        $("input[type=checkbox]").change(function() {
+            prefs.writePref(this.id, JSON.stringify(this.checked));
+        });
+    }
+
+    reset();
+    run();
+    setInterval(updateKHz, 1000);
+    updateSound();
+    updateScreen();
+
+    var cancel = function() { $(this).dialog("close"); };
+    $("#loading").dialog({ autoOpen: false, modal: true });
+    $("#options").dialog({ autoOpen: false,
+                           modal: true,
+                           width: 320,
+                           height: 400,
+                           buttons: {"Close": cancel }});
+    $("#load").dialog({ autoOpen: false,
+                        modal: true,
+                        width: 540,
+                        buttons: {"Cancel": cancel, "Load": doLoad }});
+    $("#save").dialog({ autoOpen: false,
+                        modal: true,
+                        width: 320,
+                        buttons: {"Cancel": cancel, "Save": doSave }});
+    $("#manage").dialog({ autoOpen: false,
+                          modal: true,
+                          width: 320,
+                          buttons: {"Close": cancel }});
+    $("#json").dialog({ autoOpen: false,
+                        modal: true,
+                        width: 530,
+                        buttons: {"Cancel": cancel, "OK": doLoadJSON }});
+    $("#local").dialog({ autoOpen: false,
+                        modal: true,
+                        width: 530,
+                        buttons: {"Cancel": cancel, "OK": doLoadLocal }});
+
+    if (window.localStorage !== undefined) {
+        $("button.disksave").show();  
+    }
+
+    var oldcat = "";
+    for (var idx = 0; idx < disk_index.length; idx++) {
+        var file = disk_index[idx];
+        var cat = file.category;
+        var name = file.name, disk = file.disk;
+        if (cat != oldcat) {
+            $("<option />").val(cat).text(cat).appendTo("#category_select");
+            disk_categories[cat] = [];
+            oldcat = cat;
+        } 
+        disk_categories[cat].push(file);
+        if (disk) {
+            if (!disk_sets[name]) {
+                disk_sets[name] = [] 
+            }
+            disk_sets[name].push(file);
+        }
+    }
+    $("<option/>").text("Local Saves").appendTo("#category_select");
+
+    updateLocalStorage();
+
+    // Check for disks in hashtag
+
+    var disk = gup("disk") || hup();
+    if (disk) {
+        if (disk.indexOf("://") > 0) {
+            loadAjax(disk);
+        } else {
+            loadAjax("json/disks/" + disk + ".json");
+        }
+    }
+
+    if (navigator.userAgent.match(/(iPod|iPhone|iPad)/)) {
+        $("select").removeAttr("multiple").css("height", "auto");
+    }
+
+});
+</script>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-19205057-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+</head>
+<body>
+  <div style="margin: auto; width: 604px">
+    <!--
+    <span style="font-size: 24px" class="motter">apple ][js</span>
+    -->
+    <a href="http://www.w3.org/html/logo/"><img src="http://www.w3.org/html/logo/badge/html5-badge-h-solo.png" width="63" height="64" alt="HTML5 Powered" title="HTML5 Powered" style="float: right"></a>
+    <a href="about.html" target="_blank">
+      <img src="img/badge.png" id="badge" />
+    </a>
+    <h1 id="subtitle">An Apple ][ Emulator in JavaScript</h1>
+    <table id="display">
+      <tr>
+        <td style="vertical-align: top">
+          <div role="textbox" class="overscan" 
+               onKeyDown="_keydown(event);"
+               onKeyUp="_keyup(event);">
+            <canvas id="screen" width="280" height="192"></canvas>
+            <img id="scanlines" src="css/scanlines.png" />
+          </div>
+        </td>
+      </tr>
+    </table>
+    <div class="inset">
+      <div style="float: left; width: 50%">
+        <div class="disk" id="disk1">&nbsp;</div>
+        <span id="disklabel1" class="disklabel">Disk 1</span>
+        <button id="diskload1" class="diskload" value="Load"
+                onclick="openLoad(1, event);">
+          Load
+        </button>
+        <button id="disksave1" class="disksave" value="Save"
+                disabled="disabled" onclick="openSave(1, event);">
+          Save
+        </button>
+      </div>
+      <div style="float: left; width: 50%">
+        <div class="disk" id="disk2">&nbsp;</div>
+        <span id="disklabel2" class="disklabel">Disk 2</span>
+        <button id="diskload2" class="diskload" value="Load"
+                onclick="openLoad(2, event);">
+          Load
+        </button>
+        <button id="disksave2" class="disksave" value="Save"
+                disabled="disabled" onclick="openSave(2, event);">
+          Save
+        </button>
+      </div>
+      <div style="clear: both"></div>
+    </div>
+    <div class="inset">
+      <div id="khz" onclick="showFPS = !showFPS">0KHz</div>
+      <input type="button" value="Pause" onclick="pauseRun(this)" />
+      <div style="float: right">
+        <input type="button" onclick="window.open('about.html','_html')"
+               name="About" value="About">
+        <input type="button" onclick="$('#options').dialog('open')" 
+               name="Options" value="Options">
+      </div>
+    </div>
+    <div class="inset">
+      <div style="margin: 0px 10px">
+        <div id="keyboard"></div>
+      </div>
+    </div>
+  </div>
+  <div id="loading" title="Loading">
+    Loading...
+  </div>
+  <div id="options" title="Options">
+    <h3>CPU</h3>
+    <ul>
+      <li>
+        <input type="checkbox" checked="checked" id="speed_toggle"
+               onclick="toggleSpeed()"/>
+        <label for="speed_toggle">
+          Regulate Speed
+        </label>
+      </li>
+    </ul>
+    <h3>Joystick</h3>
+    <ul>
+      <li>
+        <input type="checkbox" id="flip_x" 
+               onclick="updateJoystick()" />
+        <label for="flip_x">
+          Flip X-Axis
+        </label>
+      </li>
+      <li>
+        <input type="checkbox" id="flip_y"  
+               onclick="updateJoystick()" />
+        <label for="flip_y">
+          Flip Y-Axis
+        </label>
+      </li>
+      <li>
+        <input type="checkbox" id="swap_x_y"  
+               onclick="updateJoystick()" />
+        <label for="swap_x_y">
+          Swap X-Y Axis
+        </label>
+      </li>
+    </ul>
+    <h3>Monitor</h3>
+    <ul>
+      <li>
+        <input type="checkbox" id="green_screen" 
+               onclick="updateScreen()" />
+        <label for="green_screen">
+          Green Screen
+        </label>
+      </li>
+      <li>
+        <input type="checkbox" id="show_scanlines" 
+               onclick="updateScreen()" />
+        <label for="show_scanlines">
+          Show Scanlines
+        </label>
+      </li>
+    </ul>
+    <h3>Sound</h3>
+    <ul>
+      <li>
+        <input type="checkbox" id="enable_sound" 
+               onclick="updateSound()" checked="checked" />
+        <label for="enable_sound">
+          Enable (Experimental)
+        </label>
+      </li>
+    </ul>
+  </div>
+  <div id="save" title="Save Disk">
+    <form action="#" onsubmit="return false;">
+      Save Name: <input type="text" name="name" id="save_name" 
+                  style="width: 200px" />
+    </form>
+  </div>
+  <div id="manage" title="Manage Disks">
+  </div>
+  <div id="json" title="Input JSON">
+    <form action="#">
+      <textarea id="json_input" rows="24" cols="80">
+      </textarea>
+    </form>
+  </div>
+  <div id="local" title="Load Local File">
+    <form action="#">
+      <input type="file" id="local_file" />
+    </form>
+  </div>
+  <div id="load" title="Load Disk">
+    <table>
+      <tr>
+        <td>
+          <select id="category_select" multiple="multiple" 
+                  class="ui-widget ui-state-default"
+                  onchange="selectCategory(event)" >
+          </select>
+        </td>
+        <td>
+          <select id="disk_select" multiple="multiple"
+                  class="ui-widget ui-state-default"
+                  onchange="selectDisk(event)"
+                  ondblclick="clickDisk(event)"> 
+          </select>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <script type="text/javascript">
+    (function() {
+    var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+    po.src = 'https://apis.google.com/js/plusone.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,422 @@
+/* Copyright 2010-2013 Will Scullin */
+
+.disklabel {
+    color: #000;
+    font-weight: bold;
+}
+
+img {
+    border: none;
+}
+
+img#badge {
+    padding: 0px 12px;
+    cursor: pointer;
+}
+
+h1#subtitle {
+    margin: 0px;
+    padding: 3px 0px 0px 10px;
+    color: black;
+    font-family: "Adobe Garamond Pro",Garamond,Times;
+    font-size: 13px;
+    font-weight: normal;
+}
+
+.motter {
+    font-family: "Motter Tektura";
+    font-size: 12px;
+}
+
+input[type="button"] {
+    width: 75px;
+}
+
+input[type="text"] {
+    width: 40px;
+}
+
+body {
+    margin: 16px 0px;
+    font-size: 10px;
+    background-color: #c4c1a0; /* Pantone 453 */
+    color: #fff;
+}
+
+#display {
+    margin: 5px 0px;
+}
+
+.overscan {
+    margin: auto;
+    position: relative;
+    background-color: black;
+    padding: 16px;
+    width: 560px;
+    height: 384px;
+    border: 6px inset #f0edd0;
+    border-radius: 10px;
+}
+
+#power {
+    padding: 2px;
+    border: 1px inset #888;
+}
+
+.disk {
+    margin: 5px;
+    float: left;
+    background-image: url(red-off-16.png);
+    width: 16px;
+    height: 16px;
+}
+
+.disklabel {
+    font-size: 11px;
+    font-family: sans-serif;
+}
+
+.disksave {
+    display: none;
+}
+
+.code {
+    font-family: Courier;
+    font-size: 14px;
+    white-space: pre;
+}
+
+table.debug_page {
+    padding: 0px;
+    font-family: Courier;
+    font-size: 10px;
+    border-collapse: collapse;
+}
+
+th {
+    background-color: #ccc;
+}
+
+.inset {
+    width: 594px;
+    border-radius: 6px;
+    border: 3px inset #f0edd0;
+    padding: 6px;
+    margin: 10px 0px;
+}
+
+#speed {
+    margin: 9px 0px;
+    width: 200px;
+}
+
+#khz {
+    margin-right: 4px;
+    padding: 4px;
+    float: left;
+    font-family: Courier;
+    font-size: 12px;
+    width: 60px;
+    height: 15px;
+    text-align: right;
+    background: #000;
+    color: #0f0;
+    border: 2px inset #888;
+    border-radius: 4px;
+}
+
+canvas {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    cursor: crosshair;
+    width: 560px;
+    height: 384px;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: optimize-contrast;
+}
+
+:-webkit-full-screen {
+    width: 100%;
+    height: 100%;
+}
+/*
+@media screen and (min-device-width:1120px) {
+:-webkit-full-screen { 
+    background: #000;
+}
+
+:-moz-full-screen .overscan {
+    border: 0px none !important; 
+    width: 1120px;
+    height: 768px;
+    margin: auto;
+}
+:-webkit-full-screen .overscan {
+    border: 0px none !important;
+    width: 1120px;
+    height: 768px;
+}
+
+:-moz-full-screen canvas {
+    width: 1120px;
+    height: 768px;
+}
+:-webkit-full-screen canvas {
+    width: 1120px;
+    height: 768px;
+}
+
+:-webkit-full-screen #scanlines {
+    width: 1120px;
+    height: 768px;
+}
+:-moz-full-screen #scanlines {
+    width: 1120px;
+    height: 768px;
+}
+}
+*/
+#scanlines {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    cursor: crosshair;
+    z-index: 1;
+    width: 560px;
+    height: 384px;
+}
+
+#page1 {
+    visibility: display;
+}
+
+#page2 {
+    visibility: hidden;
+}
+
+#about iframe {
+    border: 1px inset #666;
+    width: 99%;
+    height: 99%;
+}
+
+#about {
+    padding: 16px;
+    margin: 0px;
+    font-family: "Adobe Garamond Pro",Garamond,Times;
+    font-size: 14px;
+    background-color: #fff;
+    color: #000;
+}
+
+#about a {
+    background-color: #fff;
+    color: #000;
+}
+
+#load select {
+    width: 250px;
+    height: 300px;
+}
+
+#keyboard .row {
+    display: block;
+    margin: 0px;
+    padding: 0px;
+    height: 42px;
+    font-family: Helvetica;
+    width: 605px;
+}
+
+#keyboard .row0 {
+    margin-left: 20px;
+}
+
+#keyboard .row2 {
+    margin-left: 10px;
+}
+
+#keyboard .row3 {
+    margin-left: 10px;
+}
+
+#keyboard .row4 {
+    margin-left: 10px;
+}
+
+.apple2e #keyboard .row0 {
+    margin-left: 0px;
+}
+
+.apple2e #keyboard .row2 {
+    margin-left: 0px;
+}
+
+.apple2e #keyboard .row3 {
+    margin-left: 0px;
+}
+
+.apple2e #keyboard .row4 {
+    margin-left: 0px;
+}
+
+#keyboard .key {
+    display: block;
+    float: left;
+    margin: 0px;
+    padding: 0px;
+    width: 32px;
+    height: 32px;
+    background-color: #44372C;
+    color: white;
+    vertical-align: bottom;
+    text-align: center;
+    position: relative;
+    border: 5px outset #66594E;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#keyboard .pressed {
+    background-color: #22150A;
+    border: 5px outset #44372C;
+}
+
+#keyboard .key div {
+    border-radius: 3px;
+    position: absolute;
+    bottom: 0px;
+    width: 100%;
+    text-align: center;
+}
+
+#keyboard .vcenter div {
+    bottom: 10px;
+}
+
+#keyboard .vcenter2 div {
+    bottom: 5px;
+}
+
+#keyboard .key span {
+    font-size: 14px;
+}
+
+#keyboard .key span.small {
+    font-size: 7px;
+}
+
+#keyboard .key-SHIFT {
+    width: 53px;
+}
+
+#keyboard .active {
+    color: #4f4;
+}
+
+#keyboard .key-RETURN {
+    width: 52px;
+}
+
+#keyboard .key-DELETE {
+    width: 47px;
+}
+
+#keyboard .key-TAB {
+    width: 47px;
+}
+
+#keyboard .key-POWER {
+    width: 38px;
+    height: 38px;
+    border: 2px groove black;
+    background-color: #ffd;
+    color: black;
+    border-radius: 2px;
+}
+
+#keyboard .key-POWER div {
+    bottom: 15px;
+}
+
+#keyboard .key-nbsp {
+    margin-left: 62px;
+    width: 330px;
+}
+
+.apple2e table#display {
+    margin: 5px;
+}
+
+.apple2e .inset {
+    width: 604px;
+}
+
+.apple2e #keyboard .key-CTRL {
+    width: 60px;
+}
+
+.apple2e #keyboard .key-RETURN {
+    width: 60px;
+}
+
+.apple2e #keyboard .key-SHIFT {
+    width: 81px;
+}
+
+.apple2e #keyboard .key-nbsp {
+    margin-left: 0px;
+    width: 215px;
+}
+
+#keyboard .key-POW {
+    width: 38px;
+    height: 38px;
+    border: 2px groove black;
+    background-color: #ffd;
+    color: black;
+    border-radius: 2px;
+}
+
+#keyboard .key-POW div {
+    bottom: 15px;
+}
+
+#keyboard .key-POW span {
+    background: #4f4;
+    color: #4f4;
+}
+
+#keyboard .key-OPEN_APPLE div {
+    background-image: url(../img/open-apple24.png);
+    width: 24px;
+    height: 24px;
+    bottom: 1px;
+    left: 4px;
+}
+
+#keyboard .key-OPEN_APPLE span {
+    display: none;
+}
+
+#keyboard .key-OPEN_APPLE.active div {
+    background-image: url(../img/open-apple24-green.png);
+}
+
+#keyboard .key-CLOSED_APPLE div {
+    background-image: url(../img/closed-apple24.png);
+    width: 24px;
+    height: 24px;
+    bottom: 1px;
+    left: 4px;
+}
+
+#keyboard .key-CLOSED_APPLE.active div {
+    background-image: url(../img/closed-apple24-green.png);
+}
+
+#keyboard .key-CLOSED_APPLE span {
+    display: none;
+}
