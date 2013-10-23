@@ -81,7 +81,6 @@ function DriveLights()
                                          "url(css/red-off-16.png)");
         },
         dirty: function(drive, dirty) {
-            $("#disksave" + drive).button("option", "disabled", !dirty);
         },
         label: function(drive, label) {
             $("#disklabel" + drive).text(label);
@@ -95,27 +94,17 @@ var _loadDrive = 1;
 function openLoad(drive, event)
 {
     _loadDrive = drive;
-    if (event.metaKey) {
-        openLoadJSON(drive);
-    } else if (event.altKey) {
-        openLoadLocal(drive);
-    } else {
-        if (disk_cur_cat[drive]) {
-            $("#category_select").val(disk_cur_cat[drive]).change();
-        }
-        $("#load").dialog("open");
+    if (disk_cur_cat[drive]) {
+        $("#category_select").val(disk_cur_cat[drive]).change();
     }
+    $("#load").dialog("open");
 }
 
 function openSave(drive, event)
 {
     _saveDrive = drive;
-    if (event.metaKey) {
-        dumpDisk(drive);
-    } else {
-        $("#save_name").val($("#disklabel" + drive).text());
-        $("#save").dialog("open");
-    }
+    $("#save_name").val($("#disklabel" + drive).text());
+    $("#save").dialog("open");
 }
 
 var loading = false;
@@ -134,25 +123,24 @@ function loadAjax(url) {
 
 function doLoad() {
     var urls = $("#disk_select").val(), url;
-    if (urls.length) {
+    if (urls && urls.length) {
         if (typeof(urls) == "string") {
             url = urls;
         } else {
             url = urls[0];
         }
     }
-    
-    if (url) {
+
+    var files = $("#local_file").prop("files");
+    if (files.length == 1) {
+        doLoadLocal();
+    } else if (url) {
         var filename;
         $("#load").dialog("close");
         if (url.substr(0,6) == "local:") {
             filename = url.substr(6);
             if (filename == "__manage") {
                 openManage();
-            } else if (name == "__setjson") {
-                openLoadJSON(_loadDrive);
-            } else if (name == "__getjson") {
-                dumpDisk(_loadDrive);
             } else {
                 loadLocalStorage(_loadDrive, filename);
             }
@@ -179,18 +167,6 @@ function doDelete(name) {
     }
 }
 
-function openLoadJSON(drive) {
-    _saveDrive = drive;
-    $("#json_input").val("");
-    $("#json").dialog("open");
-}
-
-function doLoadJSON() {
-    if (disk2.setJSON(_saveDrive, $("#json_input").val())) {
-        $("#json").dialog("close");
-    }
-}
-
 function doLoadLocal() {
     var files = $("#local_file").prop("files")
     if (files.length == 1) {
@@ -200,7 +176,7 @@ function doLoadLocal() {
             var parts = file.name.split(".");
             var name = parts[0], ext = parts[parts.length - 1].toLowerCase();
             if (disk2.setBinary(_saveDrive, name, ext, this.result)) {
-                $("#local").dialog("close");
+                $("#load").dialog("close");
             }
         }
         fileReader.readAsArrayBuffer(file);
@@ -830,14 +806,6 @@ $(function() {
                           modal: true,
                           width: 320,
                           buttons: {"Close": cancel }});
-    $("#json").dialog({ autoOpen: false,
-                        modal: true,
-                        width: 530,
-                        buttons: {"Cancel": cancel, "OK": doLoadJSON }});
-    $("#local").dialog({ autoOpen: false,
-                        modal: true,
-                        width: 530,
-                        buttons: {"Cancel": cancel, "OK": doLoadLocal }});
 
     if (window.localStorage !== undefined) {
         $("button.disksave").show();  
@@ -914,7 +882,7 @@ $(function() {
           Load
         </button>
         <button id="disksave1" class="disksave" value="Save"
-                disabled="disabled" onclick="openSave(1, event);">
+                onclick="openSave(1, event);">
           Save
         </button>
       </div>
@@ -926,7 +894,7 @@ $(function() {
           Load
         </button>
         <button id="disksave2" class="disksave" value="Save"
-                disabled="disabled" onclick="openSave(2, event);">
+                onclick="openSave(2, event);">
           Save
         </button>
       </div>
@@ -1022,17 +990,6 @@ $(function() {
   </div>
   <div id="manage" title="Manage Disks">
   </div>
-  <div id="json" title="Input JSON">
-    <form action="#">
-      <textarea id="json_input" rows="24" cols="80">
-      </textarea>
-    </form>
-  </div>
-  <div id="local" title="Load Local File">
-    <form action="#">
-      <input type="file" id="local_file" />
-    </form>
-  </div>
   <div id="load" title="Load Disk">
     <table>
       <tr>
@@ -1051,6 +1008,9 @@ $(function() {
         </td>
       </tr>
     </table>
+    <form action="#">
+      <input type="file" id="local_file" />
+    </form>
   </div>
 </body>
 </html>
