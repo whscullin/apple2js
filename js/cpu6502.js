@@ -1248,27 +1248,33 @@ function CPU6502(options)
             return result;
         },
 
-        dumpPage: function(page) {
-            if (page === undefined) {
-                page = pc >> 8;
+        dumpPage: function(start, end) {
+            var result = "";
+            if (start === undefined) {
+                start = pc >> 8;
             }
-            var b, result = "", idx, jdx;
-            for (idx = 0; idx < 16; idx++) {
-                result += toHex(page) + toHex(idx << 4) + ": ";
-                for (jdx = 0; jdx < 16; jdx++) {
-                    b = readByte(page * 256 + idx * 16 + jdx, true);
-                    result += toHex(b) + " ";
-                }
-                result += "        ";
-                for (jdx = 0; jdx < 16; jdx++) {
-                    b = readByte(page * 256 + idx * 16 + jdx, true) & 0x7f;
-                    if (b >= 0x20 && b < 0x7f) {
-                        result += String.fromCharCode(b);
-                    } else {
-                        result += ".";
+            if (end === undefined) {
+                end = start;
+            }
+            for (var page = start; page <= end; page++) {
+                var b, idx, jdx;
+                for (idx = 0; idx < 16; idx++) {
+                    result += toHex(page) + toHex(idx << 4) + ": ";
+                    for (jdx = 0; jdx < 16; jdx++) {
+                        b = readByte(page * 256 + idx * 16 + jdx, true);
+                        result += toHex(b) + " ";
                     }
+                    result += "        ";
+                    for (jdx = 0; jdx < 16; jdx++) {
+                        b = readByte(page * 256 + idx * 16 + jdx, true) & 0x7f;
+                        if (b >= 0x20 && b < 0x7f) {
+                            result += String.fromCharCode(b);
+                        } else {
+                            result += ".";
+                        }
+                    }
+                    result += "\n";
                 }
-                result += "\n";
             }
             return result;
         },
