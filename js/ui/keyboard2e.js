@@ -261,8 +261,8 @@ function KeyBoard(io) {
                 $(this).removeClass("pressed");
             }
 
-            function _click() {
-                var key = $(this).data(shifted ? "key2" : "key1");
+            function _click(ev) {
+                var key = $(ev.currentTarget).data(shifted ? "key2" : "key1");
                 switch (key) {
                 case "BELL":
                     key = "G";
@@ -366,9 +366,21 @@ function KeyBoard(io) {
                     label.append(label1);
                     key.append(label);
                     key.data({"key1": key1, "key2": key2});
-                    key.bind("mousedown", _mousedown);
-                    key.bind("mouseup mouseout", _mouseup);
-                    key.click(_click);
+
+                    if (window.ontouchstart === undefined) {
+                        key.bind("mousedown", function(event) {
+                            _mousedown(event);
+                            _click(event);
+                        });
+                        key.bind("mouseup mouseout", _mouseup);
+                    } else {
+                        key.bind("touchstart", function(event) {
+                            _mousedown(event);
+                            _click(event);
+                        });
+                        key.bind("touchend touchleave", _mouseup);
+                    }
+
                     row.append(key);
                 }
             }

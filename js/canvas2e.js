@@ -35,10 +35,15 @@ var context = null;
 
 function LoresPage(page) 
 {
+    // $00-$3F inverse
+    // $40-$7F flashing
+    // $80-$FF normal
+
     var _page = page;
     var _buffer = [];
     var _refreshing = false;
     var _greenMode = false;
+    var _blink = false;
 
     var _black = [0x00,0x00,0x00];
     var _white = [0xff,0xff,0xff];
@@ -76,6 +81,12 @@ function LoresPage(page)
     _init();
 
     return {
+        start: function() {
+            var self = this;
+            window.setInterval(function() {
+                self.blink();
+            }, 267);
+        },
         bank0: function() {
             var self = this;
             return {
@@ -114,7 +125,9 @@ function LoresPage(page)
 
         // These are used by both bank 0 and 1
 
-        _start: function() { return (0x04 * _page); },
+        _start: function() {
+            return (0x04 * _page);
+        },
         _end: function() { return (0x04 * _page) + 0x03; },
         _read: function(page, off, bank) {
             var addr = (page << 8) | off,
@@ -151,13 +164,15 @@ function LoresPage(page)
                 var color;
                 if (textMode || (mixedMode && row > 19)) {
                     var b;
-                    fore = _greenMode ? _green : _white;
-                    back = _black;
+                    var flash = ((val & 0xc0) == 0x40) && 
+                        _blink && !_80colMode; 
+                    fore = flash ? _black : (_greenMode ? _green : _white);
+                    back = flash ? _white : _black;
 
                     if (!altCharMode && !_80colMode) {
                         val = (val >= 0x40 && val < 0x80) ? val - 0x40 : val;
                     }
-                    
+
                     if (_80colMode) {
                         off = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
                         for (jdx = 0; jdx < 8; jdx++) {
@@ -235,6 +250,18 @@ function LoresPage(page)
                 this._write(addr >> 8, addr & 0xff, _buffer[0][idx], 0);
                 if (_80colMode)
                     this._write(addr >> 8, addr & 0xff, _buffer[1][idx], 1);
+            }
+            _refreshing = false;
+        },
+        blink: function() {
+            var addr = 0x400 * _page;
+            _refreshing = true; 
+            _blink = !_blink;
+            for (var idx = 0; idx < 0x400; idx++, addr++) {
+                var b = _buffer[0][idx];
+                if ((b & 0xC0) == 0x40) {
+                    this._write(addr >> 8, addr & 0xff, _buffer[0][idx], 0);
+                }
             }
             _refreshing = false;
         },

@@ -14,9 +14,8 @@
 /*globals debug: false, toHex: false, reset: false */
 /*exported KeyBoard */
 
-// keycode: [plain, cntl, shift]
-
 function KeyBoard(io) {
+    // keycode: [plain, cntl, shift]
     var keymap = {
         // Most of these won't happen
         0x00: [0x00, 0x00, 0x00], // 
@@ -165,6 +164,26 @@ function KeyBoard(io) {
             return 0xFF;
         },
 
+        shiftKey: function keyboard_shiftKey(down) {
+            shifted = down;
+            if (down) {
+                io.buttonDown(2);
+                $("#keyboard .key-SHIFT").addClass("active");
+            } else {
+                io.buttonUp(2);
+                $("#keyboard .key-SHIFT").removeClass("active");
+            }
+        },
+
+        controlKey: function keyboard_controlKey(down) {
+            controlled = down;
+            if (down) {
+                $("#keyboard .key-CTRL").addClass("active");
+            } else {
+                $("#keyboard .key-CTRL").removeClass("active");
+            }
+        },
+
         create: function keyboard_create(kb) {
             var x, y, row, key, key1, key2, label, label1, label2;
             
@@ -177,17 +196,16 @@ function KeyBoard(io) {
                 return span;
             }
 
-            function _mousedown() {
-                $(this).addClass("pressed");
+            function _mousedown(ev) {
+                $(ev.currentTarget).addClass("pressed");
             }
 
-            function _mouseup() {
-                $(this).removeClass("pressed");
+            function _mouseup(ev) {
+                $(ev.currentTarget).removeClass("pressed");
             }
 
-            function _click() {
-                var self = this,
-                key = $(self).data(shifted ? "key2" : "key1");
+            function _click(ev) {
+                var key = $(ev.currentTarget).data(shifted ? "key2" : "key1");
                 switch (key) {
                 case "BELL":
                     key = "G";
@@ -215,11 +233,11 @@ function KeyBoard(io) {
                     switch (key) {
                     case "SHIFT":
                         shifted = !shifted;
-                        $("#keyboard .key-SHIFT").toggleClass("shifted");
+                        $("#keyboard .key-SHIFT").toggleClass("active");
                         break;
                     case "CTRL":
                         controlled = !controlled;
-                        $("#keyboard .key-CTRL").toggleClass("controlled");
+                        $("#keyboard .key-CTRL").toggleClass("active");
                         break;
                     case "RESET":
                         reset();
@@ -265,10 +283,20 @@ function KeyBoard(io) {
                     label.append(label1);
                     key.append(label);
                     key.data({"key1": key1, "key2": key2});
-                    key.bind("mousedown", _mousedown);
-                    key.bind("mouseup mouseout", _mouseup);
-   
-                    key.click(_click);
+
+                    if (window.ontouchstart === undefined) {
+                        key.bind("mousedown", function(event) {
+                            _mousedown(event);
+                            _click(event);
+                        });
+                        key.bind("mouseup mouseout", _mouseup);
+                    } else {
+                        key.bind("touchstart", function(event) {
+                            _mousedown(event);
+                            _click(event);
+                        });
+                        key.bind("touchend touchleave", _mouseup);
+                    }
                     row.append(key);
                 }
             }

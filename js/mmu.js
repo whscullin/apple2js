@@ -569,6 +569,8 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
         start: function mmu_start() {
             // Fake call start to register switches
             io.start();
+            lores1.start();
+            lores2.start();
             
             // Do us afterward because we override some of the above
             io.registerSwitches(this, LOC);

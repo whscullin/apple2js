@@ -28,10 +28,15 @@ var context = null;
 
 function LoresPage(page) 
 {
+    // $00-$3F inverse
+    // $40-$7F flashing
+    // $80-$FF normal
+
     var _page = page;
     var _buffer = [];
     var _refreshing = false;
     var _greenMode = false;
+    var _blink = false;
 
     var _black = [0x00,0x00,0x00];
     var _white = [0xff,0xff,0xff];
@@ -86,7 +91,13 @@ function LoresPage(page)
     _init();
 
     return {
-        start: function() { return (0x04 * _page); },
+        start: function() { 
+            var self = this;
+            window.setInterval(function() {
+                self.blink();
+            }, 267);
+            return (0x04 * _page); 
+        },
         end: function() { return (0x04 * _page) + 0x03; },
         read: function(page, off) {
             var addr = (page << 8) | off,
@@ -119,7 +130,7 @@ function LoresPage(page)
                 off = (col * 7 + row * 280 * 8) * 4;
 
                 if (textMode || (mixedMode && row > 19)) {
-                    if (val & 0x80) {
+                    if (val & 0x80 || ((val & 0x40) && _blink)) {
                         fore = _greenMode ? _green : _white;
                         back = _black;
                     } else {
@@ -158,6 +169,18 @@ function LoresPage(page)
             _refreshing = true;
             for (var idx = 0; idx < 0x400; idx++, addr++) {
                 this.write(addr >> 8, addr & 0xff, _buffer[idx]);
+            }
+            _refreshing = false;
+        },
+        blink: function() {
+            var addr = 0x400 * _page;
+            _refreshing = true; 
+            _blink = !_blink;
+            for (var idx = 0; idx < 0x400; idx++, addr++) {
+                var b = _buffer[idx];
+                if ((b & 0xC0) == 0x40) {
+                    this.write(addr >> 8, addr & 0xff, _buffer[idx]);
+                }
             }
             _refreshing = false;
         },

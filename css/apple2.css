@@ -44,7 +44,7 @@ body {
 }
 
 #display {
-    margin: 5px 0px;
+    margin: 5px auto;
 }
 
 .overscan {
@@ -137,6 +137,36 @@ canvas {
     image-rendering: optimize-contrast;
 }
 
+@media all and (device-width: 320px) {
+    canvas {
+	width: 537px;
+	height: 368px;
+	left: 30px;
+	top: 24px;
+    }
+    #scanlines: {
+	width: 537px;
+	height: 368px;
+	left: 30px;
+	top: 24px;
+    }
+}
+
+@media all and (device-width: 768px) {
+    canvas {
+	width: 564px;
+	height: 386px;
+	left: 14px;
+	top: 15px;
+    }
+    #scanlines {
+	width: 564px;
+	height: 386px;
+	left: 14px;
+	top: 15px;
+    }
+}
+
 :-webkit-full-screen {
     width: 100%;
     height: 100%;
@@ -227,7 +257,11 @@ canvas {
     padding: 0px;
     height: 42px;
     font-family: Helvetica;
-    width: 605px;
+    width: 570px;
+}
+
+.apple2e #keyboard .row {
+    width: 610px;
 }
 
 #keyboard .row0 {
