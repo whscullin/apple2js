@@ -196,15 +196,12 @@ function KeyBoard(io) {
                 return span;
             }
 
-            function _mousedown(ev) {
-                $(ev.currentTarget).addClass("pressed");
-            }
-
             function _mouseup(ev) {
                 $(ev.currentTarget).removeClass("pressed");
             }
 
-            function _click(ev) {
+            function _mousedown(ev) {
+                $(ev.currentTarget).addClass("pressed");
                 var key = $(ev.currentTarget).data(shifted ? "key2" : "key1");
                 switch (key) {
                 case "BELL":
@@ -285,16 +282,10 @@ function KeyBoard(io) {
                     key.data({"key1": key1, "key2": key2});
 
                     if (window.ontouchstart === undefined) {
-                        key.bind("mousedown", function(event) {
-                            _mousedown(event);
-                            _click(event);
-                        });
+                        key.bind("mousedown", _mousedown);
                         key.bind("mouseup mouseout", _mouseup);
                     } else {
-                        key.bind("touchstart", function(event) {
-                            _mousedown(event);
-                            _click(event);
-                        });
+                        key.bind("touchstart", _mousedown);
                         key.bind("touchend touchleave", _mouseup);
                     }
                     row.append(key);
