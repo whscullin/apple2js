@@ -17,6 +17,8 @@
 
 <meta name="viewport" content="width=device-width user-scalable=0" />
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Apple ][js">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta charset="utf-8" />
 <meta name="description" content="Apple ][js is an Apple ][ (or Apple II or Apple2) emulator written using only JavaScript and HTML5. It has color display, sound and disk support. It works best in the Chrome and Safari browsers." />
 <meta name="keywords" content="apple2,apple,ii,javascript,emulator,html5" />
@@ -72,6 +74,43 @@ var sound = true;
 
 var gamepadSupportAvailable = !!navigator.webkitGetGamepads;
 var gamepad, button0 = false, button1 = false, buttonStart = false;
+var gamepadMap = [];
+var gamepadState = [];
+
+var BUTTON = {
+    // Buttons
+    'A': 0,
+    'B': 1,
+    'X': 2,
+    'Y': 3,
+
+    // Triggers
+    'L1': 4,
+    'R1': 5,
+
+    // Analog stick buttons
+    'L3': 6,
+    'R3': 7,
+
+    // Special
+    'START': 8,
+    'SELECT': 9,
+    'LOGO': 10,
+
+    // D pad
+    'UP': 11,
+    'DOWN': 12,
+    'LEFT': 13,
+    'RIGHT': 14
+};
+
+var DEFAULT_GAMEPAD = {
+    'A': 0,
+    'B': 1,
+    'L1': 0,
+    'R1': 1,
+    'START': '\033'
+}
 
 window.addEventListener("gamepadconnected", function(e) {
     gamepad = e.gamepad;
@@ -257,7 +296,7 @@ function updateKHz() {
 
     if (showFPS) {
         delta = frames - lastFrames;
-        var fps = parseInt(delta/(ms/1000));
+        var fps = parseInt(delta/(ms/1000), 10);
         $("#khz").text( fps + "fps");
     } else {
         delta = cycles - lastCycles;
@@ -473,38 +512,29 @@ function run(pc) {
             y = (gamepad.axes[1] * 1.414 + 1) / 2.0; 
             io.paddle(0, flipX ? 1.0 - x : x);
             io.paddle(1, flipY ? 1.0 - y : y);
-            if (gamepad.buttons[0]) {
-                if (!button0) {
-                    io.buttonDown(0);
-                    button0 = true;
+            var val;
+            for (var idx = 0; idx < gamepad.buttons.length; idx++) {
+                val = gamepadMap[idx];
+                if (val !== undefined) {
+                    if (gamepad.buttons[idx]) {
+                        if (!gamepadState[idx]) {
+                            if (val <= 0) {
+                                io.buttonDown(-val);
+                            } else {
+                                io.keyDown(gamepadMap[idx]);
+                            }
+                        }
+                    } else {
+                        if (gamepadState[idx]) {
+                            if (val <= 0) {
+                                io.buttonUp(-val);
+                            } else {
+                                io.keyUp();
+                            }
+                        }
+                    }
                 }
-            } else {
-                if (button0) {
-                    io.buttonUp(0);
-                    button0 = false;
-                }
-            }
-            if (gamepad.buttons[1]) {
-                if (!button1) {
-                    io.buttonDown(1);
-                    button1 = true;
-                }
-            } else {
-                if (button1) {
-                    io.buttonUp(1);
-                    button1 = false;
-                }
-            }
-            if (gamepad.buttons[9]) {
-                if (!buttonStart) {
-                    io.keyDown(0x1B);
-                    buttonStart = true;
-                }
-            } else {
-                if (buttonStart) {
-                    io.keyUp();
-                    buttonStart = false;
-                }
+                gamepadState[idx] = gamepad.buttons[idx];
             }
         }
         if (!paused && _requestAnimationFrame) {
@@ -586,6 +616,22 @@ function loadJSON(data) {
     } else if ($.inArray(data.type, ["dsk","po","raw","nib"]) >= 0) {
         loadDisk(data);
     }
+    for (var idx = 0; idx < 16; idx++) {
+        gamepadMap[idx] = undefined;
+    }
+    var map = data.gamepad || DEFAULT_GAMEPAD;
+    $.each(map, function(key, val) {
+        if (typeof val == 'string') {
+            val = val.charCodeAt(0);
+        } else {
+            val = -val;
+        }
+        if (key in BUTTON) {
+            gamepadMap[BUTTON[key]] = val;
+        } else {
+            gamepadMap[parseInt(key)] = val;
+        }
+    });
     $("#loading").dialog("close");
     loading = false;
 }
