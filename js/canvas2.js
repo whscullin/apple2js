@@ -10,6 +10,7 @@
  * implied warranty.
  */
 
+/*jshint browser:true */
 /*globals allocMemPages: false, 
           charset: false, 
           base64_encode: false, base64_decode: false */
@@ -40,7 +41,7 @@ function LoresPage(page)
 
     var _black = [0x00,0x00,0x00];
     var _white = [0xff,0xff,0xff];
-    var _green = [0x00,0xff,0x00];
+    var _green = [0x00,0xff,0x88];
 
     var _colors = [
         [0x00,0x00,0x00], // 0 Black         0000 0   0
@@ -56,7 +57,7 @@ function LoresPage(page)
         [0x40,0x40,0x40], // 10 Gray 2       1010 10
         [0xff,0x96,0xbf], // 11 Pink         1011 11
         [0x2f,0xbc,0x1a], // 12 Light Green  0110 6
-        [0xb9,0xd0,0x60], // 13 Yellow       0111 7
+        [0xbf,0xd3,0x5a], // 13 Yellow       0111 7
         [0x6f,0xe8,0xbf], // 14 Aqua         1110 14
         [0xff,0xff,0xff]  // 15 White        1111 15
 
@@ -127,7 +128,7 @@ function LoresPage(page)
                     return;
 
                 var data = pages[_page].data, fore, back;
-                off = (col * 7 + row * 280 * 8) * 4;
+                off = (col * 14 + row * 560 * 8) * 4;
 
                 if (textMode || (mixedMode && row > 19)) {
                     if (val & 0x80 || ((val & 0x40) && _blink)) {
@@ -142,24 +143,47 @@ function LoresPage(page)
                         b <<= 1;
                         for (idx = 0; idx < 7; idx++) {
                             color = (b & 0x80) ? fore : back;
-                            data[off + 0] = color[0];
-                            data[off + 1] = color[1];
-                            data[off + 2] = color[2];
+                            data[off + 0] = data[off + 4] = color[0];
+                            data[off + 1] = data[off + 5] = color[1];
+                            data[off + 2] = data[off + 6] = color[2];
                             b <<= 1;
-                            off += 4;
+                            off += 8;
                         }
-                        off += 273 * 4;
+                        off += 546 * 4;
                     }
                 } else {
-                    for (jdx = 0; jdx < 8; jdx++) {
-                        color = _colors[(jdx < 4) ? (val & 0x0f) : (val >> 4)];
-                        for (idx = 0; idx < 7; idx++) {
-                            data[off + 0] = color[0];
-                            data[off + 1] = color[1];
-                            data[off + 2] = color[2];
-                            off += 4;
+                    if (_greenMode) {
+                        fore = _green;
+                        back = _black;
+                        for (jdx = 0; jdx < 8; jdx++) {
+                            b = (jdx < 4) ? (val & 0x0f) : (val >> 4);
+                            b |= (b << 4);
+                            b |= (b << 8);
+                            if (col & 0x1) {
+                                b <<= 2;
+                            }
+                            for (idx = 0; idx < 14; idx++) {
+                                color = (b & 0x8000) ? fore : back;
+                                data[off + 0] = color[0];
+                                data[off + 1] = color[1];
+                                data[off + 2] = color[2];
+                                b <<= 1;
+                                off += 4;
+                            }
+                            off += 546 * 4;
+                        }                        
+                    } else {
+                        for (jdx = 0; jdx < 8; jdx++) {
+                            b = (jdx < 4) ? (val & 0x0f) : (val >> 4);
+                            color = _colors[b];
+                            for (idx = 0; idx < 7; idx++) {
+                                data[off + 0] = data[off + 4] = color[0];
+                                data[off + 1] = data[off + 5] = color[1];
+                                data[off + 2] = data[off + 6] = color[2];
+                                off += 8;
+                            }
+                            off += 546 * 4;
                         }
-                        off += 273 * 4;
                     }
                 }
             }
@@ -211,6 +235,7 @@ function LoresPage(page)
 function HiresPage(page)
 { 
     var _page = page;
+
     var orangeCol = [0xff, 0x65, 0x00];
     var greenCol = [0x00, 0xff, 0x00];
     var blueCol = [0x09, 0x2a, 0xff];
@@ -221,7 +246,8 @@ function HiresPage(page)
     var _buffer = [];
     var _refreshing = false;
 
-    var _green = false;
+    var _green = [0x00, 0xff, 0x80];
+    var _greenMode = false;
 
     function _init() {
         _buffer = allocMemPages(0x20);
@@ -241,6 +267,9 @@ function HiresPage(page)
             return _buffer[base];
         },
         write: function(page, off, val) {
+            function dim(c) {
+                return [c[0] * 0.75, c[1] * 0.75, c[2] * 0.75];
+            }
             var addr = (page << 8) | off,
                 base = addr - 0x2000 * _page;
             if (_buffer[base] === val && !_refreshing)
@@ -267,7 +296,7 @@ function HiresPage(page)
                 
                 var data = pages[_page].data,
                 dy = rowa * 8 + rowb,
-                dx = col * 7 - 1,
+                dx = col * 14 - 2,
                 b0 = col > 0 ? _buffer[base - 1] : 0,
                 b2 = col < 39 ? _buffer[base + 1] : 0;
                 val |= (b2 & 0x3) << 7;
@@ -277,34 +306,37 @@ function HiresPage(page)
                 oddCol = (hbs ? orangeCol : greenCol),
                 evenCol = (hbs ? blueCol : violetCol);
 
-                off = dx * 4 + dy * 280 * 4;
-                for (var idx = 0; idx < 9; idx++, off += 4) {
+                off = dx * 4 + dy * 560 * 4;
+                for (var idx = 0; idx < 9; idx++, off += 8) {
                     val >>= 1;
 
                     if (v1) {
-                        if (_green) {
-                            color = greenCol;
+                        if (_greenMode) {
+                            color = _green;
                         } else if (v0 || v2) {
                             color = whiteCol;
                         } else {
                             color = odd ? oddCol : evenCol;
                         }
                     } else {
-                        if (_green) {
+                        if (_greenMode) {
                             color = blackCol;
-                        } else if (odd && v0 && v2) {
-                            color = evenCol;
+                        } else if (odd && v2 && v0) {
+                            color = v0 ? dim(evenCol) : evenCol;
                         } else if (!odd && v0 && v2) {
-                            color = oddCol;
+                            color = v2 ? dim(oddCol) : oddCol;
                         } else {
                             color = blackCol;
                         }
                     }
 
-                    if (dx > -1 && dx < 280) {
+                    if (dx > -1 && dx < 560) {
                         data[off + 0] = color[0];
                         data[off + 1] = color[1];
                         data[off + 2] = color[2];
+                        data[off + 4] = color[0];
+                        data[off + 5] = color[1];
+                        data[off + 6] = color[2];
                     }
                     dx++;
 
@@ -324,7 +356,7 @@ function HiresPage(page)
             _refreshing = false;
         },
         green: function(on) {
-            _green = on;
+            _greenMode = on;
             this.refresh();
         },
         blit: function() {
@@ -333,13 +365,13 @@ function HiresPage(page)
         getState: function() {
             return {
                 page: _page,
-                green: _green,
+                green: _greenMode,
                 buffer: base64_encode(_buffer)
             };
         },
         setState: function(state) {
             _page = state.page;
-            _green = state.green;
+            _greenMode = state.green;
             _buffer = base64_decode(state.buffer);
 
             this.refresh();
@@ -389,9 +421,9 @@ function VideoModes(gr,hgr,gr2,hgr2) {
         setContext: function(c) {
             context = c;
 
-            pages[1] = context.createImageData(280, 192);
-            pages[2] = context.createImageData(280, 192);
-            for (var idx = 0; idx < 280 * 192 * 4; idx++) {
+            pages[1] = context.createImageData(560, 192);
+            pages[2] = context.createImageData(560, 192);
+            for (var idx = 0; idx < 560 * 192 * 4; idx++) {
                 pages[1].data[idx] = 0xff;
                 pages[2].data[idx] = 0xff;
             }

@@ -15,7 +15,7 @@
 
 <title>Apple ][js - An Apple 2 Emulator in JavaScript</title>
 
-<meta name="viewport" content="width=device-width user-scalable=0" />
+<meta name="viewport" content="width=device-width, user-scalable=no" />
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Apple ][js">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -778,8 +778,10 @@ function _mousemove(evt) {
     if (gamepad) {
         return;
     }
-    var x = evt.offsetX / $(this).width(),
-        y = evt.offsetY / $(this).height(),
+    var s = $("#screen");
+    var offset = s.offset();
+    var x = (evt.pageX - offset.left) / s.width(),
+        y = (evt.pageY - offset.top) / s.height(),
         z = x;
 
     if (swapXY) {
@@ -806,7 +808,13 @@ function pauseRun(b) {
 $(function() {
     hashtag = document.location.hash;
 
-    $("button,input[type=button],a.button").button();
+    $("button,input[type=button],a.button").button().focus(function() {
+        // Crazy hack required by Chrome
+        var self = this;
+        window.setTimeout(function() {
+            self.blur();
+        }, 1)
+    });
 
     var canvas = document.getElementById("screen");
     var context = canvas.getContext('2d');

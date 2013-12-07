@@ -205,7 +205,11 @@ function Apple2IO(cpu, callbacks)
         case LOC.STROBE:
             _key &= 0x7f;
             if (_buffer.length > 0) {
-                _key = _buffer.shift().charCodeAt(0) | 0x80;
+                var val =  _buffer.shift();
+                if (val == '\n') {
+                    val = '\r';
+                }
+                _key = val.charCodeAt(0) | 0x80;
             }
             result = _keyDown ? 0x80 : 0x00;
             break;
@@ -222,16 +226,16 @@ function Apple2IO(cpu, callbacks)
             result = _button[2] ? 0x80 : 0;
             break;
         case LOC.PADDLE0:
-            result = (delta < (_paddle[0] * 2560) ? 0x80 : 0x00);
+            result = (delta < (_paddle[0] * 2756) ? 0x80 : 0x00);
             break;
         case LOC.PADDLE1:
-            result = (delta < (_paddle[1] * 2560) ? 0x80 : 0x00);
+            result = (delta < (_paddle[1] * 2756) ? 0x80 : 0x00);
             break;
         case LOC.PADDLE2:
-            result = (delta < (_paddle[2] * 2560) ? 0x80 : 0x00);
+            result = (delta < (_paddle[2] * 2756) ? 0x80 : 0x00);
             break;
         case LOC.PADDLE3:
-            result = (delta < (_paddle[3] * 2560) ? 0x80 : 0x00);
+            result = (delta < (_paddle[3] * 2756) ? 0x80 : 0x00);
             break;
         case LOC.PDLTRIG:
             _trigger = cpu.cycles();
