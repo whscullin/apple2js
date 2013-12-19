@@ -728,6 +728,7 @@ function _keydown(evt) {
         }
     } else if (evt.keyCode == 16) { // Shift
         keyboard.shiftKey(true);
+        io.buttonDown(2, true);
     } else if (evt.keyCode == 17) { // Control
         keyboard.controlKey(true);
     } else if (!focused && (!evt.metaKey || evt.ctrlKey)) {
@@ -747,6 +748,7 @@ function _keyup(evt) {
 
     if (evt.keyCode == 16) { // Shift
         keyboard.shiftKey(false);
+        io.buttonDown(2, false);
     } else if (evt.keyCode == 17) { // Control
         keyboard.controlKey(false);
     } else {
@@ -842,8 +844,8 @@ $(function() {
       .mousemove(_mousemove)
       .bind("contextmenu", function(e) { e.preventDefault(); });
 
-    $("input,textarea").focus(function() { focused = true; });
-    $("input,textarea").blur(function() { focused = false; });
+    $("input,textarea").focus(function() { focused = true; })
+                       .blur(function() { focused = false; });
 
     keyboard.create($("#keyboard"));
     

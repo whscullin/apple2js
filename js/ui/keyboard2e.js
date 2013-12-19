@@ -253,11 +253,11 @@ function KeyBoard(io) {
                 return span;
             }
 
-            function _mouseup() {
-                $(this).removeClass("pressed");
+            function _mouseup(ev) {
+                $(ev.currentTarget).removeClass("pressed");
             }
 
-            function _mousedown() {
+            function _mousedown(ev) {
                 $(this).addClass("pressed");
                 var key = $(ev.currentTarget).data(shifted ? "key2" : "key1");
                 switch (key) {
