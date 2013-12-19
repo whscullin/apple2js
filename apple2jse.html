@@ -13,15 +13,15 @@
 <html>
 <head>
 
-<title>Apple ][js - An Apple 2 Emulator in JavaScript</title>
+<title>Apple //jse - An Apple //e Emulator in JavaScript</title>
 
 <meta name="viewport" content="width=device-width, user-scalable=no" />
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Apple ][js">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta charset="utf-8" />
-<meta name="description" content="Apple ][js is an Apple ][ (or Apple II or Apple2) emulator written using only JavaScript and HTML5. It has color display, sound and disk support. It works best in the Chrome and Safari browsers." />
-<meta name="keywords" content="apple2,apple,ii,javascript,emulator,html5" />
+<meta name="description" content="Apple //jse is an Apple //e emulator written using only JavaScript and HTML5. It has color display, sound and disk support." />
+<meta name="keywords" content="apple2e,apple,ii,javascript,emulator,html5" />
 
 <link rel="apple-touch-icon" href="img/webapp-iphone.png" />
 <link rel="apple-touch-icon" size="72x72" href="img/webapp-ipad.png" />
@@ -30,9 +30,9 @@
 <link rel="stylesheet" type="text/css" 
       href="http://code.jquery.com/ui/1.10.3/themes/mint-choc/jquery-ui.css" />
 
-<meta property="og:title" content="Apple ][js" />
+<meta property="og:title" content="Apple //js" />
 <meta property="og:type" content="website" />
-<meta property="og:description" content="Apple ][js is an Apple ][ (or Apple II or Apple2) emulator written using only JavaScript and HTML5." />
+<meta property="og:description" content="Apple //jse is an Apple ][ (or Apple II or Apple2) emulator written using only JavaScript and HTML5." />
 <meta property="og:url" content="http://www.scullinsteel.com/apple2/" />
 <meta property="og:image" content="http://www.scullinsteel.com/apple2/img/image.png" />
 <meta property="fb:admins" content="700585391" />
@@ -47,17 +47,20 @@
 <script type="text/javascript" src="js/util.js"></script>
 <script type="text/javascript" src="js/prefs.js"></script>
 <script type="text/javascript" src="js/ram.js"></script>
-<script type="text/javascript" src="js/langcard.js"></script>
-<script type="text/javascript" src="js/fpbasic.js"></script>
-<script type="text/javascript" src="js/apple2char.js"></script>
-<script type="text/javascript" src="js/canvas2.js"></script>
+<script type="text/javascript" src="js/mmu.js"></script>
+<script type="text/javascript" src="js/apple2e.js"></script>
+<script type="text/javascript" src="js/apple2e-enhanced.js"></script>
+<script type="text/javascript" src="js/apple2echar.js"></script>
+<script type="text/javascript" src="js/canvas2e.js"></script>
+<script type="text/javascript" src="js/slot3.js"></script>
 <script type="text/javascript" src="js/apple2io.js"></script>
 <script type="text/javascript" src="js/parallel.js"></script>
 <script type="text/javascript" src="js/disk2.js"></script>
 <script type="text/javascript" src="js/ramfactor.js"></script>
+<script type="text/javascript" src="js/thunderclock.js"></script>
 <script type="text/javascript" src="js/cpu6502.js"></script>
 <script type="text/javascript" src="js/base64.js"></script>
-<script type="text/javascript" src="js/ui/keyboard2.js"></script>
+<script type="text/javascript" src="js/ui/keyboard2e.js"></script>
 <script type="text/javascript" src="js/ui/printer.js"></script>
 
 <!-- Disk Index -->
@@ -65,6 +68,7 @@
 
 <script type="text/javascript">
 
+var enhanced = true;
 var focused = false;
 var startTime = Date.now();
 var lastCycles = 0;
@@ -245,46 +249,40 @@ function openManage() {
 
 var prefs = new Prefs();
 var runTimer = null;
-var cpu = new CPU6502();
-
-var ram1 = new RAM(0x00, 0x03),
-    ram2 = new RAM(0x0C, 0x1F),
-    ram3 = new RAM(0x60, 0xBF);
+var cpu = new CPU6502({"65C02": enhanced});
 
 var hgr = new HiresPage(1);
 var hgr2 = new HiresPage(2);
 var gr = new LoresPage(1);
 var gr2 = new LoresPage(2);
 
-var rom = new Apple2ROM();
+var rom;
+if (enhanced) {
+    rom = new Apple2eEnhancedROM();
+} else {
+    rom = new Apple2eROM();
+}
 var vm = new VideoModes(gr, hgr, gr2, hgr2);
-var mmu = {
-    auxRom: function(slot, rom) {
-        cpu.addPageHandler(rom);
-    }
-};
 
 var drivelights = new DriveLights();
 var io = new Apple2IO(cpu, vm);
 var keyboard = new KeyBoard(io);
+
+var mmu = new MMU(cpu, gr, gr2, hgr, hgr2, io, rom);
+
 var parallel = new Parallel(io, new Printer(), 1);
 var disk2 = new DiskII(io, drivelights, 6);
+var slot3 = new Slot3(mmu, rom);
 var slinky = new RAMFactor(mmu, io, 2, 1024 * 1024);
-var lc = new LanguageCard(io, rom);
+var clock = new Thunderclock(mmu, io, 7);
 
-cpu.addPageHandler(ram1);
-cpu.addPageHandler(gr);
-cpu.addPageHandler(gr2);
-cpu.addPageHandler(ram2);
-cpu.addPageHandler(hgr);
-cpu.addPageHandler(hgr2);
-cpu.addPageHandler(ram3);
+mmu.addSlot(1, parallel);
+mmu.addSlot(2, slinky);
+mmu.addSlot(3, slot3);
+mmu.addSlot(6, disk2);
+mmu.addSlot(7, clock);
 
-cpu.addPageHandler(lc);
-cpu.addPageHandler(io);
-cpu.addPageHandler(parallel);
-cpu.addPageHandler(slinky);
-cpu.addPageHandler(disk2);
+cpu.addPageHandler(mmu);
 
 var showFPS = false;
 
@@ -492,6 +490,7 @@ function run(pc) {
             }
         } 
         if (!loading) {
+            mmu.resetVB();
             running = true;
             cpu.stepCycles(step);
             running = false;
@@ -928,7 +927,7 @@ $(function() {
 });
 </script>
 </head>
-<body>
+<body class="apple2e">
   <div style="margin: auto; width: 604px">
     <!--
     <span style="font-size: 24px" class="motter">apple ][js</span>
@@ -988,7 +987,7 @@ $(function() {
       </div>
     </div>
     <div class="inset">
-      <div style="margin: 0px 10px">
+      <div>
         <div id="keyboard"></div>
       </div>
     </div>
