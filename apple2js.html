@@ -243,6 +243,30 @@ function openManage() {
     $("#manage").dialog("open");
 }
 
+function loadHTTP(url, cb) {
+    loading = true;
+    $("#loading").dialog("open");
+
+    var req = new XMLHttpRequest();
+    req.open("GET", url, true);
+    req.responseType = "arraybuffer";
+    
+    req.onload = function(event) {
+        var parts = url.split(/[\/\.]/);
+        var name = decodeURIComponent(parts[parts.length - 2]);
+        var ext = parts[parts.length - 1].toLowerCase();
+        if (disk2.setBinary(_saveDrive, name, ext, req.response)) {
+            $("#disklabel" + _saveDrive).text(name);
+            $("#loading").dialog("close");
+            loading = false;
+            if (cb) {
+                cb();
+            }
+        }
+    }
+    req.send(null);
+}
+
 var prefs = new Prefs();
 var runTimer = null;
 var cpu = new CPU6502();
@@ -488,7 +512,11 @@ function run(pc) {
             hashtag = document.location.hash;
             filename = hup()
             if (filename) {
-                loadAjax("json/disks/" + filename + ".json");
+                if (filename.indexOf("://") > 0) {
+                    loadHTTP(disk);
+                } else {
+                    loadAjax("json/disks/" + filename + ".json");
+                }
             }
         } 
         if (!loading) {
@@ -914,12 +942,12 @@ $(function() {
 
     // Check for disks in hashtag
 
-    var disk = gup("disk") || hup();
-    if (disk) {
-        if (disk.indexOf("://") > 0) {
-            loadAjax(disk);
+    var filename = gup("disk") || hup();
+    if (filename) {
+        if (filename.indexOf("://") > 0) {
+            loadHTTP(filename);
         } else {
-            loadAjax("json/disks/" + disk + ".json");
+            loadAjax("json/disks/" + filename + ".json");
         }
     }
 
@@ -932,9 +960,6 @@ $(function() {
 </head>
 <body>
   <div style="margin: auto; width: 604px">
-    <!--
-    <span style="font-size: 24px" class="motter">apple ][js</span>
-    -->
     <a href="http://www.w3.org/html/logo/"><img src="http://www.w3.org/html/logo/badge/html5-badge-h-solo.png" width="63" height="64" alt="HTML5 Powered" title="HTML5 Powered" style="float: right"></a>
     <a href="about.html" target="_blank">
       <img src="img/badge.png" id="badge" />

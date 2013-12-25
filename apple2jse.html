@@ -486,7 +486,11 @@ function run(pc) {
             hashtag = document.location.hash;
             filename = hup()
             if (filename) {
-                loadAjax("json/disks/" + filename + ".json");
+                if (filename.indexOf("://") > 0) {
+                    loadHTTP(disk);
+                } else {
+                    loadAjax("json/disks/" + filename + ".json");
+                }
             }
         } 
         if (!loading) {
@@ -925,12 +929,12 @@ $(function() {
 
     // Check for disks in hashtag
 
-    var disk = gup("disk") || hup();
-    if (disk) {
-        if (disk.indexOf("://") > 0) {
-            loadAjax(disk);
+    var filename = gup("disk") || hup();
+    if (filename) {
+        if (filename.indexOf("://") > 0) {
+            loadHTTP(filename);
         } else {
-            loadAjax("json/disks/" + disk + ".json");
+            loadAjax("json/disks/" + filename + ".json");
         }
     }
 
