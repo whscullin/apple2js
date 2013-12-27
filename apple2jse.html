@@ -61,6 +61,7 @@
 <script type="text/javascript" src="js/cpu6502.js"></script>
 <script type="text/javascript" src="js/base64.js"></script>
 <script type="text/javascript" src="js/ui/keyboard2e.js"></script>
+<script type="text/javascript" src="js/ui/gamepad.js"></script>
 <script type="text/javascript" src="js/ui/printer.js"></script>
 
 <!-- Disk Index -->
@@ -75,51 +76,6 @@ var lastCycles = 0;
 var frames = 0, lastFrames = 0;
 var paused = false;
 var sound = true;
-
-var gamepadSupportAvailable = !!navigator.webkitGetGamepads;
-var gamepad, button0 = false, button1 = false, buttonStart = false;
-var gamepadMap = [];
-var gamepadState = [];
-
-var BUTTON = {
-    // Buttons
-    'A': 0,
-    'B': 1,
-    'X': 2,
-    'Y': 3,
-
-    // Triggers
-    'L1': 4,
-    'R1': 5,
-
-    // Analog stick buttons
-    'L3': 6,
-    'R3': 7,
-
-    // Special
-    'START': 8,
-    'SELECT': 9,
-    'LOGO': 10,
-
-    // D pad
-    'UP': 11,
-    'DOWN': 12,
-    'LEFT': 13,
-    'RIGHT': 14
-};
-
-var DEFAULT_GAMEPAD = {
-    'A': 0,
-    'B': 1,
-    'L1': 0,
-    'R1': 1,
-    'START': '\033'
-}
-
-window.addEventListener("gamepadconnected", function(e) {
-    gamepad = e.gamepad;
-});
-
 var hashtag;
 
 var disk_categories = {'Local Saves': []};
@@ -245,6 +201,30 @@ function openLoadLocal(drive) {
 
 function openManage() {
     $("#manage").dialog("open");
+}
+
+function loadHTTP(url, cb) {
+    loading = true;
+    $("#loading").dialog("open");
+
+    var req = new XMLHttpRequest();
+    req.open("GET", url, true);
+    req.responseType = "arraybuffer";
+    
+    req.onload = function(event) {
+        var parts = url.split(/[\/\.]/);
+        var name = decodeURIComponent(parts[parts.length - 2]);
+        var ext = parts[parts.length - 1].toLowerCase();
+        if (disk2.setBinary(_saveDrive, name, ext, req.response)) {
+            $("#disklabel" + _saveDrive).text(name);
+            $("#loading").dialog("close");
+            loading = false;
+            if (cb) {
+                cb();
+            }
+        }
+    }
+    req.send(null);
 }
 
 var prefs = new Prefs();
@@ -507,39 +487,8 @@ function run(pc) {
             }
         }
 
-        if (gamepadSupportAvailable) {
-            gamepad = navigator.webkitGetGamepads()[0];
-        }
-        if (gamepad) {
-            x = (gamepad.axes[0] * 1.414 + 1) / 2.0; 
-            y = (gamepad.axes[1] * 1.414 + 1) / 2.0; 
-            io.paddle(0, flipX ? 1.0 - x : x);
-            io.paddle(1, flipY ? 1.0 - y : y);
-            var val;
-            for (var idx = 0; idx < gamepad.buttons.length; idx++) {
-                val = gamepadMap[idx];
-                if (val !== undefined) {
-                    if (gamepad.buttons[idx]) {
-                        if (!gamepadState[idx]) {
-                            if (val <= 0) {
-                                io.buttonDown(-val);
-                            } else {
-                                io.keyDown(gamepadMap[idx]);
-                            }
-                        }
-                    } else {
-                        if (gamepadState[idx]) {
-                            if (val <= 0) {
-                                io.buttonUp(-val);
-                            } else {
-                                io.keyUp();
-                            }
-                        }
-                    }
-                }
-                gamepadState[idx] = gamepad.buttons[idx];
-            }
-        }
+        processGamepad(io);
+
         if (!paused && _requestAnimationFrame) {
             _requestAnimationFrame(runFn);
         }
@@ -598,19 +547,20 @@ function clickDisk(event) {
     doLoad();    
 }
 
-function loadDisk(disk) {
-    var name = disk.name;
-    var category = disk.category;
+function loadDisk(data) {
+    var name = data.name;
+    var category = data.category;
 
-    if (disk.disk) {
-        name += " - " + disk.disk;
+    if (data.disk) {
+        name += " - " + data.disk;
     }
 
     disk_cur_cat[_loadDrive] = category;
     disk_cur_name[_loadDrive] = name;
 
     $("#disklabel" + _loadDrive).text(name);
-    disk2.setDisk(_loadDrive, disk);
+    disk2.setDisk(_loadDrive, data);
+    initGamepad(data.gamepad);
 }
 
 function loadJSON(data) {
@@ -619,22 +569,6 @@ function loadJSON(data) {
     } else if ($.inArray(data.type, ["dsk","po","raw","nib"]) >= 0) {
         loadDisk(data);
     }
-    for (var idx = 0; idx < 16; idx++) {
-        gamepadMap[idx] = undefined;
-    }
-    var map = data.gamepad || DEFAULT_GAMEPAD;
-    $.each(map, function(key, val) {
-        if (typeof val == 'string') {
-            val = val.charCodeAt(0);
-        } else {
-            val = -val;
-        }
-        if (key in BUTTON) {
-            gamepadMap[BUTTON[key]] = val;
-        } else {
-            gamepadMap[parseInt(key)] = val;
-        }
-    });
     $("#loading").dialog("close");
     loading = false;
 }
