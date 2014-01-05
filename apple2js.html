@@ -682,14 +682,13 @@ function _keydown(evt) {
 }
 
 function _keyup(evt) {
-    _key = 0xff;
-
     if (evt.keyCode == 16) { // Shift
         keyboard.shiftKey(false);
         io.buttonDown(2, false);
     } else if (evt.keyCode == 17) { // Control
         keyboard.controlKey(false);
     } else {
+        _key = 0xff;
         if (!focused) {
             io.keyUp();
         }
@@ -925,9 +924,7 @@ $(function() {
       </div>
     </div>
     <div class="inset">
-      <div style="margin: 0px 10px">
-        <div id="keyboard"></div>
-      </div>
+      <div id="keyboard"></div>
     </div>
   </div>
   <div id="loading" title="Loading">

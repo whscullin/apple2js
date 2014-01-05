@@ -264,6 +264,14 @@ canvas {
     width: 610px;
 }
 
+#keyboard {
+    margin: 0px 10px;
+}
+
+.apple2e #keyboard {
+    margin: 0px;
+}
+
 #keyboard .row0 {
     margin-left: 20px;
 }

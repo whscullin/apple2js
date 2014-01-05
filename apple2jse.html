@@ -642,17 +642,6 @@ function loadLocalStorage(drive, name) {
 
 var _key;
 function _keydown(evt) {
-    if (!focused) {
-        evt.preventDefault();
-        
-        var key = keyboard.mapKeyEvent(evt);
-        if (key != 0xff) {
-            if (_key != 0xff) io.keyUp();
-            io.keyDown(key, evt.shiftKey);
-            _key = key;
-        }
-    }
-
     if (evt.keyCode === 112) { // F1 - Reset
         cpu.reset();
     } else if (evt.keyCode === 113) { // F2 - Full Screen
@@ -683,15 +672,19 @@ function _keydown(evt) {
         keyboard.commandKey(true);
     } else if (evt.keyCode == 18) { // Alt
         keyboard.optionKey(true);
+    } else if (!focused) {
+        evt.preventDefault();
+        
+        var key = keyboard.mapKeyEvent(evt);
+        if (key != 0xff) {
+            if (_key != 0xff) io.keyUp();
+            io.keyDown(key);
+            _key = key;
+        }
     }
 }
 
 function _keyup(evt) {
-    _key = 0xff;
-
-    if (!focused) 
-        io.keyUp();
-
     if (evt.keyCode == 16) { // Shift
         keyboard.shiftKey(false);
         io.buttonDown(2, false);
@@ -701,6 +694,11 @@ function _keyup(evt) {
         keyboard.commandKey(false);
     } else if (evt.keyCode == 18) { // Alt
         keyboard.optionKey(false);
+    } else {
+        _key = 0xff;
+        if (!focused) {
+            io.keyUp();
+        }
     }
 }
 
@@ -790,11 +788,12 @@ $(function() {
       .mousemove(_mousemove)
       .bind("contextmenu", function(e) { e.preventDefault(); });
 
+    $("input,textarea").focus(function() { focused = true; })
+                       .blur(function() { focused = false; });
+
     $("body > div").hover(function() { focused = false; }, 
                           function() { focused = true; });
 
-    $("input,textarea").focus(function() { focused = true; });
-    $("input,textarea").blur(function() { focused = false; });
 
     keyboard.create($("#keyboard"));
     
@@ -936,9 +935,7 @@ $(function() {
       </div>
     </div>
     <div class="inset">
-      <div>
-        <div id="keyboard"></div>
-      </div>
+      <div id="keyboard"></div>
     </div>
   </div>
   <div id="loading" title="Loading">
