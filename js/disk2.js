@@ -720,6 +720,38 @@ function DiskII(io, callbacks, slot)
             if (fmt === "do") {
                 fmt = "dsk";
             }
+            _cur.readOnly = false;
+            if (fmt === "2mg") {
+                // Standard header size is 64 bytes. Make assumptions.
+                var prefix = new Uint8Array(data.slice(0, 64));
+                var data = data.slice(64);
+                
+                // Check image format.
+                // Sure, it's really 64 bits. But only 2 are actually used.
+                switch (prefix[0xc]) {
+                case 0:
+                    fmt = "dsk";
+                    break;
+                case 1:
+                    fmt = "po";
+                    break;
+                case 2:
+                    fmt = "nib";
+                    break;
+                default:  // Something hinky, assume "dsk"
+                    fmt = "dsk";
+                    break;
+                }
+                var flags = 
+                    prefix[0x10] | (prefix[0x11] << 8) |
+                    (prefix[0x12] << 16) | (prefix[0x13] << 24);
+                _cur.readOnly = (flags & 0x80000000) ? true : false;
+                if (flags & 0x10) {
+                    _cur.volume = flags & 0xff;
+                } else {
+                    _cur.volume = 254;
+                }
+            }
             for (var t = 0; t < 35; t++) {
                 var track, off, d;
                 if (fmt === "nib") {

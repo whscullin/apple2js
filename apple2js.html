@@ -199,7 +199,7 @@ function openManage() {
     $("#manage").dialog("open");
 }
 
-function loadHTTP(url, cb) {
+function loadHTTP(url) {
     loading = true;
     $("#loading").dialog("open");
 
@@ -215,9 +215,6 @@ function loadHTTP(url, cb) {
             $("#disklabel" + _saveDrive).text(name);
             $("#loading").dialog("close");
             loading = false;
-            if (cb) {
-                cb();
-            }
         }
     }
     req.send(null);
