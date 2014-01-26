@@ -584,6 +584,7 @@ function DiskII(io, callbacks, slot)
         read: function disk2_read(page, off) {
             return diskII[off];
         },
+        write: function disk2_write() {},
         reset: function disk2_reset() {
             if (_on) {
                 _writeMode = false;
