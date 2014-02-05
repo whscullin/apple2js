@@ -24,6 +24,7 @@ var altCharMode = false;
 var doubleHiresMode = false;
 var pages = [];
 var context = null;
+var scanlines = false;
 
 /****************************************************************************
  *
@@ -76,6 +77,38 @@ function LoresPage(page)
         }
     }
 
+    function _drawPixel(data, off, color) {
+        var c0 = color[0], c1 = color[1], c2 = color[2];
+        data[off + 0] = data[off + 4] = c0;
+        data[off + 1] = data[off + 5] = c1;
+        data[off + 2] = data[off + 6] = c2;
+        if (!scanlines) {
+            data[off + 560 * 4] = data[off + 560 * 4 + 4] = c0;
+            data[off + 560 * 4 + 1] = data[off + 560 * 4 + 5] = c1;
+            data[off + 560 * 4 + 2] = data[off + 560 * 4 + 6] = c2;
+        } else {
+            data[off + 560 * 4] = data[off + 560 * 4 + 4] = c0 >> 1;
+            data[off + 560 * 4 + 1] = data[off + 560 * 4 + 5] = c1 >> 1;
+            data[off + 560 * 4 + 2] = data[off + 560 * 4 + 6] = c2 >> 1;
+        }
+    }
+
+    function _drawHalfPixel(data, off, color) {
+        var c0 = color[0], c1 = color[1], c2 = color[2];
+        data[off + 0] = c0;
+        data[off + 1] = c1;
+        data[off + 2] = c2;
+        if (!scanlines) {
+            data[off + 560 * 4] = c0;
+            data[off + 560 * 4 + 1] = c1;
+            data[off + 560 * 4 + 2] = c2;
+        } else {
+            data[off + 560 * 4] = c0 >> 1;
+            data[off + 560 * 4 + 1] = c1 >> 1;
+            data[off + 560 * 4 + 2] = c2 >> 1;
+        }
+    }
+    
     _init();
 
     return {
@@ -172,38 +205,34 @@ function LoresPage(page)
                     }
 
                     if (_80colMode) {
-                        off = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
+                        off = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8 * 2) * 4;
                         for (jdx = 0; jdx < 8; jdx++) {
                             b = charset[val * 8 + jdx];
                             for (idx = 0; idx < 7; idx++) {
                                 color = (b & 0x01) ? back : fore;
-                                data[off + 0] = color[0];
-                                data[off + 1] = color[1];
-                                data[off + 2] = color[2];
+                                _drawHalfPixel(data, off, color);
                                 b >>= 1;
                                 off += 4;
                             }
-                            off += 553 * 4;
+                            off += 553 * 4 + 560 * 4;
                         }
                     } else {
-                        off = (col * 14 + row * 560 * 8) * 4;
+                        off = (col * 14 + row * 560 * 8 * 2) * 4;
 
                         for (jdx = 0; jdx < 8; jdx++) {
                             b = charset[val * 8 + jdx];
                             for (idx = 0; idx < 7; idx++) {
                                 color = (b & 0x01) ? back : fore;
-                                data[off + 0] = data[off + 4] = color[0];
-                                data[off + 1] = data[off + 5] = color[1];
-                                data[off + 2] = data[off + 6] = color[2];
+                                _drawPixel(data, off, color);
                                 b >>= 1;
                                 off += 8;
                             }
-                            off += 546 * 4;
+                            off += 546 * 4 + 560 * 4;
                         }
                     }
                 } else {
                     if (_80colMode) {
-                        off = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
+                        off = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8 * 2) * 4;
                         if (_greenMode) {
                             fore = _green;
                             back = _black;
@@ -215,9 +244,7 @@ function LoresPage(page)
                                 }
                                 for (idx = 0; idx < 7; idx++) {
                                     color = (b & 0x80) ? fore : back;
-                                    data[off + 0] = color[0];
-                                    data[off + 1] = color[1];
-                                    data[off + 2] = color[2];
+                                    _drawHalfPixel(data, off, color);
                                     b <<= 1;
                                     off += 4;
                                 }
@@ -228,16 +255,14 @@ function LoresPage(page)
                                 color = _colors[(jdx < 4) ? 
                                                 (val & 0x0f) : (val >> 4)];
                                 for (idx = 0; idx < 7; idx++) {
-                                    data[off + 0] = color[0];
-                                    data[off + 1] = color[1];
-                                    data[off + 2] = color[2];
+                                    _drawHalfPixel(data, off, color);
                                     off += 4;
                                 }
                                 off += 553 * 4;
                             }
                         }
                     } else {
-                        off = (col * 14 + row * 560 * 8) * 4;
+                        off = (col * 14 + row * 560 * 8 * 2) * 4;
 
                         if (_greenMode) {
                             fore = _green;
@@ -251,25 +276,21 @@ function LoresPage(page)
                                 }
                                 for (idx = 0; idx < 14; idx++) {
                                     color = (b & 0x8000) ? fore : back;
-                                    data[off + 0] = color[0];
-                                    data[off + 1] = color[1];
-                                    data[off + 2] = color[2];
+                                    _drawHalfPixel(data, off, color);
                                     b <<= 1;
                                     off += 4;
                                 }
-                                off += 546 * 4;
+                                off += 546 * 4 + 560 * 4;
                             }                        
                         } else {
                             for (jdx = 0; jdx < 8; jdx++) {
                                 color = _colors[(jdx < 4) ? 
                                                 (val & 0x0f) : (val >> 4)];
-                                for (idx = 0; idx < 7; idx++) {
-                                    data[off + 0] = data[off + 4] = color[0];
-                                    data[off + 1] = data[off + 5] = color[1];
-                                    data[off + 2] = data[off + 6] = color[2];
+                                for (idx = 0; idx < 7; idx++) { 
+                                    _drawPixel(data, off, color);
                                     off += 8;
                                 }
-                                off += 546 * 4;
+                                off += 546 * 4 + 560 * 4;
                             }
                         }
                     }
@@ -398,6 +419,38 @@ function HiresPage(page)
         }
     }
 
+    function _drawPixel(data, off, color) {
+        var c0 = color[0], c1 = color[1], c2 = color[2];
+        data[off + 0] = data[off + 4] = c0;
+        data[off + 1] = data[off + 5] = c1;
+        data[off + 2] = data[off + 6] = c2;
+        if (!scanlines) {
+            data[off + 560 * 4] = data[off + 560 * 4 + 4] = c0;
+            data[off + 560 * 4 + 1] = data[off + 560 * 4 + 5] = c1;
+            data[off + 560 * 4 + 2] = data[off + 560 * 4 + 6] = c2;
+        } else {
+            data[off + 560 * 4] = data[off + 560 * 4 + 4] = c0 >> 1;
+            data[off + 560 * 4 + 1] = data[off + 560 * 4 + 5] = c1 >> 1;
+            data[off + 560 * 4 + 2] = data[off + 560 * 4 + 6] = c2 >> 1;
+        }
+    }
+
+    function _drawHalfPixel(data, off, color) {
+        var c0 = color[0], c1 = color[1], c2 = color[2];
+        data[off + 0] = c0;
+        data[off + 1] = c1;
+        data[off + 2] = c2;
+        if (!scanlines) {
+            data[off + 560 * 4] = c0;
+            data[off + 560 * 4 + 1] = c1;
+            data[off + 560 * 4 + 2] = c2;
+        } else {
+            data[off + 560 * 4] = c0 >> 1;
+            data[off + 560 * 4 + 1] = c1 >> 1;
+            data[off + 560 * 4 + 2] = c2 >> 1;
+        }
+    }
+    
     _init();
 
     return {
@@ -503,7 +556,7 @@ function HiresPage(page)
                         c[8] = b4 & 0x0f;
                     }
                     dx = mcol * 14;
-                    off = dx * 4 + dy * 280 * 4;
+                    off = dx * 4 + dy * 280 * 4 * 2;
 
                     for (idx = 1; idx < 8; idx++) {
                         var dcolor = dcolors[r4[c[idx]]];
@@ -511,33 +564,23 @@ function HiresPage(page)
                         for (jdx = 0; jdx < 4; jdx++, off += 4) {
                             if (_greenMode) {
                                 if (bits & 0x10) {
-                                    data[off + 0] = _green[0];
-                                    data[off + 1] = _green[1];
-                                    data[off + 2] = _green[2];
+                                    _drawHalfPixel(data, off, _green);
                                 } else {
-                                    data[off + 0] = 0;
-                                    data[off + 1] = 0;
-                                    data[off + 2] = 0;
+                                    _drawHalfPixel(data, off, blackCol);
                                 }
                             } else if (((bits & 0x3c) == 0x3c) ||
                                        ((bits & 0xf0) == 0xf0) ||
                                        ((bits & 0x1e) == 0x1e) ||
                                        ((bits & 0x78) == 0x78)) {
-                                data[off + 0] = 0xff;
-                                data[off + 1] = 0xff;
-                                data[off + 2] = 0xff;
+                                _drawHalfPixel(data, off, whiteCol);
                             } else if (((c[idx] == c[idx + 1]) &&
                                         (bits & 0xf0)) ||
                                        ((c[idx] == c[idx - 1]) &&
                                         (bits & 0x01e)) ||
                                        (bits & 0x10)) {
-                                data[off + 0] = dcolor[0];
-                                data[off + 1] = dcolor[1];
-                                data[off + 2] = dcolor[2];
-                            } else {
-                                data[off + 0] = 0;
-                                data[off + 1] = 0;
-                                data[off + 2] = 0;
+                                _drawHalfPixel(data, off, dcolor);
+                            } else { 
+                                _drawHalfPixel(data, off, blackCol);
                             }
                             bits >>= 1;
                         }
@@ -558,11 +601,12 @@ function HiresPage(page)
                     b2 = col < 39 ? _buffer[bank][base + 1] : 0;
                     val |= (b2 & 0x3) << 7;
                     var v0 = b0 & 0x20, v1 = b0 & 0x40, v2 = val & 0x1,
-                    odd = !(col & 0x1), color, 
+                    odd = !(col & 0x1),
+                    color, 
                     oddCol = (hbs ? orangeCol : greenCol),
                     evenCol = (hbs ? blueCol : violetCol);
                     
-                    off = dx * 4 + dy * 280 * 4;
+                    off = dx * 4 + dy * 280 * 4 * 2;
                     for (idx = 0; idx < 9; idx++, off += 8) {
                         val >>= 1;
                         if (v1) {
@@ -586,12 +630,7 @@ function HiresPage(page)
                         }
 
                         if (dx > -1 && dx < 560) {
-                            data[off + 0] = color[0];
-                            data[off + 1] = color[1];
-                            data[off + 2] = color[2];
-                            data[off + 4] = color[0];
-                            data[off + 5] = color[1];
-                            data[off + 6] = color[2];
+                            _drawPixel(data, off, color);
                         }
                         dx += 2;
                         
@@ -736,9 +775,9 @@ function VideoModes(gr,hgr,gr2,hgr2) {
         setContext: function(c) {
             context = c;
 
-            pages[1] = c.createImageData(560, 192);
-            pages[2] = c.createImageData(560, 192);
-            for (var idx = 0; idx < 560 * 192 * 4; idx++) {
+            pages[1] = c.createImageData(560, 384);
+            pages[2] = c.createImageData(560, 384);
+            for (var idx = 0; idx < 560 * 384 * 4; idx++) {
                 pages[1].data[idx] = 0xff;
                 pages[2].data[idx] = 0xff;
             }

@@ -701,10 +701,9 @@ function _keyup(evt) {
 
 function updateScreen() {
     var green = $("#green_screen").prop("checked");
-    var scanlines = $("#show_scanlines").prop("checked");
+    scanlines = $("#show_scanlines").prop("checked");
 
     vm.green(green);
-    $("#scanlines").toggle(scanlines);
 }
 
 var flipX = false;
@@ -771,7 +770,7 @@ $(function() {
     $(window).keydown(_keydown);
     $(window).keyup(_keyup);
 
-    $("canvas,#scanlines,#joystick").mousedown(function(evt) {
+    $("canvas").mousedown(function(evt) {
         if (!gamepad) {
             io.buttonDown(evt.which == 1 ? 0 : 1);
         }
@@ -888,8 +887,7 @@ $(function() {
           <div role="textbox" class="overscan" 
                onKeyDown="_keydown(event);"
                onKeyUp="_keyup(event);">
-            <canvas id="screen" width="560" height="192"></canvas>
-            <img id="scanlines" src="css/scanlines.png" />
+            <canvas id="screen" width="560" height="384"></canvas>
           </div>
         </td>
       </tr>

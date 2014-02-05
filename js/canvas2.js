@@ -1,5 +1,5 @@
 /* -*- mode: JavaScript; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* Copyright 2010-2013 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2014 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -26,6 +26,13 @@ var hiresMode = false;
 var pageMode = 1;
 var pages = [];
 var context = null;
+var scanlines = false;
+
+/****************************************************************************
+ *
+ * Text/Lores Graphics
+ *
+ ***************************************************************************/
 
 function LoresPage(page) 
 {
@@ -41,7 +48,7 @@ function LoresPage(page)
 
     var _black = [0x00,0x00,0x00];
     var _white = [0xff,0xff,0xff];
-    var _green = [0x00,0xff,0x88];
+    var _green = [0x00,0xff,0x80];
 
     var _colors = [
         [0x00,0x00,0x00], // 0 Black         0000 0   0
@@ -85,10 +92,42 @@ function LoresPage(page)
         _buffer = allocMemPages(0x4);
 
         for (var idx = 0; idx < 0x400; idx++) {
-            _buffer[idx] = 0; // Math.floor(Math.random()*256);
+            _buffer[idx] = 0;
         }
     }
 
+    function _drawPixel(data, off, color) {
+        var c0 = color[0], c1 = color[1], c2 = color[2];
+        data[off + 0] = data[off + 4] = c0;
+        data[off + 1] = data[off + 5] = c1;
+        data[off + 2] = data[off + 6] = c2;
+        if (!scanlines) {
+            data[off + 560 * 4] = data[off + 560 * 4 + 4] = c0;
+            data[off + 560 * 4 + 1] = data[off + 560 * 4 + 5] = c1;
+            data[off + 560 * 4 + 2] = data[off + 560 * 4 + 6] = c2;
+        } else {
+            data[off + 560 * 4] = data[off + 560 * 4 + 4] = c0 >> 1;
+            data[off + 560 * 4 + 1] = data[off + 560 * 4 + 5] = c1 >> 1;
+            data[off + 560 * 4 + 2] = data[off + 560 * 4 + 6] = c2 >> 1;
+        }
+    }
+
+    function _drawHalfPixel(data, off, color) {
+        var c0 = color[0], c1 = color[1], c2 = color[2];
+        data[off + 0] = c0;
+        data[off + 1] = c1;
+        data[off + 2] = c2;
+        if (!scanlines) {
+            data[off + 560 * 4] = c0;
+            data[off + 560 * 4 + 1] = c1;
+            data[off + 560 * 4 + 2] = c2;
+        } else {
+            data[off + 560 * 4] = c0 >> 1;
+            data[off + 560 * 4 + 1] = c1 >> 1;
+            data[off + 560 * 4 + 2] = c2 >> 1;
+        }
+    }
+    
     _init();
 
     return {
@@ -128,7 +167,7 @@ function LoresPage(page)
                     return;
 
                 var data = pages[_page].data, fore, back;
-                off = (col * 14 + row * 560 * 8) * 4;
+                off = (col * 14 + row * 560 * 8 * 2) * 4;
 
                 if (textMode || (mixedMode && row > 19)) {
                     if (val & 0x80 || ((val & 0x40) && _blink)) {
@@ -143,13 +182,11 @@ function LoresPage(page)
                         b <<= 1;
                         for (idx = 0; idx < 7; idx++) {
                             color = (b & 0x80) ? fore : back;
-                            data[off + 0] = data[off + 4] = color[0];
-                            data[off + 1] = data[off + 5] = color[1];
-                            data[off + 2] = data[off + 6] = color[2];
+                            _drawPixel(data, off, color);
                             b <<= 1;
                             off += 8;
                         }
-                        off += 546 * 4;
+                        off += 546 * 4 + 560 * 4;
                     }
                 } else {
                     if (_greenMode) {
@@ -164,25 +201,21 @@ function LoresPage(page)
                             }
                             for (idx = 0; idx < 14; idx++) {
                                 color = (b & 0x8000) ? fore : back;
-                                data[off + 0] = color[0];
-                                data[off + 1] = color[1];
-                                data[off + 2] = color[2];
+                                _drawHalfPixel(data, off, color);
                                 b <<= 1;
                                 off += 4;
                             }
-                            off += 546 * 4;
+                            off += 546 * 4 + 560 * 4;
                         }                        
                     } else {
                         for (jdx = 0; jdx < 8; jdx++) {
                             b = (jdx < 4) ? (val & 0x0f) : (val >> 4);
                             color = _colors[b];
                             for (idx = 0; idx < 7; idx++) {
-                                data[off + 0] = data[off + 4] = color[0];
-                                data[off + 1] = data[off + 5] = color[1];
-                                data[off + 2] = data[off + 6] = color[2];
+                                _drawPixel(data, off, color);
                                 off += 8;
                             }
-                            off += 546 * 4;
+                            off += 546 * 4 + 560 * 4;
                         }
                     }
                 }
@@ -255,7 +288,24 @@ function HiresPage(page)
         for (var idx = 0; idx < 0x2000; idx++)
             _buffer[idx] = 0; // Math.floor(Math.random()*256);
     }
+ 
+    function _drawPixel(data, off, color) {
+        var c0 = color[0], c1 = color[1], c2 = color[2];
 
+        data[off + 0] = data[off + 4] = c0;
+        data[off + 1] = data[off + 5] = c1;
+        data[off + 2] = data[off + 6] = c2;
+        if (!scanlines) {
+            data[off + 560 * 4] = data[off + 560 * 4 + 4] = c0;
+            data[off + 560 * 4 + 1] = data[off + 560 * 4 + 5] = c1;
+            data[off + 560 * 4 + 2] = data[off + 560 * 4 + 6] = c2;
+        } else {
+            data[off + 560 * 4] = data[off + 560 * 4 + 4] = c0 >> 1;
+            data[off + 560 * 4 + 1] = data[off + 560 * 4 + 5] = c1 >> 1;
+            data[off + 560 * 4 + 2] = data[off + 560 * 4 + 6] = c2 >> 1;
+        }
+    }
+    
     _init();
 
     return {
@@ -306,7 +356,7 @@ function HiresPage(page)
                 oddCol = (hbs ? orangeCol : greenCol),
                 evenCol = (hbs ? blueCol : violetCol);
 
-                off = dx * 4 + dy * 560 * 4;
+                off = dx * 4 + dy * 560 * 4 * 2;
                 for (var idx = 0; idx < 9; idx++, off += 8) {
                     val >>= 1;
 
@@ -331,14 +381,9 @@ function HiresPage(page)
                     }
 
                     if (dx > -1 && dx < 560) {
-                        data[off + 0] = color[0];
-                        data[off + 1] = color[1];
-                        data[off + 2] = color[2];
-                        data[off + 4] = color[0];
-                        data[off + 5] = color[1];
-                        data[off + 6] = color[2];
+                        _drawPixel(data, off, color);
                     }
-                    dx++;
+                    dx += 2;
 
                     v0 = v1;
                     v1 = v2;
@@ -421,9 +466,9 @@ function VideoModes(gr,hgr,gr2,hgr2) {
         setContext: function(c) {
             context = c;
 
-            pages[1] = context.createImageData(560, 192);
-            pages[2] = context.createImageData(560, 192);
-            for (var idx = 0; idx < 560 * 192 * 4; idx++) {
+            pages[1] = context.createImageData(560, 384);
+            pages[2] = context.createImageData(560, 384);
+            for (var idx = 0; idx < 560 * 384 * 4; idx++) {
                 pages[1].data[idx] = 0xff;
                 pages[2].data[idx] = 0xff;
             }
