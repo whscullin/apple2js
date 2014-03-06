@@ -725,7 +725,7 @@ function DiskII(io, callbacks, slot)
             if (fmt === "2mg") {
                 // Standard header size is 64 bytes. Make assumptions.
                 var prefix = new Uint8Array(data.slice(0, 64));
-                var data = data.slice(64);
+                data = data.slice(64);
                 
                 // Check image format.
                 // Sure, it's really 64 bits. But only 2 are actually used.
