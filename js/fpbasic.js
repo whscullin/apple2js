@@ -1,5 +1,5 @@
 /* -*- mode: JavaScript; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-
+/*global bytify:false */
 /*exported Apple2ROM */
 function Apple2ROM()
 {
@@ -1542,14 +1542,7 @@ function Apple2ROM()
         0xf5,0x03,0xfb,0x03,0x62,0xfa,0x59,0xff
     ];
 
-    var mem = [];
-
-    for (var page = 0x00; page < 0x30; page++) {
-        mem[page] = [];
-        for (var off = 0; off < 256; off++) {
-            mem[page ][off] = rom[page * 256 + off];
-        }
-    }
+    rom = bytify(rom);
 
     return {
         start: function() {
@@ -1559,7 +1552,7 @@ function Apple2ROM()
             return 0xff;
         },
         read: function(page, off) {
-            return mem[page - 0xd0][off];
+            return rom[(page - 0xd0) << 8 | off];
         },
         write: function() {},
 

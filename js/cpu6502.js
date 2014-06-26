@@ -16,6 +16,8 @@
 
 function CPU6502(options)
 {
+    "use strict";
+
     options = options || {};
 
     var is65C02 = options['65C02'] ? true : false;
@@ -96,6 +98,7 @@ function CPU6502(options)
     var resetHandlers = [];
     var inCallback = false;
     var cycles = 0;
+    var sync = false;
 
     var blankPage = {
         read: function() { return 0; },
@@ -400,7 +403,7 @@ function CPU6502(options)
     function brk(readFn) {
         readFn();
         pushWord(pc);
-        pushByte(sr | flags.B);
+        php();
         if (is65C02) {
             setFlag(flags.D, false);
         }
@@ -689,7 +692,7 @@ function CPU6502(options)
 
     /* Return from Subroutine */
     function rti() {
-        sr = pullByte() & 0xef;
+        sr = pullByte() & ~flags.B;
         pc = pullWord();
     }
 
@@ -1033,6 +1036,9 @@ function CPU6502(options)
 
     if (is65C02) {
         for (var key in cops) {
+            if (key in ops) {
+                debug('overriding opcode ' + toHex(key));
+            }
             ops[key] = cops[key];
         }
     }
@@ -1131,7 +1137,9 @@ function CPU6502(options)
 
     return {
         step: function cpu_step(cb) {
+            sync = true;
             var op = opary[readBytePC()];
+            sync = false;
             
             op[1](op[2]);
             cycles += op[4];
@@ -1147,7 +1155,9 @@ function CPU6502(options)
             var op, idx;
 
             for (idx = 0; idx < n; idx++) {
+                sync = true;
                 op = opary[readBytePC()];
+                sync = false;
                 op[1](op[2]);
                 cycles += op[4];
             }
@@ -1157,7 +1167,9 @@ function CPU6502(options)
             var op, end = cycles + c;
 
             while (cycles < end) {
+                sync = true;
                 op = opary[readBytePC()];
+                sync = false;
                 op[1](op[2]);
                 cycles += op[4];
             }
@@ -1171,7 +1183,9 @@ function CPU6502(options)
                 return;
 
             while (cycles < end) {
+                sync = true;
                 op = opary[readBytePC()];
+                sync = false;
                 op[1](op[2]);
                 cycles += op[4];
         
@@ -1185,7 +1199,6 @@ function CPU6502(options)
 
         addPageHandler: function(pho) {
             for (var idx = pho.start(); idx <= pho.end(); idx++) {
-                writePages[idx] = pho;
                 if (pho.read)
                     readPages[idx] = pho;
                 if (pho.write)
@@ -1208,6 +1221,32 @@ function CPU6502(options)
             for (var idx = 0; idx < resetHandlers.length; idx++) {
                 resetHandlers[idx].reset();
             }
+        },
+
+        /* IRQ - Interupt Request */
+        irq: function cpu_irq()
+        {
+            if (!(sr & flags.I)) {
+                pushWord(pc);
+                pushByte(sr & ~flags.B);
+                if (is65C02) {
+                    setFlag(flags.D, false);
+                }
+                setFlag(flags.I, true);
+                pc = readWord(loc.BRK);
+            }
+        },
+
+        /* NMI Non-maskable Interrupt */
+        nmi: function cpu_nmi()
+        {
+            pushWord(pc);
+            pushByte(sr & ~flags.B);
+            if (is65C02) {
+                setFlag(flags.D, false);
+            }
+            setFlag(flags.I, true);
+            pc = readWord(loc.NMI);
         },
 
         setPC: function(_pc) {
@@ -1291,6 +1330,10 @@ function CPU6502(options)
             }
             return results;
         },
+
+        sync: function() {
+            return sync;
+        },
     
         cycles: function() { 
             return cycles;
@@ -1338,6 +1381,10 @@ function CPU6502(options)
                 (sr & flags.I ? "I" : "-") + 
                 (sr & flags.Z ? "Z" : "-") + 
                 (sr & flags.C ? "C" : "-");
+        },
+
+        read: function(page, off) {
+            return readPages[page].read(page, off, false);
         },
 
         write: function(page, off, val) {

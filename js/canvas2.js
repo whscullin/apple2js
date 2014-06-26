@@ -51,41 +51,22 @@ function LoresPage(page)
     var _green = [0x00,0xff,0x80];
 
     var _colors = [
-        [0x00,0x00,0x00], // 0 Black         0000 0   0
-        [0x90,0x17,0x40], // 1 Red           0001 8   1
-        [0x3c,0x22,0xa5], // 2 Dark Blue     1000 1
-        [0xd0,0x43,0xe5], // 3 Purple        1001 9
-        [0x00,0x69,0x40], // 4 Dark Green    0100 4
-        [0xb0,0xb0,0xb0], // 5 Gray 1        0101 5
-        [0x2f,0x95,0xe5], // 6 Medium Blue   1100 12
-        [0xbf,0xab,0xff], // 7 Light Blue    1101 13
-        [0x40,0x54,0x00], // 8 Brown         0010 2
-        [0xd0,0x6a,0x1a], // 9 Orange        0011 3
-        [0x40,0x40,0x40], // 10 Gray 2       1010 10
-        [0xff,0x96,0xbf], // 11 Pink         1011 11
-        [0x2f,0xbc,0x1a], // 12 Light Green  0110 6
-        [0xbf,0xd3,0x5a], // 13 Yellow       0111 7
-        [0x6f,0xe8,0xbf], // 14 Aqua         1110 14
-        [0xff,0xff,0xff]  // 15 White        1111 15
-
-        /* Alternate from http://mrob.com/pub/xapple2/colors.html
-        [  0,  0,  0], //  0 Black
-        [227, 30, 96], //  1 Red
-        [ 96, 78,189], //  2 Dark Blue
-        [255, 68,253], //  3 Purple
-        [  0,163, 96], //  4 Dark Green
-        [156,156,156], //  5 Grey
-        [ 20,207,253], //  6 Med Blue
-        [208,195,255], //  7 Light Blue
-        [ 96,114,  3], //  8 Brown
-        [255,106, 60], //  9 Orange
-        [156,156,156], // 10 Grey
-        [255,160,208], // 11 Pink
-        [ 20,245, 60], // 12 Light Green
-        [208,221,141], // 13 Yellow
-        [114,255,208], // 14 Aqua
-        [255,255,255]  // 15 White
-        */
+        [0x00,0x00,0x00],  // black
+        [0xdd,0x00,0x33],  // 0x1 deep red
+        [0x00,0x00,0x99],  // 0x2 dark blue
+        [0xdd,0x00,0xdd],  // 0x3 purple
+        [0x00,0x77,0x00],  // 0x4 dark green
+        [0x55,0x55,0x55],  // 0x5 dark gray
+        [0x23,0x22,0xff],  // 0x6 medium blue
+        [0x66,0xaa,0xff],  // 0x7 light blue
+        [0x88,0x55,0x22],  // 0x8 brown
+        [0xff,0x66,0x00],  // 0x9 orange
+        [0xaa,0xaa,0xaa],  // 0xa light gray
+        [0xff,0x99,0x88],  // 0xb pink
+        [0x00,0xdd,0x00],  // 0xc green
+        [0xff,0xff,0x00],  // 0xd yellow
+        [0x00,0xff,0x99],  // 0xe aquamarine
+        [0xff,0xff,0xff]   // 0xf white
     ];
 
     function _init() {

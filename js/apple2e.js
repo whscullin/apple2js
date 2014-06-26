@@ -1,5 +1,5 @@
 /* -*- mode: JavaScript; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-
+/*global bytify:false */
 /*exported Apple2eROM*/
 
 function Apple2eROM()
@@ -2056,14 +2056,8 @@ function Apple2eROM()
         0x83,0x7f,0x5d,0xcc,0xb5,0xfc,0x17,0x17,
         0xf5,0x03,0xfb,0x03,0x62,0xfa,0x40,0xfa
     ];
-    var mem = [];
 
-    for (var page = 0x00; page < 0x40; page++) {
-        mem[page] = [];
-        for (var off = 0; off < 256; off++) {
-            mem[page ][off] = rom[page << 8 | off];
-        }
-    }
+    rom = bytify(rom);
 
     return {
         start: function apple2e_start() {

@@ -11,11 +11,13 @@
  */
 
 /*jshint browser: true */
-/*globals extend: false, base64_encode: false, base64_decode: false, each: false */
+/*globals extend: false, bytify: false, base64_encode: false, base64_decode: false, each: false */
 /*exported DiskII */
 
 function DiskII(io, callbacks, slot)
 {
+    "use strict";
+
     slot = slot || 6;
     var _drives = [
         {   // Drive 1
@@ -247,14 +249,6 @@ function DiskII(io, callbacks, slot)
                                pretty ? "    " : null);
     }
 
-    function _compactArray(ary) {
-        var result = ary;
-        if (window.Uint8Array) {
-            result = new Uint8Array(ary);
-        }
-        return result;
-    }
-
     function _json_decode(drive, data) {
         var _cur = _drives[drive - 1];
         var tracks = [];
@@ -267,7 +261,7 @@ function DiskII(io, callbacks, slot)
                 var d = base64_decode(json.data[t][_s]);
                 extend(track, _explodeSector(v, t, _DO[_s], d));
             }
-            tracks[t] = _compactArray(track); 
+            tracks[t] = bytify(track); 
         }
         _cur.volume = v;
         _cur.format = json.type;
@@ -702,7 +696,7 @@ function DiskII(io, callbacks, slot)
                         }
                     }
                 }
-                tracks[t] = _compactArray(track);
+                tracks[t] = bytify(track);
             }
             cur.tracks = tracks;
             _updateDirty(_drive, false);

@@ -11,7 +11,7 @@
  */
 
 /*jshint browser:true */
-/*globals allocMemPages: false, charset: false, base64_encode: false, base64_decode: false */
+/*globals allocMemPages: false, charset: false, base64_encode: false, base64_decode: false, enhanced: false */
 /*exported LoresPage, HiresPage, VideoModes */
 
 
@@ -34,6 +34,8 @@ var scanlines = false;
 
 function LoresPage(page) 
 {
+    "use strict";
+
     // $00-$3F inverse
     // $40-$7F flashing
     // $80-$FF normal
@@ -49,22 +51,22 @@ function LoresPage(page)
     var _green = [0x00,0xff,0x80];
 
     var _colors = [
-        [0x00,0x00,0x00], // 0 Black         0000 0   0
-        [0x90,0x17,0x40], // 1 Red           0001 8   1
-        [0x3c,0x22,0xa5], // 2 Dark Blue     1000 1
-        [0xd0,0x43,0xe5], // 3 Purple        1001 9
-        [0x00,0x69,0x40], // 4 Dark Green    0100 4
-        [0xb0,0xb0,0xb0], // 5 Gray 1        0101 5
-        [0x2f,0x95,0xe5], // 6 Medium Blue   1100 12
-        [0xbf,0xab,0xff], // 7 Light Blue    1101 13
-        [0x40,0x54,0x00], // 8 Brown         0010 2
-        [0xd0,0x6a,0x1a], // 9 Orange        0011 3
-        [0x40,0x40,0x40], // 10 Gray 2       1010 10
-        [0xff,0x96,0xbf], // 11 Pink         1011 11
-        [0x2f,0xbc,0x1a], // 12 Light Green  0110 6
-        [0xb9,0xd0,0x60], // 13 Yellow       0111 7
-        [0x6f,0xe8,0xbf], // 14 Aqua         1110 14
-        [0xff,0xff,0xff]  // 15 White        1111 15
+        [0x00,0x00,0x00],  // black
+        [0xdd,0x00,0x33],  // 0x1 deep red
+        [0x00,0x00,0x99],  // 0x2 dark blue
+        [0xdd,0x00,0xdd],  // 0x3 purple
+        [0x00,0x77,0x00],  // 0x4 dark green
+        [0x55,0x55,0x55],  // 0x5 dark gray
+        [0x23,0x22,0xff],  // 0x6 medium blue
+        [0x66,0xaa,0xff],  // 0x7 light blue
+        [0x88,0x55,0x22],  // 0x8 brown
+        [0xff,0x66,0x00],  // 0x9 orange
+        [0xaa,0xaa,0xaa],  // 0xa light gray
+        [0xff,0x99,0x88],  // 0xb pink
+        [0x00,0xdd,0x00],  // 0xc green
+        [0xff,0xff,0x00],  // 0xd yellow
+        [0x00,0xff,0x99],  // 0xe aquamarine
+        [0xff,0xff,0xff]   // 0xf white
     ];
 
     function _init() {
@@ -198,9 +200,11 @@ function LoresPage(page)
                     var flash = ((val & 0xc0) == 0x40) && 
                         _blink && !_80colMode && !altCharMode; 
                     fore = flash ? _black : (_greenMode ? _green : _white);
-                    back = flash ? _white : _black;
+                    back = flash ? (_greenMode ? _green : _white) : _black;
 
-                    if (!altCharMode && !_80colMode) {
+                    if (!enhanced) {
+                        val = (val >= 0x40 && val < 0x60) ? val - 0x40 : val;
+                    } else if (!altCharMode) {
                         val = (val >= 0x40 && val < 0x80) ? val - 0x40 : val;
                     }
 
@@ -237,7 +241,7 @@ function LoresPage(page)
                             fore = _green;
                             back = _black;
                             for (jdx = 0; jdx < 8; jdx++) {
-                                b = (jdx < 4) ? (val & 0x0f) : (val >> 4);
+                                b = (jdx < 8) ? (val & 0x0f) : (val >> 4);
                                 b |= (b << 4);
                                 if (bank & 0x1) {
                                     b <<= 1;
@@ -248,9 +252,12 @@ function LoresPage(page)
                                     b <<= 1;
                                     off += 4;
                                 }
-                                off += 546 * 4;
+                                off += 553 * 4 + 560 * 4;
                             }                        
                         } else {
+                            if (bank & 0x1) {
+                                val = ((val & 0x77) << 1) | ((val & 0x88) >> 3);
+                            }
                             for (jdx = 0; jdx < 8; jdx++) {
                                 color = _colors[(jdx < 4) ? 
                                                 (val & 0x0f) : (val >> 4)];
@@ -258,7 +265,7 @@ function LoresPage(page)
                                     _drawHalfPixel(data, off, color);
                                     off += 4;
                                 }
-                                off += 553 * 4;
+                                off += 553 * 4 + 560 * 4;
                             }
                         }
                     } else {
@@ -355,6 +362,8 @@ function LoresPage(page)
 
 function HiresPage(page)
 { 
+    "use strict";
+
     var _page = page;
 
     var r4 = [0,   // Black
@@ -378,22 +387,22 @@ function HiresPage(page)
               15]; // White
 
     var dcolors = [
-        [0x00,0x00,0x00], // 0 Black         0000 0   0
-        [0x90,0x17,0x40], // 1 Red           0001 8   1
-        [0x3c,0x22,0xa5], // 2 Dark Blue     1000 1
-        [0xd0,0x43,0xe5], // 3 Purple        1001 9
-        [0x00,0x69,0x40], // 4 Dark Green    0100 4
-        [0xb0,0xb0,0xb0], // 5 Gray 1        0101 5
-        [0x2f,0x95,0xe5], // 6 Medium Blue   1100 12
-        [0xbf,0xab,0xff], // 7 Light Blue    1101 13
-        [0x40,0x54,0x00], // 8 Brown         0010 2
-        [0xd0,0x6a,0x1a], // 9 Orange        0011 3
-        [0x40,0x40,0x40], // 10 Gray 2       1010 10
-        [0xff,0x96,0xbf], // 11 Pink         1011 11
-        [0x2f,0xbc,0x1a], // 12 Light Green  0110 6
-        [0xb9,0xd0,0x60], // 13 Yellow       0111 7
-        [0x6f,0xe8,0xbf], // 14 Aqua         1110 14
-        [0xff,0xff,0xff]  // 15 White        1111 15
+        [0x00,0x00,0x00],  // black
+        [0xdd,0x00,0x33],  // 0x1 deep red
+        [0x00,0x00,0x99],  // 0x2 dark blue
+        [0xdd,0x00,0xdd],  // 0x3 purple
+        [0x00,0x77,0x00],  // 0x4 dark green
+        [0x55,0x55,0x55],  // 0x5 dark gray
+        [0x23,0x22,0xff],  // 0x6 medium blue
+        [0x66,0xaa,0xff],  // 0x7 light blue
+        [0x88,0x55,0x22],  // 0x8 brown
+        [0xff,0x66,0x00],  // 0x9 orange
+        [0xaa,0xaa,0xaa],  // 0xa light gray
+        [0xff,0x99,0x88],  // 0xb pink
+        [0x00,0xdd,0x00],  // 0xc green
+        [0xff,0xff,0x00],  // 0xd yellow
+        [0x00,0xff,0x99],  // 0xe aquamarine
+        [0xff,0xff,0xff]   // 0xf white
     ];
 
     // hires colors

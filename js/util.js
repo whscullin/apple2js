@@ -11,7 +11,7 @@
  */
 
 /*jshint rhino:true, browser: true, devel: true */
-/*exported allocMem, allocMemPages, debug, toHex, toBinary, extend, gup, hup, each */
+/*exported allocMem, allocMemPages, bytify, debug, toHex, toBinary, extend, gup, hup, each */
 
 if (!Date.now) {
     Date.now = function now() {
@@ -34,6 +34,14 @@ function allocMem(size) {
 
 function allocMemPages(pages) {
     return allocMem(pages * 0x100);
+}
+
+function bytify(ary) {
+    var result = ary;
+    if (window.Uint8Array) {
+        result = new Uint8Array(ary);
+    }
+    return result;
 }
 
 function extend(ary1, ary2) {
