@@ -83,6 +83,7 @@ function initAudio() {
             io.floatAudio(16000);
             audioMoz = true;
         } else {
+            debug("Using audio elements");
             audio2 = document.createElement("audio");
         }
     }

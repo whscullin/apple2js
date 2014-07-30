@@ -71,25 +71,30 @@ function processGamepad(io) {
         for (var idx = 0; idx < gamepad.buttons.length; idx++) {
             val = gamepadMap[idx];
             if (val !== undefined) {
-                if (gamepad.buttons[idx]) {
-                    if (!gamepadState[idx]) {
-                        if (val <= 0) {
-                            io.buttonDown(-val);
-                        } else {
-                            io.keyDown(gamepadMap[idx]);
-                        }
-                    }
+                var old = gamepadState[idx];
+                var button = gamepad.buttons[idx];
+                var pressed;
+                if (typeof(button) == "object") {
+                    pressed = button.pressed;
                 } else {
-                    if (gamepadState[idx]) {
-                        if (val <= 0) {
-                            io.buttonUp(-val);
-                        } else {
-                            io.keyUp();
-                        }
+                    pressed = (button == 1.0);
+                }
+                
+                if (pressed && !old) {
+                    if (val <= 0) {
+                        io.buttonDown(-val);
+                    } else {
+                        io.keyDown(gamepadMap[idx]);
+                    }
+                } else if (!pressed && old) {
+                    if (val <= 0) {
+                        io.buttonUp(-val);
+                    } else {
+                        io.keyUp();
                     }
                 }
+                gamepadState[idx] = pressed;
             }
-            gamepadState[idx] = gamepad.buttons[idx];
         }
     }
 }

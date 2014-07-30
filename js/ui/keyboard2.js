@@ -1,5 +1,5 @@
 /* -*- mode: JavaScript; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* Copyright 2010 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2013 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -146,7 +146,7 @@ function KeyBoard(io) {
          [['!','"','#','$','%','&',"'",'(',')','0','*','=','RESET'],
           ['ESC','Q','W','E','R','T','Y','U','I','O','@','REPT','RETURN'],
           ['CTRL','A','S','D','F','BELL','H','J','K','L','+','&larr;','&rarr;'],
-          ['SHIFT','Z','X','C','V','B','^','M','<','>','?','SHIFT'],
+          ['SHIFT','Z','X','C','V','B','^',']','<','>','?','SHIFT'],
           ['POWER', '&nbsp;']]];
     
     var shifted = false;
