@@ -539,7 +539,7 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
             break;
         case LOC.SLOTC3ROM: // 0xC017
             _debug("Slot C3 ROM " + _slot3rom);
-            result = _slot3rom ? 0x80 : 0x00;
+            result = _slot3rom ? 0x00 : 0x80;
             break;
         case LOC._80STORE: // 0xC018
             result = _80store ? 0x80 : 0x00;

@@ -10,7 +10,7 @@
  * implied warranty.
  */
 
-/*globals allocMem:false, base64_encode, base64_decode, each: false */
+/*globals allocMem:false, bytify, base64_encode, base64_decode, each: false */
 /*exported RAMFactor*/
 
 function RAMFactor(mmu, io, slot, size) {
@@ -1071,6 +1071,7 @@ function RAMFactor(mmu, io, slot, size) {
         for (var off = 0; off < size; off++) {
             mem[off] = 0;
         }
+        rom = bytify(rom);
     }
 
     function _sethi(val) {

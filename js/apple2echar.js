@@ -1,5 +1,6 @@
 /* -*- mode: JavaScript; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 
+/*global bytify */
 /*exported charset */
 
 var charset = [
@@ -516,3 +517,5 @@ var charset = [
         0x81,0x81,0x11,0x44,0x81,0x81,0x00,0x00,
         0x80,0x80,0x00,0x00,0x80,0x80,0x00,0x00
     ];
+
+charset = bytify(charset);

@@ -771,7 +771,7 @@ function DiskII(io, callbacks, slot)
                         }
                     }
                 }
-                tracks[t] = track;
+                tracks[t] = bytify(track);
             }
             _cur.volume = v;
             _cur.format = fmt;

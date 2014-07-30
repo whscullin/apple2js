@@ -1,5 +1,5 @@
 /* -*- mode: JavaScript; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* Copyright 2010-2013 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2014 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -15,7 +15,12 @@
 
 function Apple2IO(cpu, callbacks)
 {
-    var SAMPLE_RATE = 64;
+    "use strict";
+
+    var _hz = 1023000;
+    var _rate = 16000;
+
+    var _cycles_per_sample = _hz / _rate;
 
     var _buffer = [];
     var _key = 0;
@@ -24,20 +29,25 @@ function Apple2IO(cpu, callbacks)
     var _paddle = [0.0, 0.0, 0.0, 0,0];
     var _phase = -1;
     var _sample = [];
-    var _oldSample = [];
     var _sampleTime = 0;
 
     var _high = "%A0";
+    var _mid = "%80";
     var _low = "%60";
 
     var _trigger = 0;
+
+    var _tape = [];
+    var _tapeOffset = 0;
+    var _tapeNext = 0;
+    var _tapeFlip = false;
 
     var LOC = {
         KEYBOARD: 0x00, // keyboard data (latched) (Read), 
         CLR80VID: 0x0C, // clear 80 column mode
         SET80VID: 0x0D, // set 80 column mode
-        CLRALTCH: 0x0E, // clear 80 column mode
-        SETALTCH: 0x0F, // set 80 column mode
+        CLRALTCH: 0x0E, // clear mousetext
+        SETALTCH: 0x0F, // set mousetext
         STROBE:   0x10, // clear bit 7 of keyboard data ($C000)
 
         RDTEXT:   0x1A, // using text mode
@@ -196,7 +206,7 @@ function Apple2IO(cpu, callbacks)
         case LOC.SPEAKER:
             if (_sampleTime) {
                 var phase = _phase > 0 ? _high : _low;
-                for (; _sampleTime < now; _sampleTime += SAMPLE_RATE) {
+                for (; _sampleTime < now; _sampleTime += _cycles_per_sample) {
                     _sample.push(phase);
                 }
                 _phase = -_phase;
@@ -240,6 +250,38 @@ function Apple2IO(cpu, callbacks)
         case LOC.PDLTRIG:
             _trigger = cpu.cycles();
             break;
+        case LOC.TAPEIN:
+            var flipped = false;
+            if (_tapeOffset == -1) {
+                _tapeOffset = 0;
+                _tapeNext = now;
+            }
+            if (_tapeOffset < _tape.length) {
+                while (now >= _tapeNext) {
+                    if ((_tapeOffset % 1000) === 0) {
+                        debug("Read " + (_tapeOffset / 1000));
+                    }
+                    _tapeFlip = !_tapeFlip;
+                    flipped = true;
+                    _tapeNext += _tape[_tapeOffset++];
+                }
+                result = _tapeFlip ? 0x80 : 0x00;
+            }
+            /*
+            if (flipped) {
+                debug("now=" + now + " next=" + _tapeNext + " (" + (_tapeNext - now) + ")");
+            }
+            */
+
+            /*
+            var progress = 
+                Math.round(_tapeOffset / _tapeBuffer.length * 100) / 100;
+
+            if (_progress != progress) {
+                _progress = progress;
+                cb.progress(_progress);
+            }
+            */
         }
         return result;       
     }
@@ -300,35 +342,42 @@ function Apple2IO(cpu, callbacks)
         paddle: function apple2io_paddle(p, v) {
             _paddle[p] = v;
         },
-        getSample: function apple2io_getSample(stop) {
+        getSample: function apple2io_getSample() {
             var result = _sample;
             var now = cpu.cycles();
 
-            //if (_sampleTime) {
-            //    var phase = _phase > 0 ? _high : _low;
-            //    for (; _sampleTime < now; _sampleTime += SAMPLE_RATE)
-            //        _sample.push(phase);
-            //}
+            var phase = _mid;
+            if (_sample.length) {
+                phase = _phase > 0 ? _high : _low;
+            }
+            for (; _sampleTime < now; _sampleTime += _cycles_per_sample) {
+                _sample.push(phase);
+            }
 
-            _sample = _oldSample;
-            _sample.length = 0;
-            _sampleTime = stop ? 0 : now;
-
-            _oldSample = result;
+            _sample = [];
 
             return result;
         },
         floatAudio: function apple2io_floatAudio(rate) {
+            _rate = rate;
             _low = -0.5;
+            _mid = 0.0;
             _high = 0.5;
 
-            SAMPLE_RATE = 1023000.0 / rate;
+            _cycles_per_sample = _hz / _rate;
         },
-        byteAudio: function apple2io_floatAudio(rate) {
+        byteAudio: function apple2io_byteAudio(rate) {
+            _rate = rate;
             _low = 0xa0;
+            _mid = 0x80;
             _high = 0x60;
 
-            SAMPLE_RATE = 1023000.0 / rate;
+            _cycles_per_sample = _hz / _rate;
+        },
+        updateHz: function apple2io_updateHz(hz) {
+            _hz = hz;
+            
+            _cycles_per_sample = _hz / _rate;
         },
         setKeyBuffer: function apple2io_setKeyBuffer(buffer) {
             _buffer = buffer.split("");
@@ -336,6 +385,12 @@ function Apple2IO(cpu, callbacks)
                 _keyDown = true;
                 _key = _buffer.shift().charCodeAt(0) | 0x80;
             }
+        },
+
+        setTape: function apple2io_setTape(tape) {
+            debug('Tape length: ' + tape.length);
+            _tape = tape;
+            _tapeOffset = -1;
         }
     };
 }

@@ -77,6 +77,7 @@ var lastCycles = 0;
 var frames = 0, lastFrames = 0;
 var paused = false;
 var sound = true;
+
 var hashtag;
 
 var disk_categories = {'Local Saves': []};
@@ -99,6 +100,9 @@ function DriveLights()
         }
     }
 }
+
+var DISK_TYPES = ['dsk','do','po','raw','nib','2mg'];
+var TAPE_TYPES = ['wav','aiff','aif','mp3'];
 
 var _saveDrive = 1;
 var _loadDrive = 1;
@@ -183,21 +187,84 @@ function doLoadLocal() {
     var files = $("#local_file").prop("files")
     if (files.length == 1) {
         var file = files[0];
-        var fileReader = new FileReader();
-        fileReader.onload = function(event) {
-            var parts = file.name.split(".");
-            var name = parts[0], ext = parts[parts.length - 1].toLowerCase();
-            if (disk2.setBinary(_saveDrive, name, ext, this.result)) {
-                $("#load").dialog("close");
-            }
+        var parts = file.name.split(".");
+        var ext = parts[parts.length - 1].toLowerCase();
+        if ($.inArray(ext, DISK_TYPES) >= 0) {
+            doLoadLocalDisk(file);
+        } else if ($.inArray(ext, TAPE_TYPES) >= 0) {
+            doLoadLocalTape(file);
+        } else {
+            alert('Unknown file type: ' + ext);
+            $("#load").dialog("close");
         }
-        fileReader.readAsArrayBuffer(file);
     }
 }
 
-function openLoadLocal(drive) {
-    _saveDrive = drive;
-    $("#local").dialog("open");
+function doLoadLocalDisk(file) {
+    var fileReader = new FileReader();
+    fileReader.onload = function(event) {
+        var parts = file.name.split(".");
+        var name = parts[0], ext = parts[parts.length - 1].toLowerCase();
+        if (disk2.setBinary(_saveDrive, name, ext, this.result)) {
+            $("#disklabel" + _saveDrive).text(name);
+            $("#load").dialog("close");
+            initGamepad();
+        }
+    }
+    fileReader.readAsArrayBuffer(file);
+ }
+
+function doLoadLocalTape(file) {
+    // Audio Buffer Source
+    if (typeof webkitAudioContext != "undefined") {
+        var context = new webkitAudioContext();
+    } else {
+        alert("Not supported by your browser");
+        $("#load").dialog("close");
+        return;
+    }
+
+    var fileReader = new FileReader();
+	fileReader.onload = function(ev) {
+		context.decodeAudioData(ev.target.result, function(buffer) {
+            var buf = [];
+            var data = buffer.getChannelData(0), datum = data[0];
+            var old = (datum > 0.0), current;
+            var last = 0, delta, ival;
+            debug('Sample Count: ' + data.length);
+            debug('Sample rate: ' + buffer.sampleRate);
+            for (var idx = 1; idx < data.length; idx++) {
+                datum = data[idx];
+                if ((datum > 0.1) || (datum < -0.1)) {
+                    current = (datum > 0.0);
+                    if (current != old) {
+                        delta = idx - last;
+                        if (delta > 2000000) {
+                            delta = 2000000;
+                        }
+                        ival = delta / buffer.sampleRate * 1000;
+                        if (ival >= 0.550 && ival < 0.750) {
+                            ival = 0.650; // Header
+                        } else if (ival >= 0.175 && ival < 0.225) {
+                            ival = 0.200; // sync 1
+                        } else if (ival >= 0.225 && ival < 0.275) {
+                            ival = 0.250; // 0 / sync 2
+                        } else if (ival >= 0.450 && ival < 0.550) {
+                            ival = 0.500; // 1
+                        } else {
+                            // debug(idx + ' ' + buf.length + ' ' + ival);
+                        }
+                        buf.push(parseInt(ival * kHz));
+                        old = current;
+                        last = idx;
+                    }
+                }
+            }
+            io.setTape(buf);
+            $("#load").dialog("close");
+		});
+	};
+    fileReader.readAsArrayBuffer(file);
 }
 
 function openManage() {
@@ -273,11 +340,11 @@ function updateKHz() {
     if (showFPS) {
         delta = frames - lastFrames;
         var fps = parseInt(delta/(ms/1000), 10);
-        $("#khz").text( fps + "fps");
+        $("#khz").html( fps + "fps");
     } else {
         delta = cycles - lastCycles;
         khz = parseInt(delta/ms);
-        $("#khz").text( khz + "KHz");
+        $("#khz").html( khz + "KHz");
     }
 
     startTime = now;
@@ -316,11 +383,13 @@ function step()
 }
 
 var running = false;
-var throttling = true;
+var accelerated = false;
 
-function toggleSpeed()
+function updateSpeed()
 {
-    throttling = $("#speed_toggle").prop("checked");
+    accelerated = $("#accelerator_toggle").prop("checked");
+    kHz = accelerated ? 4092 : 1023;
+    io.updateHz(kHz * 1000);
     if (runTimer) {
         run();
     }
@@ -341,23 +410,18 @@ function run(pc) {
         cpu.setPC(pc);
     }
 
-    var ival = 30, step = 1023 * ival, stepMax = step;
-
-    if (!throttling) {
-        ival = 1;
-    }
-
+    var ival = 30;
     var now, last = Date.now(), lastSample = last;
     var runFn = function() { 
         now = Date.now();
         frames++;
-        if (_requestAnimationFrame) {
-            step = (now - last) * 1023;
-            last = now;
-            if (step > stepMax) {
-                step = stepMax;
-            }
+
+        var step = (now - last) * kHz, stepMax = kHz * ival;
+        last = now;
+        if (step > stepMax) {
+            step = stepMax;
         }
+
         if (document.location.hash != hashtag) {
             hashtag = document.location.hash;
             filename = hup()
@@ -462,9 +526,10 @@ function loadDisk(data) {
 function loadJSON(data) {
     if (data.type == "binary") {
         loadBinary(data);
-    } else if ($.inArray(data.type, ["dsk","po","raw","nib"]) >= 0) {
+    } else if ($.inArray(data.type, DISK_TYPES) >= 0) {
         loadDisk(data);
     }
+    initGamepad(data.gamepad);
     $("#loading").dialog("close");
     loading = false;
 }
@@ -475,7 +540,7 @@ function loadJSON(data) {
                
 function updateLocalStorage() {
     var diskIndex = JSON.parse(window.localStorage.diskIndex || "{}");
-    var names = [], name, cat, idx;
+    var names = [], name, cat;
 
     for (name in diskIndex) {
         if (diskIndex.hasOwnProperty(name)) {
@@ -484,19 +549,21 @@ function updateLocalStorage() {
     }
 
     cat = disk_categories['Local Saves'] = [];
-    for (name in diskIndex) {
+    $("#manage").empty();                   
+
+    names.forEach(function(name) {
         cat.push({'category': 'Local Saves',
                   'name': name,
                   'filename': 'local:' + name}); 
-    }
+        $("#manage").append("<span class='local_save'>" + 
+                            name + 
+                            " <a href='#' onclick='doDelete(\"" + 
+                            name + 
+                            "\")'>Delete</a><br /></span>");
+    });
     cat.push({'category': 'Local Saves', 
               'name': 'Manage Saves...',
               'filename': 'local:__manage'});
-    
-    $("#manage").empty();                   
-    for (idx in names) {
-        $("#manage").before("<span class='local_save'>" + names[idx] + " <a href='#' onclick='doDelete(\"" + names[idx] + "\")'>Delete</a><br /></span>");
-    }
 }
 
 function saveLocalStorage(drive, name) {
@@ -521,6 +588,7 @@ function deleteLocalStorage(name) {
         window.alert("Deleted");
     }
     window.localStorage.diskIndex = JSON.stringify(diskIndex);
+    updateLocalStorage();
 }
 
 function loadLocalStorage(drive, name) {
@@ -561,7 +629,7 @@ function _keydown(evt) {
         }
     } else if (evt.keyCode == 16) { // Shift
         keyboard.shiftKey(true);
-        io.buttonDown(2, true);
+        io.buttonDown(2);
     } else if (evt.keyCode == 17) { // Control
         keyboard.controlKey(true);
     } else if (evt.keyCode == 91 || evt.keyCode == 93) { // Command
@@ -573,7 +641,6 @@ function _keydown(evt) {
         
         var key = keyboard.mapKeyEvent(evt);
         if (key != 0xff) {
-            if (_key != 0xff) io.keyUp();
             io.keyDown(key);
             _key = key;
         }
@@ -581,9 +648,11 @@ function _keydown(evt) {
 }
 
 function _keyup(evt) {
+    _key = 0xff;
+
     if (evt.keyCode == 16) { // Shift
         keyboard.shiftKey(false);
-        io.buttonDown(2, false);
+        io.buttonUp(2);
     } else if (evt.keyCode == 17) { // Control
         keyboard.controlKey(false);
     } else if (evt.keyCode == 91 || evt.keyCode == 93) { // Command
@@ -591,7 +660,6 @@ function _keyup(evt) {
     } else if (evt.keyCode == 18) { // Alt
         keyboard.optionKey(false);
     } else {
-        _key = 0xff;
         if (!focused) {
             io.keyUp();
         }
@@ -708,6 +776,7 @@ $(function() {
     setInterval(updateKHz, 1000);
     updateSound();
     updateScreen();
+    updateSpeed();
 
     var cancel = function() { $(this).dialog("close"); };
     $("#loading").dialog({ autoOpen: false, modal: true });
@@ -840,10 +909,9 @@ $(function() {
     <h3>CPU</h3>
     <ul>
       <li>
-        <input type="checkbox" checked="checked" id="speed_toggle"
-               onclick="toggleSpeed()"/>
-        <label for="speed_toggle">
-          Regulate Speed
+        <input type="checkbox" id="accelerator_toggle" onclick="updateSpeed()"/>
+        <label for="accelerator_toggle">
+          Accelerated CPU
         </label>
       </li>
     </ul>

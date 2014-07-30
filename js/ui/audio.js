@@ -49,23 +49,29 @@ var audioNode;
 var audio, audio2;
 
 function initAudio() {
-    if (typeof window.webkitAudioContext != "undefined") {
+    var AC = window.webkitAudioContext || window.AudioContext;
+    if (typeof AC != "undefined") {
         debug("Using Web Audio API");
         
         audioAPI = true;
-        audioContext = new window.webkitAudioContext();
-        audioNode = audioContext.createScriptProcessor(2048, 1, 1);
+        audioContext = new AC();
+        audioNode = audioContext.createScriptProcessor(4096, 1, 1);
         io.floatAudio(audioContext.sampleRate);
         
         audioNode.onaudioprocess = function(event) {
             var data = event.outputBuffer.getChannelData(0);
             var sample = io.getSample();
-            for (var idx = 0; idx < data.length; idx++) {
-                if (idx < sample.length) {
-                    data[idx] = sample[idx];
-                } else {
-                    data[idx] = 0;
-                }
+            
+            var delta = 1; // sample.length / data.length;
+
+            var idx, kdx;
+            for (idx = 0, kdx = 0; 
+                 idx < data.length && parseInt(kdx, 10) < sample.length;
+                 kdx += delta, idx++) {
+                data[idx] = sample[parseInt(kdx, 10)];
+            }
+            for (; idx < data.length; idx++) {
+                data[idx] = sample[sample.length - 1];
             }
         };
     } else {

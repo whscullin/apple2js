@@ -588,6 +588,8 @@ function HiresPage(page)
                                         (bits & 0x01e)) ||
                                        (bits & 0x10)) {
                                 _drawHalfPixel(data, off, dcolor);
+                            } else if ((bits & 0x28) == 0x28) {
+                                _drawHalfPixel(data, off, dcolor);
                             } else { 
                                 _drawHalfPixel(data, off, blackCol);
                             }

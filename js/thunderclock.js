@@ -11,6 +11,7 @@
  */
 
 /*exported Thunderclock */
+/*global each */
 
 function Thunderclock(mmu, io, slot)
 {
@@ -274,7 +275,8 @@ function Thunderclock(mmu, io, slot)
     ];
 
     var LOC = {
-        CONTROL: 0x80
+        CONTROL: 0x80,
+        AUX: 0x88
     };
 
     var FLAGS = {
@@ -284,7 +286,9 @@ function Thunderclock(mmu, io, slot)
     };
 
     function _init() {
-        LOC.CONTROL += slot * 0x10;
+        each(LOC, function(key) {
+            LOC[key] += slot * 0x10;
+        });
     }
 
     var auxRomFn = {
@@ -350,7 +354,16 @@ function Thunderclock(mmu, io, slot)
                 }
             }
             break;
+        case LOC.AUX:
+            break;
         }
+        /*
+        if (val === undefined) {
+            debug("Read " + toHex(_command) + " from " + toHex(off))
+        } else {
+            debug("Wrote " + toHex(val) + " to " + toHex(off))
+        }
+        */
         return _command;
     }
 
