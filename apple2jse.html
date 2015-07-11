@@ -1,7 +1,7 @@
 <!DOCTYPE html><!-- -*- mode: HTML; indent-tabs-mode: nil -*- -->
-<!-- 
+<!--
  Copyright 2010-2013 Will Scullin <scullin@scullinsteel.com>
- 
+
  Permission to use, copy, modify, distribute, and sell this software and its
  documentation for any purpose is hereby granted without fee, provided that
  the above copyright notice appear in all copies and that both that
@@ -27,7 +27,7 @@
 <link rel="apple-touch-icon" size="72x72" href="img/webapp-ipad.png" />
 <link rel="shortcut icon" href="logoicon.png" />
 <link rel="stylesheet" type="text/css" href="css/apple2.css" />
-<link rel="stylesheet" type="text/css" 
+<link rel="stylesheet" type="text/css"
       href="http://code.jquery.com/ui/1.10.3/themes/mint-choc/jquery-ui.css" />
 
 <meta property="og:title" content="Apple //js" />
@@ -59,7 +59,7 @@
 <script type="text/javascript" src="js/ramfactor.js"></script>
 <script type="text/javascript" src="js/thunderclock.js"></script>
 <script type="text/javascript" src="js/cpu6502.js"></script>
-<script type="text/javascript" src="js/base64.js"></script><
+<script type="text/javascript" src="js/base64.js"></script>
 <script type="text/javascript" src="js/ui/audio.js"></script>
 <script type="text/javascript" src="js/ui/keyboard2e.js"></script>
 <script type="text/javascript" src="js/ui/gamepad.js"></script>
@@ -89,8 +89,8 @@ function DriveLights()
 {
     return {
         driveLight: function(drive, on) {
-            $("#disk" + drive).css("background-image", 
-                                    on ? "url(css/red-on-16.png)" : 
+            $("#disk" + drive).css("background-image",
+                                    on ? "url(css/red-on-16.png)" :
                                          "url(css/red-off-16.png)");
         },
         dirty: function(drive, dirty) {
@@ -278,7 +278,7 @@ function loadHTTP(url) {
     var req = new XMLHttpRequest();
     req.open("GET", url, true);
     req.responseType = "arraybuffer";
-    
+
     req.onload = function(event) {
         var parts = url.split(/[\/\.]/);
         var name = decodeURIComponent(parts[parts.length - 2]);
@@ -353,7 +353,7 @@ function updateKHz() {
 }
 
 /* Audio Handling */
-initAudio();
+initAudio(io);
 
 function updateSound()
 {
@@ -396,9 +396,9 @@ function updateSpeed()
 }
 
 var _requestAnimationFrame =
-    window.requestAnimationFrame || 
+    window.requestAnimationFrame ||
     window.mozRequestAnimationFrame ||
-    window.webkitRequestAnimationFrame || 
+    window.webkitRequestAnimationFrame ||
     window.msRequestAnimationFrame;
 
 function run(pc) {
@@ -411,8 +411,8 @@ function run(pc) {
     }
 
     var ival = 30;
-    var now, last = Date.now(), lastSample = last;
-    var runFn = function() { 
+    var now, last = Date.now();
+    var runFn = function() {
         now = Date.now();
         frames++;
 
@@ -432,19 +432,14 @@ function run(pc) {
                     loadAjax("json/disks/" + filename + ".json");
                 }
             }
-        } 
+        }
         if (!loading) {
             mmu.resetVB();
             running = true;
             cpu.stepCycles(step);
             running = false;
             vm.blit();
-            if (now - lastSample >= 200) {
-                if (!audioAPI) {
-                    playSample();
-                }
-                lastSample = now;
-            }
+            io.sampleTick();
         }
 
         processGamepad(io);
@@ -504,7 +499,7 @@ function selectDisk(event) {
 }
 
 function clickDisk(event) {
-    doLoad();    
+    doLoad();
 }
 
 function loadDisk(data) {
@@ -534,10 +529,10 @@ function loadJSON(data) {
     loading = false;
 }
 
-/* 
- *  LocalStorage Disk Storage 
+/*
+ *  LocalStorage Disk Storage
  */
-               
+
 function updateLocalStorage() {
     var diskIndex = JSON.parse(window.localStorage.diskIndex || "{}");
     var names = [], name, cat;
@@ -549,38 +544,38 @@ function updateLocalStorage() {
     }
 
     cat = disk_categories['Local Saves'] = [];
-    $("#manage").empty();                   
+    $("#manage").empty();
 
     names.forEach(function(name) {
         cat.push({'category': 'Local Saves',
                   'name': name,
-                  'filename': 'local:' + name}); 
-        $("#manage").append("<span class='local_save'>" + 
-                            name + 
-                            " <a href='#' onclick='doDelete(\"" + 
-                            name + 
+                  'filename': 'local:' + name});
+        $("#manage").append("<span class='local_save'>" +
+                            name +
+                            " <a href='#' onclick='doDelete(\"" +
+                            name +
                             "\")'>Delete</a><br /></span>");
     });
-    cat.push({'category': 'Local Saves', 
+    cat.push({'category': 'Local Saves',
               'name': 'Manage Saves...',
               'filename': 'local:__manage'});
 }
 
 function saveLocalStorage(drive, name) {
     var diskIndex = JSON.parse(window.localStorage.diskIndex || "{}");
-    
+
     var json = disk2.getJSON(drive);
     diskIndex[name] = json;
-    
+
     window.localStorage.diskIndex = JSON.stringify(diskIndex);
-    
+
     window.alert("Saved");
-    
+
     drivelights.label(drive, name);
     drivelights.dirty(drive, false);
     updateLocalStorage();
 }
- 
+
 function deleteLocalStorage(name) {
     var diskIndex = JSON.parse(window.localStorage.diskIndex || "{}");
     if (diskIndex[name]) {
@@ -638,7 +633,7 @@ function _keydown(evt) {
         keyboard.optionKey(true);
     } else if (!focused) {
         evt.preventDefault();
-        
+
         var key = keyboard.mapKeyEvent(evt);
         if (key != 0xff) {
             io.keyDown(key);
@@ -754,17 +749,17 @@ $(function() {
     $("input,textarea").focus(function() { focused = true; })
                        .blur(function() { focused = false; });
 
-    $("body > div").hover(function() { focused = false; }, 
+    $("body > div").hover(function() { focused = false; },
                           function() { focused = true; });
 
 
     keyboard.create($("#keyboard"));
-    
+
     if (prefs.havePrefs()) {
         $("input[type=checkbox]").each(function() {
             var val = prefs.readPref(this.id);
             if (val != null)
-                this.checked = JSON.parse(val);                    
+                this.checked = JSON.parse(val);
         });
         $("input[type=checkbox]").change(function() {
             prefs.writePref(this.id, JSON.stringify(this.checked));
@@ -799,7 +794,7 @@ $(function() {
                           buttons: {"Close": cancel }});
 
     if (window.localStorage !== undefined) {
-        $("button.disksave").show();  
+        $("button.disksave").show();
     }
 
     var oldcat = "";
@@ -811,11 +806,11 @@ $(function() {
             $("<option />").val(cat).text(cat).appendTo("#category_select");
             disk_categories[cat] = [];
             oldcat = cat;
-        } 
+        }
         disk_categories[cat].push(file);
         if (disk) {
             if (!disk_sets[name]) {
-                disk_sets[name] = [] 
+                disk_sets[name] = []
             }
             disk_sets[name].push(file);
         }
@@ -852,7 +847,7 @@ $(function() {
     <table id="display">
       <tr>
         <td style="vertical-align: top">
-          <div role="textbox" class="overscan" 
+          <div role="textbox" class="overscan"
                onKeyDown="_keydown(event);"
                onKeyUp="_keyup(event);">
             <canvas id="screen" width="560" height="384"></canvas>
@@ -894,7 +889,7 @@ $(function() {
       <div style="float: right">
         <input type="button" onclick="window.open('about.html','_html')"
                name="About" value="About">
-        <input type="button" onclick="$('#options').dialog('open')" 
+        <input type="button" onclick="$('#options').dialog('open')"
                name="Options" value="Options">
       </div>
     </div>
@@ -918,21 +913,21 @@ $(function() {
     <h3>Joystick</h3>
     <ul>
       <li>
-        <input type="checkbox" id="flip_x" 
+        <input type="checkbox" id="flip_x"
                onclick="updateJoystick()" />
         <label for="flip_x">
           Flip X-Axis
         </label>
       </li>
       <li>
-        <input type="checkbox" id="flip_y"  
+        <input type="checkbox" id="flip_y"
                onclick="updateJoystick()" />
         <label for="flip_y">
           Flip Y-Axis
         </label>
       </li>
       <li>
-        <input type="checkbox" id="swap_x_y"  
+        <input type="checkbox" id="swap_x_y"
                onclick="updateJoystick()" />
         <label for="swap_x_y">
           Swap X-Y Axis
@@ -942,14 +937,14 @@ $(function() {
     <h3>Monitor</h3>
     <ul>
       <li>
-        <input type="checkbox" id="green_screen" 
+        <input type="checkbox" id="green_screen"
                onclick="updateScreen()" />
         <label for="green_screen">
           Green Screen
         </label>
       </li>
       <li>
-        <input type="checkbox" id="show_scanlines" 
+        <input type="checkbox" id="show_scanlines"
                onclick="updateScreen()" />
         <label for="show_scanlines">
           Show Scanlines
@@ -959,7 +954,7 @@ $(function() {
     <h3>Sound</h3>
     <ul>
       <li>
-        <input type="checkbox" id="enable_sound" 
+        <input type="checkbox" id="enable_sound"
                onclick="updateSound()" checked="checked" />
         <label for="enable_sound">
           Enable (Experimental)
@@ -969,7 +964,7 @@ $(function() {
   </div>
   <div id="save" title="Save Disk">
     <form action="#" onsubmit="return false;">
-      Save Name: <input type="text" name="name" id="save_name" 
+      Save Name: <input type="text" name="name" id="save_name"
                   style="width: 200px" />
     </form>
   </div>
@@ -979,7 +974,7 @@ $(function() {
     <table>
       <tr>
         <td>
-          <select id="category_select" multiple="multiple" 
+          <select id="category_select" multiple="multiple"
                   class="ui-widget ui-state-default"
                   onchange="selectCategory(event)" >
           </select>
@@ -988,7 +983,7 @@ $(function() {
           <select id="disk_select" multiple="multiple"
                   class="ui-widget ui-state-default"
                   onchange="selectDisk(event)"
-                  ondblclick="clickDisk(event)"> 
+                  ondblclick="clickDisk(event)">
           </select>
         </td>
       </tr>

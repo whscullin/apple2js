@@ -11,132 +11,69 @@
  */
 
 /*jshint jquery: true, browser: true */
-/*globals io: false, toHex:false, debug: false */
-/*exported playSample, enableSound, initAudio */
+/*globals debug: false */
+/*exported enableSound, initAudio */
 
 /*
  * Audio Handling
  */
 
-var sound = true;
+ var sound = true;
+ var _samples = [];
 
-// 8000 = 0x1f40 = 64, 31
-// 16000 = 0x3e80 = 128, 62
+ var audioContext;
+ var audioNode;
+ var AC = window.webkitAudioContext || window.AudioContext;
 
-var wavHeader = 
-    ['R','I','F','F',68 ,3  ,0  ,0  ,'W','A','V','E','f','m','t',' ',
-     16 ,0  ,0  ,0  ,1  ,0  ,1  ,0  ,128,62 ,0  ,0  ,128,62 ,0  ,0  ,
-     1  ,0  ,8  ,0  ,'d','a','t','a',32 ,3  ,0  ,0  ];
+ if (typeof AC !== 'undefined') {
+     audioContext = new AC();
+     audioNode = audioContext.createScriptProcessor(4096, 1, 1);
 
-function percentEncode(ary) {
-    var buf = "";
-    for (var idx = 0; idx < ary.length; idx++) {
-        buf += "%" + toHex(ary[idx]);
-    }
-    return buf;
-}
+     audioNode.onaudioprocess = function(event) {
+         var data = event.outputBuffer.getChannelData(0);
+         var sample = _samples.shift();
+         var idx = 0;
 
-wavHeader = $.map(wavHeader, function(n) {
-                      return typeof(n) == "string" ? n.charCodeAt(0) : n;
-                  });
+         var len = data.length;
+         if (sample) {
+             len = Math.min(sample.length, len);
+             for (; idx < len; idx++) {
+                 data[idx] = sample[idx];
+             }
+         }
+         
+         for (; idx < data.length; idx++) {
+             data[idx] = 0.0;
+         }
+     };
 
-var wavHeaderStr = percentEncode(wavHeader);
+     /*
+     // Create and specify parameters for the low-pass filter.
+     var filter = audioContext.createBiquadFilter();
+     filter.type = 'lowpass';
+     filter.frequency.value = 11000;
+     filter.connect(audioContext.destination);
+     audioNode.connect(filter);
+     */
 
-var audioAPI = false;
-var audioMoz = false;
-var audioContext;
-var audioNode;
-var audio, audio2;
+     audioNode.connect(audioContext.destination);
+ }
 
-function initAudio() {
-    var AC = window.webkitAudioContext || window.AudioContext;
-    if (typeof AC != "undefined") {
-        debug("Using Web Audio API");
-        
-        audioAPI = true;
-        audioContext = new AC();
-        audioNode = audioContext.createScriptProcessor(4096, 1, 1);
-        io.floatAudio(audioContext.sampleRate);
-        
-        audioNode.onaudioprocess = function(event) {
-            var data = event.outputBuffer.getChannelData(0);
-            var sample = io.getSample();
-            
-            var delta = 1; // sample.length / data.length;
-
-            var idx, kdx;
-            for (idx = 0, kdx = 0; 
-                 idx < data.length && parseInt(kdx, 10) < sample.length;
-                 kdx += delta, idx++) {
-                data[idx] = sample[parseInt(kdx, 10)];
+function initAudio(io) {
+    if (audioContext) {
+        debug('Using Webkit Audio');
+        io.sampleRate(audioContext.sampleRate);
+        io.addSampleListener(function(sample) {
+            if (sound) {
+                _samples.push(sample);
+                while (_samples.length > 5) {
+                    _samples.shift();
+                }
             }
-            for (; idx < data.length; idx++) {
-                data[idx] = sample[sample.length - 1];
-            }
-        };
-    } else {
-        audio = document.createElement("audio");
-        
-        if (audio.mozSetup) {
-            debug("Using Mozilla Audio API");
-            audio.mozSetup(1, 16000);
-            io.floatAudio(16000);
-            audioMoz = true;
-        } else {
-            debug("Using audio elements");
-            audio2 = document.createElement("audio");
-        }
+        });
     }
 }
 
-function playSample() {
-    // [audio,audio2] = [audio2,audio];
-    
-    var sample = io.getSample();
-    
-    if (!sound) {
-        return;
-    }
-    
-    if (audioMoz) {
-        audio.mozWriteAudio(sample);
-        return;
-    }
-    
-    var tmp = audio;
-    audio = audio2;
-    audio2 = tmp;
-
-    if (sample && sample.length) {
-        var len = sample.length,
-            buf = sample.join(""),
-            o1 = percentEncode([(len + 36) & 0xff, (len + 36) >> 8]),
-            o2 = percentEncode([len & 0xff, len >> 8]),
-            header = wavHeaderStr.replace("%44%03",o1).replace("%20%03", o2); 
-
-        audio.src = "data:audio/x-wav," + header + buf;
-        // debug(audio.src);
-        audio.play();
-    }
+function enableSound(enable) {
+    sound = enable;
 }
-
-function enableSound(on)
-{
-    sound = on;
-
-    if (audioAPI) {
-        if (sound) {
-            audioNode.connect(audioContext.destination);
-        } else {
-            audioNode.disconnect();
-        }
-    } else {
-        if (sound) {
-            if (audio) audio.volume = 0.5;
-            if (audio2) audio2.volume = 0.5;
-        } else {
-            io.getSample(true);
-        }
-    }
-}
-
