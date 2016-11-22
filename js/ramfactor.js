@@ -1,5 +1,4 @@
-/* -*- mode: JavaScript; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* Copyright 2010-2013 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2016 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -10,10 +9,13 @@
  * implied warranty.
  */
 
-/*globals allocMem:false, bytify, base64_encode, base64_decode, each: false */
 /*exported RAMFactor*/
-
+/*globals allocMem: false, bytify: false, each: false,
+          base64_encode: false, base64_decode: false
+*/
 function RAMFactor(mmu, io, slot, size) {
+    'use strict';
+
     var rom = [
         0x43,0x4f,0x50,0x59,0x52,0x49,0x47,0x48,
         0x54,0x20,0x28,0x43,0x29,0x20,0x31,0x39,
@@ -1079,14 +1081,14 @@ function RAMFactor(mmu, io, slot, size) {
     }
 
     function _setmid(val) {
-        if ((_rammid & 0x80) && !(val & 0x80)) {
+        if (((_rammid & 0x80) !== 0) && ((val & 0x80) === 0)) {
             _sethi(_ramhi + 1);
         }
         _rammid = (val & 0xff);
     }
 
     function _setlo(val) {
-        if ((_ramlo & 0x80) && !(val & 0x80)) {
+        if (((_ramlo & 0x80) !== 0) && ((val & 0x80) === 0)) {
             _setmid(_rammid + 1);
         }
         _ramlo = (val & 0xff);

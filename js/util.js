@@ -1,5 +1,4 @@
-/* -*- mode: JavaScript; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* Copyright 2010-2013 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2016 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -10,8 +9,10 @@
  * implied warranty.
  */
 
-/*jshint rhino:true, browser: true, devel: true */
-/*exported allocMem, allocMemPages, bytify, debug, toHex, toBinary, extend, gup, hup, each */
+/*eslint no-console: 0*/
+/*exported allocMemPages, bytify, debug, each extend, gup, hup, toBinary, toHex
+*/
+/*global Uint8Array: false */
 
 if (!Date.now) {
     Date.now = function now() {
@@ -19,8 +20,8 @@ if (!Date.now) {
     };
 }
 
-var hex_digits = "0123456789ABCDEF";
-var bin_digits = "01";
+var hex_digits = '0123456789ABCDEF';
+var bin_digits = '01';
 
 function allocMem(size) {
     var result;
@@ -46,16 +47,14 @@ function bytify(ary) {
 
 function extend(ary1, ary2) {
     ary2.forEach(function(val) {
-         ary1.push(val);
+        ary1.push(val);
     });
     return ary1;
 }
 
-function debug(msg) {
-    if (typeof(console) != 'undefined' && 'log' in console) {
-        console.log(msg);
-    } else if (typeof(environment) == 'object') { // rhino shell
-        print(msg);
+function debug() {
+    if (typeof console != 'undefined' && 'log' in console) {
+        console.log.apply(console, arguments);
     }
 }
 
@@ -63,7 +62,7 @@ function toHex(v, n) {
     if (!n) {
         n = v < 256 ? 2 : 4;
     }
-    var result = "";
+    var result = '';
     for (var idx = 0; idx < n; idx++) {
         result = hex_digits[v & 0x0f] + result;
         v >>= 4;
@@ -72,7 +71,7 @@ function toHex(v, n) {
 }
 
 function toBinary(v) {
-    var result = "";
+    var result = '';
     for (var idx = 0; idx < 8; idx++) {
         result = bin_digits[v & 0x01] + result;
         v >>= 1;
@@ -83,25 +82,25 @@ function toBinary(v) {
 // From http://www.netlobo.com/url_query_string_javascript.html
 function gup( name )
 {
-  name = name.replace(/[\[]/,"\\[").replace(/[\]]/,"\\]");
-  var regexS = "[\\?&]"+name+"=([^&#]*)";
-  var regex = new RegExp( regexS );
-  var results = regex.exec( window.location.href );
-  if( !results )
-    return "";
-  else
-    return results[1];
-}
-
-function hup() {
-    var regex = new RegExp("#(.*)");
-    var results = regex.exec(window.location.hash);
-    if ( !results )
-        return "";
+    name = name.replace(/[\[]/,'\\[').replace(/[\]]/,'\\]');
+    var regexS = '[\\?&]'+name+'=([^&#]*)';
+    var regex = new RegExp( regexS );
+    var results = regex.exec( window.location.href );
+    if( !results )
+        return '';
     else
         return results[1];
 }
-    
+
+function hup() {
+    var regex = new RegExp('#(.*)');
+    var results = regex.exec(window.location.hash);
+    if ( !results )
+        return '';
+    else
+        return results[1];
+}
+
 function keys(obj) {
     var result = [];
     for (var key in obj) {

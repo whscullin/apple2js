@@ -1,5 +1,5 @@
-/* -*- mode: JavaScript; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* Copyright 2010-2014 Will Scullin <scullin@scullinsteel.com>
+
+/* Copyright 2010-2016 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -14,7 +14,7 @@
 /*globals flipX: false, flipY: false */
 /*exported processGamepad, initGamepad, gamepad */
 
-var gamepadSupportAvailable = !!navigator.webkitGetGamepads;
+var getGamepads = navigator.getGamepads || navigator.webkitGetGamepads;
 var gamepad;
 var gamepadMap = [];
 var gamepadState = [];
@@ -54,17 +54,17 @@ var DEFAULT_GAMEPAD = {
     'START': '\033'
 };
 
-window.addEventListener("gamepadconnected", function(e) {
+window.addEventListener('gamepadconnected', function(e) {
     gamepad = e.gamepad;
 });
 
 function processGamepad(io) {
-    if (gamepadSupportAvailable) {
-        gamepad = navigator.webkitGetGamepads()[0];
+    if (getGamepads) {
+        gamepad = getGamepads.call(navigator)[0];
     }
     if (gamepad) {
-        var x = (gamepad.axes[0] * 1.414 + 1) / 2.0; 
-        var y = (gamepad.axes[1] * 1.414 + 1) / 2.0; 
+        var x = (gamepad.axes[0] * 1.414 + 1) / 2.0;
+        var y = (gamepad.axes[1] * 1.414 + 1) / 2.0;
         io.paddle(0, flipX ? 1.0 - x : x);
         io.paddle(1, flipY ? 1.0 - y : y);
         var val;
@@ -74,12 +74,12 @@ function processGamepad(io) {
                 var old = gamepadState[idx];
                 var button = gamepad.buttons[idx];
                 var pressed;
-                if (typeof(button) == "object") {
+                if (typeof(button) == 'object') {
                     pressed = button.pressed;
                 } else {
                     pressed = (button == 1.0);
                 }
-                
+
                 if (pressed && !old) {
                     if (val <= 0) {
                         io.buttonDown(-val);
@@ -117,5 +117,3 @@ function initGamepad(data) {
         }
     });
 }
-
-

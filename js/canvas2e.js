@@ -1,5 +1,4 @@
-/* -*- mode: JavaScript; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* Copyright 2010-2013 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2016 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -10,8 +9,9 @@
  * implied warranty.
  */
 
-/*jshint browser:true */
-/*globals allocMemPages: false, charset: false, base64_encode: false, base64_decode: false, enhanced: false */
+/*globals allocMemPages: false, debug: false,
+  base64_encode: false, base64_decode: false,
+  enhanced: false */
 /*exported LoresPage, HiresPage, VideoModes */
 
 
@@ -22,6 +22,12 @@ var pageMode = 1;
 var _80colMode = false;
 var altCharMode = false;
 var doubleHiresMode = false;
+var monoDHRMode = false;
+var colorDHRMode = false;
+var mixedDHRMode = false;
+var highColorHGRMode = false;
+var highColorTextMode = false;
+
 var pages = [];
 var context = null;
 var scanlines = false;
@@ -32,9 +38,9 @@ var scanlines = false;
  *
  ***************************************************************************/
 
-function LoresPage(page) 
+function LoresPage(page, charset)
 {
-    "use strict";
+    'use strict';
 
     // $00-$3F inverse
     // $40-$7F flashing
@@ -72,7 +78,7 @@ function LoresPage(page)
     function _init() {
         _buffer[0] = allocMemPages(0x4);
         _buffer[1] = allocMemPages(0x4);
-        
+
         for (var idx = 0; idx < 0x400; idx++) {
             _buffer[0][idx] = 0; // idx & 0x2 ? 0xff : 0x00;
             _buffer[1][idx] = 0; // idx & 0x2 ? 0xff : 0x00;
@@ -110,7 +116,7 @@ function LoresPage(page)
             data[off + 560 * 4 + 2] = c2 >> 1;
         }
     }
-    
+
     _init();
 
     return {
@@ -176,16 +182,13 @@ function LoresPage(page)
                 return;
             _buffer[bank][base] = val;
 
-            if (bank !== 0 && !_80colMode)
-                return;
-
             var col = (base % 0x80) % 0x28,
                 adj = off - col;
 
-            // 000001cd eabab000 -> 000abcde 
+            // 000001cd eabab000 -> 000abcde
             var ab = (adj & 0x18),
                 cd = (page & 0x03) << 1,
-                 e = adj >> 7;
+                e = adj >> 7;
             var idx, jdx;
             var row = ab | cd | e;
             var b;
@@ -197,19 +200,20 @@ function LoresPage(page)
 
                 var color;
                 if (textMode || (mixedMode && row > 19)) {
-                    var flash = ((val & 0xc0) == 0x40) && 
-                        _blink && !_80colMode && !altCharMode; 
+                    var flash = ((val & 0xc0) == 0x40) &&
+                        _blink && !_80colMode && !altCharMode;
                     fore = flash ? _black : (_greenMode ? _green : _white);
                     back = flash ? (_greenMode ? _green : _white) : _black;
 
-                    if (!enhanced) {
-                        val = (val >= 0x40 && val < 0x60) ? val - 0x40 : val;
-                    } else if (!altCharMode) {
-                        val = (val >= 0x40 && val < 0x80) ? val - 0x40 : val;
-                    }
-
                     if (_80colMode) {
+                        if (!enhanced) {
+                            val = (val >= 0x40 && val < 0x60) ? val - 0x40 : val;
+                        } else if (!altCharMode) {
+                            val = (val >= 0x40 && val < 0x80) ? val - 0x40 : val;
+                        }
+
                         off = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8 * 2) * 4;
+
                         for (jdx = 0; jdx < 8; jdx++) {
                             b = charset[val * 8 + jdx];
                             for (idx = 0; idx < 7; idx++) {
@@ -221,7 +225,20 @@ function LoresPage(page)
                             off += 553 * 4 + 560 * 4;
                         }
                     } else {
+                        val = _buffer[0][base];
+
+                        if (!enhanced) {
+                            val = (val >= 0x40 && val < 0x60) ? val - 0x40 : val;
+                        } else if (!altCharMode) {
+                            val = (val >= 0x40 && val < 0x80) ? val - 0x40 : val;
+                        }
+
                         off = (col * 14 + row * 560 * 8 * 2) * 4;
+
+                        if (highColorTextMode) {
+                            fore = _colors[_buffer[0][base] >> 4];
+                            back = _colors[_buffer[0][base] & 0x0f];
+                        }
 
                         for (jdx = 0; jdx < 8; jdx++) {
                             b = charset[val * 8 + jdx];
@@ -253,13 +270,13 @@ function LoresPage(page)
                                     off += 4;
                                 }
                                 off += 553 * 4 + 560 * 4;
-                            }                        
+                            }
                         } else {
                             if (bank & 0x1) {
                                 val = ((val & 0x77) << 1) | ((val & 0x88) >> 3);
                             }
                             for (jdx = 0; jdx < 8; jdx++) {
-                                color = _colors[(jdx < 4) ? 
+                                color = _colors[(jdx < 4) ?
                                                 (val & 0x0f) : (val >> 4)];
                                 for (idx = 0; idx < 7; idx++) {
                                     _drawHalfPixel(data, off, color);
@@ -288,12 +305,12 @@ function LoresPage(page)
                                     off += 4;
                                 }
                                 off += 546 * 4 + 560 * 4;
-                            }                        
+                            }
                         } else {
                             for (jdx = 0; jdx < 8; jdx++) {
-                                color = _colors[(jdx < 4) ? 
+                                color = _colors[(jdx < 4) ?
                                                 (val & 0x0f) : (val >> 4)];
-                                for (idx = 0; idx < 7; idx++) { 
+                                for (idx = 0; idx < 7; idx++) {
                                     _drawPixel(data, off, color);
                                     off += 8;
                                 }
@@ -305,11 +322,9 @@ function LoresPage(page)
             }
         },
         refresh: function() {
-            var page, off, addr = 0x400 * _page;
+            var addr = 0x400 * _page;
             _refreshing = true;
             for (var idx = 0; idx < 0x400; idx++, addr++) {
-                page = addr >> 8;
-                off = addr & 0xff;
                 this._write(addr >> 8, addr & 0xff, _buffer[0][idx], 0);
                 if (_80colMode)
                     this._write(addr >> 8, addr & 0xff, _buffer[1][idx], 1);
@@ -318,7 +333,7 @@ function LoresPage(page)
         },
         blink: function() {
             var addr = 0x400 * _page;
-            _refreshing = true; 
+            _refreshing = true;
             _blink = !_blink;
             for (var idx = 0; idx < 0x400; idx++, addr++) {
                 var b = _buffer[0][idx];
@@ -361,8 +376,8 @@ function LoresPage(page)
  ***************************************************************************/
 
 function HiresPage(page)
-{ 
-    "use strict";
+{
+    'use strict';
 
     var _page = page;
 
@@ -410,14 +425,14 @@ function HiresPage(page)
     var greenCol = [0x00, 0xff, 0x00];
     var blueCol = [0x09, 0x2a, 0xff];
     var violetCol = [0xc9, 0x39, 0xc7];
-    var whiteCol = [0xff, 0xff, 0xff]; 
+    var whiteCol = [0xff, 0xff, 0xff];
     var blackCol = [0x00, 0x00, 0x00];
 
     var _buffer = [];
     var _refreshing = false;
 
-    var _green = [0x00, 0xff, 0x80];
     var _greenMode = false;
+    var _green = [0x00, 0xff, 0x80];
 
     function _init() {
         _buffer[0] = allocMemPages(0x20);
@@ -430,6 +445,7 @@ function HiresPage(page)
 
     function _drawPixel(data, off, color) {
         var c0 = color[0], c1 = color[1], c2 = color[2];
+
         data[off + 0] = data[off + 4] = c0;
         data[off + 1] = data[off + 5] = c1;
         data[off + 2] = data[off + 6] = c2;
@@ -459,7 +475,7 @@ function HiresPage(page)
             data[off + 560 * 4 + 2] = c2 >> 1;
         }
     }
-    
+
     _init();
 
     return {
@@ -510,13 +526,10 @@ function HiresPage(page)
                 return [c[0] * 0.75, c[1] * 0.75, c[2] * 0.75];
             }
             var addr = (page << 8) | off, base = addr - 0x2000 * _page,
-            idx, jdx;
+                idx, jdx;
             if (_buffer[bank][base] == val && !_refreshing)
                 return;
             _buffer[bank][base] = val;
-            
-            if (bank !== 0 && !doubleHiresMode)
-                return;
 
             var hbs = val & 0x80;
             val &= 0x7f;
@@ -524,10 +537,10 @@ function HiresPage(page)
             var col = (base % 0x80) % 0x28,
                 adj = off - col;
 
-            // 000001cd eabab000 -> 000abcde 
+            // 000001cd eabab000 -> 000abcde
             var ab = (adj & 0x18),
                 cd = (page & 0x03) << 1,
-                 e = adj >> 7;
+                e = adj >> 7;
 
             var rowa = ab | cd | e,
                 rowb = base >> 10;
@@ -536,9 +549,9 @@ function HiresPage(page)
             if ((rowa < 24) && (col < 40)) {
                 if (textMode || !hiresMode || (mixedMode && rowa > 19))
                     return;
-                
+
                 dy = rowa * 16 + rowb * 2;
-                var bz, b0, b1, b2, b3, b4, c;
+                var bz, b0, b1, b2, b3, b4, c, hb;
                 if (doubleHiresMode) {
                     // Every 4 bytes is 7 pixels
                     // 2 bytes per bank
@@ -557,26 +570,57 @@ function HiresPage(page)
                          ((b2 & 0x3c) >> 2), // 4
                          ((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1), // 5
                          ((b3 & 0x78) >> 3), // 6
+                         0], // 7
+                    hb = [0,
+                          b0 & 0x80, // 0
+                          b0 & 0x80, // 1
+                          b1 & 0x80, // 2
+                          b2 & 0x80, // 3
+                          b2 & 0x80, // 4
+                          b3 & 0x80, // 5
+                          b3 & 0x80, // 6
                          0]; // 7
                     if (col > 0) {
                         c[0] = (bz & 0x78) >> 3;
+                        hb[0] = bz & 0x80;
                     }
                     if (col < 39) {
                         c[8] = b4 & 0x0f;
+                        hb[8] = b4 & 0x80;
                     }
                     dx = mcol * 14;
                     off = dx * 4 + dy * 280 * 4 * 2;
 
+                    var monoColor = null;
+                    if (_greenMode) {
+                        monoColor = _green;
+                    } else if (monoDHRMode) {
+                        monoColor = whiteCol;
+                    }
+
                     for (idx = 1; idx < 8; idx++) {
+                        hbs = hb[idx];
                         var dcolor = dcolors[r4[c[idx]]];
                         var bits = c[idx-1] | (c[idx] << 4) | (c[idx+1] << 8);
                         for (jdx = 0; jdx < 4; jdx++, off += 4) {
-                            if (_greenMode) {
+                            if (monoColor) {
                                 if (bits & 0x10) {
-                                    _drawHalfPixel(data, off, _green);
+                                    _drawHalfPixel(data, off, monoColor);
                                 } else {
                                     _drawHalfPixel(data, off, blackCol);
                                 }
+                            } else if (mixedDHRMode) {
+                                if (hbs) {
+                                    _drawHalfPixel(data, off, dcolor);
+                                } else {
+                                    if (bits & 0x10) {
+                                        _drawHalfPixel(data, off, whiteCol);
+                                    } else {
+                                        _drawHalfPixel(data, off, blackCol);
+                                    }
+                                }
+                            } else if (colorDHRMode) {
+                                _drawHalfPixel(data, off, dcolor);
                             } else if (((bits & 0x3c) == 0x3c) ||
                                        ((bits & 0xf0) == 0xf0) ||
                                        ((bits & 0x1e) == 0x1e) ||
@@ -590,7 +634,7 @@ function HiresPage(page)
                                 _drawHalfPixel(data, off, dcolor);
                             } else if ((bits & 0x28) == 0x28) {
                                 _drawHalfPixel(data, off, dcolor);
-                            } else { 
+                            } else {
                                 _drawHalfPixel(data, off, blackCol);
                             }
                             bits >>= 1;
@@ -607,22 +651,25 @@ function HiresPage(page)
                         _refreshing = false;
                     }
                 } else {
+                    val = _buffer[0][base] & 0x7f;
                     dx = col * 14 - 2;
-                    b0 = col > 0 ? _buffer[bank][base - 1] : 0;
-                    b2 = col < 39 ? _buffer[bank][base + 1] : 0;
+                    b0 = col > 0 ? _buffer[0][base - 1] : 0;
+                    b2 = col < 39 ? _buffer[0][base + 1] : 0;
                     val |= (b2 & 0x3) << 7;
                     var v0 = b0 & 0x20, v1 = b0 & 0x40, v2 = val & 0x1,
-                    odd = !(col & 0x1),
-                    color, 
-                    oddCol = (hbs ? orangeCol : greenCol),
-                    evenCol = (hbs ? blueCol : violetCol);
-                    
+                        odd = !(col & 0x1),
+                        color,
+                        oddCol = (hbs ? orangeCol : greenCol),
+                        evenCol = (hbs ? blueCol : violetCol);
+
                     off = dx * 4 + dy * 280 * 4 * 2;
                     for (idx = 0; idx < 9; idx++, off += 8) {
                         val >>= 1;
                         if (v1) {
                             if (_greenMode) {
                                 color = _green;
+                            } else if (highColorHGRMode) {
+                                color = dcolors[_buffer[1][base] >> 4];
                             } else if (v0 || v2) {
                                 color = whiteCol;
                             } else {
@@ -631,6 +678,8 @@ function HiresPage(page)
                         } else {
                             if (_greenMode) {
                                 color = blackCol;
+                            } else if (highColorHGRMode) {
+                                color = dcolors[_buffer[1][base] & 0x0f];
                             } else if (odd && v2 && v0) {
                                 color = v0 ? dim(evenCol) : evenCol;
                             } else if (!odd && v0 && v2) {
@@ -644,7 +693,7 @@ function HiresPage(page)
                             _drawPixel(data, off, color);
                         }
                         dx += 2;
-                        
+
                         v0 = v1;
                         v1 = v2;
                         v2 = val & 0x01;
@@ -694,6 +743,7 @@ function HiresPage(page)
 function VideoModes(gr,hgr,gr2,hgr2) {
     var _grs = [gr, gr2];
     var _hgrs = [hgr, hgr2];
+    var _seq = '';
 
     function _refresh() {
         gr.refresh();
@@ -711,15 +761,28 @@ function VideoModes(gr,hgr,gr2,hgr2) {
             mixedMode = false;
             hiresMode = true;
             pageMode = 1;
+
             _80colMode = false;
             altCharMode = false;
+
             doubleHiresMode = false;
+            monoDHRMode = false;
+            colorDHRMode = false;
+            mixedDHRMode = false;
+            highColorHGRMode = false;
+            highColorTextMode = false;
 
             _refresh();
         },
         text: function(on) {
             var old = textMode;
             textMode = on;
+
+            highColorTextMode = false;
+
+            _seq = on ? 'T+' : 'T-';
+            // debug('_seq=', _seq);
+
             if (old != on) {
                 _refresh();
             }
@@ -727,6 +790,11 @@ function VideoModes(gr,hgr,gr2,hgr2) {
         _80col: function(on) {
             var old = _80colMode;
             _80colMode = on;
+
+            _seq += on ? '8+' : '8-';
+            _seq = _seq.substr(0, 16);
+            // debug('_seq=', _seq);
+
             if (old != on) {
                 _refresh();
             }
@@ -741,6 +809,11 @@ function VideoModes(gr,hgr,gr2,hgr2) {
         hires: function(on) {
             var old = hiresMode;
             hiresMode = on;
+            highColorHGRMode = false;
+
+            _seq = (on ? 'H+' : 'H-');
+            // debug('_seq=', _seq);
+
             if (old != on) {
                 _refresh();
             }
@@ -748,6 +821,41 @@ function VideoModes(gr,hgr,gr2,hgr2) {
         doublehires: function(on) {
             var old = doubleHiresMode;
             doubleHiresMode = on;
+
+            _seq += on ? 'D+' : 'D-';
+            _seq = _seq.substr(0, 16);
+            // debug('_seq=', _seq);
+
+            if (on) {
+                if (_seq == 'T+D+') {
+                    debug('High color text mode');
+                    highColorTextMode = true;
+                    doubleHiresMode = false;
+                } else if (_seq == 'H+8-D+') {
+                    debug('High color hgr');
+                    highColorHGRMode = true;
+                    doubleHiresMode = false;
+                } else if (_seq == 'H+8+D+D-D+D-D+') {
+                    debug('DoubleHires color');
+                    colorDHRMode = true;
+                    monoDHRMode = false;
+                    mixedDHRMode = false;
+                    _seq = '';
+                } else if (_seq == 'H+8-D+D-D+D-8+D+') {
+                    debug('DoubleHires mono');
+                    colorDHRMode = false;
+                    monoDHRMode = true;
+                    mixedDHRMode = false;
+                    _seq = '';
+                } else if (_seq == 'H+8-D+D-8+D+D-D+') {
+                    debug('DoubleHires mixed');
+                    colorDHRMode = false;
+                    monoDHRMode = false;
+                    mixedDHRMode = true;
+                    _seq = '';
+                }
+            }
+
             if (old != on) {
                 if (on) {
                     this.page(1);
@@ -755,7 +863,7 @@ function VideoModes(gr,hgr,gr2,hgr2) {
                 _refresh();
             }
         },
-        mixed: function(on) { 
+        mixed: function(on) {
             var old = mixedMode;
             mixedMode = on;
             if (old != on) {
@@ -835,5 +943,3 @@ function VideoModes(gr,hgr,gr2,hgr2) {
         }
     };
 }
-
-

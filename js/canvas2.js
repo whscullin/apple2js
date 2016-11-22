@@ -1,5 +1,4 @@
-/* -*- mode: JavaScript; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* Copyright 2010-2014 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2016 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -10,15 +9,13 @@
  * implied warranty.
  */
 
-/*jshint browser:true */
-/*globals allocMemPages: false, 
-          charset: false, 
-          base64_encode: false, base64_decode: false */
-/*exported LoresPage, HiresPage, VideoModes*/
-
 /*
  * Text Page 1 Drawing
  */
+
+/*globals allocMemPages: false,
+          base64_encode: false, base64_decode: false */
+/*exported LoresPage, HiresPage, VideoModes*/
 
 var textMode = true;
 var mixedMode = true;
@@ -34,8 +31,10 @@ var scanlines = false;
  *
  ***************************************************************************/
 
-function LoresPage(page) 
+function LoresPage(page, charset)
 {
+    'use strict';
+
     // $00-$3F inverse
     // $40-$7F flashing
     // $80-$FF normal
@@ -108,16 +107,16 @@ function LoresPage(page)
             data[off + 560 * 4 + 2] = c2 >> 1;
         }
     }
-    
+
     _init();
 
     return {
-        start: function() { 
+        start: function() {
             var self = this;
             window.setInterval(function() {
                 self.blink();
             }, 267);
-            return (0x04 * _page); 
+            return (0x04 * _page);
         },
         end: function() { return (0x04 * _page) + 0x03; },
         read: function(page, off) {
@@ -136,10 +135,10 @@ function LoresPage(page)
             var col = (base % 0x80) % 0x28,
                 adj = off - col;
 
-            // 000001cd eabab000 -> 000abcde 
+            // 000001cd eabab000 -> 000abcde
             var ab = (adj & 0x18),
                 cd = (page & 0x03) << 1,
-                 e = adj >> 7;
+                e = adj >> 7;
 
             var row = ab | cd | e, color, idx, jdx, b;
 
@@ -159,7 +158,7 @@ function LoresPage(page)
                         back = _greenMode ? _green : _white;
                     }
                     for (jdx = 0; jdx < 8; jdx++) {
-                        b = charset[(val & 0x3f) * 8 + jdx];
+                        b = charset[val * 8 + jdx];
                         b <<= 1;
                         for (idx = 0; idx < 7; idx++) {
                             color = (b & 0x80) ? fore : back;
@@ -177,7 +176,7 @@ function LoresPage(page)
                             b = (jdx < 4) ? (val & 0x0f) : (val >> 4);
                             b |= (b << 4);
                             b |= (b << 8);
-                            if (col & 0x1) {
+                            if ((col & 0x1) !== 0) {
                                 b <<= 2;
                             }
                             for (idx = 0; idx < 14; idx++) {
@@ -187,7 +186,7 @@ function LoresPage(page)
                                 off += 4;
                             }
                             off += 546 * 4 + 560 * 4;
-                        }                        
+                        }
                     } else {
                         for (jdx = 0; jdx < 8; jdx++) {
                             b = (jdx < 4) ? (val & 0x0f) : (val >> 4);
@@ -212,7 +211,7 @@ function LoresPage(page)
         },
         blink: function() {
             var addr = 0x400 * _page;
-            _refreshing = true; 
+            _refreshing = true;
             _blink = !_blink;
             for (var idx = 0; idx < 0x400; idx++, addr++) {
                 var b = _buffer[idx];
@@ -247,14 +246,14 @@ function LoresPage(page)
 }
 
 function HiresPage(page)
-{ 
+{
     var _page = page;
 
     var orangeCol = [0xff, 0x65, 0x00];
     var greenCol = [0x00, 0xff, 0x00];
     var blueCol = [0x09, 0x2a, 0xff];
     var violetCol = [0xc9, 0x39, 0xc7];
-    var whiteCol = [0xff, 0xff, 0xff]; 
+    var whiteCol = [0xff, 0xff, 0xff];
     var blackCol = [0x00, 0x00, 0x00];
 
     var _buffer = [];
@@ -269,7 +268,7 @@ function HiresPage(page)
         for (var idx = 0; idx < 0x2000; idx++)
             _buffer[idx] = 0; // Math.floor(Math.random()*256);
     }
- 
+
     function _drawPixel(data, off, color) {
         var c0 = color[0], c1 = color[1], c2 = color[2];
 
@@ -286,7 +285,7 @@ function HiresPage(page)
             data[off + 560 * 4 + 2] = data[off + 560 * 4 + 6] = c2 >> 1;
         }
     }
-    
+
     _init();
 
     return {
@@ -306,17 +305,17 @@ function HiresPage(page)
             if (_buffer[base] === val && !_refreshing)
                 return;
             _buffer[base] = val;
-            
+
             var hbs = val & 0x80;
             val &= 0x7f;
 
             var col = (base % 0x80) % 0x28,
                 adj = off - col;
 
-            // 000001cd eabab000 -> 000abcde 
+            // 000001cd eabab000 -> 000abcde
             var ab = (adj & 0x18),
                 cd = (page & 0x03) << 1,
-                 e = adj >> 7;
+                e = adj >> 7;
 
             var rowa = ab | cd | e,
                 rowb = base >> 10;
@@ -324,18 +323,18 @@ function HiresPage(page)
             if ((rowa < 24) && (col < 40)) {
                 if (textMode || !hiresMode || (mixedMode && rowa > 19))
                     return;
-                
+
                 var data = pages[_page].data,
-                dy = rowa * 8 + rowb,
-                dx = col * 14 - 2,
-                b0 = col > 0 ? _buffer[base - 1] : 0,
-                b2 = col < 39 ? _buffer[base + 1] : 0;
+                    dy = rowa * 8 + rowb,
+                    dx = col * 14 - 2,
+                    b0 = col > 0 ? _buffer[base - 1] : 0,
+                    b2 = col < 39 ? _buffer[base + 1] : 0;
                 val |= (b2 & 0x3) << 7;
                 var v0 = b0 & 0x20, v1 = b0 & 0x40, v2 = val & 0x1,
-                odd = !(col & 0x1), 
-                color, 
-                oddCol = (hbs ? orangeCol : greenCol),
-                evenCol = (hbs ? blueCol : violetCol);
+                    odd = (col & 0x1) === 0,
+                    color,
+                    oddCol = (hbs ? orangeCol : greenCol),
+                    evenCol = (hbs ? blueCol : violetCol);
 
                 off = dx * 4 + dy * 560 * 4 * 2;
                 for (var idx = 0; idx < 9; idx++, off += 8) {
@@ -434,7 +433,7 @@ function VideoModes(gr,hgr,gr2,hgr2) {
                 _refresh();
             }
         },
-        mixed: function(on) { 
+        mixed: function(on) {
             var old = mixedMode;
             mixedMode = on;
             if (old != on) {
@@ -490,4 +489,3 @@ function VideoModes(gr,hgr,gr2,hgr2) {
         }
     };
 }
-

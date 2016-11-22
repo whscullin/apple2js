@@ -1,5 +1,4 @@
-/* -*- mode: JavaScript; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* Copyright 2010-2013 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2016 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -10,18 +9,20 @@
  * implied warranty.
  */
 
-/*jshint browser: true */
-/*globals extend: false, bytify: false, base64_encode: false, base64_decode: false, each: false */
 /*exported DiskII */
+/*globals bytify, each: false, extend: false
+          base64_encode, base64_decode
+          Uint8Array
+*/
 
 function DiskII(io, callbacks, slot)
 {
-    "use strict";
+    'use strict';
 
     slot = slot || 6;
     var _drives = [
         {   // Drive 1
-            format: "dsk",
+            format: 'dsk',
             volume: 254,
             tracks: [],
             track: 0,
@@ -31,7 +32,7 @@ function DiskII(io, callbacks, slot)
             dirty: false
         },
         {   // Drive 2
-            format: "dsk",
+            format: 'dsk',
             volume: 254,
             tracks: [],
             track: 0,
@@ -68,12 +69,12 @@ function DiskII(io, callbacks, slot)
         DRIVEREADMODE: 0x8E, // Q7L
         DRIVEWRITEMODE: 0x8F // Q7H
     };
-    
+
 //    var DO = [0x0,0x7,0xE,0x6,0xD,0x5,0xC,0x4,
 //              0xB,0x3,0xA,0x2,0x9,0x1,0x8,0xF];
     var _DO = [0x0,0xD,0xB,0x9,0x7,0x5,0x3,0x1,
                0xE,0xC,0xA,0x8,0x6,0x4,0x2,0xF];
-    
+
 //    var PO = [0x0,0x8,0x1,0x9,0x2,0xa,0x3,0xb,
 //              0x4,0xc,0x5,0xd,0x6,0xe,0x7,0xf];
     var _PO = [0x0,0x2,0x4,0x6,0x8,0xa,0xc,0xe,
@@ -116,9 +117,9 @@ function DiskII(io, callbacks, slot)
     }
 
     /**
-     * From Beneath Apple DOS 
+     * From Beneath Apple DOS
      */
-    
+
     function _fourXfour(val) {
         var xx = val & 0xaa;
         var yy = val & 0x55;
@@ -170,7 +171,7 @@ function DiskII(io, callbacks, slot)
         /*
          * Gap 2 (5 bytes)
          */
-        
+
         for (idx = 0; idx < 0x05; idx++) {
             buf.push(0xff);
         }
@@ -180,33 +181,33 @@ function DiskII(io, callbacks, slot)
          */
 
         extend(buf, [0xd5, 0xaa, 0xad]); // Data Prolog D5 AA AD
- 
+
         var nibbles = [];
         var ptr2 = 0;
         var ptr6 = 0x56;
         var idx2, idx6;
-        
+
         for (idx = 0; idx < 0x156; idx++) {
             nibbles[idx] = 0;
         }
-        
+
         idx2 = 0x55;
         for (idx6 = 0x101; idx6 >= 0; idx6--) {
             var val6 = data[idx6 % 0x100];
             var val2 = nibbles[ptr2 + idx2];
-            
+
             val2 = (val2 << 1) | (val6 & 1);
             val6 >>= 1;
             val2 = (val2 << 1) | (val6 & 1);
             val6 >>= 1;
-            
+
             nibbles[ptr6 + idx6] = val6;
             nibbles[ptr2 + idx2] = val2;
-            
-            if (--idx2 < 0) 
+
+            if (--idx2 < 0)
                 idx2 = 0x55;
         }
-        
+
         var last = 0;
         for (idx = 0; idx < 0x156; idx++) {
             var val = nibbles[idx];
@@ -214,13 +215,13 @@ function DiskII(io, callbacks, slot)
             last = val;
         }
         buf.push(_trans[last]);
-        
+
         extend(buf, [0xde, 0xaa, 0xeb]); // Epilog DE AA EB
-        
+
         /*
          * Gap 3
          */
-        
+
         buf.push(0xff);
 
         return buf;
@@ -229,11 +230,11 @@ function DiskII(io, callbacks, slot)
     function _json_encode(drive, pretty) {
         var cur = _drives[drive - 1];
         var data = [];
-        var format = "dsk";
+        var format = 'dsk';
         for (var t = 0; t < cur.tracks.length; t++) {
             data[t] = [];
-            if (cur.format === "nib") {
-                format = "nib";
+            if (cur.format === 'nib') {
+                format = 'nib';
                 data[t] = base64_encode(cur.tracks[t]);
             } else {
                 for (var s = 0; s < 0x10; s++) {
@@ -241,12 +242,12 @@ function DiskII(io, callbacks, slot)
                 }
             }
         }
-        return JSON.stringify({"type": format,
-                               "encoding": "base64",
-                               "volume": cur.volume,
-                               "data": data}, 
-                               null, 
-                               pretty ? "    " : null);
+        return JSON.stringify({'type': format,
+                               'encoding': 'base64',
+                               'volume': cur.volume,
+                               'data': data},
+                               null,
+                               pretty ? '    ' : null);
     }
 
     function _json_decode(drive, data) {
@@ -261,14 +262,14 @@ function DiskII(io, callbacks, slot)
                 var d = base64_decode(json.data[t][_s]);
                 extend(track, _explodeSector(v, t, _DO[_s], d));
             }
-            tracks[t] = bytify(track); 
+            tracks[t] = bytify(track);
         }
         _cur.volume = v;
         _cur.format = json.type;
         _cur.tracks = tracks;
     }
 
-    function _readNext() { 
+    function _readNext() {
         var result = 0;
         if (_skip || _writeMode) {
             var t = _cur.tracks[_cur.track >> 1];
@@ -283,8 +284,8 @@ function DiskII(io, callbacks, slot)
 
                 ++_cur.head;
             }
-        } 
-        _skip = (++_skip % 4); 
+        }
+        _skip = (++_skip % 4);
         return result;
     }
 
@@ -383,9 +384,9 @@ function DiskII(io, callbacks, slot)
                         [-1, 0, 1, 2],
                         [-2,-1, 0, 1],
                         [ 1,-2,-1, 0]];
-    
+
     function setPhase(phase, on) {
-        _debug("phase " + phase + (on ? " on" : " off"));
+        _debug('phase ' + phase + (on ? ' on' : ' off'));
         if (on) {
             _cur.track += _phase_delta[_cur.phase][phase];
             _cur.phase = phase;
@@ -395,10 +396,10 @@ function DiskII(io, callbacks, slot)
             if (_cur.track < 0x0)
                 _cur.track = 0x0;
 
-            /* _debug("Drive " + _drive + 
-                   ", track " + toHex(_cur.track >> 1) + 
-                   " (" + toHex(_cur.track) + ")" + 
-                   " [" + (_cur.track % 4) + "/" + phase + "]"); */
+            /* _debug('Drive ' + _drive +
+                   ', track ' + toHex(_cur.track >> 1) +
+                   ' (' + toHex(_cur.track) + ')' +
+                   ' [' + (_cur.track % 4) + '/' + phase + ']'); */
         }
     }
 
@@ -429,20 +430,20 @@ function DiskII(io, callbacks, slot)
         case LOC.PHASE3ON:
             setPhase(3, true);
             break;
-            
+
         case LOC.DRIVEOFF:
-            _debug("Drive Off");
+            _debug('Drive Off');
             _on = false;
             if (callbacks.driveLight) { callbacks.driveLight(_drive, false); }
             break;
         case LOC.DRIVEON:
-            _debug("Drive On");
+            _debug('Drive On');
             _on = true;
             if (callbacks.driveLight) { callbacks.driveLight(_drive, true); }
             break;
-            
+
         case LOC.DRIVE1:
-            _debug("Disk 1");
+            _debug('Disk 1');
             _drive = 1;
             _cur = _drives[_drive - 1];
             if (_on && callbacks.driveLight) {
@@ -451,7 +452,7 @@ function DiskII(io, callbacks, slot)
             }
             break;
         case LOC.DRIVE2:
-            _debug("Disk 2");
+            _debug('Disk 2');
             _drive = 2;
             _cur = _drives[_drive - 1];
             if (_on && callbacks.driveLight)  {
@@ -459,25 +460,25 @@ function DiskII(io, callbacks, slot)
                 callbacks.driveLight(2, true);
             }
             break;
-            
+
         case LOC.DRIVEREAD:
             result = _readNext();
-            // _debug("read: " + toHex(result));
+            // _debug('read: ' + toHex(result));
             break;
-            
+
         case LOC.DRIVEWRITE:
-            // _debug("write: " + toHex(val));
+            // _debug('write: ' + toHex(val));
             if (val !== undefined) {
                 _writeNext(val);
             }
             break;
         case LOC.DRIVEREADMODE:
-            _debug("Read Mode");
+            _debug('Read Mode');
             _writeMode = false;
             result = (_readNext() & 0x7f) | (_cur.readOnly ? 0x80 : 0x00);
             break;
         case LOC.DRIVEWRITEMODE:
-            _debug("Write Mode");
+            _debug('Write Mode');
             _writeMode = true;
             break;
         default:
@@ -650,10 +651,10 @@ function DiskII(io, callbacks, slot)
             var fmt = disk.type, readOnly = disk.readOnly;
 
             var data, t, s;
-            if (disk.encoding == "base64") {
+            if (disk.encoding == 'base64') {
                 data = [];
                 for (t = 0; t < disk.data.length; t++) {
-                    if (fmt == "nib") {
+                    if (fmt == 'nib') {
                         data[t] = base64_decode(disk.data[t]);
                     } else {
                         data[t] = [];
@@ -667,7 +668,7 @@ function DiskII(io, callbacks, slot)
             }
             var cur = _drives[drive - 1];
 
-            // var v = (fmt === "dsk" ? data[0x11][0x00][0x06] : 0xfe);
+            // var v = (fmt === 'dsk' ? data[0x11][0x00][0x06] : 0xfe);
             // if (v == 0x00) {
             var v = disk.volume || 0xfe;
             // }
@@ -679,19 +680,19 @@ function DiskII(io, callbacks, slot)
 
             for (t = 0; t < data.length; t++) {
                 var track = [];
-                if (fmt === "nib") {
+                if (fmt === 'nib') {
                     track = data[t];
                 } else {
                     for (s = 0; s < data[t].length; s++) {
                         var _s = 15 - s;
-                        if (fmt === "po") { // ProDOS Order
+                        if (fmt === 'po') { // ProDOS Order
                             extend(track,
                                    _explodeSector(v, t, _PO[s], data[t][s]));
-                        } else if (fmt === "dsk") { // DOS Order
+                        } else if (fmt === 'dsk') { // DOS Order
                             extend(track,
                                    _explodeSector(v, t, _DO[_s], data[t][_s]));
                         } else { // flat
-                            extend(track, 
+                            extend(track,
                                    _explodeSector(v, t, s, data[t][s]));
                         }
                     }
@@ -712,32 +713,32 @@ function DiskII(io, callbacks, slot)
             var _cur = _drives[drive - 1];
             var tracks = [];
             var v = 254;
-            if (fmt === "do") {
-                fmt = "dsk";
+            if (fmt === 'do') {
+                fmt = 'dsk';
             }
             _cur.readOnly = false;
-            if (fmt === "2mg") {
+            if (fmt === '2mg') {
                 // Standard header size is 64 bytes. Make assumptions.
                 var prefix = new Uint8Array(data.slice(0, 64));
                 data = data.slice(64);
-                
+
                 // Check image format.
                 // Sure, it's really 64 bits. But only 2 are actually used.
                 switch (prefix[0xc]) {
                 case 0:
-                    fmt = "dsk";
+                    fmt = 'dsk';
                     break;
                 case 1:
-                    fmt = "po";
+                    fmt = 'po';
                     break;
                 case 2:
-                    fmt = "nib";
+                    fmt = 'nib';
                     break;
-                default:  // Something hinky, assume "dsk"
-                    fmt = "dsk";
+                default:  // Something hinky, assume 'dsk'
+                    fmt = 'dsk';
                     break;
                 }
-                var flags = 
+                var flags =
                     prefix[0x10] | (prefix[0x11] << 8) |
                     (prefix[0x12] << 16) | (prefix[0x13] << 24);
                 _cur.readOnly = (flags & 0x80000000) ? true : false;
@@ -749,20 +750,20 @@ function DiskII(io, callbacks, slot)
             }
             for (var t = 0; t < 35; t++) {
                 var track, off, d;
-                if (fmt === "nib") {
+                if (fmt === 'nib') {
                     off = t * 0x1a00;
                     track = new Uint8Array(data.slice(off, off + 0x1a00));
                 } else {
                     track = [];
                     for (var s = 0; s < 16; s++) {
                         var _s = 15 - s;
-                        if (fmt == "po") { // ProDOS Order
-                            off = (16 * t + s) * 256; 
+                        if (fmt == 'po') { // ProDOS Order
+                            off = (16 * t + s) * 256;
                             d = new Uint8Array(data.slice(off, off + 256));
                             extend(track,
                                    _explodeSector(v, t, _PO[s], d));
-                        } else if (fmt == "dsk") { // DOS Order
-                            off = (16 * t + _s) * 256; 
+                        } else if (fmt == 'dsk') { // DOS Order
+                            off = (16 * t + _s) * 256;
                             d = new Uint8Array(data.slice(off, off + 256));
                             extend(track,
                                    _explodeSector(v, t, _DO[_s], d));
@@ -786,9 +787,9 @@ function DiskII(io, callbacks, slot)
             var len = (16 * cur.tracks.length * 256);
             var data = new Uint8Array(len);
             var idx = 0;
-          
+
             for (var t = 0; t < cur.tracks.length; t++) {
-                if (cur.format === "nib") {
+                if (cur.format === 'nib') {
                     data[idx++] = cur.tracks[t];
                 } else {
                     for (var s = 0; s < 0x10; s++) {
@@ -808,7 +809,7 @@ function DiskII(io, callbacks, slot)
             var data = [];
             for (var t = 0; t < cur.tracks.length; t++) {
                 data[t] = [];
-                if (cur.format === "nib") {
+                if (cur.format === 'nib') {
                     data += base64_encode(cur.tracks[t]);
                 } else {
                     for (var s = 0; s < 0x10; s++) {

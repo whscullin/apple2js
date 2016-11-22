@@ -1,5 +1,4 @@
-/* -*- mode: JavaScript; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* Copyright 2010-2014 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2016 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -10,7 +9,6 @@
  * implied warranty.
  */
 
-/*jshint jquery: true, browser: true */
 /*globals debug: false */
 /*exported enableSound, initAudio */
 
@@ -18,46 +16,46 @@
  * Audio Handling
  */
 
- var sound = true;
- var _samples = [];
+var sound = true;
+var _samples = [];
 
- var audioContext;
- var audioNode;
- var AC = window.webkitAudioContext || window.AudioContext;
+var audioContext;
+var audioNode;
+var AC = window.AudioContext;
 
- if (typeof AC !== 'undefined') {
-     audioContext = new AC();
-     audioNode = audioContext.createScriptProcessor(4096, 1, 1);
+if (typeof AC !== 'undefined') {
+    audioContext = new AC();
+    audioNode = audioContext.createScriptProcessor(4096, 1, 1);
 
-     audioNode.onaudioprocess = function(event) {
-         var data = event.outputBuffer.getChannelData(0);
-         var sample = _samples.shift();
-         var idx = 0;
+    audioNode.onaudioprocess = function(event) {
+        var data = event.outputBuffer.getChannelData(0);
+        var sample = _samples.shift();
+        var idx = 0;
 
-         var len = data.length;
-         if (sample) {
-             len = Math.min(sample.length, len);
-             for (; idx < len; idx++) {
-                 data[idx] = sample[idx];
-             }
-         }
-         
-         for (; idx < data.length; idx++) {
-             data[idx] = 0.0;
-         }
-     };
+        var len = data.length;
+        if (sample) {
+            len = Math.min(sample.length, len);
+            for (; idx < len; idx++) {
+                data[idx] = sample[idx];
+            }
+        }
 
-     /*
-     // Create and specify parameters for the low-pass filter.
-     var filter = audioContext.createBiquadFilter();
-     filter.type = 'lowpass';
-     filter.frequency.value = 11000;
-     filter.connect(audioContext.destination);
-     audioNode.connect(filter);
-     */
+        for (; idx < data.length; idx++) {
+            data[idx] = 0.0;
+        }
+    };
 
-     audioNode.connect(audioContext.destination);
- }
+    /*
+    // Create and specify parameters for the low-pass filter.
+    var filter = audioContext.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 11000;
+    filter.connect(audioContext.destination);
+    audioNode.connect(filter);
+    */
+
+    audioNode.connect(audioContext.destination);
+}
 
 function initAudio(io) {
     if (audioContext) {

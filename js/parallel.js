@@ -1,5 +1,4 @@
-/* -*- mode: JavaScript; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* Copyright 2010-2013 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2016 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -13,6 +12,8 @@
 /*exported Parallel */
 
 function Parallel(io, cbs, slot) {
+    'use strict';
+
     slot = slot || 1;
 
     var LOC = {
@@ -75,5 +76,3 @@ function Parallel(io, cbs, slot) {
         write: function() {}
     };
 }
-
-    
