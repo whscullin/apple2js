@@ -2,7 +2,7 @@
 
 function base64_encode (data) {
     // Twacked by Will Scullin to handle arrays of "bytes"
-    
+
     // http://kevin.vanzonneveld.net
     // +   original by: Tyler Akins (http://rumkin.com)
     // +   improved by: Bayron Guevara
@@ -19,9 +19,9 @@ function base64_encode (data) {
     //if (typeof this.window['atob'] == 'function') {
     //    return atob(data);
     //}
-        
-    var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-    var o1, o2, o3, h1, h2, h3, h4, bits, i = 0, ac = 0, enc="", tmp_arr = [];
+
+    var b64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+    var o1, o2, o3, h1, h2, h3, h4, bits, i = 0, ac = 0, enc='', tmp_arr = [];
 
     if (!data) {
         return data;
@@ -42,15 +42,15 @@ function base64_encode (data) {
         // use hexets to index into b64, and append result to encoded string
         tmp_arr[ac++] = b64.charAt(h1) + b64.charAt(h2) + b64.charAt(h3) + b64.charAt(h4);
     } while (i < data.length);
-    
+
     enc = tmp_arr.join('');
-    
+
     switch (data.length % 3) {
-        case 1:
-            enc = enc.slice(0, -2) + '==';
+    case 1:
+        enc = enc.slice(0, -2) + '==';
         break;
-        case 2:
-            enc = enc.slice(0, -1) + '=';
+    case 2:
+        enc = enc.slice(0, -1) + '=';
         break;
     }
 
@@ -59,7 +59,7 @@ function base64_encode (data) {
 
 function base64_decode(data) {
     // Twacked by Will Scullin to handle arrays of "bytes"
-    
+
     // http://kevin.vanzonneveld.net
     // +   original by: Tyler Akins (http://rumkin.com)
     // +   improved by: Thunder.m
@@ -80,7 +80,7 @@ function base64_decode(data) {
     //    return btoa(data);
     //}
 
-    var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+    var b64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
     var o1, o2, o3, h1, h2, h3, h4, bits, i = 0, ac = 0, tmp_arr = [];
 
     if (!data) {
@@ -99,10 +99,10 @@ function base64_decode(data) {
         o2 = bits>>8 & 0xff;
         o3 = bits & 0xff;
 
-	tmp_arr[ac++] = o1;
+        tmp_arr[ac++] = o1;
         if (h3 != 64) {
             tmp_arr[ac++] = o2;
-	}
+        }
         if (h4 != 64) {
             tmp_arr[ac++] = o3;
         }

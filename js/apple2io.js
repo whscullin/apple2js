@@ -1,5 +1,4 @@
-/* -*- mode: JavaScript; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* Copyright 2010-2014 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2016 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -15,7 +14,7 @@
 
 function Apple2IO(cpu, callbacks)
 {
-    "use strict";
+    'use strict';
 
     var _hz = 1023000;
     var _rate = 44000;
@@ -36,7 +35,7 @@ function Apple2IO(cpu, callbacks)
     var _low = -0.5;
 
     var _audioListener = null;
-    
+
     var _trigger = 0;
 
     var _tape = [];
@@ -45,7 +44,7 @@ function Apple2IO(cpu, callbacks)
     var _tapeFlip = false;
 
     var LOC = {
-        KEYBOARD: 0x00, // keyboard data (latched) (Read), 
+        KEYBOARD: 0x00, // keyboard data (latched) (Read),
         CLR80VID: 0x0C, // clear 80 column mode
         SET80VID: 0x0D, // set 80 column mode
         CLRALTCH: 0x0E, // clear mousetext
@@ -89,7 +88,7 @@ function Apple2IO(cpu, callbacks)
         SETIOUDIS:0x7E, // Enable double hires
         CLRIOUDIS:0x7F  // Disable double hires
     };
-    
+
     function _debug() {
         // debug.apply(arguments);
     }
@@ -116,43 +115,43 @@ function Apple2IO(cpu, callbacks)
         var delta = now - _trigger;
         switch (off) {
         case LOC.CLR80VID:
-            // _debug("80 Column Mode off");
+            // _debug('80 Column Mode off');
             if ('_80col' in callbacks) callbacks._80col(false);
             break;
         case LOC.SET80VID:
-            // _debug("80 Column Mode on");
+            // _debug('80 Column Mode on');
             if ('_80col' in callbacks) callbacks._80col(true);
             break;
         case LOC.CLRALTCH:
-            // _debug("Alt Char off");
+            // _debug('Alt Char off');
             if ('altchar' in callbacks) callbacks.altchar(false);
             break;
         case LOC.SETALTCH:
-            // _debug("Alt Char on");
+            // _debug('Alt Char on');
             if ('altchar' in callbacks) callbacks.altchar(true);
             break;
         case LOC.CLRTEXT:
-            _debug("Graphics Mode");
+            _debug('Graphics Mode');
             callbacks.text(false);
             break;
         case LOC.SETTEXT:
-            _debug("Text Mode");
+            _debug('Text Mode');
             callbacks.text(true);
             break;
         case LOC.CLRMIXED:
-            _debug("Mixed Mode off");
+            _debug('Mixed Mode off');
             callbacks.mixed(false);
             break;
         case LOC.SETMIXED:
-            _debug("Mixed Mode on");
+            _debug('Mixed Mode on');
             callbacks.mixed(true);
             break;
         case LOC.CLRHIRES:
-            _debug("LoRes Mode");
+            _debug('LoRes Mode');
             callbacks.hires(false);
             break;
         case LOC.SETHIRES:
-            _debug("HiRes Mode");
+            _debug('HiRes Mode');
             callbacks.hires(true);
             break;
         case LOC.PAGE1:
@@ -162,27 +161,27 @@ function Apple2IO(cpu, callbacks)
             callbacks.page(2);
             break;
         case LOC.RDTEXT:
-            if ('isText' in callbacks) 
+            if ('isText' in callbacks)
                 result = callbacks.isText() ? 0x80 : 0x0;
             break;
         case LOC.RDMIXED:
-            if ('isMixed' in callbacks) 
+            if ('isMixed' in callbacks)
                 result = callbacks.isMixed() ? 0x80 : 0x0;
             break;
         case LOC.RDPAGE2:
-            if ('isPage2' in callbacks) 
+            if ('isPage2' in callbacks)
                 result = callbacks.isPage2() ? 0x80 : 0x0;
             break;
         case LOC.RDHIRES:
-            if ('isHires' in callbacks) 
+            if ('isHires' in callbacks)
                 result = callbacks.isHires() ? 0x80 : 0x0;
             break;
         case LOC.RD80VID:
-            if ('is80Col' in callbacks) 
+            if ('is80Col' in callbacks)
                 result = callbacks.is80Col() ? 0x80 : 0x0;
             break;
         case LOC.RDALTCH:
-            if ('isAltChar' in callbacks) 
+            if ('isAltChar' in callbacks)
                 result = callbacks.isAltChar() ? 0x80 : 0x0;
             break;
         case LOC.SETAN0:
@@ -262,7 +261,7 @@ function Apple2IO(cpu, callbacks)
             _trigger = cpu.cycles();
             break;
         case LOC.TAPEIN:
-            var flipped = false;
+            // var flipped = false;
             if (_tapeOffset == -1) {
                 _tapeOffset = 0;
                 _tapeNext = now;
@@ -270,22 +269,22 @@ function Apple2IO(cpu, callbacks)
             if (_tapeOffset < _tape.length) {
                 while (now >= _tapeNext) {
                     if ((_tapeOffset % 1000) === 0) {
-                        debug("Read " + (_tapeOffset / 1000));
+                        debug('Read ' + (_tapeOffset / 1000));
                     }
                     _tapeFlip = !_tapeFlip;
-                    flipped = true;
+                    // flipped = true;
                     _tapeNext += _tape[_tapeOffset++];
                 }
                 result = _tapeFlip ? 0x80 : 0x00;
             }
             /*
             if (flipped) {
-                debug("now=" + now + " next=" + _tapeNext + " (" + (_tapeNext - now) + ")");
+                debug('now=' + now + ' next=' + _tapeNext + ' (' + (_tapeNext - now) + ')');
             }
             */
 
             /*
-            var progress = 
+            var progress =
                 Math.round(_tapeOffset / _tapeBuffer.length * 100) / 100;
 
             if (_progress != progress) {
@@ -294,9 +293,9 @@ function Apple2IO(cpu, callbacks)
             }
             */
         }
-        return result;       
+        return result;
     }
-    
+
     return {
         registerSwitches: function apple2io_registerSwitches(a, locs) {
             each(locs, function(key) {
@@ -314,12 +313,12 @@ function Apple2IO(cpu, callbacks)
         end: function apple2io_end() {
             return 0xc0;
         },
-        read: function apple2io_read(page, off) { 
+        read: function apple2io_read(page, off) {
             var result = 0;
             if (_locs[off]) {
                 result = _locs[off].ioSwitch(off);
             } else {
-                debug("I/O read: C0" + toHex(off));
+                debug('I/O read: C0' + toHex(off));
             }
             return result;
         },
@@ -327,7 +326,7 @@ function Apple2IO(cpu, callbacks)
             if (_locs[off]) {
                 _locs[off].ioSwitch(off, val);
             } else {
-                debug("I/O write: C0" + toHex(off));
+                debug('I/O write: C0' + toHex(off));
             }
         },
         getState: function apple2io_getState() { return {}; },
@@ -339,7 +338,7 @@ function Apple2IO(cpu, callbacks)
             _keyDown = true;
             _key = ascii | 0x80;
         },
-        keyUp: function apple2io_keyUp() { 
+        keyUp: function apple2io_keyUp() {
             _keyDown = false;
             _key = 0;
         },
@@ -353,10 +352,10 @@ function Apple2IO(cpu, callbacks)
         paddle: function apple2io_paddle(p, v) {
             _paddle[p] = v;
         },
-        
+
         updateHz: function apple2io_updateHz(hz) {
             _hz = hz;
-            
+
             _cycles_per_sample = _hz / _rate;
         },
         setKeyBuffer: function apple2io_setKeyBuffer(buffer) {
@@ -373,15 +372,15 @@ function Apple2IO(cpu, callbacks)
             _tapeOffset = -1;
         },
 
-        sampleRate: function sampleRate(rate) { 
+        sampleRate: function sampleRate(rate) {
             _rate = rate;
             _cycles_per_sample = _hz / _rate;
         },
-        
+
         sampleTick: function sampleTick() {
             _tick();
         },
-        
+
         addSampleListener: function addSampleListener(cb) {
             _audioListener = cb;
         }

@@ -1,5 +1,4 @@
-/* -*- mode: JavaScript; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* Copyright 2010-2013 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2016 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -10,10 +9,12 @@
  * implied warranty.
  */
 
-/*globals RAM */
 /*exported LanguageCard */
+/*globals RAM: false */
 
 function LanguageCard(io, rom) {
+    'use strict';
+
     var _io = io;
     var _rom = rom;
     var _bank1 = null;
@@ -88,28 +89,28 @@ function LanguageCard(io, rom) {
             _readbsr = true;
             _writebsr = false;
             _bsr2 = true;
-            _debug("Bank 2 Read");
+            _debug('Bank 2 Read');
             break;
         case LOC.WRITEBSR2:
         case LOC._WRITEBSR2:
             _readbsr = false;
             _writebsr = ((_last & 0xF3) == (off & 0xF3));
             _bsr2 = true;
-            _debug("Bank 2 Write");
+            _debug('Bank 2 Write');
             break;
         case LOC.OFFBSR2:
         case LOC._OFFBSR2:
             _readbsr = false;
             _writebsr = false;
             _bsr2 = true;
-            _debug("Bank 2 Off");
+            _debug('Bank 2 Off');
             break;
         case LOC.READWRBSR2:
-        case LOC._READWRBSR2: 
+        case LOC._READWRBSR2:
             _readbsr = true;
             _writebsr = ((_last & 0xF3) == (off & 0xF3));
             _bsr2 = true;
-            _debug("Bank 2 Read/Write");
+            _debug('Bank 2 Read/Write');
             break;
 
         case LOC.READBSR1:
@@ -117,37 +118,37 @@ function LanguageCard(io, rom) {
             _readbsr = true;
             _writebsr = false;
             _bsr2 = false;
-            _debug("Bank 1 Read");
+            _debug('Bank 1 Read');
             break;
         case LOC.WRITEBSR1:
         case LOC._WRITEBSR1:
             _readbsr = false;
             _writebsr = ((_last & 0xF3) == (off & 0xF3));
             _bsr2 = false;
-            _debug("Bank 1 Write");
+            _debug('Bank 1 Write');
             break;
         case LOC.OFFBSR1:
         case LOC._OFFBSR1:
             _readbsr = false;
             _writebsr = false;
             _bsr2 = false;
-            _debug("Bank 1 Off");
+            _debug('Bank 1 Off');
             break;
         case LOC.READWRBSR1:
         case LOC._READWRBSR1:
             _readbsr = true;
             _writebsr = ((_last & 0xF3) == (off & 0xF3));
             _bsr2 = false;
-            _debug("Bank 1 Read/Write");
+            _debug('Bank 1 Read/Write');
             break;
-            
+
         case LOC.BSRBANK2:
-            result = _bsr2 ? 0x80 : 0x00; 
-            _debug("Bank 2 Read " + _bsr2);
+            result = _bsr2 ? 0x80 : 0x00;
+            _debug('Bank 2 Read ' + _bsr2);
             break;
         case LOC.BSRREADRAM:
             result = _readbsr ? 0x80 : 0x00;
-            _debug("Bank SW RAM Read " + _readbsr);
+            _debug('Bank SW RAM Read ' + _readbsr);
             break;
         default:
             break;
