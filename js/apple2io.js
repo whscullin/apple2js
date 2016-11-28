@@ -9,12 +9,15 @@
  * implied warranty.
  */
 
-/*globals debug: false, toHex: false, each: false */
+/*globals debug: false */
 /*exported Apple2IO */
 
 function Apple2IO(cpu, callbacks)
 {
     'use strict';
+
+    var _slot = [];
+    var _auxRom = null;
 
     var _hz = 1023000;
     var _rate = 44000;
@@ -85,15 +88,14 @@ function Apple2IO(cpu, callbacks)
         PADDLE2:  0x66, // bit 7: status of pdl-2 timer (read)
         PADDLE3:  0x67, // bit 7: status of pdl-3 timer (read)
         PDLTRIG:  0x70, // trigger paddles
+        BANK:     0x73, // Back switched RAM card bank
         SETIOUDIS:0x7E, // Enable double hires
         CLRIOUDIS:0x7F  // Disable double hires
     };
 
     function _debug() {
-        // debug.apply(arguments);
+        debug.apply(arguments);
     }
-
-    var _locs = [];
 
     function _tick() {
         var now = cpu.cycles();
@@ -297,47 +299,95 @@ function Apple2IO(cpu, callbacks)
     }
 
     return {
-        registerSwitches: function apple2io_registerSwitches(a, locs) {
-            each(locs, function(key) {
-                var val = locs[key];
-                if (_locs[val]) {
-                    debug('duplicate switch! ' + toHex(val));
-                }
-                _locs[val] = a;
-            });
-        },
         start: function apple2io_start() {
-            this.registerSwitches(this, LOC);
             return 0xc0;
         },
         end: function apple2io_end() {
-            return 0xc0;
+            return 0xcf;
         },
+
+        ioSwitch: function apple2io_ioSwitch(off, val) {
+            var result;
+            if (off < 0x80) {
+                result = _access(off, val);
+            } else {
+                var slot = (off & 0x70) >> 4;
+                if (_slot[slot]) {
+                    result = _slot[slot].ioSwitch(off, val);
+                }
+            }
+
+            return result;
+        },
+
         read: function apple2io_read(page, off) {
             var result = 0;
-            if (_locs[off]) {
-                result = _locs[off].ioSwitch(off);
-            } else {
-                debug('I/O read: C0' + toHex(off));
+            var slot;
+            switch (page) {
+            case 0xc0:
+                result = this.ioSwitch(off);
+                break;
+            case 0xc1:
+            case 0xc2:
+            case 0xc3:
+            case 0xc4:
+            case 0xc5:
+            case 0xc6:
+            case 0xc7:
+                slot = page & 0x0f;
+                _auxRom = _slot[slot];
+                if (_slot[slot]) {
+                    result = _slot[slot].read(page, off);
+                }
+                break;
+            default:
+                if (_auxRom) {
+                    result = _auxRom.read(page, off);
+                }
+                break;
             }
             return result;
         },
+
         write: function apple2io_write(page, off, val) {
-            if (_locs[off]) {
-                _locs[off].ioSwitch(off, val);
-            } else {
-                debug('I/O write: C0' + toHex(off));
+            var slot;
+            switch (page) {
+            case 0xc0:
+                this.ioSwitch(off);
+                break;
+            case 0xc1:
+            case 0xc2:
+            case 0xc3:
+            case 0xc4:
+            case 0xc5:
+            case 0xc6:
+            case 0xc7:
+                slot = page & 0x0f;
+                _auxRom = _slot[slot];
+                if (_slot[slot]) {
+                    _slot[slot].write(page, off, val);
+                }
+                break;
+            default:
+                if (_auxRom) {
+                    _auxRom.write(page, off, val);
+                }
+                break;
             }
         },
+
         getState: function apple2io_getState() { return {}; },
         setState: function apple2io_setState() { },
-        ioSwitch: function apple2io_ioSwitch(off, val) {
-            return _access(off, val);
+
+        addSlot: function apple2io_addSlot(slot, card) {
+            _slot[slot] = card;
         },
+
         keyDown: function apple2io_keyDown(ascii) {
             _keyDown = true;
             _key = ascii | 0x80;
         },
+
         keyUp: function apple2io_keyUp() {
             _keyDown = false;
             _key = 0;
@@ -346,9 +396,11 @@ function Apple2IO(cpu, callbacks)
         buttonDown: function apple2io_buttonDown(b) {
             _button[b] = true;
         },
+
         buttonUp: function apple2io_buttonUp(b) {
             _button[b] = false;
         },
+
         paddle: function apple2io_paddle(p, v) {
             _paddle[p] = v;
         },

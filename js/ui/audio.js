@@ -21,10 +21,9 @@ var _samples = [];
 
 var audioContext;
 var audioNode;
-var AC = window.AudioContext;
 
-if (typeof AC !== 'undefined') {
-    audioContext = new AC();
+if (window.AudioContext) {
+    audioContext = new window.AudioContext();
     audioNode = audioContext.createScriptProcessor(4096, 1, 1);
 
     audioNode.onaudioprocess = function(event) {

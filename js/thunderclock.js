@@ -10,9 +10,9 @@
  */
 
 /*exported Thunderclock */
-/*global each: false */
+/*global debug: false, each: false */
 
-function Thunderclock(mmu, io, slot)
+function Thunderclock(io, slot)
 {
     'use strict';
 
@@ -287,23 +287,12 @@ function Thunderclock(mmu, io, slot)
     };
 
     function _init() {
+        debug('Thunderclock card in slot', slot);
+
         each(LOC, function(key) {
             LOC[key] += slot * 0x10;
         });
     }
-
-    var auxRomFn = {
-        start: function auxRom_start() {
-            return 0xc8;
-        },
-        end: function auxRom_end() {
-            return 0xcf;
-        },
-        read: function auxRom_read(page, off) {
-            return rom[(page - 0xc8) * 256 + off];
-        },
-        write: function auxRom_write() {}
-    };
 
     var _command = 0;
     var _bits = [];
@@ -372,19 +361,21 @@ function Thunderclock(mmu, io, slot)
 
     return {
         start: function thunderclock_start() {
-            io.registerSwitches(this, LOC);
             return 0xc0 + slot;
         },
         end: function thunderclock_end() {
             return 0xc0 + slot;
         },
         read: function thunderclock_read(page, off) {
-            mmu.auxRom(slot, auxRomFn);
-
-            return rom[off];
+            var result;
+            if (page < 0xc8) {
+                result = rom[off];
+            } else {
+                result = rom[(page - 0xc8) * 256 + off];
+            }
+            return result;
         },
         write: function thunderclock_write() {
-            mmu.auxRom(slot, auxRomFn);
         },
         ioSwitch: function thunderclock_ioSwitch(off, val) {
             return _access(off, val);

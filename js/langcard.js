@@ -10,12 +10,12 @@
  */
 
 /*exported LanguageCard */
-/*globals RAM: false */
+/*globals debug: false
+          RAM: false */
 
-function LanguageCard(io, rom) {
+function LanguageCard(io, slot, rom) {
     'use strict';
 
-    var _io = io;
     var _rom = rom;
     var _bank1 = null;
     var _bank2 = null;
@@ -34,6 +34,8 @@ function LanguageCard(io, rom) {
     var _write2 = null;
 
     function _init() {
+        debug('Language card in slot', slot);
+
         _bank1 = new RAM(0xd0, 0xdf);
         _bank2 = new RAM(0xd0, 0xdf);
         _ram = new RAM(0xe0, 0xff);
@@ -173,9 +175,9 @@ function LanguageCard(io, rom) {
 
         return result;
     }
+
     return {
         start: function() {
-            _io.registerSwitches(this, LOC);
             return 0xd0;
         },
         end: function() {

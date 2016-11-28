@@ -9,11 +9,11 @@
  * implied warranty.
  */
 
-/*exported RAMFactor*/
-/*globals allocMem: false, bytify: false, each: false,
+/*exported RAMFactor */
+/*globals allocMem: false, bytify: false, debug: false, each: false,
           base64_encode: false, base64_decode: false
 */
-function RAMFactor(mmu, io, slot, size) {
+function RAMFactor(io, slot, size) {
     'use strict';
 
     var rom = [
@@ -1066,6 +1066,8 @@ function RAMFactor(mmu, io, slot, size) {
     };
 
     function _init() {
+        debug('RAMFactor card in slot', slot);
+
         each(LOC, function(key) {
             LOC[key] += slot * 0x10;
         });
@@ -1154,19 +1156,6 @@ function RAMFactor(mmu, io, slot, size) {
         return result;
     }
 
-    var auxRomFn = {
-        start: function auxRom_start() {
-            return 0xc8;
-        },
-        end: function auxRom_end() {
-            return 0xcf;
-        },
-        read: function auxRom_read(page, off) {
-            return rom[_firmware * 0x1000 + (page - 0xC0) * 0x100 + off];
-        },
-        write: function auxRom_write() {}
-    };
-
     _init();
 
     return {
@@ -1177,17 +1166,19 @@ function RAMFactor(mmu, io, slot, size) {
         end: function ramfactor_end() {
             return 0xc0 + slot;
         },
-        read: function ramfactor_read(page, off) {
-            mmu.auxRom(slot, auxRomFn);
-
-            return rom[slot * 0x100 + off];
-        },
-        write: function ramfactor_write() {
-            mmu.auxRom(slot, auxRomFn);
-        },
-        ioSwitch: function ramfactor_ioSwitch(off, val) {
+        ioSwitch: function (off, val) {
             return _access(off, val);
         },
+        read: function ramfactor_read(page, off) {
+            var result;
+            if (page == 0xc0 + slot) {
+                result = rom[slot * 0x100 + off];
+            } else {
+                result = rom[_firmware * 0x1000 + (page - 0xC0) * 0x100 + off];
+            }
+            return result;
+        },
+        write: function ramfactor_write() {},
         reset: function ramfactor_reset() {
             _firmware = 0;
         },

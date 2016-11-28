@@ -10,17 +10,18 @@
  */
 
 /*exported Parallel */
+/*globals debug: false */
 
-function Parallel(io, cbs, slot) {
+function Parallel(io, slot, cbs) {
     'use strict';
 
     slot = slot || 1;
 
+    debug('Parallel card in slot', slot);
+
     var LOC = {
         IOREG: 0x80
     };
-
-    var _cbs = cbs;
 
     var rom = [
         0x18,0xb0,0x38,0x48,0x8a,0x48,0x98,0x48,
@@ -57,18 +58,23 @@ function Parallel(io, cbs, slot) {
         0xff,0xf0,0x03,0xfe,0x38,0x07,0x70,0x84
     ];
 
+    LOC.IOREG += 0x10 * slot;
+
+    function _access(off, val) {
+        if (off == LOC.IOREG && val && 'putChar' in cbs) {
+            cbs.putChar(val);
+        }
+    }
+
     return {
         start: function() {
-            LOC.IOREG += 0x10 * slot;
-            io.registerSwitches(this, LOC);
             return 0xc0 + slot;
         },
         end: function() {
             return 0xc0 + slot;
         },
-        ioSwitch: function(off, val) {
-            if (off == LOC.IOREG && val && 'putChar' in _cbs)
-                _cbs.putChar(val);
+        ioSwitch: function (off, val) {
+            return _access(off, val);
         },
         read: function(page, off) {
             return rom[off];
