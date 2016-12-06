@@ -10,7 +10,7 @@
  */
 
 /*exported Thunderclock */
-/*global debug: false, each: false */
+/*global debug: false */
 
 function Thunderclock(io, slot)
 {
@@ -288,10 +288,6 @@ function Thunderclock(io, slot)
 
     function _init() {
         debug('Thunderclock card in slot', slot);
-
-        each(LOC, function(key) {
-            LOC[key] += slot * 0x10;
-        });
     }
 
     var _command = 0;
@@ -327,7 +323,7 @@ function Thunderclock(io, slot)
     }
 
     function _access(off, val) {
-        switch (off) {
+        switch (off & 0x8F) {
         case LOC.CONTROL:
             if (val !== undefined) {
                 if ((val & FLAGS.STROBE) !== 0) {
@@ -360,18 +356,12 @@ function Thunderclock(io, slot)
     _init();
 
     return {
-        start: function thunderclock_start() {
-            return 0xc0 + slot;
-        },
-        end: function thunderclock_end() {
-            return 0xc0 + slot;
-        },
         read: function thunderclock_read(page, off) {
             var result;
             if (page < 0xc8) {
                 result = rom[off];
             } else {
-                result = rom[(page - 0xc8) * 256 + off];
+                result = rom[(page - 0xc8) << 8 | off];
             }
             return result;
         },

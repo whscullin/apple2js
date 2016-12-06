@@ -5,8 +5,7 @@
            apple2_charset: false,
            Apple2IO: false
            LoresPage: false, HiresPage: false, VideoModes: false
-           scanlines: true,
-           KeyBoard: false,
+           KeyBoard2: false,
            Parallel: false,
            DiskII: false,
            Printer: false,
@@ -376,7 +375,7 @@ var dumper = new ApplesoftDump(cpu);
 
 var drivelights = new DriveLights();
 var io = new Apple2IO(cpu, vm);
-var keyboard = new KeyBoard(io);
+var keyboard = new KeyBoard2(io);
 var lc = new LanguageCard(io, 0, rom);
 var parallel = new Parallel(io, 1, new Printer());
 var slinky = new RAMFactor(io, 2, 1024 * 1024);
@@ -393,11 +392,11 @@ cpu.addPageHandler(ram3);
 cpu.addPageHandler(io);
 cpu.addPageHandler(lc);
 
-io.addSlot(0, lc);
-io.addSlot(1, parallel);
-io.addSlot(2, slinky);
-io.addSlot(6, disk2);
-io.addSlot(7, clock);
+io.setSlot(0, lc);
+io.setSlot(1, parallel);
+io.setSlot(2, slinky);
+io.setSlot(6, disk2);
+io.setSlot(7, clock);
 
 var showFPS = false;
 
@@ -805,8 +804,9 @@ function _keyup(evt) {
 
 function updateScreen() {
     var green = $('#green_screen').prop('checked');
-    scanlines = $('#show_scanlines').prop('checked');
+    var scanlines = $('#show_scanlines').prop('checked');
 
+    vm.scanlines(scanlines);
     vm.green(green);
 }
 

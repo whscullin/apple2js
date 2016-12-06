@@ -15,7 +15,6 @@
   enhanced: false */
 /*exported LoresPage, HiresPage, VideoModes */
 
-
 var textMode = true;
 var mixedMode = false;
 var hiresMode = false;
@@ -586,7 +585,7 @@ function HiresPage(page)
                           b2 & 0x80, // 4
                           b3 & 0x80, // 5
                           b3 & 0x80, // 6
-                         0]; // 7
+                          0]; // 7
                     if (col > 0) {
                         c[0] = (bz & 0x78) >> 3;
                         hb[0] = bz & 0x80;
@@ -948,6 +947,10 @@ function VideoModes(gr,hgr,gr2,hgr2) {
             _grs[1].green(on);
             _hgrs[0].green(on);
             _hgrs[1].green(on);
+        },
+        scanlines: function(on) {
+            scanlines = on;
+            _refresh();
         }
     };
 }

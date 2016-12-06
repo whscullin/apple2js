@@ -9,13 +9,9 @@
  * implied warranty.
  */
 
-/*
- * Text Page 1 Drawing
- */
-
-/*globals allocMemPages: false,
-          base64_encode: false, base64_decode: false */
-/*exported LoresPage, HiresPage, VideoModes*/
+ /*globals allocMemPages: false,
+           base64_encode: false, base64_decode: false */
+ /*exported LoresPage, HiresPage, VideoModes*/
 
 var textMode = true;
 var mixedMode = true;
@@ -486,6 +482,10 @@ function VideoModes(gr,hgr,gr2,hgr2) {
             _grs[1].green(on);
             _hgrs[0].green(on);
             _hgrs[1].green(on);
+        },
+        scanlines: function(on) {
+            scanlines = on;
+            _refresh();
         }
     };
 }

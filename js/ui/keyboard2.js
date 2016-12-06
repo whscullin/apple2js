@@ -10,9 +10,9 @@
  */
 
 /*globals debug: false, toHex: false, reset: false */
-/*exported KeyBoard */
+/*exported KeyBoard2 */
 
-function KeyBoard(io) {
+function KeyBoard2(io) {
     // keycode: [plain, cntl, shift]
     var keymap = {
         // Most of these won't happen

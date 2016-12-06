@@ -58,21 +58,17 @@ function Parallel(io, slot, cbs) {
         0xff,0xf0,0x03,0xfe,0x38,0x07,0x70,0x84
     ];
 
-    LOC.IOREG += 0x10 * slot;
-
     function _access(off, val) {
-        if (off == LOC.IOREG && val && 'putChar' in cbs) {
-            cbs.putChar(val);
+        switch (off) {
+        case LOC.IOREG:
+            if (val && 'putChar' in cbs) {
+                cbs.putChar(val);
+            }
+            break;
         }
     }
 
     return {
-        start: function() {
-            return 0xc0 + slot;
-        },
-        end: function() {
-            return 0xc0 + slot;
-        },
         ioSwitch: function (off, val) {
             return _access(off, val);
         },
