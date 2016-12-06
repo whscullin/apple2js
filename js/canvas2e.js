@@ -9,6 +9,7 @@
  * implied warranty.
  */
 
+/*jshint browser:true */
 /*globals allocMemPages: false, debug: false,
   base64_encode: false, base64_decode: false,
   enhanced: false */
@@ -173,6 +174,7 @@ function LoresPage(page, charset)
                 base = addr - 0x400 * _page;
             return _buffer[bank][base];
         },
+
         _write: function(page, off, val, bank) {
             var addr = (page << 8) | off,
                 base = addr - 0x400 * _page,
@@ -321,6 +323,7 @@ function LoresPage(page, charset)
                 }
             }
         },
+
         refresh: function() {
             var addr = 0x400 * _page;
             _refreshing = true;
@@ -331,6 +334,7 @@ function LoresPage(page, charset)
             }
             _refreshing = false;
         },
+
         blink: function() {
             var addr = 0x400 * _page;
             _refreshing = true;
@@ -516,11 +520,14 @@ function HiresPage(page)
         },
 
         _start: function() { return (0x20 * _page); },
+
         _end: function() { return (0x020 * _page) + 0x1f; },
+
         _read: function(page, off, bank) {
             var addr = (page << 8) | off, base = addr - 0x2000 * _page;
             return _buffer[bank][base];
         },
+
         _write: function(page, off, val, bank) {
             function dim(c) {
                 return [c[0] * 0.75, c[1] * 0.75, c[2] * 0.75];
@@ -665,6 +672,7 @@ function HiresPage(page)
                     off = dx * 4 + dy * 280 * 4 * 2;
                     for (idx = 0; idx < 9; idx++, off += 8) {
                         val >>= 1;
+
                         if (v1) {
                             if (_greenMode) {
                                 color = _green;

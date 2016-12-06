@@ -10,8 +10,8 @@
  * implied warranty.
  */
 
-/*globals toHex: false, debug: false*/
 /*exported CPU6502 */
+/*globals debug: false, toHex: false */
 
 function CPU6502(options)
 {
@@ -1039,8 +1039,8 @@ function CPU6502(options)
                 if (key in ops) {
                     debug('overriding opcode ' + toHex(key));
                 }
+                ops[key] = cops[key];
             }
-            ops[key] = cops[key];
         }
     }
 
@@ -1379,14 +1379,14 @@ function CPU6502(options)
                 ' P=' + toHex(sr) +
                 ' S=' + toHex(sp) +
                 ' ' +
-                (sr & flags.N ? 'N' : '-') +
-                (sr & flags.V ? 'V' : '-') +
+                ((sr & flags.N) ? 'N' : '-') +
+                ((sr & flags.V) ? 'V' : '-') +
                 '-' +
-                (sr & flags.B ? 'B' : '-') +
-                (sr & flags.D ? 'D' : '-') +
-                (sr & flags.I ? 'I' : '-') +
-                (sr & flags.Z ? 'Z' : '-') +
-                (sr & flags.C ? 'C' : '-');
+                ((sr & flags.B) ? 'B' : '-') +
+                ((sr & flags.D) ? 'D' : '-') +
+                ((sr & flags.I) ? 'I' : '-') +
+                ((sr & flags.Z) ? 'Z' : '-') +
+                ((sr & flags.C) ? 'C' : '-');
         },
 
         read: function(page, off) {

@@ -21,8 +21,6 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
 
     var idx;
 
-    var _auxRom = 0x00;
-
     var _readPages = new Array(0x100);
     var _writePages = new Array(0x100);
     var _pages = new Array(0x100);
@@ -47,6 +45,69 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
 
     var _vbEnd = 0;
 
+    /*
+     * I/O Switch locations
+     */
+
+    var LOC = {
+        // 80 Column
+        _80STOREOFF: 0x00,
+        _80STOREON: 0x01,
+
+        // Aux RAM
+        RAMRDOFF: 0x02,
+        RAMRDON: 0x03,
+
+        RAMWROFF: 0x04,
+        RAMWRON: 0x05,
+
+        // Bank switched ROM
+        INTCXROMOFF: 0x06,
+        INTCXROMON: 0x07,
+        ALTZPOFF: 0x08,
+        ALTZPON: 0x09,
+        SLOTC3ROMOFF: 0x0A,
+        SLOTC3ROMON: 0x0B,
+
+        // Status
+        BSRBANK2: 0x11,
+        BSRREADRAM: 0x12,
+        RAMRD: 0x13,
+        RAMWRT: 0x14,
+        INTCXROM: 0x15,
+        ALTZP: 0x16,
+        SLOTC3ROM: 0x17,
+        _80STORE: 0x18,
+        VERTBLANK: 0x19,
+
+        PAGE1:    0x54, // select text/graphics page1 main/aux
+        PAGE2:    0x55, // select text/graphics page2 main/aux
+
+        // Bank 2
+        READBSR2: 0x80,
+        WRITEBSR2: 0x81,
+        OFFBSR2: 0x82,
+        READWRBSR2: 0x83,
+
+        // Shadow Bank 2
+        _READBSR2: 0x84,
+        _WRITEBSR2: 0x85,
+        _OFFBSR2: 0x86,
+        _READWRBSR2: 0x87,
+
+        // Bank 1
+        READBSR1: 0x88,
+        WRITEBSR1: 0x89,
+        OFFBSR1: 0x8a,
+        READWRBSR1: 0x8b,
+
+        // Shadow Bank 1
+        _READBSR1: 0x8c,
+        _WRITEBSR1: 0x8d,
+        _OFFBSR1: 0x8e,
+        _READWRBSR1: 0x8f
+    };
+
     function _initSwitches() {
         _bank1 = true;
         _readbsr = false;
@@ -64,28 +125,69 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
     }
 
     function _debug() {
-        // debug.apply(arguments);
+        debug.apply(arguments);
     }
 
     var _last = 0x00;
 
-    function EmptySlots() {
+    function Switches() {
+        var locs = {};
+
+        for (var loc in LOC) {
+            if (LOC.hasOwnProperty(loc)) {
+                locs[LOC[loc]] = loc;
+            }
+        }
+
         return {
-            start: function slot_start() {
-                return 0xC1;
+            start: function() {
+                return 0xC0;
             },
-            end: function slot_end() {
-                return 0xCF;
+            end: function() {
+                return 0xC0;
             },
-            read: function slot_read() {
-                return 0x00;
+            read: function(page, off) {
+                var result;
+                if (off in locs) {
+                    result = _access(off);
+                } else {
+                    result = io.ioSwitch(off);
+                }
+                return result;
             },
-            write: function slot_write() {
+            write: function(page, off, val) {
+                if (off in locs) {
+                    _access(off, val);
+                } else {
+                    io.ioSwitch(off, val);
+                }
             }
         };
     }
 
-    var emptyslots = new EmptySlots();
+    function AuxRom() {
+        return {
+            start: function() {
+                return 0xC1;
+            },
+            end: function() {
+                return 0xCF;
+            },
+            read: function(page, off) {
+                var result;
+                if (page == 0xc3) {
+                    result = io.read(page, off);
+                } else {
+                    result = rom.read(page, off);
+                }
+                return result;
+            },
+            write: function() {}
+        };
+    }
+
+    var switches = new Switches();
+    var auxRom = new AuxRom();
 
     var mem00_01 = [new RAM(0x0, 0x1), new RAM(0x0, 0x1)];
     var mem02_03 = [new RAM(0x2, 0x3), new RAM(0x2, 0x3)];
@@ -95,8 +197,8 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
     var mem20_3F = [hires1.bank0(), hires1.bank1()];
     var mem40_5F = [hires2.bank0(), hires2.bank1()];
     var mem60_BF = [new RAM(0x60,0xBF), new RAM(0x60,0xBF)];
-    var memC0_C0 = [io];
-    // var memC1_CF = [emptyslots, rom];
+    var memC0_C0 = [switches];
+    var memC1_CF = [io, auxRom];
     var memD0_DF = [rom,
                     new RAM(0xD0,0xDF), new RAM(0xD0,0xDF),
                     new RAM(0xD0,0xDF), new RAM(0xD0,0xDF)];
@@ -161,7 +263,7 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
     _writePages[idx] = _pages[idx][0];
     // Slots
     for (idx = 0xc1; idx < 0xd0; idx++) {
-        _pages[idx] = [emptyslots, rom]; // memC1_CF;
+        _pages[idx] = memC1_CF;
         _readPages[idx] = _pages[idx][0];
         _writePages[idx] = _pages[idx][0];
     }
@@ -177,69 +279,6 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
         _readPages[idx] = _pages[idx][0];
         _writePages[idx] = _pages[idx][0];
     }
-
-    /*
-     * I/O Switch locations
-     */
-
-    var LOC = {
-        // 80 Column
-        _80STOREOFF: 0x00,
-        _80STOREON: 0x01,
-
-        // Aux RAM
-        RAMRDOFF: 0x02,
-        RAMRDON: 0x03,
-
-        RAMWROFF: 0x04,
-        RAMWRON: 0x05,
-
-        // Bank switched ROM
-        INTCXROMOFF: 0x06,
-        INTCXROMON: 0x07,
-        ALTZPOFF: 0x08,
-        ALTZPON: 0x09,
-        SLOTC3ROMOFF: 0x0A,
-        SLOTC3ROMON: 0x0B,
-
-        // Status
-        BSRBANK2: 0x11,
-        BSRREADRAM: 0x12,
-        RAMRD: 0x13,
-        RAMWRT: 0x14,
-        INTCXROM: 0x15,
-        ALTZP: 0x16,
-        SLOTC3ROM: 0x17,
-        _80STORE: 0x18,
-        VERTBLANK: 0x19,
-
-        PAGE1:    0x54, // select text/graphics page1 main/aux
-        PAGE2:    0x55, // select text/graphics page2 main/aux
-
-        // Bank 2
-        READBSR2: 0x80,
-        WRITEBSR2: 0x81,
-        OFFBSR2: 0x82,
-        READWRBSR2: 0x83,
-
-        // Shadow Bank 2
-        _READBSR2: 0x84,
-        _WRITEBSR2: 0x85,
-        _OFFBSR2: 0x86,
-        _READWRBSR2: 0x87,
-
-        // Bank 1
-        READBSR1: 0x88,
-        WRITEBSR1: 0x89,
-        OFFBSR1: 0x8a,
-        READWRBSR1: 0x8b,
-
-        // Shadow Bank 1
-        _READBSR1: 0x8c,
-        _WRITEBSR1: 0x8d,
-        _OFFBSR1: 0x8e,
-        _READWRBSR1: 0x8f
-    };
 
     function _updateBanks() {
         if (_auxRamRead) {
@@ -549,7 +588,7 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
         case LOC._80STORE: // 0xC018
             result = _80store ? 0x80 : 0x00;
             break;
-        case LOC.VERTBLANK: // 0xC018
+        case LOC.VERTBLANK: // 0xC019
             // result = cpu.cycles() % 20 < 5 ? 0x80 : 0x00;
             result = (cpu.cycles() < _vbEnd) ? 0x80 : 0x00;
             break;
@@ -577,16 +616,10 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
             lores1.start();
             lores2.start();
 
-            // Do us afterward because we override some of the above
-            io.registerSwitches(this, LOC);
-
             return 0x00;
         },
         end: function mmu_end() {
             return 0xff;
-        },
-        ioSwitch: function mmu_ioswitch(off, val) {
-            return _access(off, val);
         },
         reset: function() {
             _initSwitches();
@@ -603,24 +636,6 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
         write: function mmu_write(page, off, val) {
             _writePages[page].write(page, off, val);
         },
-        addSlot: function mmu_addSlot(slot, card) {
-            if (slot == 3) {
-                _pages[0xc0 + slot][1] = card;
-            }
-            _pages[0xc0 + slot][0] = card;
-            card.start();
-        },
-        auxRom: function mmu_auxRom(slot, rom) {
-            var idx;
-            if (_auxRom != slot) {
-                _debug("Slot " + slot + " expansion rom added");
-                _auxRom = slot;
-                for (idx = 0xc8; idx < 0xd0; idx++) {
-                    _pages[idx][0] = rom;
-                }
-                _updateBanks();
-            }
-        },
         resetVB: function mmu_resetVB() {
             _vbEnd = cpu.cycles() + 1000;
         },
@@ -631,7 +646,6 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
                 bank1: _bank1,
                 last: _last,
 
-                auxRom: _auxRom,
                 intcxrom: _intcxrom,
                 slot3rom: _slot3rom,
                 auxRamRead: _auxRamRead,
@@ -655,7 +669,6 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
             _writebsr = state.writebsr;
             _bank1 = state.bank1;
 
-            _auxRom = state.auxRom;
             _intcxrom = state.intcxrom;
             _slot3rom = state.slot3rom;
             _auxRamRead = state.auxRamRead;

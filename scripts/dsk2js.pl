@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 # Copyright 2010-2016 Will Scullin <scullin@scullinsteel.com>
-# 
+#
 # Permission to use, copy, modify, distribute, and sell this software and its
 # documentation for any purpose is hereby granted without fee, provided that
 # the above copyright notice appear in all copies and that both that
@@ -17,9 +17,9 @@ $Getopt::Std::STANDARD_HELP_VERSION = 1;
 my %opts;
 getopts('rn:c:t:', \%opts);
 
-sub HELP_MESSAGE() { 
-    my $fh = shift; 
-    print $fh "dsk2js.pl [-c category] [-n name] [-t type] imagefile\n" 
+sub HELP_MESSAGE() {
+    my $fh = shift;
+    print $fh "dsk2js.pl [-c category] [-n name] [-t type] imagefile\n"
 };
 sub VERSION_MESSAGE() { my $fh = shift; print $fh "Version 1.0\n" };
 
@@ -102,7 +102,7 @@ if ($ext eq '2mg') {
 my $sector = 0;
 my $track = 0;
 
-print "loadJSON({\n";
+print "{\n";
 print "  \"name\": \"$name\",\n";
 print "  \"type\": \"$ext\",\n";
 print "  \"category\": \"$category\",\n";
@@ -127,6 +127,6 @@ for ($track = 0; $track < 0x23; $track++) {
     }
     print "\n  ]";
 }
-print "\n]});\n";
+print "\n]}\n";
 
 close(DISK);

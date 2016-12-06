@@ -1,27 +1,29 @@
-/* globals debug: false, gup: false, hup: false
+/* globals debug: false, gup: false, hup: false, toHex: false,
            CPU6502: false,
            RAM: false,
-           Apple2ROM: false
+           Apple2ROM: false, IntBASIC: false, OriginalROM: false,
            apple2_charset: false,
            Apple2IO: false
            LoresPage: false, HiresPage: false, VideoModes: false
+           scanlines: true,
            KeyBoard: false,
            Parallel: false,
            DiskII: false,
-           RAMFactor: false,
            Printer: false,
            LanguageCard: false,
+           RAMFactor: false,
            Thunderclock: false,
            Prefs: false,
            disk_index: false,
            initAudio: false, enableSound: false,
            initGamepad: false, processGamepad: false, gamepad: false,
-           ApplesoftDump: false
+           ApplesoftDump: false, SYMBOLS: false
 */
 /* exported openLoad, openSave, doDelete,
-            selectCategory, selectDisk, clickDisk, loadJSON,
+            selectCategory, selectDisk, clickDisk,
             updateJoystick,
-            pauseRun, step
+            pauseRun, step,
+            restoreState, saveState,
             dumpProgram, PageDebug
 */
 
@@ -34,6 +36,47 @@ var renderedFrames = 0, lastFrames = 0;
 var paused = false;
 
 var hashtag;
+
+var DEBUG = false;
+var TRACE = false;
+var MAX_TRACE = 256;
+var trace = [];
+
+/*
+ * Page viewer
+ */
+
+function PageDebug(page)
+{
+    var _page = page;
+
+    function _init() {
+        var r, c;
+        var row = $('<tr />').appendTo('#page' + toHex(_page));
+        $('<th>\\</th>').appendTo(row);
+        for (c = 0; c < 16; c++) {
+            $('<th>' + toHex(c) + '</th>').appendTo(row);
+        }
+        for (r = 0; r < 16; r++) {
+            row = $('<tr />').appendTo('#page' + toHex(_page));
+            $('<th>' + toHex(r * 16) + '</th>').appendTo(row);
+            for (c = 0; c < 16; c++) {
+                $('<td>--</td>').appendTo(row).attr('id', 'page' + toHex(_page) + '-' + toHex(r * 16 + c));
+            }
+        }
+    }
+
+    _init();
+
+    return {
+        start: function() { return _page; },
+        end: function() { return _page; },
+        read: null,
+        write: function(page, off, val) {
+            $('#page' + toHex(page) + '-' + toHex(off)).text(toHex(val));
+        }
+    };
+}
 
 var disk_categories = {'Local Saves': []};
 var disk_sets = {};
@@ -48,8 +91,8 @@ function DriveLights()
                                     on ? 'url(css/red-on-16.png)' :
                                          'url(css/red-off-16.png)');
         },
-        dirty: function(drive, dirty) {
-            $('#disksave' + drive).button('option', 'disabled', !dirty);
+        dirty: function() {
+            // $('#disksave' + drive).button('option', 'disabled', !dirty);
         },
         label: function(drive, label) {
             if (label) {
@@ -77,12 +120,11 @@ function DriveLights()
 var DISK_TYPES = ['dsk','do','po','raw','nib','2mg'];
 var TAPE_TYPES = ['wav','aiff','aif','mp3'];
 
-var _saveDrive = 1;
-var _loadDrive = 1;
+var _currentDrive = 1;
 
 function openLoad(drive, event)
 {
-    _loadDrive = drive;
+    _currentDrive = parseInt(drive, 10);
     if (event.metaKey) {
         openLoadHTTP(drive);
     } else {
@@ -95,11 +137,18 @@ function openLoad(drive, event)
 
 function openSave(drive, event)
 {
-    _saveDrive = drive;
+    _currentDrive = parseInt(drive, 10);
+
+    var mimetype = 'application/octet-stream';
+    var data = disk2.getBinary(drive);
+    var a = $('#local_save_link');
+
+    var blob = new Blob([data], { 'type': mimetype });
+    a.attr('href', window.URL.createObjectURL(blob));
+    a.attr('download', drivelights.label(drive) + '.dsk');
+
     if (event.metaKey) {
         dumpDisk(drive);
-    } else if (event.altKey) {
-        openSaveLocal(drive);
     } else {
         $('#save_name').val(drivelights.label(drive));
         $('#save').dialog('open');
@@ -108,16 +157,30 @@ function openSave(drive, event)
 
 var loading = false;
 
-function loadAjax(url) {
+function loadAjax(drive, url) {
     loading = true;
     $('#loading').dialog('open');
 
-    $.ajax({ url: url,
-             cache: false,
-             dataType: 'jsonp',
-             jsonp: false,
-             global: false
-           });
+    $.ajax({
+        url: url,
+        dataType: 'json',
+        modifiedSince: true,
+        error: function(xhr, status, error) {
+            alert(error || status);
+            $('#loading').dialog('close');
+            loading = false;
+        },
+        success: function(data) {
+            if (data.type == 'binary') {
+                loadBinary(drive, data);
+            } else if ($.inArray(data.type, DISK_TYPES) >= 0) {
+                loadDisk(drive, data);
+            }
+            initGamepad(data.gamepad);
+            $('#loading').dialog('close');
+            loading = false;
+        }
+    });
 }
 
 function doLoad() {
@@ -132,7 +195,7 @@ function doLoad() {
 
     var files = $('#local_file').prop('files');
     if (files.length == 1) {
-        doLoadLocal();
+        doLoadLocal(_currentDrive);
     } else if (url) {
         var filename;
         $('#load').dialog('close');
@@ -141,22 +204,26 @@ function doLoad() {
             if (filename == '__manage') {
                 openManage();
             } else {
-                loadLocalStorage(_loadDrive, filename);
+                loadLocalStorage(_currentDrive, filename);
             }
         } else {
             var r1 = /json\/disks\/(.*).json$/.exec(url);
-            if (r1 && _loadDrive == 1) {
+            if (r1) {
                 filename = r1[1];
-                document.location.hash = filename;
+            } else {
+                filename = url;
             }
-            loadAjax(url);
+            var parts = document.location.hash.split('|');
+            parts[_currentDrive - 1] = filename;
+            document.location.hash = parts.join('|');
+            loadAjax(_currentDrive, url);
         }
     }
 }
 
 function doSave() {
     var name = $('#save_name').val();
-    saveLocalStorage(_saveDrive, name);
+    saveLocalStorage(_currentDrive, name);
     $('#save').dialog('close');
 }
 
@@ -166,14 +233,14 @@ function doDelete(name) {
     }
 }
 
-function doLoadLocal() {
+function doLoadLocal(drive) {
     var files = $('#local_file').prop('files');
     if (files.length == 1) {
         var file = files[0];
         var parts = file.name.split('.');
         var ext = parts[parts.length - 1].toLowerCase();
         if ($.inArray(ext, DISK_TYPES) >= 0) {
-            doLoadLocalDisk(file);
+            doLoadLocalDisk(drive, file);
         } else if ($.inArray(ext, TAPE_TYPES) >= 0) {
             doLoadLocalTape(file);
         } else {
@@ -183,13 +250,13 @@ function doLoadLocal() {
     }
 }
 
-function doLoadLocalDisk(file) {
+function doLoadLocalDisk(drive, file) {
     var fileReader = new FileReader();
     fileReader.onload = function() {
         var parts = file.name.split('.');
         var name = parts[0], ext = parts[parts.length - 1].toLowerCase();
-        if (disk2.setBinary(_saveDrive, name, ext, this.result)) {
-            drivelights.label(_saveDrive, name);
+        if (disk2.setBinary(drive, name, ext, this.result)) {
+            drivelights.label(drive, name);
             $('#load').dialog('close');
             initGamepad();
         }
@@ -251,7 +318,7 @@ function doLoadLocalTape(file) {
     fileReader.readAsArrayBuffer(file);
 }
 
-function doLoadHTTP(_url) {
+function doLoadHTTP(drive, _url) {
     var url = _url || $('#http_url').val();
     if (url) {
         var req = new XMLHttpRequest();
@@ -262,8 +329,8 @@ function doLoadHTTP(_url) {
             var parts = url.split(/[\/\.]/);
             var name = decodeURIComponent(parts[parts.length - 2]);
             var ext = parts[parts.length - 1].toLowerCase();
-            if (disk2.setBinary(_saveDrive, name, ext, req.response)) {
-                drivelights.label(_saveDrive, name);
+            if (disk2.setBinary(drive, name, ext, req.response)) {
+                drivelights.label(drive, name);
                 $('#http_load').dialog('close');
                 initGamepad();
             }
@@ -273,21 +340,8 @@ function doLoadHTTP(_url) {
 }
 
 function openLoadHTTP(drive) {
-    _saveDrive = drive;
+    _currentDrive = parseInt(drive, 10);
     $('#http_load').dialog('open');
-}
-
-function openSaveLocal(drive) {
-    _saveDrive = drive;
-    var mimetype = 'application/octet-stream';
-    var data = disk2.getBinary(drive);
-    var a = $('#local_save_link');
-
-    var blob = new Blob([data], { 'type': mimetype });
-    a.attr('href', window.URL.createObjectURL(blob));
-    a.attr('download', drivelights.label(drive) + '.dsk');
-
-    $('#local_save').dialog('open');
 }
 
 function openManage() {
@@ -307,23 +361,27 @@ var hgr2 = new HiresPage(2);
 var gr = new LoresPage(1, apple2_charset);
 var gr2 = new LoresPage(2, apple2_charset);
 
-var rom = new Apple2ROM();
-var dumper = new ApplesoftDump(ram2);
+var romVersion = prefs.readPref('computer_type');
+var rom;
+if (romVersion == 'apple2') {
+    rom = new IntBASIC();
+} else if (romVersion == 'original') {
+    rom = new OriginalROM();
+} else {
+    rom = new Apple2ROM();
+}
+
 var vm = new VideoModes(gr, hgr, gr2, hgr2);
-var mmu = {
-    auxRom: function(slot, rom) {
-        cpu.addPageHandler(rom);
-    }
-};
+var dumper = new ApplesoftDump(cpu);
 
 var drivelights = new DriveLights();
 var io = new Apple2IO(cpu, vm);
 var keyboard = new KeyBoard(io);
-var parallel = new Parallel(io, new Printer(), 1);
-var disk2 = new DiskII(io, drivelights, 6);
-var slinky = new RAMFactor(mmu, io, 2, 1024 * 1024);
-var clock = new Thunderclock(mmu, io, 7);
-var lc = new LanguageCard(io, rom);
+var lc = new LanguageCard(io, 0, rom);
+var parallel = new Parallel(io, 1, new Printer());
+var slinky = new RAMFactor(io, 2, 1024 * 1024);
+var disk2 = new DiskII(io, 6, drivelights);
+var clock = new Thunderclock(io, 7);
 
 cpu.addPageHandler(ram1);
 cpu.addPageHandler(gr);
@@ -332,13 +390,14 @@ cpu.addPageHandler(ram2);
 cpu.addPageHandler(hgr);
 cpu.addPageHandler(hgr2);
 cpu.addPageHandler(ram3);
-
-cpu.addPageHandler(lc);
 cpu.addPageHandler(io);
-cpu.addPageHandler(parallel);
-cpu.addPageHandler(slinky);
-cpu.addPageHandler(disk2);
-cpu.addPageHandler(clock);
+cpu.addPageHandler(lc);
+
+io.addSlot(0, lc);
+io.addSlot(1, parallel);
+io.addSlot(2, slinky);
+io.addSlot(6, disk2);
+io.addSlot(7, clock);
 
 var showFPS = false;
 
@@ -403,7 +462,7 @@ function step()
 
 var accelerated = false;
 
-function updateSpeed()
+function updateCPU()
 {
     accelerated = $('#accelerator_toggle').prop('checked');
     kHz = accelerated ? 4092 : 1023;
@@ -429,6 +488,7 @@ function run(pc) {
     }
 
     var ival = 30;
+
     var now, last = Date.now();
     var runFn = function() {
         now = Date.now();
@@ -447,9 +507,23 @@ function run(pc) {
                 processHash(hash);
             }
         }
-
         if (!loading) {
-            cpu.stepCycles(step);
+            if (DEBUG) {
+                cpu.stepCyclesDebug(TRACE ? 1 : step, function() {
+                    var line = cpu.dumpRegisters() + ' ' +
+                        cpu.dumpPC(undefined, SYMBOLS);
+                    if (TRACE) {
+                        debug(line);
+                    } else {
+                        trace.push(line);
+                        if (trace.length > MAX_TRACE) {
+                            trace.shift();
+                        }
+                    }
+                });
+            } else {
+                cpu.stepCycles(step);
+            }
             vm.blit();
             io.sampleTick();
         }
@@ -479,6 +553,65 @@ function reset()
     cpu.reset();
 }
 
+var state = null;
+
+function storeStateLocal() {
+    window.localStorage['apple2.state'] = JSON.stringify(state);
+}
+
+function restoreStateLocal() {
+    var data = window.localStorage['apple2.state'];
+    if (data) {
+        state = JSON.parse(data);
+    }
+}
+
+function saveState() {
+    if (state && !window.confirm('Overwrite Saved State?')) {
+        return;
+    }
+
+    state = {
+        cpu: cpu.getState(),
+        ram1: ram1.getState(),
+        ram2: ram2.getState(),
+        ram3: ram3.getState(),
+        io: io.getState(),
+        lc: lc.getState(),
+        vm: vm.getState(),
+        disk2: disk2.getState(),
+        drivelights: drivelights.getState()
+    };
+    if (slinky) {
+        state.slinky = slinky.getState();
+    }
+
+    if (window.localStorage) {
+        storeStateLocal();
+    }
+}
+
+function restoreState() {
+    if (window.localStorage) {
+        restoreStateLocal();
+    }
+    if (!state) {
+        return;
+    }
+    cpu.setState(state.cpu);
+    ram1.setState(state.ram1);
+    ram2.setState(state.ram2);
+    ram3.setState(state.ram3);
+    io.setState(state.io);
+    lc.setState(state.lc);
+    vm.setState(state.vm);
+    disk2.setState(state.disk2);
+    drivelights.setState(state.drivelights);
+    if (slinky && state.slinky) {
+        slinky.setState(state.slinky);
+    }
+}
+
 function loadBinary(bin) {
     stop();
     for (var idx = 0; idx < bin.length; idx++) {
@@ -499,7 +632,7 @@ function selectCategory() {
             }
             var option = $('<option />').val(file.filename).text(name)
                 .appendTo('#disk_select');
-            if (disk_cur_name[_loadDrive] == name) {
+            if (disk_cur_name[_currentDrive] == name) {
                 option.attr('selected', 'selected');
             }
         }
@@ -514,7 +647,7 @@ function clickDisk() {
     doLoad();
 }
 
-function loadDisk(disk) {
+function loadDisk(drive, disk) {
     var name = disk.name;
     var category = disk.category;
 
@@ -522,23 +655,12 @@ function loadDisk(disk) {
         name += ' - ' + disk.disk;
     }
 
-    disk_cur_cat[_loadDrive] = category;
-    disk_cur_name[_loadDrive] = name;
+    disk_cur_cat[drive] = category;
+    disk_cur_name[drive] = name;
 
-    drivelights.label(_loadDrive, name);
-    disk2.setDisk(_loadDrive, disk);
+    drivelights.label(drive, name);
+    disk2.setDisk(drive, disk);
     initGamepad(disk.gamepad);
-}
-
-function loadJSON(data) {
-    if (data.type == 'binary') {
-        loadBinary(data);
-    } else if ($.inArray(data.type, DISK_TYPES) >= 0) {
-        loadDisk(data);
-    }
-    initGamepad(data.gamepad);
-    $('#loading').dialog('close');
-    loading = false;
 }
 
 /*
@@ -608,16 +730,20 @@ function loadLocalStorage(drive, name) {
 }
 
 function processHash(hash) {
-    if (hash.indexOf('://') > 0) {
-        var parts = hash.split('.');
-        var ext = parts[parts.length - 1].toLowerCase();
-        if (ext == 'json') {
-            loadAjax(hash);
+    var files = hash.split('|');
+    for (var idx = 0; idx < files.length; idx++) {
+        var file = files[idx];
+        if (file.indexOf('://') > 0) {
+            var parts = file.split('.');
+            var ext = parts[parts.length - 1].toLowerCase();
+            if (ext == 'json') {
+                loadAjax(idx + 1, file);
+            } else {
+                doLoadHTTP(idx + 1, file);
+            }
         } else {
-            doLoadHTTP(hash);
+            loadAjax(idx + 1, 'json/disks/' + file + '.json');
         }
-    } else {
-        loadAjax('json/disks/' + hash + '.json');
     }
 }
 
@@ -626,6 +752,14 @@ function processHash(hash) {
  */
 
 function _keydown(evt) {
+    if (!focused || (!evt.metaKey || evt.ctrlKey)) {
+        evt.preventDefault();
+
+        var key = keyboard.mapKeyEvent(evt);
+        if (key != 0xff) {
+            io.keyDown(key, evt.shiftKey);
+        }
+    }
     if (evt.keyCode === 112) { // F1 - Reset
         cpu.reset();
     } else if (evt.keyCode === 113) { // F2 - Full Screen
@@ -647,36 +781,31 @@ function _keydown(evt) {
                 elem.mozRequestFullScreen();
             }
         }
+    } else if (evt.keyCode === 114) { // F3
+        io.keyDown(0x1b);
     } else if (evt.keyCode == 16) { // Shift
         keyboard.shiftKey(true);
         io.buttonDown(2);
     } else if (evt.keyCode == 17) { // Control
         keyboard.controlKey(true);
-    } else if (!focused && (!evt.metaKey || evt.ctrlKey)) {
-        evt.preventDefault();
-
-        var key = keyboard.mapKeyEvent(evt);
-        if (key != 0xff) {
-            io.keyDown(key);
-        }
     }
 }
 
 function _keyup(evt) {
+    if (!focused)
+        io.keyUp();
+
     if (evt.keyCode == 16) { // Shift
         keyboard.shiftKey(false);
         io.buttonUp(2);
     } else if (evt.keyCode == 17) { // Control
         keyboard.controlKey(false);
-    } else {
-        if (!focused) {
-            io.keyUp();
-        }
     }
 }
 
 function updateScreen() {
     var green = $('#green_screen').prop('checked');
+    scanlines = $('#show_scanlines').prop('checked');
 
     vm.green(green);
 }
@@ -774,21 +903,30 @@ $(function() {
     keyboard.create($('#keyboard'));
 
     if (prefs.havePrefs()) {
-        $('input[type=checkbox]').each(function() {
+        $('#options input[type=checkbox]').each(function() {
             var val = prefs.readPref(this.id);
             if (val)
                 this.checked = JSON.parse(val);
         }).change(function() {
             prefs.writePref(this.id, JSON.stringify(this.checked));
         });
+        $('#options select').each(function() {
+            var val = prefs.readPref(this.id);
+            if (val)
+                this.value = val;
+        }).change(function() {
+            prefs.writePref(this.id, this.value);
+        });
     }
 
-    reset();
+    if (romVersion != 'original') {
+        reset();
+    }
     run();
     setInterval(updateKHz, 1000);
     updateSound();
     updateScreen();
-    updateSpeed();
+    updateCPU();
 
     var cancel = function() { $(this).dialog('close'); };
     $('#loading').dialog({ autoOpen: false, modal: true });

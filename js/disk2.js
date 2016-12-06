@@ -10,12 +10,12 @@
  */
 
 /*exported DiskII */
-/*globals bytify, each: false, extend: false
-          base64_encode, base64_decode
-          Uint8Array
+/*globals bytify: false, each: false, extend: false, debug: false
+          base64_decode: false, base64_encode: false
+          Uint8Array: false
 */
 
-function DiskII(io, callbacks, slot)
+function DiskII(io, slot, callbacks)
 {
     'use strict';
 
@@ -111,6 +111,7 @@ function DiskII(io, callbacks, slot)
     }
 
     function _init() {
+        debug('Disk ][ in slot', slot);
         each(LOC, function(key) {
             LOC[key] += slot * 0x10;
         });
@@ -358,11 +359,15 @@ function DiskII(io, callbacks, slot)
                     }
                     for (kdx = 0, jdx = 0x55; kdx < 0x100; kdx++) {
                         data[kdx] <<= 1;
-                        if (data2[jdx] & 0x01) data[kdx] |= 0x01;
+                        if ((data2[jdx] & 0x01) !== 0) {
+                            data[kdx] |= 0x01;
+                        }
                         data2[jdx] >>= 1;
 
                         data[kdx] <<= 1;
-                        if (data2[jdx] & 0x01) data[kdx] |= 0x01;
+                        if ((data2[jdx] & 0x01) !== 0) {
+                            data[kdx] |= 0x01;
+                        }
                         data2[jdx] >>= 1;
 
                         if (--jdx < 0) jdx = 0x55;
@@ -492,7 +497,7 @@ function DiskII(io, callbacks, slot)
         if (callbacks.dirty) { callbacks.dirty(_drive, dirty); }
     }
 
-    var diskII_16 = [
+    var diskII = [
         0xa2,0x20,0xa0,0x00,0xa2,0x03,0x86,0x3c,
         0x8a,0x0a,0x24,0x3c,0xf0,0x10,0x05,0x3c,
         0x49,0xff,0x29,0x7e,0xb0,0x08,0x4a,0xd0,
@@ -561,25 +566,28 @@ function DiskII(io, callbacks, slot)
         0x03,0x4c,0x01,0x03,0x4c,0x2d,0xff,0xff
     ];
 */
-    var diskII = diskII_16;
 
     _init();
 
     return {
         start: function disk2_start() {
-            io.registerSwitches(this, LOC);
             return 0xc0 + slot;
         },
+
         end: function disk2_end() {
             return 0xc0 + slot;
         },
+
         ioSwitch: function disk2_ioSwitch(off, val) {
             return _access(off, val);
         },
+
         read: function disk2_read(page, off) {
             return diskII[off];
         },
+
         write: function disk2_write() {},
+
         reset: function disk2_reset() {
             if (_on) {
                 _writeMode = false;
@@ -587,6 +595,7 @@ function DiskII(io, callbacks, slot)
                 callbacks.driveLight(_drive, false);
             }
         },
+
         getState: function disk2_getState() {
             function getDriveState(drive) {
                 var result = {
@@ -613,7 +622,9 @@ function DiskII(io, callbacks, slot)
                 drive: _drive
             };
             _drives.forEach(function (drive, idx) {
-                result.drives[idx] = getDriveState(drive);
+                var _drive = result.drives[idx] = getDriveState(drive);
+                callbacks.driveLight(idx, _drive.on);
+                callbacks.dirty(idx, _drive.dirty);
             });
             return result;
         },
@@ -635,7 +646,7 @@ function DiskII(io, callbacks, slot)
                 return result;
             }
             state.drives.forEach(function(drive, idx) {
-                _drives[idx] = setDriveState(state);
+                _drives[idx] = setDriveState(drive);
             });
             _skip = state.skip;
             _latch = state.latch;
@@ -741,8 +752,8 @@ function DiskII(io, callbacks, slot)
                 var flags =
                     prefix[0x10] | (prefix[0x11] << 8) |
                     (prefix[0x12] << 16) | (prefix[0x13] << 24);
-                _cur.readOnly = (flags & 0x80000000) ? true : false;
-                if (flags & 0x10) {
+                _cur.readOnly = (flags & 0x80000000) !== 0;
+                if ((flags & 0x10) !== 0) {
                     _cur.volume = flags & 0xff;
                 } else {
                     _cur.volume = 254;

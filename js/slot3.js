@@ -9,24 +9,11 @@
  * implied warranty.
  */
 
-/*exported Slot3*/
+/*exported Slot3 */
 
-function Slot3(mmu, rom)
+function Slot3(io, slot, rom)
 {
     'use strict';
-
-    var auxRomFn = {
-        start: function auxRom_start() {
-            return 0xc8;
-        },
-        end: function auxRom_end() {
-            return 0xcf;
-        },
-        read: function auxRom_read(page, off) {
-            return rom.read(page, off);
-        },
-        write: function auxRom_write() {}
-    };
 
     return {
         start: function slot3_start() {
@@ -36,11 +23,9 @@ function Slot3(mmu, rom)
             return 0xc3;
         },
         read: function slot3_read(page, off) {
-            mmu.auxRom(0x3, auxRomFn);
             return rom.read(page, off);
         },
         write: function slot3_write() {
-            mmu.auxRom(0x3, auxRomFn);
         }
     };
 

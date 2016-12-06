@@ -134,7 +134,17 @@
     <h3>CPU</h3>
     <ul>
       <li>
-        <input type="checkbox" id="accelerator_toggle" onclick="updateSpeed()"/>
+        <select id="computer_type" value="apple2plus" onchange="updateCPU()">
+          <option value="apple2plus">Apple ][+</option>
+          <option value="apple2">Autostart Apple ][</option>
+          <option value="original">Apple ][</option>
+        <select>
+        <label for="computer_type">
+          Type
+        </label>
+      </li>
+      <li>
+        <input type="checkbox" id="accelerator_toggle" onclick="updateCPU()"/>
         <label for="accelerator_toggle">
           Accelerated CPU
         </label>
@@ -142,6 +152,13 @@
     </ul>
     <h3>Joystick</h3>
     <ul>
+      <li>
+        <input type="checkbox" id="disable_mouse"
+               onclick="updateJoystick()" />
+        <label for="disable_mouse">
+          Disable Mouse Joystick
+        </label>
+      </li>
       <li>
         <input type="checkbox" id="flip_x"
                onclick="updateJoystick()" />
@@ -194,11 +211,24 @@
   </div>
   <div id="save" title="Save Disk">
     <form action="#" onsubmit="return false;">
+      <b>Save to Browser</a>
+      <br /><br />
       Save Name: <input type="text" name="name" id="save_name"
                   style="width: 200px" />
     </form>
+    <hr />
+    <div>
+      <b>Download to Local Disk</b>
+      <br /><br />
+      <a id="local_save_link" class="button">Download</a>
+    </div>
   </div>
   <div id="manage" title="Manage Disks">
+  </div>
+  <div id="http_load" title="Load URL">
+    <form action="#">
+      <input type="text" id="http_url" style="width: 500px"/>
+    </form>
   </div>
   <div id="load" title="Load Disk">
     <table>
