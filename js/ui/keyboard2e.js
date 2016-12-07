@@ -1,4 +1,3 @@
-
 /* Copyright 2010-2016 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
@@ -12,9 +11,9 @@
 
 /*jshint jquery: true, browser: true */
 /*globals debug: false, toHex: false */
-/*exported KeyBoard */
+/*exported KeyBoard2e */
 
-function KeyBoard(io) {
+function KeyBoard2e(io) {
     // keycode: [plain, cntl, shift]
     var keymap = {
         // Most of these won't happen

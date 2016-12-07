@@ -10,7 +10,7 @@
  */
 
 /*eslint no-console: 0*/
-/*exported allocMemPages, bytify, debug, each extend, gup, hup, toBinary, toHex
+/*exported allocMemPages, bytify, debug, each, gup, hup, toBinary, toHex
 */
 /*global Uint8Array: false */
 
@@ -43,13 +43,6 @@ function bytify(ary) {
         result = new Uint8Array(ary);
     }
     return result;
-}
-
-function extend(ary1, ary2) {
-    ary2.forEach(function(val) {
-        ary1.push(val);
-    });
-    return ary1;
 }
 
 function debug() {

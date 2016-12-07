@@ -4,13 +4,11 @@
            apple2e_charset: false,
            Apple2IO: false
            LoresPage: false, HiresPage: false, VideoModes: false,
-           scanlines: true,
-           KeyBoard: false,
+           KeyBoard2e: false,
            Parallel: false,
            DiskII: false,
            Printer: false,
            MMU: false,
-           Slot3: false,
            RAMFactor: false,
            Thunderclock: false,
            Prefs: false,
@@ -371,7 +369,7 @@ var dumper = new ApplesoftDump(cpu);
 
 var drivelights = new DriveLights();
 var io = new Apple2IO(cpu, vm);
-var keyboard = new KeyBoard(io);
+var keyboard = new KeyBoard2e(io);
 
 var mmu = new MMU(cpu, gr, gr2, hgr, hgr2, io, rom);
 
@@ -379,15 +377,13 @@ cpu.addPageHandler(mmu);
 
 var parallel = new Parallel(io, 1, new Printer());
 var slinky = new RAMFactor(io, 2, 1024 * 1024);
-var slot3 = new Slot3(io, 3, rom);
 var disk2 = new DiskII(io, 6, drivelights);
 var clock = new Thunderclock(io, 7);
 
-io.addSlot(1, parallel);
-io.addSlot(2, slinky);
-io.addSlot(3, slot3);
-io.addSlot(6, disk2);
-io.addSlot(7, clock);
+io.setSlot(1, parallel);
+io.setSlot(2, slinky);
+io.setSlot(6, disk2);
+io.setSlot(7, clock);
 
 var showFPS = false;
 
@@ -798,9 +794,10 @@ function _keyup(evt) {
 
 function updateScreen() {
     var green = $('#green_screen').prop('checked');
-    scanlines = $('#show_scanlines').prop('checked');
+    var scanlines = $('#show_scanlines').prop('checked');
 
     vm.green(green);
+    vm.scanlines(scanlines);
 }
 
 var disableMouseJoystick = false;

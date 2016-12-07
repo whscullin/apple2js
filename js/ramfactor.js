@@ -10,7 +10,7 @@
  */
 
 /*exported RAMFactor */
-/*globals allocMem: false, bytify: false, debug: false, each: false,
+/*globals allocMem: false, bytify: false, debug: false,
           base64_encode: false, base64_decode: false
 */
 function RAMFactor(io, slot, size) {
@@ -1068,9 +1068,6 @@ function RAMFactor(io, slot, size) {
     function _init() {
         debug('RAMFactor card in slot', slot);
 
-        each(LOC, function(key) {
-            LOC[key] += slot * 0x10;
-        });
         mem = allocMem(size);
         for (var off = 0; off < size; off++) {
             mem[off] = 0;
@@ -1098,7 +1095,7 @@ function RAMFactor(io, slot, size) {
 
     function _access(off, val) {
         var result = 0;
-        switch (off) {
+        switch (off & 0x8f) {
         case LOC.RAMLO:
         case LOC._RAMLO:
             if (val !== undefined) {
@@ -1159,13 +1156,6 @@ function RAMFactor(io, slot, size) {
     _init();
 
     return {
-        start: function ramfactor_start() {
-            io.registerSwitches(this, LOC);
-            return 0xc0 + slot;
-        },
-        end: function ramfactor_end() {
-            return 0xc0 + slot;
-        },
         ioSwitch: function (off, val) {
             return _access(off, val);
         },

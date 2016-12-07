@@ -94,7 +94,7 @@ function Apple2IO(cpu, callbacks)
     };
 
     function _debug() {
-        debug.apply(arguments);
+        // debug.apply(this, arguments);
     }
 
     function _tick() {
@@ -302,6 +302,7 @@ function Apple2IO(cpu, callbacks)
         start: function apple2io_start() {
             return 0xc0;
         },
+
         end: function apple2io_end() {
             return 0xcf;
         },
@@ -312,17 +313,29 @@ function Apple2IO(cpu, callbacks)
                 result = _access(off, val);
             } else {
                 var slot = (off & 0x70) >> 4;
-                if (_slot[slot]) {
-                    result = _slot[slot].ioSwitch(off, val);
+                var card = _slot[slot];
+                if (card && card.ioSwitch) {
+                    result = card.ioSwitch(off, val);
                 }
             }
 
             return result;
         },
 
+        reset: function apple2io_reset() {
+            for (var slot = 0; slot < 8; slot++) {
+                var card = _slot[slot];
+                if (card && card.reset) {
+                    card.reset();
+                }
+            }
+        },
+
         read: function apple2io_read(page, off) {
             var result = 0;
             var slot;
+            var card;
+
             switch (page) {
             case 0xc0:
                 result = this.ioSwitch(off);
@@ -335,9 +348,13 @@ function Apple2IO(cpu, callbacks)
             case 0xc6:
             case 0xc7:
                 slot = page & 0x0f;
-                _auxRom = _slot[slot];
-                if (_slot[slot]) {
-                    result = _slot[slot].read(page, off);
+                card = _slot[slot];
+                if (_auxRom != card) {
+                    // _debug('Setting auxRom to slot', slot);
+                    _auxRom = card;
+                }
+                if (card) {
+                    result = card.read(page, off);
                 }
                 break;
             default:
@@ -351,6 +368,8 @@ function Apple2IO(cpu, callbacks)
 
         write: function apple2io_write(page, off, val) {
             var slot;
+            var card;
+
             switch (page) {
             case 0xc0:
                 this.ioSwitch(off);
@@ -363,9 +382,13 @@ function Apple2IO(cpu, callbacks)
             case 0xc6:
             case 0xc7:
                 slot = page & 0x0f;
-                _auxRom = _slot[slot];
-                if (_slot[slot]) {
-                    _slot[slot].write(page, off, val);
+                card = _slot[slot];
+                if (_auxRom != card) {
+                    // _debug('Setting auxRom to slot', slot);
+                    _auxRom = card;
+                }
+                if (card) {
+                    card.write(page, off, val);
                 }
                 break;
             default:
@@ -379,7 +402,7 @@ function Apple2IO(cpu, callbacks)
         getState: function apple2io_getState() { return {}; },
         setState: function apple2io_setState() { },
 
-        addSlot: function apple2io_addSlot(slot, card) {
+        setSlot: function apple2io_setSlot(slot, card) {
             _slot[slot] = card;
         },
 

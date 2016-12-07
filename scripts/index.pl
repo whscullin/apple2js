@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 # Copyright 2010-2016 Will Scullin <scullin@scullinsteel.com>
-# 
+#
 # Permission to use, copy, modify, distribute, and sell this software and its
 # documentation for any purpose is hereby granted without fee, provided that
 # the above copyright notice appear in all copies and that both that
@@ -27,14 +27,11 @@ while (<json/disks/*.json>) {
     open(DISK, $fn) or die $!;
     while (<DISK>) {
 	my $line = $_;
-	
-	$line =~ s/^loadJSON\(//;
-	$line =~ s/\);$//;
-	
+
 	$json .= $line;
     }
     close(DISK);
-    
+
     $disk = from_json($json);
     $disk->{'filename'} = $fn;
     $disk->{'data'} = NULL;
