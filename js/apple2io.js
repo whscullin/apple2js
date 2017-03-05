@@ -111,26 +111,34 @@ function Apple2IO(cpu, callbacks)
         }
     }
 
-    function _access(off) {
+    function _access(off, val) {
         var result = 0;
         var now = cpu.cycles();
         var delta = now - _trigger;
         switch (off) {
         case LOC.CLR80VID:
-            // _debug('80 Column Mode off');
-            if ('_80col' in callbacks) callbacks._80col(false);
+            if ('_80col' in callbacks && val !== undefined) {
+                _debug('80 Column Mode off');
+                callbacks._80col(false);
+            }
             break;
         case LOC.SET80VID:
-            // _debug('80 Column Mode on');
-            if ('_80col' in callbacks) callbacks._80col(true);
+            if ('_80col' in callbacks && val !== undefined) {
+                _debug('80 Column Mode on');
+                callbacks._80col(true);
+            }
             break;
         case LOC.CLRALTCH:
-            // _debug('Alt Char off');
-            if ('altchar' in callbacks) callbacks.altchar(false);
+            if ('altchar' in callbacks && val !== undefined) {
+                _debug('Alt Char off');
+                callbacks.altchar(false);
+            }
             break;
         case LOC.SETALTCH:
-            // _debug('Alt Char on');
-            if ('altchar' in callbacks) callbacks.altchar(true);
+            if ('altchar' in callbacks && val !== undefined) {
+                _debug('Alt Char on');
+                callbacks.altchar(true);
+            }
             break;
         case LOC.CLRTEXT:
             _debug('Graphics Mode');
@@ -227,7 +235,7 @@ function Apple2IO(cpu, callbacks)
         case LOC.STROBE:
             _key &= 0x7f;
             if (_buffer.length > 0) {
-                var val =  _buffer.shift();
+                val =  _buffer.shift();
                 if (val == '\n') {
                     val = '\r';
                 }
@@ -372,7 +380,7 @@ function Apple2IO(cpu, callbacks)
 
             switch (page) {
             case 0xc0:
-                this.ioSwitch(off);
+                this.ioSwitch(off, val);
                 break;
             case 0xc1:
             case 0xc2:

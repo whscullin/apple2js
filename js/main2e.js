@@ -766,7 +766,6 @@ function _keydown(evt) {
         io.keyDown(0x1b);
     } else if (evt.keyCode == 16) { // Shift
         keyboard.shiftKey(true);
-        io.buttonDown(2);
     } else if (evt.keyCode == 17) { // Control
         keyboard.controlKey(true);
     } else if (evt.keyCode == 91 || evt.keyCode == 93) { // Command
@@ -782,7 +781,6 @@ function _keyup(evt) {
 
     if (evt.keyCode == 16) { // Shift
         keyboard.shiftKey(false);
-        io.buttonUp(2);
     } else if (evt.keyCode == 17) { // Control
         keyboard.controlKey(false);
     } else if (evt.keyCode == 91 || evt.keyCode == 93) { // Command
