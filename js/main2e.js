@@ -371,7 +371,7 @@ var drivelights = new DriveLights();
 var io = new Apple2IO(cpu, vm);
 var keyboard = new KeyBoard2e(io);
 
-var mmu = new MMU(cpu, gr, gr2, hgr, hgr2, io, rom);
+var mmu = new MMU(cpu, vm, gr, gr2, hgr, hgr2, io, rom);
 
 cpu.addPageHandler(mmu);
 
@@ -662,18 +662,24 @@ function updateLocalStorage() {
     $('#manage').empty();
 
     names.forEach(function(name) {
-        cat.push({'category': 'Local Saves',
-                  'name': name,
-                  'filename': 'local:' + name});
-        $('#manage').append('<span class="local_save">' +
-                            name +
-                            ' <a href="#" onclick="doDelete(\'' +
-                            name +
-                            '\')">Delete</a><br /></span>');
+        cat.push({
+            'category': 'Local Saves',
+            'name': name,
+            'filename': 'local:' + name
+        });
+        $('#manage').append(
+            '<span class="local_save">' +
+            name +
+            ' <a href="#" onclick="doDelete(\'' +
+            name +
+            '\')">Delete</a><br /></span>'
+        );
     });
-    cat.push({'category': 'Local Saves',
-              'name': 'Manage Saves...',
-              'filename': 'local:__manage'});
+    cat.push({
+        'category': 'Local Saves',
+        'name': 'Manage Saves...',
+        'filename': 'local:__manage'
+    });
 }
 
 function saveLocalStorage(drive, name) {
@@ -919,27 +925,37 @@ $(function() {
 
     var cancel = function() { $(this).dialog('close'); };
     $('#loading').dialog({ autoOpen: false, modal: true });
-    $('#options').dialog({ autoOpen: false,
-                           modal: true,
-                           width: 320,
-                           height: 400,
-                           buttons: {'Close': cancel }});
-    $('#load').dialog({ autoOpen: false,
-                        modal: true,
-                        width: 540,
-                        buttons: {'Cancel': cancel, 'Load': doLoad }});
-    $('#save').dialog({ autoOpen: false,
-                        modal: true,
-                        width: 320,
-                        buttons: {'Cancel': cancel, 'Save': doSave }});
-    $('#manage').dialog({ autoOpen: false,
-                          modal: true,
-                          width: 320,
-                          buttons: {'Close': cancel }});
-    $('#http_load').dialog({ autoOpen: false,
-                             modal: true,
-                             width: 530,
-                             buttons: {'Cancel': cancel, 'OK': doLoadHTTP }});
+    $('#options').dialog({
+        autoOpen: false,
+        modal: true,
+        width: 320,
+        height: 400,
+        buttons: {'Close': cancel }
+    });
+    $('#load').dialog({
+        autoOpen: false,
+        modal: true,
+        width: 540,
+        buttons: {'Cancel': cancel, 'Load': doLoad }
+    });
+    $('#save').dialog({
+        autoOpen: false,
+        modal: true,
+        width: 320,
+        buttons: {'Cancel': cancel, 'Save': doSave }
+    });
+    $('#manage').dialog({
+        autoOpen: false,
+        modal: true,
+        width: 320,
+        buttons: {'Close': cancel }
+    });
+    $('#http_load').dialog({
+        autoOpen: false,
+        modal: true,
+        width: 530,
+        buttons: {'Cancel': cancel, 'OK': doLoadHTTP }
+    });
 
     if (window.localStorage !== undefined) {
         $('.disksave').show();

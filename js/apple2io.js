@@ -33,6 +33,7 @@ function Apple2IO(cpu, callbacks)
     var _phase = -1;
     var _sample = [];
     var _sampleTime = 0;
+    var _didAudio = false;
 
     var _high = 0.5;
     var _low = -0.5;
@@ -104,9 +105,10 @@ function Apple2IO(cpu, callbacks)
             _sample.push(phase);
             if (_sample.length >= _sample_size) {
                 if (_audioListener) {
-                    _audioListener(_sample);
+                    _audioListener(_didAudio ? _sample : []);
                 }
                 _sample = [];
+                _didAudio = false;
             }
         }
     }
@@ -230,6 +232,7 @@ function Apple2IO(cpu, callbacks)
             break;
         case LOC.SPEAKER:
             _phase = -_phase;
+            _didAudio = true;
             _tick();
             break;
         case LOC.STROBE:
@@ -303,6 +306,11 @@ function Apple2IO(cpu, callbacks)
             }
             */
         }
+
+        if (val !== undefined) {
+            result = undefined;
+        }
+
         return result;
     }
 

@@ -48,12 +48,9 @@
 <script type="text/javascript" src="js/prefs.js"></script>
 <script type="text/javascript" src="js/ram.js"></script>
 <script type="text/javascript" src="js/mmu.js"></script>
-<script type="text/javascript" src="js/apple2e.js"></script>
-<script type="text/javascript" src="js/apple2e-enhanced.js"></script>
-<script type="text/javascript" src="js/apple2echar.js"></script>
 <script type="text/javascript" src="js/applesoft/decompiler.js"></script>
+<script type="text/javascript" src="js/intbasic/decompiler.js"></script>
 <script type="text/javascript" src="js/canvas2e.js"></script>
-<script type="text/javascript" src="js/slot3.js"></script>
 <script type="text/javascript" src="js/apple2io.js"></script>
 <script type="text/javascript" src="js/parallel.js"></script>
 <script type="text/javascript" src="js/disk2.js"></script>
@@ -61,6 +58,9 @@
 <script type="text/javascript" src="js/thunderclock.js"></script>
 <script type="text/javascript" src="js/cpu6502.js"></script>
 <script type="text/javascript" src="js/base64.js"></script>
+<script type="text/javascript" src="js/roms/apple2e.js"></script>
+<script type="text/javascript" src="js/roms/apple2enh.js"></script>
+<script type="text/javascript" src="js/roms/apple2e_char.js"></script>
 <script type="text/javascript" src="js/ui/audio.js"></script>
 <script type="text/javascript" src="js/ui/keyboard2e.js"></script>
 <script type="text/javascript" src="js/ui/gamepad.js"></script>
@@ -116,16 +116,18 @@
       </div>
       <div style="clear: both"></div>
     </div>
-    <div class="inset">
-      <div id="khz" onclick="showFPS = !showFPS">0KHz</div>
-      <input type="button" value="Pause" onclick="pauseRun(this)" />
-      <input type="button" value="Reset" onclick="reset()" />
-      <div style="float: right">
-        <input type="button" onclick="window.open('about.html','_html')"
-               name="About" value="About">
-        <input type="button" onclick="$('#options').dialog('open')"
-               name="Options" value="Options">
+    <div style="position: relative">
+      <div id="controls" class="inset">
+        <div id="khz" onclick="showFPS = !showFPS">0KHz</div>
+        <input type="button" value="Pause" onclick="pauseRun(this)" />
+        <div style="float: right">
+          <input type="button" onclick="window.open('about.html','_html')"
+                 name="About" value="About">
+          <input type="button" onclick="$('#options').dialog('open')"
+                 name="Options" value="Options">
+        </div>
       </div>
+      <input id="reset" type="button" value="Reset" onclick="reset()" />
     </div>
     <div class="inset">
       <div id="keyboard"></div>

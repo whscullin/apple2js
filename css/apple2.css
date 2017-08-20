@@ -173,12 +173,12 @@ canvas {
 }
 /*
 @media screen and (min-device-width:1120px) {
-:-webkit-full-screen { 
+:-webkit-full-screen {
     background: #000;
 }
 
 :-moz-full-screen .overscan {
-    border: 0px none !important; 
+    border: 0px none !important;
     width: 1120px;
     height: 768px;
     margin: auto;
@@ -249,6 +249,33 @@ canvas {
 #load select {
     width: 250px;
     height: 300px;
+}
+
+.apple2e #controls {
+    width: calc(100% - 70px)
+}
+
+.apple2e #reset {
+    position: absolute;
+    right: 0; top: 0;
+    background: #44372C;
+    border: 3px outset #66594E;
+    border-radius: 3px;
+    color: white;
+    font: 9px Helvetica;
+    height: 42px;
+    padding: 0;
+    width: 42px;
+}
+
+.apple2e #reset:hover {
+  background: #44372C;
+  border: 3px outset #66594E;
+}
+
+.apple2e #reset:active {
+  background: #22150A;
+  border: 5px outset #44372C;
 }
 
 #keyboard .row {

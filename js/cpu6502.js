@@ -246,6 +246,9 @@ function CPU6502(options)
      * Read functions
      */
 
+    function readImplied() {
+    }
+
     // #$00
     function readImmediate() {
         return readBytePC();
@@ -378,19 +381,23 @@ function CPU6502(options)
         return readWordPC();
     }
 
-    // $0000
+    // ($0000) (6502)
     function readAddrAbsoluteIndirectBug() {
         return indirectBug(readWordPC());
     }
 
-    // ($0000)
+    // ($0000) (65C02)
     function readAddrAbsoluteIndirect() {
         return readWord(readWordPC());
     }
 
     // $0000,X
     function readAddrAbsoluteX() {
-        return (readWordPC() + xr) & 0xffff;
+        var addr = readWordPC();
+        if (!is65C02) {
+            readByte(addr);
+        }
+        return (addr + xr) & 0xffff;
     }
 
     // $(0000,X)
@@ -705,7 +712,8 @@ function CPU6502(options)
     }
 
     /* No-Op */
-    function nop() {
+    function nop(readAddrFn) {
+        readAddrFn();
     }
 
     var ops = {
@@ -933,11 +941,12 @@ function CPU6502(options)
         0x28: ['PLP', plp, null, modes.implied, 4],
 
         // JMP
-        0x4C: ['JMP', jmp,
-               readAddrAbsolute, modes.absolute, 3],
-        0x6C: ['JMP', jmp,
-               readAddrAbsoluteIndirectBug, modes.absoluteIndirect, 5],
-
+        0x4C: [
+            'JMP', jmp, readAddrAbsolute, modes.absolute, 3
+        ],
+        0x6C: [
+            'JMP', jmp, readAddrAbsoluteIndirectBug, modes.absoluteIndirect, 5
+        ],
         // JSR
         0x20: ['JSR', jsr, readAddrAbsolute, modes.absolute, 6],
 
@@ -969,7 +978,7 @@ function CPU6502(options)
         0xB8: ['CLV', clr, flags.V, modes.implied, 2],
 
         // NOP
-        0xea: ['NOP', nop, null, modes.implied, 2],
+        0xea: ['NOP', nop, readImplied, modes.implied, 2],
 
         // BRK
         0x00: ['BRK', brk, readImmediate, modes.immediate, 7]
@@ -998,13 +1007,31 @@ function CPU6502(options)
         0x89: ['BIT', bitI, readImmediate, modes.immediate, 2],
 
         // JMP absolute indirect indexed
-        0x6C: ['JMP', jmp, readAddrAbsoluteIndirect,
-               modes.absoluteIndirect, 6],
-        0x7C: ['JMP', jmp, readAddrAbsoluteXIndirect,
-               modes.absoluteXIndirect, 6],
+        0x6C: [
+            'JMP', jmp, readAddrAbsoluteIndirect, modes.absoluteIndirect, 6
+        ],
+        0x7C: [
+            'JMP', jmp, readAddrAbsoluteXIndirect, modes.absoluteXIndirect, 6
+        ],
 
         // BRA
-        0x80: ['BRA', brc, 0, modes.relative, 3],
+        0x80: ['BRA', brc, 0, modes.relative, 2],
+
+        // NOP
+        0x02: ['NOP', nop, readImmediate, modes.immediate, 2],
+        0x22: ['NOP', nop, readImmediate, modes.immediate, 2],
+        0x42: ['NOP', nop, readImmediate, modes.immediate, 2],
+        0x44: ['NOP', nop, readImmediate, modes.immediate, 3],
+        0x54: ['NOP', nop, readImmediate, modes.immediate, 4],
+        0x62: ['NOP', nop, readImmediate, modes.immediate, 2],
+        0x82: ['NOP', nop, readImmediate, modes.immediate, 2],
+        0xC2: ['NOP', nop, readImmediate, modes.immediate, 2],
+        0xD4: ['NOP', nop, readImmediate, modes.immediate, 4],
+        0xE2: ['NOP', nop, readImmediate, modes.immediate, 2],
+        0xF4: ['NOP', nop, readImmediate, modes.immediate, 4],
+        0x5C: ['NOP', nop, readAbsolute, modes.absolute, 8],
+        0xDC: ['NOP', nop, readAbsolute, modes.absolute, 4],
+        0xFC: ['NOP', nop, readAbsolute, modes.absolute, 4],
 
         // PHX
         0xDA: ['PHX', phx, null, modes.implied, 3],
@@ -1013,10 +1040,10 @@ function CPU6502(options)
         0x5A: ['PHY', phy, null, modes.implied, 3],
 
         // PLX
-        0xFA: ['PLX', plx, null, modes.implied, 3],
+        0xFA: ['PLX', plx, null, modes.implied, 4],
 
         // PLY
-        0x7A: ['PLY', ply, null, modes.implied, 3],
+        0x7A: ['PLY', ply, null, modes.implied, 4],
 
         // STZ
         0x64: ['STZ', stz, writeZeroPage, modes.zeroPage, 3],
@@ -1048,19 +1075,26 @@ function CPU6502(options)
         var unk;
 
         if (is65C02) {
-            unk = ['NOP (' + toHex(b) + ')', function() {
-                debug('Unknown OpCode: ' + toHex(b) + ' at ' + toHex(pc - 1, 4));
-            }, null, modes.implied, 2];
+            unk = [
+                'NOP',
+                nop,
+                readImplied,
+                modes.implied,
+                2
+            ];
         } else {
-            unk = ['???',
-                   function() {
-                   /*
+            unk = [
+                '???',
+                function() {
+                /*
                     debug('Unknown OpCode: ' + toHex(b) +
                           ' at ' + toHex(pc - 1, 4));
-                   */
-                   },
-                   null, modes.implied,
-                   1];
+                */
+                },
+                readImplied,
+                modes.implied,
+                1
+            ];
         }
         ops[b] = unk;
         return unk;

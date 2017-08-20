@@ -9,7 +9,6 @@
  * implied warranty.
  */
 
-/*jshint browser:true */
 /*globals allocMemPages: false, debug: false,
   base64_encode: false, base64_decode: false,
   enhanced: false */

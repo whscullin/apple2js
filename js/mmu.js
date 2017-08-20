@@ -11,11 +11,10 @@
 
 /*exported MMU */
 /*globals debug: false, toHex: false
-          hiresMode: false,
           RAM: false
 */
 
-function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
+function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
 {
     'use strict';
 
@@ -34,6 +33,7 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
     // Auxilliary ROM
     var _intcxrom;
     var _slot3rom;
+    var _intc8rom;
 
     // Auxilliary RAM
     var _auxRamRead;
@@ -41,8 +41,9 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
     var _altzp;
 
     // Video
-    var _80store = false;
+    var _80store;
     var _page2;
+    var _hires;
 
     var _vbEnd = 0;
 
@@ -81,8 +82,10 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
         _80STORE: 0x18,
         VERTBLANK: 0x19,
 
-        PAGE1:    0x54, // select text/graphics page1 main/aux
-        PAGE2:    0x55, // select text/graphics page2 main/aux
+        PAGE1: 0x54, // select text/graphics page1 main/aux
+        PAGE2: 0x55, // select text/graphics page2 main/aux
+        RESET_HIRES: 0x56,
+        SET_HIRES: 0x57,
 
         // Bank 2
         READBSR2: 0x80,
@@ -121,12 +124,15 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
 
         _intcxrom = false;
         _slot3rom = false;
+        _intc8rom = false;
 
         _80store = false;
         _page2 = false;
+        _hires = false;
     }
 
     function _debug() {
+        /*eslint no-console: 0*/
         // console.debug.apply(this, arguments);
     }
 
@@ -168,6 +174,14 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
     function AuxRom() {
         return {
             read: function(page, off) {
+                if (page == 0xc3) {
+                    _intc8rom = true;
+                    _updateBanks();
+                }
+                if (page == 0xcf && off == 0xff) {
+                    _intc8rom = false;
+                    _updateBanks();
+                }
                 return rom.read(page, off);
             },
             write: function() {}
@@ -193,8 +207,6 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
         new RAM(0xD0,0xDF), new RAM(0xD0,0xDF)
     ];
     var memE0_FF = [rom, new RAM(0xE0,0xFF), new RAM(0xE0,0xFF)];
-
-    io.setSlot(3, auxRom);
 
     /*
      * Initialize read/write banks
@@ -299,7 +311,7 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
                     _readPages[idx] = _pages[idx][1];
                     _writePages[idx] = _pages[idx][1];
                 }
-                if (hiresMode) {
+                if (_hires) {
                     for (idx = 0x20; idx < 0x40; idx++) {
                         _readPages[idx] = _pages[idx][1];
                         _writePages[idx] = _pages[idx][1];
@@ -310,7 +322,7 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
                     _readPages[idx] = _pages[idx][0];
                     _writePages[idx] = _pages[idx][0];
                 }
-                if (hiresMode) {
+                if (_hires) {
                     for (idx = 0x20; idx < 0x40; idx++) {
                         _readPages[idx] = _pages[idx][0];
                         _writePages[idx] = _pages[idx][0];
@@ -326,6 +338,14 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
         } else {
             for (idx = 0xc1; idx < 0xd0; idx++) {
                 _readPages[idx] = _pages[idx][0];
+            }
+            if (!_slot3rom) {
+                _readPages[0xc3] = _pages[0xc3][1];
+            }
+            if (_intc8rom) {
+                for (idx = 0xc8; idx < 0xd0; idx++) {
+                    _readPages[idx] = _pages[idx][1];
+                }
             }
         }
 
@@ -386,6 +406,7 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
 
     function _access(off, val) {
         var result;
+        var readMode = val === undefined;
         switch (off) {
 
         // Apple //e memory management
@@ -438,6 +459,7 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
         case LOC.INTCXROMOFF:
             if (val !== undefined) {
                 _intcxrom = false;
+                _intc8rom = false;
                 _debug('Int CX ROM Off');
             }
             break;
@@ -459,13 +481,13 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
                 _debug('Alt ZP On');
             }
             break;
-        case LOC.SLOTC3ROMOFF:
-            if (typeof val != 'undefined') {
+        case LOC.SLOTC3ROMOFF: // 0x0A
+            if (val !== undefined) {
                 _slot3rom = false;
                 _debug('Slot 3 ROM Off');
             }
             break;
-        case LOC.SLOTC3ROMON:
+        case LOC.SLOTC3ROMON: // 0x0B
             if (val !== undefined) {
                 _slot3rom = true;
                 _debug('Slot 3 ROM On');
@@ -475,18 +497,30 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
         // Graphics Switches
 
         case LOC.PAGE1:
-            if (_80store) {
-                _page2 = false;
-            } else {
+            _page2 = false;
+            if (!_80store) {
                 result = io.ioSwitch(off, val);
             }
+            _debug('Page 2 off');
             break;
         case LOC.PAGE2:
-            if (_80store) {
-                _page2 = true;
-            } else {
+            _page2 = true;
+            if (!_80store) {
                 result = io.ioSwitch(off, val);
             }
+            _debug('Page 2 on');
+            break;
+
+        case LOC.RESET_HIRES:
+            _hires = false;
+            result = io.ioSwitch(off, val);
+            _debug('Hires off');
+            break;
+
+        case LOC.SET_HIRES:
+            _hires = true;
+            result = io.ioSwitch(off, val);
+            _debug('Hires on');
             break;
 
         // Language Card Switches
@@ -503,8 +537,8 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
         case LOC._WRITEBSR2: // 0xC085
             _bank1 = false;
             _readbsr = false;
-            _writebsr = _prewrite;
-            _prewrite = true;
+            if (readMode) { _writebsr = _prewrite; }
+            _prewrite = readMode;
             // _debug('Bank 2 Write');
             break;
         case LOC.OFFBSR2: // 0xC082
@@ -519,8 +553,8 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
         case LOC._READWRBSR2: // 0xC087
             _bank1 = false;
             _readbsr = true;
-            _writebsr = _prewrite;
-            _prewrite = true;
+            if (readMode) { _writebsr = _prewrite; }
+            _prewrite = readMode;
             // _debug('Bank 2 Read/Write');
             break;
         case LOC.READBSR1: // 0xC088
@@ -535,8 +569,8 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
         case LOC._WRITEBSR1: // 0xC08D
             _bank1 = true;
             _readbsr = false;
-            _writebsr = _prewrite;
-            _prewrite = true;
+            if (readMode) { _writebsr = _prewrite; }
+            _prewrite = readMode;
             // _debug('Bank 1 Write');
             break;
         case LOC.OFFBSR1: // 0xC08A
@@ -551,8 +585,8 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
         case LOC._READWRBSR1:  // 0xC08F
             _bank1 = true;
             _readbsr = true;
-            _writebsr = _prewrite;
-            _prewrite = true;
+            if (readMode) { _writebsr = _prewrite; }
+            _prewrite = readMode;
             //_debug('Bank 1 Read/Write');
             break;
 
@@ -600,10 +634,6 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
             break;
         }
 
-        if (val !== undefined) {
-            _prewrite = false;
-        }
-
         if (result !== undefined)
             return result;
 
@@ -625,6 +655,7 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
             debug('reset');
             _initSwitches();
             _updateBanks();
+            vm.reset();
             io.reset();
         },
         read: function mmu_read(page, off, debug) {
@@ -645,6 +676,7 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
 
                 intcxrom: _intcxrom,
                 slot3rom: _slot3rom,
+                intc8rom: _intc8rom,
                 auxRamRead: _auxRamRead,
                 auxRamWrite: _auxRamWrite,
                 altzp: _altzp,
@@ -670,6 +702,7 @@ function MMU(cpu, lores1, lores2, hires1, hires2, io, rom)
 
             _intcxrom = state.intcxrom;
             _slot3rom = state.slot3rom;
+            _intc8rom = state.intc8rom;
             _auxRamRead = state.auxRamRead;
             _auxRamWrite = state.auxRamWrite;
             _altzp = state.altzp;

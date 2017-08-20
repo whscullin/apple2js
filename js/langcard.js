@@ -84,6 +84,7 @@ function LanguageCard(io, slot, rom) {
     };
 
     function _access(off, val) {
+        var readMode = val === undefined;
         var result = 0;
         switch (off) {
         case LOC.READBSR2: // 0xC080
@@ -97,9 +98,11 @@ function LanguageCard(io, slot, rom) {
         case LOC.WRITEBSR2: // 0xC081
         case LOC._WRITEBSR2: // 0xC085
             _readbsr = false;
-            _writebsr = _prewrite;
+            if (readMode) {
+                _writebsr = _prewrite;
+            }
             _bsr2 = true;
-            _prewrite = true;
+            _prewrite = readMode;
             _debug('Bank 2 Write');
             break;
         case LOC.OFFBSR2: // 0xC082
@@ -113,9 +116,11 @@ function LanguageCard(io, slot, rom) {
         case LOC.READWRBSR2: // 0xC083
         case LOC._READWRBSR2: // 0xC087
             _readbsr = true;
-            _writebsr = _prewrite;
+            if (readMode) {
+                _writebsr = _prewrite;
+            }
             _bsr2 = true;
-            _prewrite = true;
+            _prewrite = readMode;
             _debug('Bank 2 Read/Write');
             break;
 
@@ -130,9 +135,11 @@ function LanguageCard(io, slot, rom) {
         case LOC.WRITEBSR1: // 0xC089
         case LOC._WRITEBSR1: // 0xC08D
             _readbsr = false;
-            _writebsr = _prewrite;
+            if (readMode) {
+                _writebsr = _prewrite;
+            }
             _bsr2 = false;
-            _prewrite = true;
+            _prewrite = readMode;
             _debug('Bank 1 Write');
             break;
         case LOC.OFFBSR1: // 0xC08A
@@ -146,9 +153,11 @@ function LanguageCard(io, slot, rom) {
         case LOC.READWRBSR1: // 0xC08B
         case LOC._READWRBSR1: // 0xC08F
             _readbsr = true;
-            _writebsr = _prewrite;
+            if (readMode) {
+                _writebsr = _prewrite;
+            }
             _bsr2 = false;
-            _prewrite = true;
+            _prewrite = readMode;
             _debug('Bank 1 Read/Write');
             break;
 
@@ -162,10 +171,6 @@ function LanguageCard(io, slot, rom) {
             break;
         default:
             break;
-        }
-
-        if (val !== undefined) {
-            _prewrite = false;
         }
 
         if (_readbsr) {
