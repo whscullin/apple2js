@@ -139,31 +139,31 @@ canvas {
 
 @media all and (device-width: 320px) {
     canvas {
-	width: 537px;
-	height: 368px;
-	left: 30px;
-	top: 24px;
+        width: 537px;
+        height: 368px;
+        left: 30px;
+        top: 24px;
     }
     #scanlines: {
-	width: 537px;
-	height: 368px;
-	left: 30px;
-	top: 24px;
+        width: 537px;
+        height: 368px;
+        left: 30px;
+        top: 24px;
     }
 }
 
 @media all and (device-width: 768px) {
     canvas {
-	width: 564px;
-	height: 386px;
-	left: 14px;
-	top: 15px;
+        width: 564px;
+        height: 386px;
+        left: 14px;
+        top: 15px;
     }
     #scanlines {
-	width: 564px;
-	height: 386px;
-	left: 14px;
-	top: 15px;
+        width: 564px;
+        height: 386px;
+        left: 14px;
+        top: 15px;
     }
 }
 
@@ -269,13 +269,13 @@ canvas {
 }
 
 .apple2e #reset:hover {
-  background: #44372C;
-  border: 3px outset #66594E;
+    background: #44372C;
+    border: 3px outset #66594E;
 }
 
 .apple2e #reset:active {
-  background: #22150A;
-  border: 5px outset #44372C;
+    background: #22150A;
+    border: 5px outset #44372C;
 }
 
 #keyboard .row {
