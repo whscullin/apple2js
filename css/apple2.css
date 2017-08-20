@@ -144,22 +144,10 @@ canvas {
         left: 30px;
         top: 24px;
     }
-    #scanlines: {
-        width: 537px;
-        height: 368px;
-        left: 30px;
-        top: 24px;
-    }
 }
 
 @media all and (device-width: 768px) {
     canvas {
-        width: 564px;
-        height: 386px;
-        left: 14px;
-        top: 15px;
-    }
-    #scanlines {
         width: 564px;
         height: 386px;
         left: 14px;
@@ -198,33 +186,8 @@ canvas {
     height: 768px;
 }
 
-:-webkit-full-screen #scanlines {
-    width: 1120px;
-    height: 768px;
-}
-:-moz-full-screen #scanlines {
-    width: 1120px;
-    height: 768px;
-}
 }
 */
-#scanlines {
-    position: absolute;
-    top: 16px;
-    left: 16px;
-    cursor: crosshair;
-    z-index: 1;
-    width: 560px;
-    height: 384px;
-}
-
-#page1 {
-    visibility: display;
-}
-
-#page2 {
-    visibility: hidden;
-}
 
 #about iframe {
     border: 1px inset #666;
