@@ -1,10 +1,11 @@
 /* globals debug: false, gup: false, hup: false, toHex: false
            CPU6502: false,
            Apple2eROM: false, Apple2eEnhancedROM: false,
-           apple2e_charset: false,
+           apple2e_charset: false, rmfont_charset: false,
+           apple2enh_charset: false,
            Apple2IO: false
            LoresPage: false, HiresPage: false, VideoModes: false,
-           KeyBoard2e: false,
+           KeyBoard: false,
            Parallel: false,
            DiskII: false,
            Printer: false,
@@ -16,9 +17,11 @@
            initAudio: false, enableSound: false,
            initGamepad: false, processGamepad: false, gamepad: false,
            ApplesoftDump: false, SYMBOLS: false,
+           multiScreen: true
 */
 /* exported openLoad, openSave, doDelete,
             selectCategory, selectDisk, clickDisk,
+            multiScreen,
             updateJoystick,
             pauseRun, step,
             restoreState, saveState,
@@ -115,7 +118,7 @@ function DriveLights()
     };
 }
 
-var DISK_TYPES = ['dsk','do','po','raw','nib','2mg'];
+var DISK_TYPES = ['dsk','d13','do','po','raw','nib','2mg'];
 var TAPE_TYPES = ['wav','aiff','aif','mp3'];
 
 var _currentDrive = 1;
@@ -327,10 +330,14 @@ function doLoadHTTP(drive, _url) {
             var parts = url.split(/[\/\.]/);
             var name = decodeURIComponent(parts[parts.length - 2]);
             var ext = parts[parts.length - 1].toLowerCase();
-            if (disk2.setBinary(drive, name, ext, req.response)) {
-                drivelights.label(drive, name);
-                $('#http_load').dialog('close');
-                initGamepad();
+            if (req.response.byteLength >= 400 * 1024) {
+                // smartport.setBinary(drive, req.response);
+            } else {
+                if (disk2.setBinary(drive, name, ext, req.response)) {
+                    drivelights.label(drive, name);
+                    $('#http_load').dialog('close');
+                    initGamepad();
+                }
             }
         };
         req.send(null);
@@ -347,29 +354,64 @@ function openManage() {
 }
 
 var prefs = new Prefs();
-var enhanced = prefs.readPref('computer_type') != 'apple2e';
+var romVersion = prefs.readPref('computer_type2e');
+var enhanced = false;
+var rom;
+var char_rom = apple2e_charset;
+switch (romVersion) {
+case 'apple2e':
+    rom = new Apple2eROM();
+    break;
+case 'apple2rm':
+    rom = new Apple2eEnhancedROM();
+    char_rom = rmfont_charset;
+    enhanced = true;
+    break;
+default:
+    rom = new Apple2eEnhancedROM();
+    char_rom =apple2enh_charset;
+    enhanced = true;
+}
+
 var runTimer = null;
 
 var cpu = new CPU6502({'65C02': enhanced});
 
-var hgr = new HiresPage(1);
-var hgr2 = new HiresPage(2);
-var gr = new LoresPage(1, apple2e_charset);
-var gr2 = new LoresPage(2, apple2e_charset);
+var context1, context2, context3, context4;
 
-var rom;
-if (enhanced) {
-    rom = new Apple2eEnhancedROM();
+var canvas1 = document.getElementById('screen');
+var canvas2 = document.getElementById('screen2');
+var canvas3 = document.getElementById('screen3');
+var canvas4 = document.getElementById('screen4');
+
+context1 = canvas1.getContext('2d');
+if (canvas4) {
+    multiScreen = true;
+    context2 = canvas2.getContext('2d');
+    context3 = canvas3.getContext('2d');
+    context4 = canvas4.getContext('2d');
+} else if (canvas2) {
+    multiScreen = true;
+    context2 = context1;
+    context3 = canvas2.getContext('2d');
+    context4 = context3;
 } else {
-    rom = new Apple2eROM();
+    context2 = context1;
+    context3 = context1;
+    context4 = context1;
 }
+
+var gr = new LoresPage(1, char_rom, context1);
+var gr2 = new LoresPage(2, char_rom, context2);
+var hgr = new HiresPage(1, context3);
+var hgr2 = new HiresPage(2, context4);
 
 var vm = new VideoModes(gr, hgr, gr2, hgr2);
 var dumper = new ApplesoftDump(cpu);
 
 var drivelights = new DriveLights();
 var io = new Apple2IO(cpu, vm);
-var keyboard = new KeyBoard2e(io);
+var keyboard = new KeyBoard(io, true);
 
 var mmu = new MMU(cpu, vm, gr, gr2, hgr, hgr2, io, rom);
 
@@ -863,11 +905,6 @@ $(function() {
             self.blur();
         }, 1);
     });
-
-    var canvas = document.getElementById('screen');
-    var context = canvas.getContext('2d');
-
-    vm.setContext(context);
 
     /*
      * Input Handling

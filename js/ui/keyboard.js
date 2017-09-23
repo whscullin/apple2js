@@ -10,10 +10,10 @@
  */
 
 /*jshint jquery: true, browser: true */
-/*globals debug: false, toHex: false */
-/*exported KeyBoard2e */
+/*globals debug: false, toHex: false, reset: false */
+/*exported KeyBoard */
 
-function KeyBoard2e(io) {
+function KeyBoard(io, e) {
     // keycode: [plain, cntl, shift]
     var keymap = {
         // Most of these won't happen
@@ -155,17 +155,32 @@ function KeyBoard2e(io) {
         0xFF: [0xFF, 0xFF, 0xFF] // No comma line
     };
 
-    var keys =
-        [[['ESC','1','2','3','4','5','6','7','8','9','0','-','=','DELETE'],
+    var keys2 =
+        [[['1','2','3','4','5','6','7','8','9','0',':','-','RESET'],
+          ['ESC','Q','W','E','R','T','Y','U','I','O','P','REPT','RETURN'],
+          ['CTRL','A','S','D','F','G','H','J','K','L',';','&larr;','&rarr;'],
+          ['SHIFT','Z','X','C','V','B','N','M',',','.','/','SHIFT'],
+          ['POWER', '&nbsp;']],
+        [['!','"','#','$','%','&','\'','(',')','0','*','=','RESET'],
+          ['ESC','Q','W','E','R','T','Y','U','I','O','@','REPT','RETURN'],
+          ['CTRL','A','S','D','F','BELL','H','J','K','L','+','&larr;','&rarr;'],
+          ['SHIFT','Z','X','C','V','B','^',']','<','>','?','SHIFT'],
+          ['POWER', '&nbsp;']]];
+
+    var keys2e = [
+        [['ESC','1','2','3','4','5','6','7','8','9','0','-','=','DELETE'],
           ['TAB','Q','W','E','R','T','Y','U','I','O','P','[',']','\\'],
           ['CTRL','A','S','D','F','G','H','J','K','L',';','"','RETURN'],
           ['SHIFT','Z','X','C','V','B','N','M',',','.','/','SHIFT'],
           ['LOCK','`','POW','OPEN_APPLE','&nbsp;','CLOSED_APPLE','&larr;','&rarr;','&darr;','&uarr;']],
-         [['ESC','!','@','#','$','%','^','&','*','(',')','_','+','DELETE'],
+        [['ESC','!','@','#','$','%','^','&','*','(',')','_','+','DELETE'],
           ['TAB','Q','W','E','R','T','Y','U','I','O','P','{','}','|'],
           ['CTRL','A','S','D','F','G','H','J','K','L',':','\'','RETURN'],
           ['SHIFT','Z','X','C','V','B','N','M','<','>','?','SHIFT'],
-          ['CAPS','~','POW','OPEN_APPLE','&nbsp;','CLOSED_APPLE','&larr;','&rarr;','&darr;','&uarr;']]];
+          ['CAPS','~','POW','OPEN_APPLE','&nbsp;','CLOSED_APPLE','&larr;','&rarr;','&darr;','&uarr;']]
+    ];
+
+    var keys = e ? keys2e : keys2;
 
     var shifted = false;
     var controlled = false;
@@ -191,10 +206,10 @@ function KeyBoard2e(io) {
         shiftKey: function keyboard_shiftKey(down) {
             shifted = down;
             if (down) {
-                io.buttonDown(2);
+                io.buttonUp(2);
                 $('#keyboard .key-SHIFT').addClass('active');
             } else {
-                io.buttonUp(2);
+                io.buttonDown(2);
                 $('#keyboard .key-SHIFT').removeClass('active');
             }
         },
@@ -270,7 +285,7 @@ function KeyBoard2e(io) {
                     key = '\t';
                     break;
                 case 'DELETE':
-                    key = '\0177';
+                    key = '\177';
                     break;
                 case '&larr;':
                     key = '\010';
@@ -307,8 +322,12 @@ function KeyBoard2e(io) {
                         self.capslockKey(!capslocked);
                         break;
                     case 'POW':
+                    case 'POWER':
                         if (window.confirm('Power Cycle?'))
                             window.location.reload();
+                        break;
+                    case 'RESET':
+                        reset();
                         break;
                     case 'OPEN_APPLE':
                         self.commandKey(!commanded);
@@ -322,7 +341,7 @@ function KeyBoard2e(io) {
                 } else {
                     if (controlled && key >= '@' && key <= '_') {
                         io.keyDown(key.charCodeAt(0) - 0x40);
-                    } else if (!shifted && !capslocked &&
+                    } else if (!e && !shifted && !capslocked &&
                                key >= 'A' && key <= 'Z') {
                         io.keyDown(key.charCodeAt(0) + 0x20);
                     } else {
@@ -332,7 +351,7 @@ function KeyBoard2e(io) {
             }
 
             for (y = 0; y < 5; y++) {
-                row = $('<div class="row row' + y + 'e"/>');
+                row = $('<div class="row row' + y + '"/>');
                 kb.append(row);
                 for (x = 0; x < keys[0][y].length; x++) {
                     key1 = keys[0][y][x];

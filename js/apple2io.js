@@ -41,6 +41,7 @@ function Apple2IO(cpu, callbacks)
     var _audioListener = null;
 
     var _trigger = 0;
+    var _annunciators = [false, false, false, false];
 
     var _tape = [];
     var _tapeOffset = 0;
@@ -91,7 +92,8 @@ function Apple2IO(cpu, callbacks)
         PDLTRIG:  0x70, // trigger paddles
         BANK:     0x73, // Back switched RAM card bank
         SETIOUDIS:0x7E, // Enable double hires
-        CLRIOUDIS:0x7F  // Disable double hires
+        CLRIOUDIS:0x7F, // Disable double hires
+        RDDHIRES: 0x7F  // Read double hires status
     };
 
     function _debug() {
@@ -198,36 +200,36 @@ function Apple2IO(cpu, callbacks)
             break;
         case LOC.SETAN0:
             _debug('Annunciator 0 on');
-            if ('annunciator' in callbacks) callbacks.annunicator(0, true);
+            _annunciators[0] = true;
             break;
         case LOC.SETAN1:
             _debug('Annunciator 1 on');
-            if ('annunciator' in callbacks) callbacks.annunicator(1, true);
+            _annunciators[1] = true;
             break;
         case LOC.SETAN2:
             _debug('Annunciator 2 on');
-            if ('annunciator' in callbacks) callbacks.annunicator(2, true);
+            _annunciators[2] = true;
             break;
         case LOC.SETAN3:
             _debug('Annunciator 3 on');
-            if ('annunciator' in callbacks) callbacks.annunicator(3, true);
+            _annunciators[3] = true;
             if ('doublehires' in callbacks) callbacks.doublehires(false);
             break;
         case LOC.CLRAN0:
             _debug('Annunciator 0 off');
-            if ('annunciator' in callbacks) callbacks.annunicator(0, false);
+            _annunciators[0] = false;
             break;
         case LOC.CLRAN1:
             _debug('Annunciator 1 off');
-            if ('annunciator' in callbacks) callbacks.annunicator(1, false);
+            _annunciators[1] = false;
             break;
         case LOC.CLRAN2:
             _debug('Annunciator 2 off');
-            if ('annunciator' in callbacks) callbacks.annunicator(2, false);
+            _annunciators[2] = false;
             break;
         case LOC.CLRAN3:
             _debug('Annunciator 3 off');
-            if ('annunciator' in callbacks) callbacks.annunicator(3, false);
+            _annunciators[3] = false;
             if ('doublehires' in callbacks) callbacks.doublehires(true);
             break;
         case LOC.SPEAKER:
@@ -272,6 +274,11 @@ function Apple2IO(cpu, callbacks)
             break;
         case LOC.PDLTRIG:
             _trigger = cpu.cycles();
+            break;
+        case LOC.RDDHIRES:
+            if ('isDoubleHires' in callbacks) {
+                result = callbacks.isDoubleHires() ? 0x80 : 0x0;
+            }
             break;
         case LOC.TAPEIN:
             // var flipped = false;
@@ -474,6 +481,10 @@ function Apple2IO(cpu, callbacks)
 
         addSampleListener: function addSampleListener(cb) {
             _audioListener = cb;
+        },
+
+        annunciator: function annunciator(idx) {
+            return _annunciators[idx];
         }
     };
 }

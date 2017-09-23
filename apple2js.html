@@ -47,15 +47,16 @@
 <script type="text/javascript" src="js/util.js"></script>
 <script type="text/javascript" src="js/prefs.js"></script>
 <script type="text/javascript" src="js/ram.js"></script>
-<script type="text/javascript" src="js/langcard.js"></script>
 <script type="text/javascript" src="js/applesoft/decompiler.js"></script>
 <script type="text/javascript" src="js/intbasic/decompiler.js"></script>
 <script type="text/javascript" src="js/canvas2.js"></script>
 <script type="text/javascript" src="js/apple2io.js"></script>
-<script type="text/javascript" src="js/parallel.js"></script>
-<script type="text/javascript" src="js/disk2.js"></script>
-<script type="text/javascript" src="js/ramfactor.js"></script>
-<script type="text/javascript" src="js/thunderclock.js"></script>
+<script type="text/javascript" src="js/cards/langcard.js"></script>
+<script type="text/javascript" src="js/cards/parallel.js"></script>
+<script type="text/javascript" src="js/cards/videoterm.js"></script>
+<script type="text/javascript" src="js/cards/disk2.js"></script>
+<script type="text/javascript" src="js/cards/ramfactor.js"></script>
+<script type="text/javascript" src="js/cards/thunderclock.js"></script>
 <script type="text/javascript" src="js/cpu6502.js"></script>
 <script type="text/javascript" src="js/base64.js"></script>
 <script type="text/javascript" src="js/roms/fpbasic.js"></script>
@@ -63,32 +64,28 @@
 <script type="text/javascript" src="js/roms/original.js"></script>
 <script type="text/javascript" src="js/roms/apple2_char.js"></script>
 <script type="text/javascript" src="js/ui/audio.js"></script>
-<script type="text/javascript" src="js/ui/keyboard2.js"></script>
+<script type="text/javascript" src="js/ui/keyboard.js"></script>
 <script type="text/javascript" src="js/ui/gamepad.js"></script>
 <script type="text/javascript" src="js/ui/printer.js"></script>
 
 <!-- Disk Index -->
 <script type="text/javascript" src="json/disks/index.js"></script>
 
-<script type="text/javascript" src="js/main2.js"></script>
-
 </head>
 <body>
   <div style="margin: auto; width: 604px">
-    <a href="http://www.w3.org/html/logo/"><img src="http://www.w3.org/html/logo/badge/html5-badge-h-solo.png" width="63" height="64" alt="HTML5 Powered" title="HTML5 Powered" style="float: right"></a>
-    <a href="about.html" target="_blank">
-      <img src="img/badge.png" id="badge" />
-    </a>
-    <h1 id="subtitle">An Apple ][ Emulator in JavaScript</h1>
-    <table id="display">
-      <tr>
-        <td style="vertical-align: top">
-          <div class="overscan">
-            <canvas id="screen" width="560" height="384"></canvas>
-          </div>
-        </td>
-      </tr>
-    </table>
+    <div id="header">
+      <a href="http://www.w3.org/html/logo/"><img src="http://www.w3.org/html/logo/badge/html5-badge-h-solo.png" width="63" height="64" alt="HTML5 Powered" title="HTML5 Powered" style="float: right"></a>
+      <a href="about.html" target="_blank">
+        <img src="img/badge.png" id="badge" />
+      </a>
+      <h1 id="subtitle">An Apple ][ Emulator in JavaScript</h1>
+    </div>
+    <div id="display">
+      <div class="overscan">
+        <canvas id="screen" width="560" height="384"></canvas>
+      </div>
+    </div>
     <div class="inset">
       <div style="float: left; width: 50%">
         <div class="disk" id="disk1">&nbsp;</div>
@@ -128,12 +125,38 @@
     </div>
     <div class="inset">
       <div id="keyboard"></div>
+      <div id="textarea" style="display: none">
+        <button onclick="io.keyDown(0x1b)">
+          ESC
+        </button>
+        <button onclick="reset()" style="float: right; margin-left: 10px">
+          Reset
+        </button>
+        <button onclick="io.keyDown(0x15)" style="float: right">
+          &rarr;
+        </button>
+        <button onclick="io.keyDown(0x08)" style="float: right">
+          &larr;
+        </button>
+          <label for="text_input">Text Input</label>
+          <textarea rows="10" style="width: 99%" id="text_input"></textarea>
+        <br />
+        <button onclick="io.setKeyBuffer($('#text_input').val())">
+          Send
+        </button>
+        <input type="checkbox" id="buffering" />
+        <label for="buffering">Buffer</label>
+        <button style="float: right"
+                onclick="$('#keyboard').show(); $('#textarea').hide()">
+          Keyboard
+        </button>
+      </div>
     </div>
   </div>
-  <div id="loading" title="Loading">
+  <div id="loading" title="Loading" style="display: none">
     Loading...
   </div>
-  <div id="options" title="Options">
+  <div id="options" title="Options" style="display: none">
     <h3>CPU</h3>
     <ul>
       <li>
@@ -141,7 +164,7 @@
           <option value="apple2plus">Apple ][+</option>
           <option value="apple2">Autostart Apple ][</option>
           <option value="original">Apple ][</option>
-        <select>
+        </select>
         <label for="computer_type">
           Type
         </label>
@@ -212,9 +235,9 @@
       </li>
     </ul>
   </div>
-  <div id="save" title="Save Disk">
+  <div id="save" title="Save Disk" style="display: none">
     <form action="#" onsubmit="return false;">
-      <b>Save to Browser</a>
+      <b>Save to Browser</b>
       <br /><br />
       Save Name: <input type="text" name="name" id="save_name"
                   style="width: 200px" />
@@ -226,14 +249,14 @@
       <a id="local_save_link" class="button">Download</a>
     </div>
   </div>
-  <div id="manage" title="Manage Disks">
+  <div id="manage" title="Manage Disks" style="display: none">
   </div>
-  <div id="http_load" title="Load URL">
+  <div id="http_load" title="Load URL" style="display: none">
     <form action="#">
       <input type="text" id="http_url" style="width: 500px"/>
     </form>
   </div>
-  <div id="load" title="Load Disk">
+  <div id="load" title="Load Disk" style="display: none">
     <table>
       <tr>
         <td>
@@ -255,5 +278,6 @@
       <input type="file" id="local_file" />
     </form>
   </div>
+  <script type="text/javascript" src="js/main2.js"></script>
 </body>
 </html>

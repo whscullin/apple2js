@@ -52,43 +52,41 @@
 <script type="text/javascript" src="js/intbasic/decompiler.js"></script>
 <script type="text/javascript" src="js/canvas2e.js"></script>
 <script type="text/javascript" src="js/apple2io.js"></script>
-<script type="text/javascript" src="js/parallel.js"></script>
-<script type="text/javascript" src="js/disk2.js"></script>
-<script type="text/javascript" src="js/ramfactor.js"></script>
-<script type="text/javascript" src="js/thunderclock.js"></script>
+<script type="text/javascript" src="js/cards/parallel.js"></script>
+<script type="text/javascript" src="js/cards/disk2.js"></script>
+<script type="text/javascript" src="js/cards/ramfactor.js"></script>
+<script type="text/javascript" src="js/cards/thunderclock.js"></script>
 <script type="text/javascript" src="js/cpu6502.js"></script>
 <script type="text/javascript" src="js/base64.js"></script>
 <script type="text/javascript" src="js/roms/apple2e.js"></script>
 <script type="text/javascript" src="js/roms/apple2enh.js"></script>
 <script type="text/javascript" src="js/roms/apple2e_char.js"></script>
+<script type="text/javascript" src="js/roms/apple2enh_char.js"></script>
 <script type="text/javascript" src="js/ui/audio.js"></script>
-<script type="text/javascript" src="js/ui/keyboard2e.js"></script>
+<script type="text/javascript" src="js/ui/keyboard.js"></script>
 <script type="text/javascript" src="js/ui/gamepad.js"></script>
 <script type="text/javascript" src="js/ui/printer.js"></script>
 
 <!-- Disk Index -->
 <script type="text/javascript" src="json/disks/index.js"></script>
 
-<script type="text/javascript" src="js/main2e.js"></script>
 </head>
 <body class="apple2e">
   <div style="margin: auto; width: 604px">
-    <a href="http://www.w3.org/html/logo/"><img src="http://www.w3.org/html/logo/badge/html5-badge-h-solo.png" width="63" height="64" alt="HTML5 Powered" title="HTML5 Powered" style="float: right"></a>
-    <a href="about.html" target="_blank">
-      <img src="img/badge.png" id="badge" />
-    </a>
-    <h1 id="subtitle">An Apple //e Emulator in JavaScript</h1>
-    <table id="display">
-      <tr>
-        <td style="vertical-align: top">
-          <div role="textbox" class="overscan"
-               onKeyDown="_keydown(event);"
-               onKeyUp="_keyup(event);">
-            <canvas id="screen" width="560" height="384"></canvas>
-          </div>
-        </td>
-      </tr>
-    </table>
+    <div id="header">
+      <a href="http://www.w3.org/html/logo/"><img src="http://www.w3.org/html/logo/badge/html5-badge-h-solo.png" width="63" height="64" alt="HTML5 Powered" title="HTML5 Powered" style="float: right"></a>
+      <a href="about.html" target="_blank">
+        <img src="img/badge.png" id="badge" />
+      </a>
+      <h1 id="subtitle">An Apple //e Emulator in JavaScript</h1>
+    </div>
+    <div id="display">
+      <div class="overscan"
+           onkeydown="_keydown(event);"
+           onkeyup="_keyup(event);">
+        <canvas id="screen" width="560" height="384"></canvas>
+      </div>
+    </div>
     <div class="inset">
       <div style="float: left; width: 50%">
         <div class="disk" id="disk1">&nbsp;</div>
@@ -143,7 +141,7 @@
         <select id="computer_type" value="apple2enh" onchange="updateCPU()">
           <option value="apple2enh">Enhanced Apple //e</option>
           <option value="apple2e">Apple //e</option>
-        <select>
+        </select>
         <label for="computer_type">
           Type
         </label>
@@ -216,7 +214,7 @@
   </div>
   <div id="save" title="Save Disk">
     <form action="#" onsubmit="return false;">
-      <b>Save to Browser</a>
+      <b>Save to Browser</b>
       <br /><br />
       Save Name: <input type="text" name="name" id="save_name"
                   style="width: 200px" />
@@ -257,5 +255,6 @@
       <input type="file" id="local_file" />
     </form>
   </div>
+  <script type="text/javascript" src="js/main2e.js"></script>
 </body>
 </html>

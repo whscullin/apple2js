@@ -30,6 +30,9 @@ function allocMem(size) {
     } else {
         result = new Array(size);
     }
+    for (var idx = 0; idx < size; idx++) {
+        result[idx] = (idx & 0x02) ? 0x00 : 0xff;
+    }
     return result;
 }
 

@@ -12,8 +12,9 @@
 /*globals allocMemPages: false, debug: false,
   base64_encode: false, base64_decode: false,
   enhanced: false */
-/*exported LoresPage, HiresPage, VideoModes */
+/*exported LoresPage, HiresPage, VideoModes, scanlines, multiScreen */
 
+var multiScreen = false;
 var textMode = true;
 var mixedMode = false;
 var hiresMode = false;
@@ -27,8 +28,6 @@ var mixedDHRMode = false;
 var highColorHGRMode = false;
 var highColorTextMode = false;
 
-var pages = [];
-var context = null;
 var scanlines = false;
 
 /****************************************************************************
@@ -37,7 +36,7 @@ var scanlines = false;
  *
  ***************************************************************************/
 
-function LoresPage(page, charset)
+function LoresPage(page, charset, context)
 {
     'use strict';
 
@@ -46,6 +45,7 @@ function LoresPage(page, charset)
     // $80-$FF normal
 
     var _page = page;
+    var _imageData;
     var _buffer = [];
     var _refreshing = false;
     var _greenMode = false;
@@ -75,13 +75,13 @@ function LoresPage(page, charset)
     ];
 
     function _init() {
+        var idx;
+        _imageData = context.createImageData(560, 384);
+        for (idx = 0; idx < 560 * 384 * 4; idx++) {
+            _imageData.data[idx] = 0xff;
+        }
         _buffer[0] = allocMemPages(0x4);
         _buffer[1] = allocMemPages(0x4);
-
-        for (var idx = 0; idx < 0x400; idx++) {
-            _buffer[0][idx] = 0; // idx & 0x2 ? 0xff : 0x00;
-            _buffer[1][idx] = 0; // idx & 0x2 ? 0xff : 0x00;
-        }
     }
 
     function _drawPixel(data, off, color) {
@@ -178,8 +178,9 @@ function LoresPage(page, charset)
                 base = addr - 0x400 * _page,
                 fore, back;
 
-            if (_buffer[bank][base] == val && !_refreshing)
+            if (_buffer[bank][base] == val && !_refreshing) {
                 return;
+            }
             _buffer[bank][base] = val;
 
             var col = (base % 0x80) % 0x28,
@@ -193,13 +194,10 @@ function LoresPage(page, charset)
             var row = ab | cd | e;
             var b;
 
-            var data = pages[_page].data;
+            var data = _imageData.data;
             if ((row < 24) && (col < 40)) {
-                if (!textMode && hiresMode && !(mixedMode && row > 19))
-                    return;
-
                 var color;
-                if (textMode || (mixedMode && row > 19)) {
+                if (textMode || hiresMode || (mixedMode && row > 19)) {
                     var flash = ((val & 0xc0) == 0x40) &&
                         _blink && !_80colMode && !altCharMode;
                     fore = flash ? _black : (_greenMode ? _green : _white);
@@ -236,8 +234,8 @@ function LoresPage(page, charset)
                         off = (col * 14 + row * 560 * 8 * 2) * 4;
 
                         if (highColorTextMode) {
-                            fore = _colors[_buffer[0][base] >> 4];
-                            back = _colors[_buffer[0][base] & 0x0f];
+                            fore = _colors[_buffer[1][base] >> 4];
+                            back = _colors[_buffer[1][base] & 0x0f];
                         }
 
                         for (jdx = 0; jdx < 8; jdx++) {
@@ -327,8 +325,9 @@ function LoresPage(page, charset)
             _refreshing = true;
             for (var idx = 0; idx < 0x400; idx++, addr++) {
                 this._write(addr >> 8, addr & 0xff, _buffer[0][idx], 0);
-                if (_80colMode)
+                if (_80colMode) {
                     this._write(addr >> 8, addr & 0xff, _buffer[1][idx], 1);
+                }
             }
             _refreshing = false;
         },
@@ -349,15 +348,21 @@ function LoresPage(page, charset)
             _greenMode = on;
             this.refresh();
         },
-        blit: function() {
-            context.putImageData(pages[_page], 0, 0);
+        blit: function(mixed) {
+            if (mixed) {
+                context.putImageData(_imageData, 0, 0, 0, 320, 560, 64);
+            } else {
+                context.putImageData(_imageData, 0, 0, 0, 0, 560, 384);
+            }
         },
         getState: function() {
             return {
                 page: _page,
                 green: _greenMode,
-                buffer: [base64_encode(_buffer[0]),
-                         base64_encode(_buffer[1])]
+                buffer: [
+                    base64_encode(_buffer[0]),
+                    base64_encode(_buffer[1])
+                ]
             };
         },
         setState: function(state) {
@@ -377,31 +382,34 @@ function LoresPage(page, charset)
  *
  ***************************************************************************/
 
-function HiresPage(page)
+function HiresPage(page, context)
 {
     'use strict';
 
     var _page = page;
+    var _imageData;
 
-    var r4 = [0,   // Black
-              2,   // Dark Blue
-              4,   // Dark Green
-              6,   // Medium Blue
+    var r4 = [
+        0,   // Black
+        2,   // Dark Blue
+        4,   // Dark Green
+        6,   // Medium Blue
 
-              8,   // Brown
-              5,   // Gray 1
-              12,  // Light Green
-              14,  // Aqua
+        8,   // Brown
+        5,   // Gray 1
+        12,  // Light Green
+        14,  // Aqua
 
-              1,   // Red
-              3,   // Purple
-              10,  // Gray 2
-              7,  // Pink
+        1,   // Red
+        3,   // Purple
+        10,  // Gray 2
+        7,  // Pink
 
-              9,   // Orange
-              11,   // Light Blue
-              13,  // Yellow
-              15]; // White
+        9,   // Orange
+        11,   // Light Blue
+        13,  // Yellow
+        15   // White
+    ];
 
     var dcolors = [
         [0x00,0x00,0x00],  // black
@@ -437,12 +445,13 @@ function HiresPage(page)
     var _green = [0x00, 0xff, 0x80];
 
     function _init() {
+        var idx;
+        _imageData = context.createImageData(560, 384);
+        for (idx = 0; idx < 560 * 384 * 4; idx++) {
+            _imageData.data[idx] = 0xff;
+        }
         _buffer[0] = allocMemPages(0x20);
         _buffer[1] = allocMemPages(0x20);
-        for (var idx = 0; idx < 0x2000; idx++) {
-            _buffer[0][idx] = 0; // idx & 0x2 ? 0xff : 0x00;
-            _buffer[1][idx] = 0; // idx & 0x2 ? 0xff : 0x00;
-        }
     }
 
     function _drawPixel(data, off, color) {
@@ -528,12 +537,22 @@ function HiresPage(page)
 
         _write: function(page, off, val, bank) {
             function dim(c) {
-                return [c[0] * 0.75, c[1] * 0.75, c[2] * 0.75];
+                return [
+                    c[0] * 0.75 & 0xff,
+                    c[1] * 0.75 & 0xff,
+                    c[2] * 0.75 & 0xff
+                ];
             }
             var addr = (page << 8) | off, base = addr - 0x2000 * _page,
                 idx, jdx;
-            if (_buffer[bank][base] == val && !_refreshing)
+
+            if (addr < (0x2000 * _page) || addr >= (0x2000 * _page + 0x2000)) {
                 return;
+            }
+
+            if (_buffer[bank][base] == val && !_refreshing) {
+                return;
+            }
             _buffer[bank][base] = val;
 
             var hbs = val & 0x80;
@@ -550,16 +569,23 @@ function HiresPage(page)
             var rowa = ab | cd | e,
                 rowb = base >> 10;
 
-            var dx, dy, data = pages[_page].data;
+            var dx, dy, data = _imageData.data;
             if ((rowa < 24) && (col < 40)) {
-                if (textMode || !hiresMode || (mixedMode && rowa > 19))
+                if (!multiScreen && !hiresMode) {
                     return;
+                }
 
                 dy = rowa * 16 + rowb * 2;
                 var bz, b0, b1, b2, b3, b4, c, hb;
                 if (doubleHiresMode) {
                     // Every 4 bytes is 7 pixels
                     // 2 bytes per bank
+
+                    // b0       b1       b2       b3
+                    //  c0  c1    c2  c3    c4  c5    c6
+                    // 76543210 76543210 76543210 76543210
+                    //  1111222  2333344  4455556  6667777
+
                     var mod = col % 2, mcol = col - mod;
                     bz = _buffer[0][base - mod - 1];
                     b0 = _buffer[1][base - mod];
@@ -567,24 +593,28 @@ function HiresPage(page)
                     b2 = _buffer[1][base - mod + 1];
                     b3 = _buffer[0][base - mod + 1];
                     b4 = _buffer[1][base - mod + 2];
-                    c = [0,
-                         ((b0 & 0x0f) >> 0), // 0
-                         ((b0 & 0x70) >> 4) | ((b1 & 0x01) << 3), // 1
-                         ((b1 & 0x1e) >> 1), // 2
-                         ((b1 & 0x60) >> 5) | ((b2 & 0x03) << 2), // 3
-                         ((b2 & 0x3c) >> 2), // 4
-                         ((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1), // 5
-                         ((b3 & 0x78) >> 3), // 6
-                         0], // 7
-                    hb = [0,
-                          b0 & 0x80, // 0
-                          b0 & 0x80, // 1
-                          b1 & 0x80, // 2
-                          b2 & 0x80, // 3
-                          b2 & 0x80, // 4
-                          b3 & 0x80, // 5
-                          b3 & 0x80, // 6
-                          0]; // 7
+                    c = [
+                        0,
+                        ((b0 & 0x0f) >> 0), // 0
+                        ((b0 & 0x70) >> 4) | ((b1 & 0x01) << 3), // 1
+                        ((b1 & 0x1e) >> 1), // 2
+                        ((b1 & 0x60) >> 5) | ((b2 & 0x03) << 2), // 3
+                        ((b2 & 0x3c) >> 2), // 4
+                        ((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1), // 5
+                        ((b3 & 0x78) >> 3), // 6
+                        0
+                    ], // 7
+                    hb = [
+                        0,
+                        b0 & 0x80, // 0
+                        b0 & 0x80, // 1
+                        b1 & 0x80, // 2
+                        b2 & 0x80, // 3
+                        b2 & 0x80, // 4
+                        b3 & 0x80, // 5
+                        b3 & 0x80, // 6
+                        0
+                    ]; // 7
                     if (col > 0) {
                         c[0] = (bz & 0x78) >> 3;
                         hb[0] = bz & 0x80;
@@ -626,19 +656,21 @@ function HiresPage(page)
                                 }
                             } else if (colorDHRMode) {
                                 _drawHalfPixel(data, off, dcolor);
-                            } else if (((bits & 0x3c) == 0x3c) ||
-                                       ((bits & 0xf0) == 0xf0) ||
-                                       ((bits & 0x1e) == 0x1e) ||
-                                       ((bits & 0x78) == 0x78)) {
+                            } else if (
+                                ((c[idx] != c[idx - 1]) && (c[idx] != c[idx + 1])) &&
+                                (((bits & 0x1c) == 0x1c) ||
+                                ((bits & 0x70) == 0x70) ||
+                                ((bits & 0x38) == 0x38))
+                            ) {
                                 _drawHalfPixel(data, off, whiteCol);
-                            } else if (((c[idx] == c[idx + 1]) &&
-                                        (bits & 0xf0)) ||
-                                       ((c[idx] == c[idx - 1]) &&
-                                        (bits & 0x01e)) ||
-                                       (bits & 0x10)) {
+                            } else if (
+                                (bits & 0x38) ||
+                                (c[idx] == c[idx + 1]) ||
+                                (c[idx] == c[idx - 1])
+                            ) {
                                 _drawHalfPixel(data, off, dcolor);
-                            } else if ((bits & 0x28) == 0x28) {
-                                _drawHalfPixel(data, off, dcolor);
+                            }  else if (bits & 0x28) {
+                                _drawHalfPixel(data, off, dim(dcolor));
                             } else {
                                 _drawHalfPixel(data, off, blackCol);
                             }
@@ -668,12 +700,15 @@ function HiresPage(page)
                         evenCol = (hbs ? blueCol : violetCol);
 
                     off = dx * 4 + dy * 280 * 4 * 2;
+
+                    monoColor = _greenMode ? _green : null;
+
                     for (idx = 0; idx < 9; idx++, off += 8) {
                         val >>= 1;
 
                         if (v1) {
-                            if (_greenMode) {
-                                color = _green;
+                            if (monoColor) {
+                                color = monoColor;
                             } else if (highColorHGRMode) {
                                 color = dcolors[_buffer[1][base] >> 4];
                             } else if (v0 || v2) {
@@ -682,7 +717,7 @@ function HiresPage(page)
                                 color = odd ? oddCol : evenCol;
                             }
                         } else {
-                            if (_greenMode) {
+                            if (monoColor) {
                                 color = blackCol;
                             } else if (highColorHGRMode) {
                                 color = dcolors[_buffer[1][base] & 0x0f];
@@ -715,8 +750,9 @@ function HiresPage(page)
                 page = addr >> 8;
                 off = addr & 0xff;
                 this._write(page, off, _buffer[0][idx], 0);
-                if (_80colMode)
+                if (_80colMode) {
                     this._write(page, off, _buffer[1][idx], 1);
+                }
             }
             _refreshing = false;
         },
@@ -724,15 +760,21 @@ function HiresPage(page)
             _greenMode = on;
             this.refresh();
         },
-        blit: function() {
-            context.putImageData(pages[_page], 0, 0);
+        blit: function(mixed) {
+            if (mixed) {
+                context.putImageData(_imageData, 0, 0, 0, 0, 560, 320);
+            } else {
+                context.putImageData(_imageData, 0, 0, 0, 0, 560, 384);
+            }
         },
         getState: function() {
             return {
                 page: _page,
                 green: _greenMode,
-                buffer: [base64_encode(_buffer[0]),
-                         base64_encode(_buffer[1])]
+                buffer: [
+                    base64_encode(_buffer[0]),
+                    base64_encode(_buffer[1])
+                ]
             };
         },
         setState: function(state) {
@@ -746,7 +788,7 @@ function HiresPage(page)
     };
 }
 
-function VideoModes(gr,hgr,gr2,hgr2) {
+function VideoModes(gr, hgr, gr2, hgr2) {
     var _grs = [gr, gr2];
     var _hgrs = [hgr, hgr2];
     var _seq = '';
@@ -817,7 +859,7 @@ function VideoModes(gr,hgr,gr2,hgr2) {
             hiresMode = on;
             highColorHGRMode = false;
 
-            _seq = (on ? 'H+' : 'H-');
+            _seq = on ? 'H+' : 'H-';
             // debug('_seq=', _seq);
 
             if (old != on) {
@@ -897,21 +939,23 @@ function VideoModes(gr,hgr,gr2,hgr2) {
         isAltChar: function() {
             return altCharMode;
         },
-        setContext: function(c) {
-            context = c;
-
-            pages[1] = c.createImageData(560, 384);
-            pages[2] = c.createImageData(560, 384);
-            for (var idx = 0; idx < 560 * 384 * 4; idx++) {
-                pages[1].data[idx] = 0xff;
-                pages[2].data[idx] = 0xff;
-            }
-        },
         blit: function() {
-            if (hiresMode && !textMode) {
-                _hgrs[pageMode - 1].blit();
+            if (multiScreen) {
+                _grs[0].blit();
+                _grs[1].blit();
+                _hgrs[0].blit();
+                _hgrs[1].blit();
             } else {
-                _grs[pageMode - 1].blit();
+                if (hiresMode && !textMode) {
+                    if (mixedMode) {
+                        _grs[pageMode - 1].blit(true);
+                        _hgrs[pageMode - 1].blit(true);
+                    } else {
+                        _hgrs[pageMode - 1].blit();
+                    }
+                } else {
+                    _grs[pageMode - 1].blit();
+                }
             }
         },
         getState: function() {

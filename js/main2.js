@@ -2,11 +2,14 @@
            CPU6502: false,
            RAM: false,
            Apple2ROM: false, IntBASIC: false, OriginalROM: false,
-           apple2_charset: false,
+           Apple2jROM: false,
+           apple2_charset: false, apple2j_charset: false,
+           pigfont_charset: false, apple2lc_charset: false,
            Apple2IO: false
            LoresPage: false, HiresPage: false, VideoModes: false
-           KeyBoard2: false,
+           KeyBoard: false,
            Parallel: false,
+           Videoterm: false,
            DiskII: false,
            Printer: false,
            LanguageCard: false,
@@ -16,14 +19,16 @@
            disk_index: false,
            initAudio: false, enableSound: false,
            initGamepad: false, processGamepad: false, gamepad: false,
-           ApplesoftDump: false, SYMBOLS: false
+           ApplesoftDump: false, SYMBOLS: false,
+           multiScreen: true
 */
 /* exported openLoad, openSave, doDelete,
             selectCategory, selectDisk, clickDisk,
             updateJoystick,
             pauseRun, step,
             restoreState, saveState,
-            dumpProgram, PageDebug
+            dumpProgram, PageDebug,
+            multiScreen
 */
 
 var kHz = 1023;
@@ -116,7 +121,7 @@ function DriveLights()
     };
 }
 
-var DISK_TYPES = ['dsk','do','po','raw','nib','2mg'];
+var DISK_TYPES = ['dsk','d13','do','po','raw','nib','2mg'];
 var TAPE_TYPES = ['wav','aiff','aif','mp3'];
 
 var _currentDrive = 1;
@@ -351,34 +356,76 @@ var prefs = new Prefs();
 var runTimer = null;
 var cpu = new CPU6502();
 
+var context1, context2, context3, context4;
+
+var canvas1 = document.getElementById('screen');
+var canvas2 = document.getElementById('screen2');
+var canvas3 = document.getElementById('screen3');
+var canvas4 = document.getElementById('screen4');
+
+context1 = canvas1.getContext('2d');
+if (canvas4) {
+    multiScreen = true;
+    context2 = canvas2.getContext('2d');
+    context3 = canvas3.getContext('2d');
+    context4 = canvas4.getContext('2d');
+} else if (canvas2) {
+    multiScreen = true;
+    context2 = context1;
+    context3 = canvas2.getContext('2d');
+    context4 = context3;
+} else {
+    context2 = context1;
+    context3 = context1;
+    context4 = context1;
+}
+
+var romVersion = prefs.readPref('computer_type2');
+var rom;
+var char_rom = apple2_charset;
+switch (romVersion) {
+case 'apple2':
+    rom = new IntBASIC();
+    break;
+case'original':
+    rom = new OriginalROM();
+    break;
+case 'apple2jplus':
+    rom = new Apple2jROM();
+    char_rom = apple2j_charset;
+    break;
+case 'apple2pig':
+    rom = new Apple2ROM();
+    char_rom = pigfont_charset;
+    break;
+case 'apple2lc':
+    rom = new Apple2ROM();
+    char_rom = apple2lc_charset;
+    break;
+default:
+    rom = new Apple2ROM();
+}
+
+var gr = new LoresPage(1, char_rom, context1);
+var gr2 = new LoresPage(2, char_rom, context2);
+var hgr = new HiresPage(1, context3);
+var hgr2 = new HiresPage(2, context4);
+
 var ram1 = new RAM(0x00, 0x03),
     ram2 = new RAM(0x0C, 0x1F),
     ram3 = new RAM(0x60, 0xBF);
 
-var hgr = new HiresPage(1);
-var hgr2 = new HiresPage(2);
-var gr = new LoresPage(1, apple2_charset);
-var gr2 = new LoresPage(2, apple2_charset);
-
-var romVersion = prefs.readPref('computer_type');
-var rom;
-if (romVersion == 'apple2') {
-    rom = new IntBASIC();
-} else if (romVersion == 'original') {
-    rom = new OriginalROM();
-} else {
-    rom = new Apple2ROM();
-}
 
 var vm = new VideoModes(gr, hgr, gr2, hgr2);
 var dumper = new ApplesoftDump(cpu);
 
 var drivelights = new DriveLights();
 var io = new Apple2IO(cpu, vm);
-var keyboard = new KeyBoard2(io);
+var keyboard = new KeyBoard(io);
 var lc = new LanguageCard(io, 0, rom);
 var parallel = new Parallel(io, 1, new Printer());
 var slinky = new RAMFactor(io, 2, 1024 * 1024);
+var videoterm = new Videoterm(io, 3, context1);
 var disk2 = new DiskII(io, 6, drivelights);
 var clock = new Thunderclock(io, 7);
 
@@ -395,6 +442,7 @@ cpu.addPageHandler(lc);
 io.setSlot(0, lc);
 io.setSlot(1, parallel);
 io.setSlot(2, slinky);
+io.setSlot(3, videoterm);
 io.setSlot(6, disk2);
 io.setSlot(7, clock);
 
@@ -523,7 +571,14 @@ function run(pc) {
             } else {
                 cpu.stepCycles(step);
             }
-            vm.blit();
+            if (io.annunciator(0)) {
+                if (multiScreen) {
+                    vm.blit();
+                }
+                videoterm.blit();
+            } else {
+                vm.blit();
+            }
             io.sampleTick();
         }
 
@@ -757,7 +812,7 @@ function processHash(hash) {
  */
 
 function _keydown(evt) {
-    if (!focused || (!evt.metaKey || evt.ctrlKey)) {
+    if (!focused && (!evt.metaKey || evt.ctrlKey)) {
         evt.preventDefault();
 
         var key = keyboard.mapKeyEvent(evt);
@@ -873,11 +928,6 @@ $(function() {
             self.blur();
         }, 1);
     });
-
-    var canvas = document.getElementById('screen');
-    var context = canvas.getContext('2d');
-
-    vm.setContext(context);
 
     /*
      * Input Handling
