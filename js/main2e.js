@@ -89,8 +89,8 @@ function DriveLights()
     return {
         driveLight: function(drive, on) {
             $('#disk' + drive).css('background-image',
-                                    on ? 'url(css/red-on-16.png)' :
-                                         'url(css/red-off-16.png)');
+                on ? 'url(css/red-on-16.png)' :
+                    'url(css/red-off-16.png)');
         },
         dirty: function() {
             // $('#disksave' + drive).button('option', 'disabled', !dirty);
@@ -327,7 +327,7 @@ function doLoadHTTP(drive, _url) {
         req.responseType = 'arraybuffer';
 
         req.onload = function() {
-            var parts = url.split(/[\/\.]/);
+            var parts = url.split(/[/.]/);
             var name = decodeURIComponent(parts[parts.length - 2]);
             var ext = parts[parts.length - 1].toLowerCase();
             if (req.response.byteLength >= 400 * 1024) {
@@ -401,12 +401,12 @@ if (canvas4) {
     context4 = context1;
 }
 
-var gr = new LoresPage(1, char_rom, context1);
-var gr2 = new LoresPage(2, char_rom, context2);
+var gr = new LoresPage(1, char_rom, true, context1);
+var gr2 = new LoresPage(2, char_rom, true, context2);
 var hgr = new HiresPage(1, context3);
 var hgr2 = new HiresPage(2, context4);
 
-var vm = new VideoModes(gr, hgr, gr2, hgr2);
+var vm = new VideoModes(gr, hgr, gr2, hgr2, true);
 var dumper = new ApplesoftDump(cpu);
 
 var drivelights = new DriveLights();
@@ -919,20 +919,20 @@ $(function() {
         }
         evt.preventDefault();
     })
-    .mouseup(function(evt) {
-        if (!gamepad) {
-            io.buttonUp(evt.which == 1 ? 0 : 1);
-        }
-    })
-    .bind('contextmenu', function(evt) { evt.preventDefault(); });
+        .mouseup(function(evt) {
+            if (!gamepad) {
+                io.buttonUp(evt.which == 1 ? 0 : 1);
+            }
+        })
+        .bind('contextmenu', function(evt) { evt.preventDefault(); });
 
     $('body').mousemove(_mousemove);
 
     $('body > div').hover(function() { focused = false; },
-                          function() { focused = true; });
+        function() { focused = true; });
 
     $('input,textarea').focus(function() { focused = true; })
-                       .blur(function() { focused = false; });
+        .blur(function() { focused = false; });
 
     keyboard.create($('#keyboard'));
 

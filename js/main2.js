@@ -28,7 +28,8 @@
             pauseRun, step,
             restoreState, saveState,
             dumpProgram, PageDebug,
-            multiScreen
+            multiScreen,
+            enhanced
 */
 
 var kHz = 1023;
@@ -91,9 +92,12 @@ function DriveLights()
 {
     return {
         driveLight: function(drive, on) {
-            $('#disk' + drive).css('background-image',
-                                    on ? 'url(css/red-on-16.png)' :
-                                         'url(css/red-off-16.png)');
+            $('#disk' + drive).css(
+                'background-image',
+                on ?
+                    'url(css/red-on-16.png)' :
+                    'url(css/red-off-16.png)'
+            );
         },
         dirty: function() {
             // $('#disksave' + drive).button('option', 'disabled', !dirty);
@@ -330,7 +334,7 @@ function doLoadHTTP(drive, _url) {
         req.responseType = 'arraybuffer';
 
         req.onload = function() {
-            var parts = url.split(/[\/\.]/);
+            var parts = url.split(/[/.]/);
             var name = decodeURIComponent(parts[parts.length - 2]);
             var ext = parts[parts.length - 1].toLowerCase();
             if (disk2.setBinary(drive, name, ext, req.response)) {
@@ -381,6 +385,7 @@ if (canvas4) {
 }
 
 var romVersion = prefs.readPref('computer_type2');
+var enhanced = false;
 var rom;
 var char_rom = apple2_charset;
 switch (romVersion) {
@@ -406,8 +411,8 @@ default:
     rom = new Apple2ROM();
 }
 
-var gr = new LoresPage(1, char_rom, context1);
-var gr2 = new LoresPage(2, char_rom, context2);
+var gr = new LoresPage(1, char_rom, false, context1);
+var gr2 = new LoresPage(2, char_rom, false, context2);
 var hgr = new HiresPage(1, context3);
 var hgr2 = new HiresPage(2, context4);
 
@@ -416,7 +421,7 @@ var ram1 = new RAM(0x00, 0x03),
     ram3 = new RAM(0x60, 0xBF);
 
 
-var vm = new VideoModes(gr, hgr, gr2, hgr2);
+var vm = new VideoModes(gr, hgr, gr2, hgr2, false);
 var dumper = new ApplesoftDump(cpu);
 
 var drivelights = new DriveLights();
@@ -942,17 +947,17 @@ $(function() {
         }
         evt.preventDefault();
     })
-    .mouseup(function(evt) {
-        if (!gamepad) {
-            io.buttonUp(evt.which == 1 ? 0 : 1);
-        }
-    })
-    .bind('contextmenu', function(evt) { evt.preventDefault(); });
+        .mouseup(function(evt) {
+            if (!gamepad) {
+                io.buttonUp(evt.which == 1 ? 0 : 1);
+            }
+        })
+        .bind('contextmenu', function(evt) { evt.preventDefault(); });
 
     $('body').mousemove(_mousemove);
 
     $('input,textarea').focus(function() { focused = true; })
-                       .blur(function() { focused = false; });
+        .blur(function() { focused = false; });
 
     keyboard.create($('#keyboard'));
 
@@ -973,9 +978,7 @@ $(function() {
         });
     }
 
-    if (romVersion != 'original') {
-        reset();
-    }
+    reset();
     run();
     setInterval(updateKHz, 1000);
     updateSound();

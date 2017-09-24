@@ -36,7 +36,7 @@ var scanlines = false;
  *
  ***************************************************************************/
 
-function LoresPage(page, charset, context)
+function LoresPage(page, charset, e, context)
 {
     'use strict';
 
@@ -119,12 +119,6 @@ function LoresPage(page, charset, context)
     _init();
 
     return {
-        start: function() {
-            var self = this;
-            window.setInterval(function() {
-                self.blink();
-            }, 267);
-        },
         bank0: function() {
             var self = this;
             return {
@@ -189,19 +183,29 @@ function LoresPage(page, charset, context)
             // 000001cd eabab000 -> 000abcde
             var ab = (adj & 0x18),
                 cd = (page & 0x03) << 1,
-                e = adj >> 7;
+                ee = adj >> 7;
             var idx, jdx;
-            var row = ab | cd | e;
+            var row = ab | cd | ee;
             var b;
 
             var data = _imageData.data;
             if ((row < 24) && (col < 40)) {
                 var color;
                 if (textMode || hiresMode || (mixedMode && row > 19)) {
-                    var flash = ((val & 0xc0) == 0x40) &&
-                        _blink && !_80colMode && !altCharMode;
-                    fore = flash ? _black : (_greenMode ? _green : _white);
-                    back = flash ? (_greenMode ? _green : _white) : _black;
+                    if (e) {
+                        var flash = ((val & 0xc0) == 0x40) &&
+                            _blink && !_80colMode && !altCharMode;
+                        fore = flash ? _black : (_greenMode ? _green : _white);
+                        back = flash ? (_greenMode ? _green : _white) : _black;
+                    } else {
+                        if (val & 0x80 || ((val & 0x40) && _blink)) {
+                            fore = _greenMode ? _green : _white;
+                            back = _black;
+                        } else {
+                            fore = _black;
+                            back = _greenMode ? _green : _white;
+                        }
+                    }
 
                     if (_80colMode) {
                         if (!enhanced) {
@@ -238,15 +242,29 @@ function LoresPage(page, charset, context)
                             back = _colors[_buffer[1][base] & 0x0f];
                         }
 
-                        for (jdx = 0; jdx < 8; jdx++) {
-                            b = charset[val * 8 + jdx];
-                            for (idx = 0; idx < 7; idx++) {
-                                color = (b & 0x01) ? back : fore;
-                                _drawPixel(data, off, color);
-                                b >>= 1;
-                                off += 8;
+                        if (e) {
+                            for (jdx = 0; jdx < 8; jdx++) {
+                                b = charset[val * 8 + jdx];
+                                for (idx = 0; idx < 7; idx++) {
+                                    color = (b & 0x01) ? back : fore;
+                                    _drawPixel(data, off, color);
+                                    b >>= 1;
+                                    off += 8;
+                                }
+                                off += 546 * 4 + 560 * 4;
                             }
-                            off += 546 * 4 + 560 * 4;
+                        } else {
+                            for (jdx = 0; jdx < 8; jdx++) {
+                                b = charset[val * 8 + jdx];
+                                b <<= 1;
+                                for (idx = 0; idx < 7; idx++) {
+                                    color = (b & 0x80) ? fore : back;
+                                    _drawPixel(data, off, color);
+                                    b <<= 1;
+                                    off += 8;
+                                }
+                                off += 546 * 4 + 560 * 4;
+                            }
                         }
                     }
                 } else {
@@ -275,7 +293,7 @@ function LoresPage(page, charset, context)
                             }
                             for (jdx = 0; jdx < 8; jdx++) {
                                 color = _colors[(jdx < 4) ?
-                                                (val & 0x0f) : (val >> 4)];
+                                    (val & 0x0f) : (val >> 4)];
                                 for (idx = 0; idx < 7; idx++) {
                                     _drawHalfPixel(data, off, color);
                                     off += 4;
@@ -306,8 +324,7 @@ function LoresPage(page, charset, context)
                             }
                         } else {
                             for (jdx = 0; jdx < 8; jdx++) {
-                                color = _colors[(jdx < 4) ?
-                                                (val & 0x0f) : (val >> 4)];
+                                color = _colors[(jdx < 4) ? (val & 0x0f) : (val >> 4)];
                                 for (idx = 0; idx < 7; idx++) {
                                     _drawPixel(data, off, color);
                                     off += 8;
@@ -354,6 +371,22 @@ function LoresPage(page, charset, context)
             } else {
                 context.putImageData(_imageData, 0, 0, 0, 0, 560, 384);
             }
+        },
+        start: function() {
+            var self = this;
+            setInterval(function() {
+                self.blink();
+            }, 267);
+            return this._start();
+        },
+        end: function() {
+            return this._end();
+        },
+        read: function(page, off) {
+            return this._read(page, off, 0);
+        },
+        write: function(page, off, val) {
+            return this._write(page, off, val, 0);
         },
         getState: function() {
             return {
@@ -767,6 +800,18 @@ function HiresPage(page, context)
                 context.putImageData(_imageData, 0, 0, 0, 0, 560, 384);
             }
         },
+        start: function() {
+            return this._start();
+        },
+        end: function() {
+            return this._end();
+        },
+        read: function(page, off) {
+            return this._read(page, off, 0);
+        },
+        write: function(page, off, val) {
+            return this._write(page, off, val, 0);
+        },
         getState: function() {
             return {
                 page: _page,
@@ -788,7 +833,7 @@ function HiresPage(page, context)
     };
 }
 
-function VideoModes(gr, hgr, gr2, hgr2) {
+function VideoModes(gr, hgr, gr2, hgr2, e) {
     var _grs = [gr, gr2];
     var _hgrs = [hgr, hgr2];
     var _seq = '';
@@ -836,6 +881,7 @@ function VideoModes(gr, hgr, gr2, hgr2) {
             }
         },
         _80col: function(on) {
+            if (!e) { return; }
             var old = _80colMode;
             _80colMode = on;
 
@@ -848,6 +894,7 @@ function VideoModes(gr, hgr, gr2, hgr2) {
             }
         },
         altchar: function(on) {
+            if (!e) { return; }
             var old = altCharMode;
             altCharMode = on;
             if (old != on) {
@@ -867,6 +914,7 @@ function VideoModes(gr, hgr, gr2, hgr2) {
             }
         },
         doublehires: function(on) {
+            if (!e) { return; }
             var old = doubleHiresMode;
             doubleHiresMode = on;
 
