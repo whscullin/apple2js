@@ -30,6 +30,22 @@ var highColorTextMode = false;
 
 var scanlines = false;
 
+function dim(c) {
+    return [
+        c[0] * 0.75 & 0xff,
+        c[1] * 0.75 & 0xff,
+        c[2] * 0.75 & 0xff
+    ];
+}
+
+// hires colors
+var orangeCol = [0xff, 0x65, 0x00];
+var greenCol = [0x00, 0xff, 0x00];
+var blueCol = [0x09, 0x2a, 0xff];
+var violetCol = [0xc9, 0x39, 0xc7];
+var whiteCol = [0xff, 0xff, 0xff];
+var blackCol = [0x00, 0x00, 0x00];
+
 /****************************************************************************
  *
  * Text/Lores Graphics
@@ -51,8 +67,6 @@ function LoresPage(page, charset, e, context)
     var _greenMode = false;
     var _blink = false;
 
-    var _black = [0x00,0x00,0x00];
-    var _white = [0xff,0xff,0xff];
     var _green = [0x00,0xff,0x80];
 
     var _colors = [
@@ -192,20 +206,17 @@ function LoresPage(page, charset, e, context)
             if ((row < 24) && (col < 40)) {
                 var color;
                 if (textMode || hiresMode || (mixedMode && row > 19)) {
+                    var inverse;
                     if (e) {
-                        var flash = ((val & 0xc0) == 0x40) &&
-                            _blink && !_80colMode && !altCharMode;
-                        fore = flash ? _black : (_greenMode ? _green : _white);
-                        back = flash ? (_greenMode ? _green : _white) : _black;
-                    } else {
-                        if (val & 0x80 || ((val & 0x40) && _blink)) {
-                            fore = _greenMode ? _green : _white;
-                            back = _black;
-                        } else {
-                            fore = _black;
-                            back = _greenMode ? _green : _white;
+                        if (!_80colMode && !altCharMode) {
+                            inverse = ((val & 0xc0) == 0x40) && _blink;
                         }
+                    } else {
+                        inverse = !((val & 0x80) || (val & 0x40) && _blink);
                     }
+
+                    fore = inverse ? blackCol : (_greenMode ? _green : whiteCol);
+                    back = inverse ? (_greenMode ? _green : whiteCol) : blackCol;
 
                     if (_80colMode) {
                         if (!enhanced) {
@@ -254,11 +265,34 @@ function LoresPage(page, charset, e, context)
                                 off += 546 * 4 + 560 * 4;
                             }
                         } else {
+                            var colorMode = mixedMode && !textMode && !_greenMode;
+                            // var val0 = col > 0 ? _buffer[0][base - 1] : 0;
+                            // var val2 = col < 39 ? _buffer[0][base + 1] : 0;
+
                             for (jdx = 0; jdx < 8; jdx++) {
-                                b = charset[val * 8 + jdx];
-                                b <<= 1;
+                                var odd = !(col & 0x1);
+                                b = charset[val * 8 + jdx] << 1;
+                                if (colorMode) {
+                                    // var b0 = charset[val0 * 8 + jdx];
+                                    // var b2 = charset[val2 * 8 + jdx];
+                                    if (inverse) { b ^= 0x1ff; }
+                                }
+
                                 for (idx = 0; idx < 7; idx++) {
-                                    color = (b & 0x80) ? fore : back;
+                                    if (colorMode) {
+                                        if (b & 0x80) {
+                                            if ((b & 0x1c0) != 0x80) {
+                                                color = whiteCol;
+                                            } else {
+                                                color = odd ? violetCol : greenCol;
+                                            }
+                                        } else {
+                                            color = blackCol;
+                                        }
+                                        odd = !odd;
+                                    } else {
+                                        color = (b & 0x80) ? fore : back;
+                                    }
                                     _drawPixel(data, off, color);
                                     b <<= 1;
                                     off += 8;
@@ -272,7 +306,7 @@ function LoresPage(page, charset, e, context)
                         off = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8 * 2) * 4;
                         if (_greenMode) {
                             fore = _green;
-                            back = _black;
+                            back = blackCol;
                             for (jdx = 0; jdx < 8; jdx++) {
                                 b = (jdx < 8) ? (val & 0x0f) : (val >> 4);
                                 b |= (b << 4);
@@ -306,7 +340,7 @@ function LoresPage(page, charset, e, context)
 
                         if (_greenMode) {
                             fore = _green;
-                            back = _black;
+                            back = blackCol;
                             for (jdx = 0; jdx < 8; jdx++) {
                                 b = (jdx < 4) ? (val & 0x0f) : (val >> 4);
                                 b |= (b << 4);
@@ -463,14 +497,6 @@ function HiresPage(page, context)
         [0xff,0xff,0xff]   // 0xf white
     ];
 
-    // hires colors
-    var orangeCol = [0xff, 0x65, 0x00];
-    var greenCol = [0x00, 0xff, 0x00];
-    var blueCol = [0x09, 0x2a, 0xff];
-    var violetCol = [0xc9, 0x39, 0xc7];
-    var whiteCol = [0xff, 0xff, 0xff];
-    var blackCol = [0x00, 0x00, 0x00];
-
     var _buffer = [];
     var _refreshing = false;
 
@@ -569,13 +595,6 @@ function HiresPage(page, context)
         },
 
         _write: function(page, off, val, bank) {
-            function dim(c) {
-                return [
-                    c[0] * 0.75 & 0xff,
-                    c[1] * 0.75 & 0xff,
-                    c[2] * 0.75 & 0xff
-                ];
-            }
             var addr = (page << 8) | off, base = addr - 0x2000 * _page,
                 idx, jdx;
 
