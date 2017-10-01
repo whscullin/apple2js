@@ -646,6 +646,8 @@ function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
 
     return {
         start: function mmu_start() {
+            lores1.start();
+            lores2.start();
             return 0x00;
         },
         end: function mmu_end() {
