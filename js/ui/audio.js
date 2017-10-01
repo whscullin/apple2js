@@ -20,10 +20,11 @@ var sound = true;
 var _samples = [];
 
 var audioContext;
+var AudioContext = window.AudioContext || window.webkitAudioContext;
 var audioNode;
 
-if (window.AudioContext) {
-    audioContext = new window.AudioContext();
+if (AudioContext) {
+    audioContext = new AudioContext();
     audioNode = audioContext.createScriptProcessor(4096, 1, 1);
 
     audioNode.onaudioprocess = function(event) {
