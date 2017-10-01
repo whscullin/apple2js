@@ -147,37 +147,53 @@ function KeyBoard(io, e) {
         0xBE: [0x2E, 0x2E, 0x3E], // . - >
         0xBF: [0x2F, 0x2F, 0x3F], // / - ?
         0xC0: [0x60, 0x60, 0x7E], // ` - ~
-        0xDB: [0x5B, 0x5B, 0x7B], // [
-        0xDC: [0x5C, 0x5C, 0x7C], // \
-        0xDD: [0x5D, 0x5D, 0x7D], // ]
+        0xDB: [0x5B, 0x1B, 0x7B], // [ - {
+        0xDC: [0x5C, 0x1C, 0x7C], // \ - |
+        0xDD: [0x5D, 0x1D, 0x7D], // ] - }
         0xDE: [0x27, 0x22, 0x22], // ' - '
 
         0xFF: [0xFF, 0xFF, 0xFF] // No comma line
     };
 
-    var keys2 =
-        [[['1','2','3','4','5','6','7','8','9','0',':','-','RESET'],
-          ['ESC','Q','W','E','R','T','Y','U','I','O','P','REPT','RETURN'],
-          ['CTRL','A','S','D','F','G','H','J','K','L',';','&larr;','&rarr;'],
-          ['SHIFT','Z','X','C','V','B','N','M',',','.','/','SHIFT'],
-          ['POWER', '&nbsp;']],
-        [['!','"','#','$','%','&','\'','(',')','0','*','=','RESET'],
-          ['ESC','Q','W','E','R','T','Y','U','I','O','@','REPT','RETURN'],
-          ['CTRL','A','S','D','F','BELL','H','J','K','L','+','&larr;','&rarr;'],
-          ['SHIFT','Z','X','C','V','B','^',']','<','>','?','SHIFT'],
-          ['POWER', '&nbsp;']]];
+    var uiKitMap = {
+        'Dead': 0xFF,
+        'UIKeyInputLeftArrow': 0x08,
+        'UIKeyInputRightArrow': 0x15,
+        'UIKeyInputUpArrow': 0x0B,
+        'UIKeyInputDownArrow': 0x0A,
+        'UIKeyInputEscape': 0x1B
+    };
+
+    var keys2 = [
+        [
+            ['1','2','3','4','5','6','7','8','9','0',':','-','RESET'],
+            ['ESC','Q','W','E','R','T','Y','U','I','O','P','REPT','RETURN'],
+            ['CTRL','A','S','D','F','G','H','J','K','L',';','&larr;','&rarr;'],
+            ['SHIFT','Z','X','C','V','B','N','M',',','.','/','SHIFT'],
+            ['POWER', '&nbsp;']
+        ], [
+            ['!','"','#','$','%','&','\'','(',')','0','*','=','RESET'],
+            ['ESC','Q','W','E','R','T','Y','U','I','O','@','REPT','RETURN'],
+            ['CTRL','A','S','D','F','BELL','H','J','K','L','+','&larr;','&rarr;'],
+            ['SHIFT','Z','X','C','V','B','^',']','<','>','?','SHIFT'],
+            ['POWER', '&nbsp;']
+        ]
+    ];
 
     var keys2e = [
-        [['ESC','1','2','3','4','5','6','7','8','9','0','-','=','DELETE'],
-          ['TAB','Q','W','E','R','T','Y','U','I','O','P','[',']','\\'],
-          ['CTRL','A','S','D','F','G','H','J','K','L',';','"','RETURN'],
-          ['SHIFT','Z','X','C','V','B','N','M',',','.','/','SHIFT'],
-          ['LOCK','`','POW','OPEN_APPLE','&nbsp;','CLOSED_APPLE','&larr;','&rarr;','&darr;','&uarr;']],
-        [['ESC','!','@','#','$','%','^','&','*','(',')','_','+','DELETE'],
-          ['TAB','Q','W','E','R','T','Y','U','I','O','P','{','}','|'],
-          ['CTRL','A','S','D','F','G','H','J','K','L',':','\'','RETURN'],
-          ['SHIFT','Z','X','C','V','B','N','M','<','>','?','SHIFT'],
-          ['CAPS','~','POW','OPEN_APPLE','&nbsp;','CLOSED_APPLE','&larr;','&rarr;','&darr;','&uarr;']]
+        [
+            ['ESC','1','2','3','4','5','6','7','8','9','0','-','=','DELETE'],
+            ['TAB','Q','W','E','R','T','Y','U','I','O','P','[',']','\\'],
+            ['CTRL','A','S','D','F','G','H','J','K','L',';','"','RETURN'],
+            ['SHIFT','Z','X','C','V','B','N','M',',','.','/','SHIFT'],
+            ['LOCK','`','POW','OPEN_APPLE','&nbsp;','CLOSED_APPLE','&larr;','&rarr;','&darr;','&uarr;']
+        ], [
+            ['ESC','!','@','#','$','%','^','&','*','(',')','_','+','DELETE'],
+            ['TAB','Q','W','E','R','T','Y','U','I','O','P','{','}','|'],
+            ['CTRL','A','S','D','F','G','H','J','K','L',':','\'','RETURN'],
+            ['SHIFT','Z','X','C','V','B','N','M','<','>','?','SHIFT'],
+            ['CAPS','~','POW','OPEN_APPLE','&nbsp;','CLOSED_APPLE','&larr;','&rarr;','&darr;','&uarr;']
+        ]
     ];
 
     var keys = e ? keys2e : keys2;
@@ -192,12 +208,19 @@ function KeyBoard(io, e) {
         mapKeyEvent: function keyboard_mapKeyEvent(evt) {
             var code = evt.keyCode, key = 0xff;
 
-            if (code in keymap) {
+            if (evt.key in uiKitMap) {
+                key = uiKitMap[evt.key];
+            } else if (code in keymap) {
                 key = keymap[code][evt.shiftKey ? 2 : (evt.ctrlKey ? 1 : 0)];
                 if (capslocked && key >= 0x61 && key <= 0x7A)
                     key -= 0x20;
             } else {
                 debug('Unhandled key = ' + toHex(code));
+            }
+
+            if (key == 0x7F && evt.shiftKey && evt.ctrlKey) {
+                reset();
+                key = 0xff;
             }
 
             return key;

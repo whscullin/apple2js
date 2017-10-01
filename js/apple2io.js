@@ -246,7 +246,7 @@ function Apple2IO(cpu, callbacks)
                 }
                 _key = val.charCodeAt(0) | 0x80;
             }
-            result = _keyDown ? 0x80 : 0x00;
+            result = (_keyDown ? 0x80 : 0x00) | _key;
             break;
         case LOC.KEYBOARD:
             result = _key;
@@ -436,7 +436,6 @@ function Apple2IO(cpu, callbacks)
 
         keyUp: function apple2io_keyUp() {
             _keyDown = false;
-            _key = 0;
         },
 
         buttonDown: function apple2io_buttonDown(b) {
@@ -456,6 +455,7 @@ function Apple2IO(cpu, callbacks)
 
             _cycles_per_sample = _hz / _rate;
         },
+
         setKeyBuffer: function apple2io_setKeyBuffer(buffer) {
             _buffer = buffer.split('');
             if (_buffer.length > 0) {

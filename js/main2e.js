@@ -786,7 +786,7 @@ function _keydown(evt) {
 
         var key = keyboard.mapKeyEvent(evt);
         if (key != 0xff) {
-            io.keyDown(key, evt.shiftKey);
+            io.keyDown(key);
         }
     }
     if (evt.keyCode === 112) { // F1 - Reset
