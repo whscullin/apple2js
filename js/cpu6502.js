@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2016 Will Scullin <scullin@scullinsteel.com>
+ * Copyright 2010-2017 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that

@@ -1,4 +1,4 @@
-/* Copyright 2010-2016 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2017 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -82,6 +82,24 @@ function LanguageCard(io, slot, rom) {
         _OFFBSR1: 0x8e,
         _READWRBSR1: 0x8f
     };
+
+    function _updateBanks() {
+        if (_readbsr) {
+            _read1 = _bsr2 ? _bank2 : _bank1;
+            _read2 = _ram;
+        } else {
+            _read1 = _rom;
+            _read2 = _rom;
+        }
+
+        if (_writebsr) {
+            _write1 = _bsr2 ? _bank2 : _bank1;
+            _write2 = _ram;
+        } else {
+            _write1 = rom;
+            _write2 = rom;
+        }
+    }
 
     function _access(off, val) {
         var readMode = val === undefined;
@@ -173,21 +191,7 @@ function LanguageCard(io, slot, rom) {
             break;
         }
 
-        if (_readbsr) {
-            _read1 = _bsr2 ? _bank2 : _bank1;
-            _read2 = _ram;
-        } else {
-            _read1 = _rom;
-            _read2 = _rom;
-        }
-
-        if (_writebsr) {
-            _write1 = _bsr2 ? _bank2 : _bank1;
-            _write2 = _ram;
-        } else {
-            _write1 = rom;
-            _write2 = rom;
-        }
+        _updateBanks();
 
         return result;
     }
@@ -224,6 +228,7 @@ function LanguageCard(io, slot, rom) {
                 writebsr: _writebsr,
                 bsr2: _bsr2,
                 prewrite: _prewrite,
+                ram: _ram.getState(),
                 bank1: _bank1.getState(),
                 bank2: _bank2.getState()
             };
@@ -232,10 +237,11 @@ function LanguageCard(io, slot, rom) {
             _readbsr = state.readbsr;
             _writebsr = state.writebsr;
             _bsr2 = state.bsr2;
+            _prewrite = state.prewrite;
+            _ram.setState(state.ram);
             _bank1.setState(state.bank1);
             _bank2.setState(state.bank2);
-            _access(-1);
-            _prewrite = state.prewrite;
+            _updateBanks();
         }
     };
 }

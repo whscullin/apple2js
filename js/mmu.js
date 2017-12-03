@@ -1,4 +1,4 @@
-/* Copyright 2010-2016 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2017 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -671,20 +671,22 @@ function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
         },
         getState: function() {
             return {
+                bank1: _bank1,
                 readbsr: _readbsr,
                 writebsr: _writebsr,
-                bank1: _bank1,
                 prewrite: _prewrite,
 
                 intcxrom: _intcxrom,
                 slot3rom: _slot3rom,
                 intc8rom: _intc8rom,
+
                 auxRamRead: _auxRamRead,
                 auxRamWrite: _auxRamWrite,
                 altzp: _altzp,
 
                 _80store: _80store,
                 page2: _page2,
+                hires: _hires,
 
                 mem00_01: [mem00_01[0].getState(), mem00_01[1].getState()],
                 mem02_03: [mem02_03[0].getState(), mem02_03[1].getState()],
@@ -701,16 +703,19 @@ function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
             _readbsr = state.readbsr;
             _writebsr = state.writebsr;
             _bank1 = state.bank1;
+            _prewrite = state.prewrite;
 
             _intcxrom = state.intcxrom;
             _slot3rom = state.slot3rom;
             _intc8rom = state.intc8rom;
+
             _auxRamRead = state.auxRamRead;
             _auxRamWrite = state.auxRamWrite;
             _altzp = state.altzp;
 
             _80store = state._80store;
             _page2 = state.page2;
+            _hires = state.hires;
 
             mem00_01[0].setState(state.mem00_01[0]);
             mem00_01[1].setState(state.mem00_01[1]);
@@ -727,8 +732,7 @@ function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
             memE0_FF[0].setState(state.memE0_FF[0]);
             memE0_FF[1].setState(state.memE0_FF[1]);
 
-            _access(-1);
-            _prewrite = state.prewrite;
+            _updateBanks();
         }
     };
 }

@@ -1,4 +1,4 @@
-/* Copyright 2010-2016 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2017 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -78,7 +78,7 @@ function toBinary(v) {
 // From http://www.netlobo.com/url_query_string_javascript.html
 function gup( name )
 {
-    name = name.replace(/[\[]/,'\\[').replace(/[\]]/,'\\]');
+    name = name.replace(/[[]/,'\\[').replace(/[\]]/,'\\]');
     var regexS = '[\\?&]'+name+'=([^&#]*)';
     var regex = new RegExp( regexS );
     var results = regex.exec( window.location.href );

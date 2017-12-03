@@ -1,4 +1,4 @@
-/* Copyright 2010-2016 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2017 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -752,11 +752,10 @@ function DiskII(io, slot, callbacks)
                 on: _on,
                 drive: _drive
             };
-            _drives.forEach(function (drive, idx) {
-                var _drive = result.drives[idx] = getDriveState(drive);
-                callbacks.driveLight(idx, _drive.on);
-                callbacks.dirty(idx, _drive.dirty);
+            _drives.forEach(function(drive, idx) {
+                result.drives[idx] = getDriveState(drive);
             });
+
             return result;
         },
         setState: function disk2_setState(state) {
@@ -778,6 +777,8 @@ function DiskII(io, slot, callbacks)
             }
             state.drives.forEach(function(drive, idx) {
                 _drives[idx] = setDriveState(drive);
+                callbacks.driveLight(idx, _drive.on);
+                callbacks.dirty(idx, _drive.dirty);
             });
             _skip = state.skip;
             _latch = state.latch;

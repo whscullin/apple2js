@@ -1,4 +1,4 @@
-/* globals debug: false, gup: false, hup: false, toHex: false
+/* globals debug: false, gup: false, hup: false, toHex: false,
            CPU6502: false,
            Apple2eROM: false, Apple2eEnhancedROM: false,
            apple2e_charset: false, rmfont_charset: false,
@@ -14,7 +14,7 @@
            Thunderclock: false,
            Prefs: false,
            disk_index: false,
-           initAudio: false, enableSound: false,
+           Audio: false,
            initGamepad: false, processGamepad: false, gamepad: false,
            ApplesoftDump: false, SYMBOLS: false,
            multiScreen: true
@@ -24,8 +24,10 @@
             multiScreen,
             updateJoystick,
             pauseRun, step,
+            toggleSound,
             restoreState, saveState,
-            dumpProgram, PageDebug
+            dumpProgram, PageDebug,
+            enhanced
 */
 
 var kHz = 1023;
@@ -412,6 +414,7 @@ var dumper = new ApplesoftDump(cpu);
 var drivelights = new DriveLights();
 var io = new Apple2IO(cpu, vm);
 var keyboard = new KeyBoard(io, true);
+var audio = new Audio(io);
 
 var mmu = new MMU(cpu, vm, gr, gr2, hgr, hgr2, io, rom);
 
@@ -450,11 +453,8 @@ function updateKHz() {
     lastFrames = renderedFrames;
 }
 
-/* Audio Handling */
-initAudio(io);
-
 function updateSound() {
-    enableSound($('#enable_sound').attr('checked'));
+    audio.enable($('#enable_sound').attr('checked'));
 }
 
 function dumpDisk(drive) {
@@ -812,6 +812,10 @@ function _keydown(evt) {
         }
     } else if (evt.keyCode === 114) { // F3
         io.keyDown(0x1b);
+    } else if (evt.keyCode === 117) { // F6 Quick Save
+        saveState();
+    } else if (evt.keyCode === 120) { // F9 Quick Restore
+        restoreState();
     } else if (evt.keyCode == 16) { // Shift
         keyboard.shiftKey(true);
     } else if (evt.keyCode == 17) { // Control
@@ -966,7 +970,6 @@ $(function() {
         autoOpen: false,
         modal: true,
         width: 320,
-        height: 400,
         buttons: {'Close': cancel }
     });
     $('#load').dialog({

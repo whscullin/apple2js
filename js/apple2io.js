@@ -1,4 +1,4 @@
-/* Copyright 2010-2016 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2017 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -92,8 +92,7 @@ function Apple2IO(cpu, callbacks)
         PDLTRIG:  0x70, // trigger paddles
         BANK:     0x73, // Back switched RAM card bank
         SETIOUDIS:0x7E, // Enable double hires
-        CLRIOUDIS:0x7F, // Disable double hires
-        RDDHIRES: 0x7F  // Read double hires status
+        CLRIOUDIS:0x7F  // Disable double hires
     };
 
     function _debug() {
@@ -422,8 +421,14 @@ function Apple2IO(cpu, callbacks)
             }
         },
 
-        getState: function apple2io_getState() { return {}; },
-        setState: function apple2io_setState() { },
+        getState: function apple2io_getState() {
+            return {
+                annunciators: _annunciators[0]
+            };
+        },
+        setState: function apple2io_setState(state) {
+            _annunciators = state.annunciators;
+        },
 
         setSlot: function apple2io_setSlot(slot, card) {
             _slot[slot] = card;

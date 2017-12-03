@@ -1,7 +1,10 @@
+/*globals debug: false */
 /*exported Printer */
 
 function Printer() {
     var _printer = null;
+    var _linebuffer = '';
+
     return {
         putChar: function(val) {
             if (!_printer || _printer.closed) {
@@ -13,14 +16,21 @@ function Printer() {
                     window.focus();
                 }
             }
+            var c = String.fromCharCode(val & 0x7f);
             if (_printer) {
-                var c = String.fromCharCode(val & 0x7f);
                 if (c == '\r') {
                     _printer.document.write('<br /></span>');
                 } else if (c == ' ') {
                     _printer.document.write('&nbsp;');
                 } else {
                     _printer.document.write(c);
+                }
+            } else {
+                if (c == '\r') {
+                    debug(_linebuffer);
+                    _linebuffer = '';
+                } else if (c == ' ') {
+                    _linebuffer += c;
                 }
             }
         }

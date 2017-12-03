@@ -6,7 +6,7 @@
            apple2_charset: false, apple2j_charset: false,
            pigfont_charset: false, apple2lc_charset: false,
            Apple2IO: false
-           LoresPage: false, HiresPage: false, VideoModes: false
+           LoresPage: false, HiresPage: false, VideoModes: false,
            KeyBoard: false,
            Parallel: false,
            Videoterm: false,
@@ -17,18 +17,19 @@
            Thunderclock: false,
            Prefs: false,
            disk_index: false,
-           initAudio: false, enableSound: false,
+           Audio: false,
            initGamepad: false, processGamepad: false, gamepad: false,
            ApplesoftDump: false, SYMBOLS: false,
            multiScreen: true
 */
 /* exported openLoad, openSave, doDelete,
             selectCategory, selectDisk, clickDisk,
+            multiScreen,
             updateJoystick,
             pauseRun, step,
+            toggleSound,
             restoreState, saveState,
             dumpProgram, PageDebug,
-            multiScreen,
             enhanced
 */
 
@@ -357,33 +358,6 @@ function openManage() {
 }
 
 var prefs = new Prefs();
-var runTimer = null;
-var cpu = new CPU6502();
-
-var context1, context2, context3, context4;
-
-var canvas1 = document.getElementById('screen');
-var canvas2 = document.getElementById('screen2');
-var canvas3 = document.getElementById('screen3');
-var canvas4 = document.getElementById('screen4');
-
-context1 = canvas1.getContext('2d');
-if (canvas4) {
-    multiScreen = true;
-    context2 = canvas2.getContext('2d');
-    context3 = canvas3.getContext('2d');
-    context4 = canvas4.getContext('2d');
-} else if (canvas2) {
-    multiScreen = true;
-    context2 = context1;
-    context3 = canvas2.getContext('2d');
-    context4 = context3;
-} else {
-    context2 = context1;
-    context3 = context1;
-    context4 = context1;
-}
-
 var romVersion = prefs.readPref('computer_type2');
 var enhanced = false;
 var rom;
@@ -411,6 +385,33 @@ default:
     rom = new Apple2ROM();
 }
 
+var runTimer = null;
+var cpu = new CPU6502();
+
+var context1, context2, context3, context4;
+
+var canvas1 = document.getElementById('screen');
+var canvas2 = document.getElementById('screen2');
+var canvas3 = document.getElementById('screen3');
+var canvas4 = document.getElementById('screen4');
+
+context1 = canvas1.getContext('2d');
+if (canvas4) {
+    multiScreen = true;
+    context2 = canvas2.getContext('2d');
+    context3 = canvas3.getContext('2d');
+    context4 = canvas4.getContext('2d');
+} else if (canvas2) {
+    multiScreen = true;
+    context2 = context1;
+    context3 = canvas2.getContext('2d');
+    context4 = context3;
+} else {
+    context2 = context1;
+    context3 = context1;
+    context4 = context1;
+}
+
 var gr = new LoresPage(1, char_rom, false, context1);
 var gr2 = new LoresPage(2, char_rom, false, context2);
 var hgr = new HiresPage(1, context3);
@@ -427,6 +428,7 @@ var dumper = new ApplesoftDump(cpu);
 var drivelights = new DriveLights();
 var io = new Apple2IO(cpu, vm);
 var keyboard = new KeyBoard(io);
+var audio = new Audio(io);
 var lc = new LanguageCard(io, 0, rom);
 var parallel = new Parallel(io, 1, new Printer());
 var slinky = new RAMFactor(io, 2, 1024 * 1024);
@@ -474,11 +476,8 @@ function updateKHz() {
     lastFrames = renderedFrames;
 }
 
-/* Audio Handling */
-initAudio(io);
-
 function updateSound() {
-    enableSound($('#enable_sound').attr('checked'));
+    audio.enable($('#enable_sound').attr('checked'));
 }
 
 function dumpDisk(drive) {
@@ -848,6 +847,10 @@ function _keydown(evt) {
         }
     } else if (evt.keyCode === 114) { // F3
         io.keyDown(0x1b);
+    } else if (evt.keyCode === 117) { // F6 Quick Save
+        saveState();
+    } else if (evt.keyCode === 120) { // F9 Quick Restore
+        restoreState();
     } else if (evt.keyCode == 16) { // Shift
         keyboard.shiftKey(true);
     } else if (evt.keyCode == 17) { // Control
@@ -870,8 +873,8 @@ function updateScreen() {
     var green = $('#green_screen').prop('checked');
     var scanlines = $('#show_scanlines').prop('checked');
 
-    vm.scanlines(scanlines);
     vm.green(green);
+    vm.scanlines(scanlines);
 }
 
 var disableMouseJoystick = false;
@@ -991,7 +994,6 @@ $(function() {
         autoOpen: false,
         modal: true,
         width: 320,
-        height: 400,
         buttons: {'Close': cancel }
     });
     $('#load').dialog({
@@ -1011,12 +1013,6 @@ $(function() {
         modal: true,
         width: 320,
         buttons: {'Close': cancel }
-    });
-    $('#local_save').dialog({
-        autoOpen: false,
-        modal: true,
-        width: 530,
-        buttons: {'OK': cancel }
     });
     $('#http_load').dialog({
         autoOpen: false,
