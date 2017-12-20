@@ -49,7 +49,8 @@ function CPU6502(options)
 
         /* 65c02 */
         zeroPageIndirect:   13,  // (zp),
-        absoluteXIndirect:  14   // (a, X)
+        absoluteXIndirect:  14,  // (a, X),
+        zeroPage_relative:  15   // zp, Relative
     };
 
     var sizes = {
@@ -68,7 +69,8 @@ function CPU6502(options)
         12 /* modes.zeroPageYIndirect */: 2,
 
         13 /* mode.zeroPageIndirect */: 2,
-        14 /* mode.absoluteXIndirect */: 3
+        14 /* mode.absoluteXIndirect */: 3,
+        15 /* mode.zeroPage_relative */: 3
     };
 
     /* Flags */
@@ -1053,23 +1055,23 @@ function CPU6502(options)
         ],
 
         // BBR/BBS
-        0x0F: ['BBR0', bbr, 0, modes.zp_relative, 5],
-        0x1F: ['BBR1', bbr, 1, modes.zp_relative, 5],
-        0x2F: ['BBR2', bbr, 2, modes.zp_relative, 5],
-        0x3F: ['BBR3', bbr, 3, modes.zp_relative, 5],
-        0x4F: ['BBR4', bbr, 4, modes.zp_relative, 5],
-        0x5F: ['BBR5', bbr, 5, modes.zp_relative, 5],
-        0x6F: ['BBR6', bbr, 6, modes.zp_relative, 5],
-        0x7F: ['BBR7', bbr, 7, modes.zp_relative, 5],
+        0x0F: ['BBR0', bbr, 0, modes.zeroPage_relative, 5],
+        0x1F: ['BBR1', bbr, 1, modes.zeroPage_relative, 5],
+        0x2F: ['BBR2', bbr, 2, modes.zeroPage_relative, 5],
+        0x3F: ['BBR3', bbr, 3, modes.zeroPage_relative, 5],
+        0x4F: ['BBR4', bbr, 4, modes.zeroPage_relative, 5],
+        0x5F: ['BBR5', bbr, 5, modes.zeroPage_relative, 5],
+        0x6F: ['BBR6', bbr, 6, modes.zeroPage_relative, 5],
+        0x7F: ['BBR7', bbr, 7, modes.zeroPage_relative, 5],
 
-        0x8F: ['BBS0', bbs, 0, modes.zp_relative, 5],
-        0x9F: ['BBS1', bbs, 1, modes.zp_relative, 5],
-        0xAF: ['BBS2', bbs, 2, modes.zp_relative, 5],
-        0xBF: ['BBS3', bbs, 3, modes.zp_relative, 5],
-        0xCF: ['BBS4', bbs, 4, modes.zp_relative, 5],
-        0xDF: ['BBS5', bbs, 5, modes.zp_relative, 5],
-        0xEF: ['BBS6', bbs, 6, modes.zp_relative, 5],
-        0xFF: ['BBS7', bbs, 7, modes.zp_relative, 5],
+        0x8F: ['BBS0', bbs, 0, modes.zeroPage_relative, 5],
+        0x9F: ['BBS1', bbs, 1, modes.zeroPage_relative, 5],
+        0xAF: ['BBS2', bbs, 2, modes.zeroPage_relative, 5],
+        0xBF: ['BBS3', bbs, 3, modes.zeroPage_relative, 5],
+        0xCF: ['BBS4', bbs, 4, modes.zeroPage_relative, 5],
+        0xDF: ['BBS5', bbs, 5, modes.zeroPage_relative, 5],
+        0xEF: ['BBS6', bbs, 6, modes.zeroPage_relative, 5],
+        0xFF: ['BBS7', bbs, 7, modes.zeroPage_relative, 5],
 
         // BRA
         0x80: ['BRA', brc, 0, modes.relative, 2],
@@ -1104,23 +1106,23 @@ function CPU6502(options)
 
         // RMB/SMB
 
-        0x07: ['RMB0', rmb, 0, modes.zp, 5],
-        0x17: ['RMB1', rmb, 1, modes.zp, 5],
-        0x27: ['RMB2', rmb, 2, modes.zp, 5],
-        0x37: ['RMB3', rmb, 3, modes.zp, 5],
-        0x47: ['RMB4', rmb, 4, modes.zp, 5],
-        0x57: ['RMB5', rmb, 5, modes.zp, 5],
-        0x67: ['RMB6', rmb, 6, modes.zp, 5],
-        0x77: ['RMB7', rmb, 7, modes.zp, 5],
+        0x07: ['RMB0', rmb, 0, modes.zeroPage, 5],
+        0x17: ['RMB1', rmb, 1, modes.zeroPage, 5],
+        0x27: ['RMB2', rmb, 2, modes.zeroPage, 5],
+        0x37: ['RMB3', rmb, 3, modes.zeroPage, 5],
+        0x47: ['RMB4', rmb, 4, modes.zeroPage, 5],
+        0x57: ['RMB5', rmb, 5, modes.zeroPage, 5],
+        0x67: ['RMB6', rmb, 6, modes.zeroPage, 5],
+        0x77: ['RMB7', rmb, 7, modes.zeroPage, 5],
 
-        0x87: ['SMB0', smb, 0, modes.zp, 5],
-        0x97: ['SMB1', smb, 1, modes.zp, 5],
-        0xA7: ['SMB2', smb, 2, modes.zp, 5],
-        0xB7: ['SMB3', smb, 3, modes.zp, 5],
-        0xC7: ['SMB4', smb, 4, modes.zp, 5],
-        0xD7: ['SMB5', smb, 5, modes.zp, 5],
-        0xE7: ['SMB6', smb, 6, modes.zp, 5],
-        0xF7: ['SMB7', smb, 7, modes.zp, 5],
+        0x87: ['SMB0', smb, 0, modes.zeroPage, 5],
+        0x97: ['SMB1', smb, 1, modes.zeroPage, 5],
+        0xA7: ['SMB2', smb, 2, modes.zeroPage, 5],
+        0xB7: ['SMB3', smb, 3, modes.zeroPage, 5],
+        0xC7: ['SMB4', smb, 4, modes.zeroPage, 5],
+        0xD7: ['SMB5', smb, 5, modes.zeroPage, 5],
+        0xE7: ['SMB6', smb, 6, modes.zeroPage, 5],
+        0xF7: ['SMB7', smb, 7, modes.zeroPage, 5],
 
         // STZ
         0x64: ['STZ', stz, writeZeroPage, modes.zeroPage, 3],
@@ -1247,16 +1249,14 @@ function CPU6502(options)
         case modes.absoluteXIndirect:
             result = '(' + toHexOrSymbol(readWord(addr, true), 4) + ',X)';
             break;
-        case modes.zp_relative:
-            {
-                val = readByte(addr, true);
-                off = readByte(addr, true);
-                if (off > 127) {
-                    off -= 256;
-                }
-                addr += off + 1;
-                result = val + ',', toHexOrSymbol(addr, 4) + ' (' + off + ')';
+        case modes.zeroPage_relative:
+            val = readByte(addr, true);
+            off = readByte(addr + 1, true);
+            if (off > 127) {
+                off -= 256;
             }
+            addr += off + 2;
+            result = '' + toHexOrSymbol(val) + ',' + toHexOrSymbol(addr, 4) + ' (' + off + ')';
             break;
         default:
             break;
