@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- -*- mode: HTML; indent-tabs-mode: nil -*- -->
 <!-- Copyright 2010-2016 Will Scullin -->
 <html>
   <head>
@@ -7,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="keywords" content="apple2,apple,ii,javascript,emulator,html5" />
     <link rel="shortcut icon" href="logoicon.png" />
-    <link rel="stylesheet" type="text/css" href="css/apple2.css" />
+    <link rel="stylesheet" type="text/css" href="apple2/css/apple2.css" />
     <title>About Apple ][js/Apple //jse</title>
     <script type="text/javascript">
 
@@ -39,17 +38,50 @@
     <span class="motter"><a href="../apple//e">Apple //jse</a></span>
     are Apple ][ and Apple //e emulators written entirely in JavaScript
     and HTML5.
+    <h2>Updates (2017-10-08)</h2>
+    <ul>
+      <li><h3>Better iOS support</h3>
+        Bluetooth keyboards now work better.
+        Reset is <tt>Ctrl-Shift-Delete</tt>. iOS now allows loadinging disks
+        from iCloud and services like Drop Box. Saving locally is still not
+        supported by iOS. I now understand why sound doesn't work, and
+        I'm working on a work-around.
+      </li>
+      <li><h3>Source Maps</h3>
+        Although the source code has always been available, by default
+        I serve up minified Javascript for performance reasons. But now you
+        can poke around more easily.
+      </li>
+    </ul>
+    <h2>Updates (2017-08-31)</h2>
+    (It's been a long time since I updated, so this is a rough list)
+    <ul>
+      <li><h3>Videx Videoterm Emulation (][js)</h3>
+        PR#3 now does something on the Apple ][!.
+      </li>
+      <li><h3>AppleColor RGB Card Emulation (//jse)</h3>
+        Now supports a bunch of the mostly non-standard video formats
+        found on the AppleColor RGB card, including 16 color text, 16 color
+        hires mode, and mixed black and white and color double hires
+      </li>
+      <li><h3>Machine selection</h3>
+        You can now select between original, autostart and plus Apple ][s,
+        and unenhanced and enhanced //es.
+      </li>
+    </ul>
     <h2>Updates (2013-07-04)</h2>
     <ul>
       <li><h3>RAMFactor Emulation (//jse)</h3>
         I now simulate having a 1 Megabyte RAMFactor card in slot 2.
-      <li><h3>Thunderclock Emulation (//jse)</h3>
+      </li>
+      <li><h3>Thunderclock Emulation</h3>
         There is cursory emulation of the Thunderclock card, enough
         to keep ProDOS applications from asking you to enter the date
         all the time. ProDOS attempts to guess the year from the month,
         the day and the day of the week, something that needs to be
         patched every 6 years. This means newer versions think it's 1996,
         older versions are stuck in the 80s.
+      </li>
       <li><h3>Firefox Nightly Joystick Support</h3>
         Joystick support has yet to officially land, but the latest
         nightlies support the gamepad API.
@@ -61,6 +93,7 @@
         I've switched from using setInterval() to requestAnimationFrame() where
         supported. This, in conjunction with the graphics re-write, seems
         to smooth performance and provide a more stable CPU speed.
+      </li>
       <li><h3>Graphics Re-Write</h3>
         This (third) re-write of the graphics system should improve performance
         with graphics intensive programs. Rather than rendering each graphics
@@ -150,85 +183,105 @@
     <h2>Acknowlegements</h2>
     <ul>
       <li>
-    <h3>I'm using the following libraries:</h3>
-    <ul>
-      <li>
-        <a href="http://jquery.com">jQuery</a> and
-        <a href="http://jqueryui.com">jQuery UI</a>
+        <h3>I'm using the following libraries:</h3>
+        <ul>
+          <li>
+            <a href="http://jquery.com">jQuery</a> and
+            <a href="http://jqueryui.com">jQuery UI</a>
+          </li>
+          <li>
+            Base64 Utilities via
+            <a href="http://kevin.vanzonneveld.net/">KvZ</a>
+          </li>
+          <li>
+            LED graphics from <a href="http://modernl.com/">Modern Life</a>.
+          </li>
+        </ul>
       </li>
       <li>
-        Base64 Utilities via
-        <a href="http://kevin.vanzonneveld.net/">KvZ</a>
+        <h3>I heavily referenced:</h3>
+        <ul>
+          <li>
+            <a href="http://www.scribd.com/doc/200679/Beneath-Apple-DOS-By-Don-Worth-and-Pieter-Lechner">
+              <i>Beneath Apple DOS</i>
+            </a>
+            by Don Worth and Pieter Lechner
+          </li>
+          <li>
+            <i>Inside the Apple //e</i> by Gary B. Little
+          </li>
+          <li>
+            <a href="http://apple2.org.za/gswv/a2zine/GS.WorldView/Resources/DOS.3.3.ANATOMY/">
+              <i>DOS 3.3 Anatomy</i>
+            </a>
+          </li>
+          <li>
+            <a href="http://www.doc.ic.ac.uk/~ih/doc/stepper/others/example3/diskii_specs.html">
+              <i>Apple II Disk Drive Article</i>
+            </a>
+            by Neil Parker
+          </li>
+          <li>
+            <a href="http://6502.org/">6502.org</a>
+          </li>
+          <li>
+            The
+            <a href="http://www.faqs.org/faqs/apple2/programmerfaq/part1/">
+              comp.sys.apple2.programmer
+            </a>
+            FAQ
+          </li>
+          <li>
+            <a href="https://archive.org/details/understanding_the_apple_ii">
+              Understanding the Apple ][
+            </a>
+            and
+            <a href="https://archive.org/details/Understanding_the_Apple_IIe">
+              Understanding the Apple //e
+            </a>
+            by Jim Sather.
+          </li>
+        </ul>
       </li>
       <li>
-        LED graphics from <a href="http://modernl.com/">Modern Life</a>.
+        <h3>And special thanks to:</h3>
+        <ul>
+          <li>
+            <a href="http://adtpro.sourceforge.net/">ADTPro</a>
+            for allowing me to pull some of my circa
+            1980 programming efforts off some ancient floppies.
+          </li>
+          <li>
+            <a href="http://kegs.sourceforge.net/">KEGS</a>, because at some
+            point I got so tired of futzing with ADC/SBC code I just ported
+            the KEGS C code for those opcodes to Javascript so I could stop
+            worrying about it.
+          </li>
+          <li>
+            <a href="http://apple2history.org/">Apple II History</a>,
+            for a lovely, informative site.
+          </li>
+          <li>
+            <a href="http://www.megidish.net/apple2js/">Gil Megidish</a>,
+            for the kick in the pants to finally post my version, once I
+            realized there was, in fact, another apple2js in the world.
+          </li>
+          <li>
+            <a href="https://github.com/AppleWin/AppleWin/">AppleWin</a>,
+            whose source code is a goldmine of useful references.
+          </li>
+          <li>
+            <a href="https://github.com/zellyn/a2audit">Zellyn Hunter</a> and
+            a2audit, for allowing me to get really nitpicky in my memory
+            emulation.
+          </li>
+        </ul>
       </li>
     </ul>
-      </li>
-      <li>
-    <h3>I heavily referenced:</h3>
-    <ul>
-      <li>
-        <a href="http://www.scribd.com/doc/200679/Beneath-Apple-DOS-By-Don-Worth-and-Pieter-Lechner">
-          <i>Beneath Apple DOS</i>
-        </a>
-        by Don Worth and Pieter Lechner
-      </li>
-      <li>
-        <i>Inside the Apple //e</i> by Gary B. Little
-      </li>
-      <li>
-        <a href="http://apple2.org.za/gswv/a2zine/GS.WorldView/Resources/DOS.3.3.ANATOMY/">
-          <i>DOS 3.3 Anatomy</i>
-        </a>
-      </li>
-      <li>
-        <a href="http://www.doc.ic.ac.uk/~ih/doc/stepper/others/example3/diskii_specs.html">
-          <i>Apple II Disk Drive Article</i>
-        </a>
-        by Neil Parker
-      </li>
-      <li>
-        <a href="http://6502.org/">6502.org</a>
-      </li>
-      <li>
-        The
-        <a href="http://www.faqs.org/faqs/apple2/programmerfaq/part1/">
-          comp.sys.apple2.programmer
-        </a>
-        FAQ
-      </li>
-    </ul>
-      </li>
-      <li>
-    <h3>And special thanks to:</h3>
-    <ul>
-      <li>
-        <a href="http://adtpro.sourceforge.net/">ADTPro</a>
-        for allowing me to pull some of my circa
-        1980 programming efforts off some ancient floppies.
-      </li>
-      <li>
-        <a href="http://kegs.sourceforge.net/">KEGS</a>, because at some
-        point I got so tired of futzing with ADC/SBC code I just ported
-        the KEGS C code for those opcodes to Javascript so I could stop
-        worrying about it.
-      </li>
-      <li>
-        <a href="http://apple2history.org/">Apple II History</a>,
-        for a lovely, informative site.
-      </li>
-      <li>
-        <a href="http://www.megidish.net/apple2js/">Gil Megidish</a>,
-        for the kick in the pants to finally post my version, once I
-        realized there was, in fact, another apple2js in the world.
-      </li>
-    </ul>
-      </li>
     <h2>Contact</h2>
     <ul>
       <li>
-    <a href="mailto:apple2js@scullinsteel.com">apple2js@scullinsteel.com</a>
+        <a href="mailto:apple2js@scullinsteel.com">apple2js@scullinsteel.com</a>
       </li>
     </ul>
   </div>
