@@ -579,6 +579,26 @@ function CPU6502(options)
         ar = testNZ(ar ^ readFn());
     }
 
+    /* Reset Bit */
+
+    function rmb(b) {
+        var bit = (0x1 << b) ^ 0xFF;
+        var addr = readBytePC();
+        var val = readByte(addr);
+        val &= bit;
+        writeByte(addr, val);
+    }
+
+    /* Set Bit */
+
+    function smb(b) {
+        var bit = 0x1 << b;
+        var addr = readBytePC();
+        var val = readByte(addr);
+        val |= bit;
+        writeByte(addr, val);
+    }
+
     /* Test and Reset Bits */
     function trb(readAddrFn) {
         var addr = readAddrFn(),
@@ -647,6 +667,24 @@ function CPU6502(options)
             pc += off > 127 ? off - 256 : off;
             cycles++;
             if ((pc >> 8) != (oldPC >> 8)) cycles++;
+        }
+    }
+
+    /* WDC 65C02 branches */
+
+    function bbr(b) {
+        var val = readZeroPage()
+        var off = readBytePC(); // changes pc
+        if (((1 << b) & val) === 0) {
+            pc += off > 127 ? off - 256 : off;
+        }
+    }
+
+    function bbs(b) {
+        var val = readZeroPage() // ZP
+        var off = readBytePC(); // changes pc
+        if (((1 << b) & val) !== 0) {
+            pc += off > 127 ? off - 256 : off;
         }
     }
 
@@ -959,7 +997,7 @@ function CPU6502(options)
         // SEC
         0x38: ['SEC', set, flags.C, modes.implied, 2],
 
-       // SED
+        // SED
         0xF8: ['SED', set, flags.D, modes.implied, 2],
 
         // SEI
@@ -1014,6 +1052,25 @@ function CPU6502(options)
             'JMP', jmp, readAddrAbsoluteXIndirect, modes.absoluteXIndirect, 6
         ],
 
+        // BBR/BBS
+        0x0F: ['BBR0', bbr, 0, modes.zp_relative, 5],
+        0x1F: ['BBR1', bbr, 1, modes.zp_relative, 5],
+        0x2F: ['BBR2', bbr, 2, modes.zp_relative, 5],
+        0x3F: ['BBR3', bbr, 3, modes.zp_relative, 5],
+        0x4F: ['BBR4', bbr, 4, modes.zp_relative, 5],
+        0x5F: ['BBR5', bbr, 5, modes.zp_relative, 5],
+        0x6F: ['BBR6', bbr, 6, modes.zp_relative, 5],
+        0x7F: ['BBR7', bbr, 7, modes.zp_relative, 5],
+
+        0x8F: ['BBS0', bbs, 0, modes.zp_relative, 5],
+        0x9F: ['BBS1', bbs, 1, modes.zp_relative, 5],
+        0xAF: ['BBS2', bbs, 2, modes.zp_relative, 5],
+        0xBF: ['BBS3', bbs, 3, modes.zp_relative, 5],
+        0xCF: ['BBS4', bbs, 4, modes.zp_relative, 5],
+        0xDF: ['BBS5', bbs, 5, modes.zp_relative, 5],
+        0xEF: ['BBS6', bbs, 6, modes.zp_relative, 5],
+        0xFF: ['BBS7', bbs, 7, modes.zp_relative, 5],
+
         // BRA
         0x80: ['BRA', brc, 0, modes.relative, 2],
 
@@ -1044,6 +1101,26 @@ function CPU6502(options)
 
         // PLY
         0x7A: ['PLY', ply, null, modes.implied, 4],
+
+        // RMB/SMB
+
+        0x07: ['RMB0', rmb, 0, modes.zp, 5],
+        0x17: ['RMB1', rmb, 1, modes.zp, 5],
+        0x27: ['RMB2', rmb, 2, modes.zp, 5],
+        0x37: ['RMB3', rmb, 3, modes.zp, 5],
+        0x47: ['RMB4', rmb, 4, modes.zp, 5],
+        0x57: ['RMB5', rmb, 5, modes.zp, 5],
+        0x67: ['RMB6', rmb, 6, modes.zp, 5],
+        0x77: ['RMB7', rmb, 7, modes.zp, 5],
+
+        0x87: ['SMB0', smb, 0, modes.zp, 5],
+        0x97: ['SMB1', smb, 1, modes.zp, 5],
+        0xA7: ['SMB2', smb, 2, modes.zp, 5],
+        0xB7: ['SMB3', smb, 3, modes.zp, 5],
+        0xC7: ['SMB4', smb, 4, modes.zp, 5],
+        0xD7: ['SMB5', smb, 5, modes.zp, 5],
+        0xE7: ['SMB6', smb, 6, modes.zp, 5],
+        0xF7: ['SMB7', smb, 7, modes.zp, 5],
 
         // STZ
         0x64: ['STZ', stz, writeZeroPage, modes.zeroPage, 3],
@@ -1108,6 +1185,8 @@ function CPU6502(options)
     }
 
     function dumpArgs(addr, m, symbols) {
+        var val;
+        var off;
         function toHexOrSymbol(v, n) {
             if (symbols && symbols[v]) {
                 return symbols[v];
@@ -1130,7 +1209,7 @@ function CPU6502(options)
             break;
         case modes.relative:
             {
-                var off = readByte(addr, true);
+                off = readByte(addr, true);
                 if (off > 127) {
                     off -= 256;
                 }
@@ -1167,6 +1246,17 @@ function CPU6502(options)
             break;
         case modes.absoluteXIndirect:
             result = '(' + toHexOrSymbol(readWord(addr, true), 4) + ',X)';
+            break;
+        case modes.zp_relative:
+            {
+                val = readByte(addr, true);
+                off = readByte(addr, true);
+                if (off > 127) {
+                    off -= 256;
+                }
+                addr += off + 1;
+                result = val + ',', toHexOrSymbol(addr, 4) + ' (' + off + ')';
+            }
             break;
         default:
             break;
@@ -1287,6 +1377,10 @@ function CPU6502(options)
             }
             setFlag(flags.I, true);
             pc = readWord(loc.NMI);
+        },
+
+        getPC: function () {
+            return pc;
         },
 
         setPC: function(_pc) {

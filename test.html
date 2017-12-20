@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Test</title>
+  </head>
+  <body>
+    <script src="js/util.js"></script>
+    <script src="js/cpu6502.js"></script>
+    <script src="js/6502test.js"></script>
+    <script src="js/65C02test.js"></script>
+    <script>
+      var SYMBOLS = {};
+      var cpu;
+      var trace = [];
+      var lastPC = 0;
+      var done = false;
+      function traceCB() {
+        var pc = cpu.getPC()
+        done = lastPC == pc
+        lastPC = pc
+        var line = cpu.dumpRegisters() + ' ' + cpu.dumpPC(undefined, SYMBOLS);
+        trace.push(line);
+        if (trace.length > 1000) {
+            trace.shift();
+        }
+      }
+
+      function test6502() {
+        cpu = new CPU6502();
+        var test = new Test6502();
+        cpu.addPageHandler(test);
+        cpu.setPC(0x400);
+        do {
+          cpu.stepCyclesDebug(1000, traceCB);
+        } while (!done)
+
+        if (lastPC == 0x3469) {
+          window.alert("6502 Success!")
+        } else {
+          window.alert("Failed! " + toHex(lastPC))
+        }
+      }
+
+      function test65C02() {
+        cpu = new CPU6502({'65C02': true});
+        var test = new Test65C02();
+        cpu.addPageHandler(test);
+        cpu.setPC(0x400);
+        do {
+          cpu.stepCyclesDebug(1000, traceCB);
+        } while (!done)
+        if (lastPC == 0x24f1) {
+          window.alert("65C02 Success!")
+        } else {
+          window.alert("Failed! " + toHex(lastPC))
+        }
+      }
+    </script>
+    <button onclick="test6502()">Test 6502</button>
+    <button onclick="test65C02()">Test 65C02</button>
+  </body>
+</html>
