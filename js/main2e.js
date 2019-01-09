@@ -736,6 +736,7 @@ function _keydown(evt) {
     }
     if (evt.keyCode === 112) { // F1 - Reset
         cpu.reset();
+        evt.preventDefault(); // prevent launching help
     } else if (evt.keyCode === 113) { // F2 - Full Screen
         var elem = document.getElementById('screen');
         if (document.webkitCancelFullScreen) {
