@@ -1,4 +1,4 @@
-JSLINT = jshint
+JSLINT = eslint
 
 JSFILES = copyright.js util.js prefs.js ram.js langcard.js fpbasic.js apple2char.js canvas2.js apple2io.js parallel.js ramfactor.js disk2.js cpu6502.js base64.js
 

@@ -46,7 +46,7 @@ function Apple2IO(cpu, callbacks)
     var _tape = [];
     var _tapeOffset = 0;
     var _tapeNext = 0;
-    var _tapeFlip = false;
+    var _tapeCurrent = false;
 
     var LOC = {
         KEYBOARD: 0x00, // keyboard data (latched) (Read),
@@ -285,32 +285,20 @@ function Apple2IO(cpu, callbacks)
                 _tapeOffset = 0;
                 _tapeNext = now;
             }
+
             if (_tapeOffset < _tape.length) {
+                _tapeCurrent = _tape[_tapeOffset][1];
                 while (now >= _tapeNext) {
                     if ((_tapeOffset % 1000) === 0) {
                         debug('Read ' + (_tapeOffset / 1000));
                     }
-                    _tapeFlip = !_tapeFlip;
-                    // flipped = true;
-                    _tapeNext += _tape[_tapeOffset++];
+                    _tapeCurrent = _tape[_tapeOffset][1];
+                    _tapeNext += _tape[_tapeOffset++][0];
                 }
-                result = _tapeFlip ? 0x80 : 0x00;
-            }
-            /*
-            if (flipped) {
-                debug('now=' + now + ' next=' + _tapeNext + ' (' + (_tapeNext - now) + ')');
-            }
-            */
 
-            /*
-            var progress =
-                Math.round(_tapeOffset / _tapeBuffer.length * 100) / 100;
-
-            if (_progress != progress) {
-                _progress = progress;
-                cb.progress(_progress);
             }
-            */
+
+            result = _tapeCurrent ? 0x80 : 0x00;
         }
 
         if (val !== undefined) {
@@ -459,6 +447,10 @@ function Apple2IO(cpu, callbacks)
             _hz = hz;
 
             _cycles_per_sample = _hz / _rate;
+        },
+
+        getHz: function apple2io_updateHz() {
+            return _hz;
         },
 
         setKeyBuffer: function apple2io_setKeyBuffer(buffer) {

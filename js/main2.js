@@ -19,6 +19,7 @@
            disk_index: false,
            Audio: false,
            initGamepad: false, processGamepad: false, gamepad: false,
+           Tape: false,
            ApplesoftDump: false, SYMBOLS: false,
            multiScreen: true
 */
@@ -127,7 +128,7 @@ function DriveLights()
 }
 
 var DISK_TYPES = ['dsk','d13','do','po','raw','nib','2mg'];
-var TAPE_TYPES = ['wav','aiff','aif','mp3'];
+var TAPE_TYPES = ['wav','aiff','aif','mp3','m4a'];
 
 var _currentDrive = 1;
 
@@ -204,7 +205,7 @@ function doLoad() {
 
     var files = $('#local_file').prop('files');
     if (files.length == 1) {
-        doLoadLocal(_currentDrive);
+        doLoadLocal(_currentDrive, files[0]);
     } else if (url) {
         var filename;
         $('#load').dialog('close');
@@ -242,20 +243,18 @@ function doDelete(name) {
     }
 }
 
-function doLoadLocal(drive) {
-    var files = $('#local_file').prop('files');
-    if (files.length == 1) {
-        var file = files[0];
-        var parts = file.name.split('.');
-        var ext = parts[parts.length - 1].toLowerCase();
-        if ($.inArray(ext, DISK_TYPES) >= 0) {
-            doLoadLocalDisk(drive, file);
-        } else if ($.inArray(ext, TAPE_TYPES) >= 0) {
-            doLoadLocalTape(file);
-        } else {
-            window.alert('Unknown file type: ' + ext);
+function doLoadLocal(drive, file) {
+    var parts = file.name.split('.');
+    var ext = parts[parts.length - 1].toLowerCase();
+    if ($.inArray(ext, DISK_TYPES) >= 0) {
+        doLoadLocalDisk(drive, file);
+    } else if ($.inArray(ext, TAPE_TYPES) >= 0) {
+        tape.doLoadLocalTape(file, function() {
             $('#load').dialog('close');
-        }
+        });
+    } else {
+        window.alert('Unknown file type: ' + ext);
+        $('#load').dialog('close');
     }
 }
 
@@ -263,66 +262,13 @@ function doLoadLocalDisk(drive, file) {
     var fileReader = new FileReader();
     fileReader.onload = function() {
         var parts = file.name.split('.');
-        var name = parts[0], ext = parts[parts.length - 1].toLowerCase();
+        var ext = parts.pop().toLowerCase();
+        var name = parts.join('.');
         if (disk2.setBinary(drive, name, ext, this.result)) {
             drivelights.label(drive, name);
             $('#load').dialog('close');
             initGamepad();
         }
-    };
-    fileReader.readAsArrayBuffer(file);
-}
-
-function doLoadLocalTape(file) {
-    // Audio Buffer Source
-    var context;
-    if (typeof window.AudioContext != 'undefined') {
-        context = new window.AudioContext();
-    } else {
-        window.alert('Not supported by your browser');
-        $('#load').dialog('close');
-        return;
-    }
-
-    var fileReader = new FileReader();
-    fileReader.onload = function(ev) {
-        context.decodeAudioData(ev.target.result, function(buffer) {
-            var buf = [];
-            var data = buffer.getChannelData(0), datum = data[0];
-            var old = (datum > 0.0), current;
-            var last = 0, delta, ival;
-            debug('Sample Count: ' + data.length);
-            debug('Sample rate: ' + buffer.sampleRate);
-            for (var idx = 1; idx < data.length; idx++) {
-                datum = data[idx];
-                if ((datum > 0.1) || (datum < -0.1)) {
-                    current = (datum > 0.0);
-                    if (current != old) {
-                        delta = idx - last;
-                        if (delta > 2000000) {
-                            delta = 2000000;
-                        }
-                        ival = delta / buffer.sampleRate * 1000;
-                        if (ival >= 0.550 && ival < 0.750) {
-                            ival = 0.650; // Header
-                        } else if (ival >= 0.175 && ival < 0.225) {
-                            ival = 0.200; // sync 1
-                        } else if (ival >= 0.225 && ival < 0.275) {
-                            ival = 0.250; // 0 / sync 2
-                        } else if (ival >= 0.450 && ival < 0.550) {
-                            ival = 0.500; // 1
-                        } else {
-                            // debug(idx + ' ' + buf.length + ' ' + ival);
-                        }
-                        buf.push(parseInt(ival * kHz));
-                        old = current;
-                        last = idx;
-                    }
-                }
-            }
-            io.setTape(buf);
-            $('#load').dialog('close');
-        });
     };
     fileReader.readAsArrayBuffer(file);
 }
@@ -335,9 +281,11 @@ function doLoadHTTP(drive, _url) {
         req.responseType = 'arraybuffer';
 
         req.onload = function() {
-            var parts = url.split(/[/.]/);
-            var name = decodeURIComponent(parts[parts.length - 2]);
-            var ext = parts[parts.length - 1].toLowerCase();
+            var urlParts = url.split('/');
+            var file = urlParts.pop();
+            var fileParts = file.split('.');
+            var ext = fileParts.pop().toLowerCase();
+            var name = decodeURIComponent(fileParts.join('.'));
             if (disk2.setBinary(drive, name, ext, req.response)) {
                 drivelights.label(drive, name);
                 $('#http_load').dialog('close');
@@ -429,6 +377,7 @@ var drivelights = new DriveLights();
 var io = new Apple2IO(cpu, vm);
 var keyboard = new KeyBoard(io);
 var audio = new Audio(io);
+var tape = new Tape(io);
 var lc = new LanguageCard(io, 0, rom);
 var parallel = new Parallel(io, 1, new Printer());
 var slinky = new RAMFactor(io, 2, 1024 * 1024);
