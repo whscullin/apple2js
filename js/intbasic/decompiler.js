@@ -1,5 +1,4 @@
 /*exported IntBasicDump */
-/*globals debug: false */
 
 function IntBasicDump(mem)
 {
@@ -8,7 +7,7 @@ function IntBasicDump(mem)
     var LETTERS =
 	'                                ' +
 	' !"#$%&\'()*+,-./0123456789:;<=>?' +
-	'@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_' +
+	'@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_' +
 	'`abcdefghijklmnopqrstuvwxyz{|}~ ';
 
     var TOKENS = {
@@ -148,8 +147,8 @@ function IntBasicDump(mem)
     function readWord(addr) {
         var lsb, msb;
 
-        lsb = readByte(addr, debug);
-        msb = readByte(addr + 1, debug);
+        lsb = readByte(addr);
+        msb = readByte(addr + 1);
 
         return (msb << 8) | lsb;
     }

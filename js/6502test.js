@@ -8214,9 +8214,9 @@ function Test6502() {
             /*eslint no-console: 0 */
             data[page * 0x100 + off] = val;
             if (LOG) {
-                console.log(toHex(page * 0x100 + off, 4) + " = " + toHex(val) +
-                            " ("+ String.fromCharCode(val) + ")");
+                console.log(toHex(page * 0x100 + off, 4) + ' = ' + toHex(val) +
+                            ' ('+ String.fromCharCode(val) + ')');
             }
         }
-    }
+    };
 }

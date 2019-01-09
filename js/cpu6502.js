@@ -675,7 +675,7 @@ function CPU6502(options)
     /* WDC 65C02 branches */
 
     function bbr(b) {
-        var val = readZeroPage()
+        var val = readZeroPage();
         var off = readBytePC(); // changes pc
         if (((1 << b) & val) === 0) {
             pc += off > 127 ? off - 256 : off;
@@ -683,7 +683,7 @@ function CPU6502(options)
     }
 
     function bbs(b) {
-        var val = readZeroPage() // ZP
+        var val = readZeroPage(); // ZP
         var off = readBytePC(); // changes pc
         if (((1 << b) & val) !== 0) {
             pc += off > 127 ? off - 256 : off;

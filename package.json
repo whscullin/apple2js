@@ -1,0 +1,23 @@
+{
+  "name": "apple2js",
+  "version": "0.0.1",
+  "description": "Apple II Emulator in JavaScript",
+  "main": "index.js",
+  "scripts": {
+    "index": "scripts/index.pl > json/disks/index.js",
+    "lint": "eslint js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/whscullin/apple2js.git"
+  },
+  "author": "Will Scullin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/whscullin/apple2js/issues"
+  },
+  "homepage": "https://github.com/whscullin/apple2js#readme",
+  "dependencies": {
+    "eslint": "^5.12.0"
+  }
+}

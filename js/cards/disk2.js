@@ -10,7 +10,7 @@
  */
 
 /*exported DiskII */
-/*globals bytify: false, debug: false, toHex: false
+/*globals bytify: false, debug: false
           base64_decode: false, base64_encode: false
           Uint8Array: false
 */
