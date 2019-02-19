@@ -1,4 +1,4 @@
-<!DOCTYPE html><!-- -*- mode: HTML; indent-tabs-mode: nil -*- -->
+<!DOCTYPE html>
 <!--
  Copyright 2010-2016 Will Scullin <scullin@scullinsteel.com>
 
@@ -15,7 +15,7 @@
 
 <title>Apple //jse - An Apple //e Emulator in JavaScript</title>
 
-<meta name="viewport" content="width=device-width, user-scalable=no" />
+<meta name="viewport" content="width=640 user-scalable=0" />
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Apple //jse">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -25,10 +25,11 @@
 
 <link rel="apple-touch-icon" href="img/webapp-iphone.png" />
 <link rel="apple-touch-icon" size="72x72" href="img/webapp-ipad.png" />
-<link rel="shortcut icon" href="logoicon.png" />
+<link rel="shortcut icon" href="img/logoicon.png" />
 <link rel="stylesheet" type="text/css" href="css/apple2.css" />
 <link rel="stylesheet" type="text/css"
       href="http://code.jquery.com/ui/1.10.3/themes/mint-choc/jquery-ui.css" />
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.2/css/all.css" />
 
 <meta property="og:title" content="Apple //js" />
 <meta property="og:type" content="website" />
@@ -72,12 +73,17 @@
 <script type="text/javascript" src="json/disks/index.js"></script>
 
 </head>
-<body class="apple2e">
-  <div style="margin: auto; width: 604px">
+<body class="apple2e"
+      ondragover="handleDragOver(0, event)"
+      ondrop="handleDrop(0, event)"
+      ondragend="handleDragEnd(0, event)">
+  <div class="outer">
     <div id="header">
-      <a href="http://www.w3.org/html/logo/"><img src="http://www.w3.org/html/logo/badge/html5-badge-h-solo.png" width="63" height="64" alt="HTML5 Powered" title="HTML5 Powered" style="float: right"></a>
+      <a href="//www.w3.org/html/logo/" target="_blank">
+        <img src="//www.w3.org/html/logo/badge/html5-badge-h-solo.png" style="float: right" />
+      </a>
       <a href="about.html" target="_blank">
-        <img src="img/badge.png" id="badge" />
+        <img src="img/badge2e.png" id="badge" />
       </a>
       <h1 id="subtitle">An Apple //e Emulator in JavaScript</h1>
     </div>
@@ -89,44 +95,62 @@
       </div>
     </div>
     <div class="inset">
-      <div style="float: left; width: 50%">
+      <div style="float: left; width: 50%"
+           ondragover="handleDragOver(1, event)"
+           ondrop="handleDrop(1, event)"
+           ondragend="handleDragEnd(1, event)">
+        <button id="diskload1" class="diskload" title="Load Disk"
+                onclick="openLoad(1, event);">
+          <i class="fas fa-folder-open"></i>
+        </button>
+        <button id="disksave1" class="disksave" title="Save Disk"
+                onclick="openSave(1, event);">
+          <i class="fas fa-save"></i>
+        </button>
         <div class="disk" id="disk1">&nbsp;</div>
         <span id="disklabel1" class="disklabel">Disk 1</span>
-        <button id="diskload1" class="diskload" value="Load"
-                onclick="openLoad(1, event);">
-          Load
-        </button>
-        <button id="disksave1" class="disksave" value="Save"
-                onclick="openSave(1, event);">
-          Save
-        </button>
       </div>
-      <div style="float: left; width: 50%">
+      <div style="float: left; width: 50%"
+           ondragover="handleDragOver(2, event)"
+           ondrop="handleDrop(2, event)"
+           ondragend="handleDragEnd(2, event)">
+        <button id="diskload2" class="diskload" title="Load Disk"
+                onclick="openLoad(2, event);">
+          <i class="fas fa-folder-open"></i>
+        </button>
+        <button id="disksave2" class="disksave" title="Save Disk"
+                onclick="openSave(2, event);">
+          <i class="fas fa-save"></i>
+        </button>
         <div class="disk" id="disk2">&nbsp;</div>
         <span id="disklabel2" class="disklabel">Disk 2</span>
-        <button id="diskload2" class="diskload" value="Load"
-                onclick="openLoad(2, event);">
-          Load
-        </button>
-        <button id="disksave2" class="disksave" value="Save"
-                onclick="openSave(2, event);">
-          Save
-        </button>
       </div>
       <div style="clear: both"></div>
     </div>
     <div style="position: relative">
       <div id="controls" class="inset">
         <div id="khz" onclick="showFPS = !showFPS">0KHz</div>
-        <input type="button" value="Pause" onclick="pauseRun(this)" />
+        <button id="pause-run" onclick="pauseRun()">
+          <i class="fas fa-pause"></i>
+        </button>
+        <button id="toggle-sound" onclick="toggleSound()">
+          <i class="fas fa-volume-off"></i>
+        </button>
+        <button id="toggle-printer" onclick="$('#printer').dialog('open')" title="Toggle Printer">
+          <i class="fas fa-print"></i>
+        </button>
         <div style="float: right">
-          <input type="button" onclick="window.open('about.html','_html')"
-                 name="About" value="About">
-          <input type="button" onclick="$('#options').dialog('open')"
-                 name="Options" value="Options">
+          <a class="button" href="about.html" target="_blank" title="About">
+            <i class="fas fa-info"></i>
+          </a>
+          <button onclick="$('#options').dialog('open')">
+            <i class="fas fa-cog"></i>
+          </button>
         </div>
       </div>
-      <input id="reset" type="button" value="Reset" onclick="reset()" />
+      <input id="reset" type="button" value="Reset"
+             onclick="keyboard.reset(event)"
+             oncontextmenu="keyboard.reset(event)" />
     </div>
     <div class="inset">
       <div id="keyboard"></div>
@@ -136,17 +160,20 @@
     Loading...
   </div>
   <div id="options" title="Options" style="display: none">
-    <h3>CPU</h3>
+    <h3>Type</h3>
     <ul>
       <li>
         <select id="computer_type2e" value="apple2enh" onchange="updateCPU()">
           <option value="apple2enh">Enhanced Apple //e</option>
           <option value="apple2e">Apple //e</option>
         </select>
-        <label for="computer_type2e">
-          Type
-        </label>
       </li>
+      <li>
+        <i>* Reload page to take effect</i>
+      </li>
+    </ul>
+    <h3>CPU</h3>
+    <ul>
       <li>
         <input type="checkbox" id="accelerator_toggle" onclick="updateCPU()"/>
         <label for="accelerator_toggle">
@@ -229,7 +256,7 @@
   </div>
   <div id="manage" title="Manage Disks" style="display: none">
   </div>
-  <div id="http_load" title="Load URL">
+  <div id="http_load" title="Load URL" style="display: none">
     <form action="#">
       <input type="text" id="http_url" style="width: 500px"/>
     </form>
@@ -256,6 +283,10 @@
       <input type="file" id="local_file" />
     </form>
   </div>
-  <script type="text/javascript" src="js/main2e.js"></script>
+  <div id="printer" title="Printer" style="display: none">
+    <div class="paper">
+    </div>
+  </div>
+  <script src="js/main2e.js"></script>
 </body>
 </html>

@@ -463,6 +463,7 @@ function Videoterm(io, slot, context) {
     var _bank = 0;
     var _buffer = allocMemPages(8);
     var _imageData;
+    var _dirty = false;
 
     var _black = [0x00, 0x00, 0x00];
     var _white = [0xff, 0xff, 0xff];
@@ -500,6 +501,7 @@ function Videoterm(io, slot, context) {
         var color;
 
         if (row < 25) {
+            _dirty = true;
             for (var idx = 0; idx < 8; idx++) {
                 var cdata = VIDEO_ROM[c + idx];
                 for (var jdx = 0; jdx < 7; jdx++) {
@@ -543,6 +545,7 @@ function Videoterm(io, slot, context) {
             return;
         }
         if (_blink || (blinkmode === CURSOR_MODES.SOLID)) {
+            _dirty = true;
             for (var idx = 0; idx < 8; idx++) {
                 var color = _white;
                 if (idx >= (_regs[REGS.CURSOR_UPPER] & 0x1f) &&
@@ -641,7 +644,12 @@ function Videoterm(io, slot, context) {
                 _refresh();
                 _shouldRefresh = false;
             }
-            context.putImageData(_imageData, 0, 0);
+            if (_dirty) {
+                context.putImageData(_imageData, 0, 0);
+                _dirty = false;
+                return true;
+            }
+            return false;
         }
     };
 }

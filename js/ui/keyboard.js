@@ -278,7 +278,14 @@ function KeyBoard(io, e) {
 
         },
 
-        create: function keyboard_create(kb) {
+        reset: function keyboard_reset(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            reset();
+        },
+
+        create: function keyboard_create(el) {
+            var kb = $(el);
             var x, y, row, key, key1, key2, label, label1, label2, self = this;
 
             kb.disableSelection();
@@ -295,6 +302,7 @@ function KeyBoard(io, e) {
             }
 
             function _mousedown(ev) {
+                ev.preventDefault();
                 $(this).addClass('pressed');
                 var key = $(ev.currentTarget).data(shifted ? 'key2' : 'key1');
                 switch (key) {

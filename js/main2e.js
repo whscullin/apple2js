@@ -20,7 +20,7 @@
            ApplesoftDump: false, SYMBOLS: false,
            multiScreen: true
 */
-/* exported openLoad, openSave, doDelete,
+/* exported openLoad, openSave, doDelete, handleDragOver, handleDragEnd, handleDrop,
             selectCategory, selectDisk, clickDisk,
             multiScreen,
             updateJoystick,
@@ -156,6 +156,44 @@ function openSave(drive, event)
     } else {
         $('#save_name').val(drivelights.label(drive));
         $('#save').dialog('open');
+    }
+}
+
+function handleDragOver(drive, event) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+}
+
+function handleDragEnd(drive, event) {
+    var dt = event.dataTransfer;
+    if (dt.items) {
+        for (var i = 0; i < dt.items.length; i++) {
+            dt.items.remove(i);
+        }
+    } else {
+        event.dataTransfer.clearData();
+    }
+}
+
+function handleDrop(drive, event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (drive < 1) {
+        if (!disk2.getMetadata(1)) {
+            drive = 1;
+        } else if (!disk2.getMetadata(2)) {
+            drive = 2;
+        } else {
+            drive = 1;
+        }
+    }
+    var dt = event.dataTransfer;
+    if (dt.files.length == 1) {
+        doLoadLocal(drive, dt.files[0]);
+    } else if (dt.files.length == 2) {
+        doLoadLocal(1, dt.files[0]);
+        doLoadLocal(2, dt.files[1]);
     }
 }
 
@@ -320,7 +358,6 @@ default:
 }
 
 var runTimer = null;
-
 var cpu = new CPU6502({'65C02': enhanced});
 
 var context1, context2, context3, context4;
@@ -360,12 +397,13 @@ var io = new Apple2IO(cpu, vm);
 var keyboard = new KeyBoard(io, true);
 var audio = new Audio(io);
 var tape = new Tape(io);
+var printer = new Printer($('#printer .paper'));
 
 var mmu = new MMU(cpu, vm, gr, gr2, hgr, hgr2, io, rom);
 
 cpu.addPageHandler(mmu);
 
-var parallel = new Parallel(io, 1, new Printer());
+var parallel = new Parallel(io, 1, printer);
 var slinky = new RAMFactor(io, 2, 1024 * 1024);
 var disk2 = new DiskII(io, 6, drivelights);
 var clock = new Thunderclock(io, 7);
@@ -399,7 +437,14 @@ function updateKHz() {
 }
 
 function updateSound() {
-    audio.enable($('#enable_sound').attr('checked'));
+    var on = $('#enable_sound').prop('checked');
+    var label = $('#toggle-sound i');
+    audio.enable(on);
+    if (on) {
+        label.removeClass('fa-volume-off').addClass('fa-volume-up');
+    } else {
+        label.removeClass('fa-volume-up').addClass('fa-volume-off');
+    }
 }
 
 function dumpDisk(drive) {
@@ -499,7 +544,7 @@ function run(pc) {
                 cpu.stepCycles(step);
             }
             vm.blit();
-            io.sampleTick();
+            io.tick();
         }
 
         processGamepad(io);
@@ -726,6 +771,8 @@ function processHash(hash) {
  */
 
 function _keydown(evt) {
+    audio.autoStart();
+
     if (!focused) {
         evt.preventDefault();
 
@@ -842,15 +889,22 @@ function _mousemove(evt) {
     io.paddle(1, flipY ? 1 - y : y);
 }
 
-function pauseRun(b) {
+function pauseRun() {
+    var label = $('#pause-run i');
     if (paused) {
         run();
-        b.value = 'Pause';
+        label.removeClass('fa-play').addClass('fa-pause');
     } else {
         stop();
-        b.value = 'Run';
+        label.removeClass('fa-pause').addClass('fa-play');
     }
     paused = !paused;
+}
+
+function toggleSound() {
+    var enableSound = $('#enable_sound');
+    enableSound.prop('checked', !enableSound.prop('checked'));
+    updateSound();
 }
 
 $(function() {
@@ -868,15 +922,18 @@ $(function() {
      * Input Handling
      */
 
-    $(window).keydown(_keydown);
-    $(window).keyup(_keyup);
+    $(window)
+        .keydown(_keydown)
+        .keyup(_keyup)
+        .mousedown(function() { audio.autoStart(); });
 
-    $('canvas').mousedown(function(evt) {
-        if (!gamepad) {
-            io.buttonDown(evt.which == 1 ? 0 : 1);
-        }
-        evt.preventDefault();
-    })
+    $('canvas')
+        .mousedown(function(evt) {
+            if (!gamepad) {
+                io.buttonDown(evt.which == 1 ? 0 : 1);
+            }
+            evt.preventDefault();
+        })
         .mouseup(function(evt) {
             if (!gamepad) {
                 io.buttonUp(evt.which == 1 ? 0 : 1);
@@ -886,13 +943,11 @@ $(function() {
 
     $('body').mousemove(_mousemove);
 
-    $('body > div').hover(function() { focused = false; },
-        function() { focused = true; });
-
-    $('input,textarea').focus(function() { focused = true; })
+    $('input,textarea')
+        .focus(function() { focused = true; })
         .blur(function() { focused = false; });
 
-    keyboard.create($('#keyboard'));
+    keyboard.create('#keyboard');
 
     if (prefs.havePrefs()) {
         $('#options input[type=checkbox]').each(function() {
@@ -912,7 +967,6 @@ $(function() {
     }
 
     reset();
-    run();
     setInterval(updateKHz, 1000);
     updateSound();
     updateScreen();
@@ -943,6 +997,16 @@ $(function() {
         modal: true,
         width: 320,
         buttons: {'Close': cancel }
+    });
+    $('#printer').dialog({
+        autoOpen: false,
+        modal: true,
+        resizeable: false,
+        width: 570,
+        buttons: {
+            'Clear': printer.clear,
+            'Close': cancel
+        }
     });
     $('#http_load').dialog({
         autoOpen: false,
@@ -993,4 +1057,5 @@ $(function() {
         $('body').addClass('standalone');
     }
 
+    run();
 });

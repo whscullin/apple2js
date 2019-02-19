@@ -59,12 +59,14 @@ function Parallel(io, slot, cbs) {
     ];
 
     function _access(off, val) {
-        switch (off) {
+        switch (off & 0x8f) {
         case LOC.IOREG:
-            if (val && 'putChar' in cbs) {
+            if (cbs.putChar && val) {
                 cbs.putChar(val);
             }
             break;
+        default:
+            debug('Parallel card unknown softswitch', off);
         }
     }
 

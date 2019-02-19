@@ -66,6 +66,12 @@ function LoresPage(page, charset, e, context)
     var _refreshing = false;
     var _greenMode = false;
     var _blink = false;
+    var _dirty = {
+        top: 385,
+        bottom: -1,
+        left: 561,
+        right: -1
+    };
 
     var _green = [0x00,0xff,0x80];
 
@@ -204,6 +210,15 @@ function LoresPage(page, charset, e, context)
 
             var data = _imageData.data;
             if ((row < 24) && (col < 40)) {
+                var y = row * 16;
+                if (y < _dirty.top) { _dirty.top = y; }
+                y += 16;
+                if (y > _dirty.bottom) { _dirty.bottom = y; }
+                var x = col * 14;
+                if (x < _dirty.left) { _dirty.left = x; }
+                x += 14;
+                if (x > _dirty.right) { _dirty.right = x; }
+
                 var color;
                 if (textMode || hiresMode || (mixedMode && row > 19)) {
                     var inverse;
@@ -400,11 +415,26 @@ function LoresPage(page, charset, e, context)
             this.refresh();
         },
         blit: function(mixed) {
+            if (_dirty.top === 385) { return false; }
+            var top = _dirty.top;
+            var bottom = _dirty.bottom;
+            var left = _dirty.left;
+            var right = _dirty.right;
+
             if (mixed) {
-                context.putImageData(_imageData, 0, 0, 0, 320, 560, 64);
-            } else {
-                context.putImageData(_imageData, 0, 0, 0, 0, 560, 384);
+                if (bottom < 320) { return false; }
+                if (top < 320) { top = 320; }
             }
+            context.putImageData(
+                _imageData, 0, 0, left, top, right - left, bottom - top
+            );
+            _dirty = {
+                top: 385,
+                bottom: -1,
+                left: 561,
+                right: -1
+            };
+            return true;
         },
         start: function() {
             var self = this;
@@ -455,6 +485,12 @@ function HiresPage(page, context)
 
     var _page = page;
     var _imageData;
+    var _dirty = {
+        top: 385,
+        bottom: -1,
+        left: 561,
+        right: -1
+    };
 
     var r4 = [
         0,   // Black
@@ -626,6 +662,15 @@ function HiresPage(page, context)
                 if (!multiScreen && !hiresMode) {
                     return;
                 }
+
+                var y = rowa * 16 + rowb * 2;
+                if (y < _dirty.top) { _dirty.top = y; }
+                y += 2;
+                if (y > _dirty.bottom) { _dirty.bottom = y; }
+                var x = col * 14;
+                if (x < _dirty.left) { _dirty.left = x; }
+                x += 14;
+                if (x > _dirty.right) { _dirty.right = x; }
 
                 dy = rowa * 16 + rowb * 2;
                 var bz, b0, b1, b2, b3, b4, c, hb;
@@ -813,11 +858,26 @@ function HiresPage(page, context)
             this.refresh();
         },
         blit: function(mixed) {
+            if (_dirty.top === 385) { return false; }
+            var top = _dirty.top;
+            var bottom = _dirty.bottom;
+            var left = _dirty.left;
+            var right = _dirty.right;
+
             if (mixed) {
-                context.putImageData(_imageData, 0, 0, 0, 0, 560, 320);
-            } else {
-                context.putImageData(_imageData, 0, 0, 0, 0, 560, 384);
+                if (top > 320) { return false; }
+                if (bottom > 320) { bottom = 320; }
             }
+            context.putImageData(
+                _imageData, 0, 0, left, top, right - left, bottom - top
+            );
+            _dirty = {
+                top: 385,
+                bottom: -1,
+                left: 561,
+                right: -1
+            };
+            return true;
         },
         start: function() {
             return this._start();
@@ -986,7 +1046,11 @@ function VideoModes(gr, hgr, gr2, hgr2, e) {
             }
         },
         page: function(pageNo) {
+            var old = pageMode;
             pageMode = pageNo;
+            if (old != pageNo) {
+                _refresh();
+            }
         },
         isText: function() {
             return textMode;
@@ -1007,23 +1071,25 @@ function VideoModes(gr, hgr, gr2, hgr2, e) {
             return altCharMode;
         },
         blit: function() {
+            var blitted = false;
             if (multiScreen) {
-                _grs[0].blit();
-                _grs[1].blit();
-                _hgrs[0].blit();
-                _hgrs[1].blit();
+                blitted = _grs[0].blit() || blitted;
+                blitted = _grs[1].blit() || blitted;
+                blitted = _hgrs[0].blit() || blitted;
+                blitted = _hgrs[1].blit() || blitted;
             } else {
                 if (hiresMode && !textMode) {
                     if (mixedMode) {
-                        _grs[pageMode - 1].blit(true);
-                        _hgrs[pageMode - 1].blit(true);
+                        blitted = _grs[pageMode - 1].blit(true) || blitted;
+                        blitted = _hgrs[pageMode - 1].blit(true) || blitted;
                     } else {
-                        _hgrs[pageMode - 1].blit();
+                        blitted = _hgrs[pageMode - 1].blit();
                     }
                 } else {
-                    _grs[pageMode - 1].blit();
+                    blitted = _grs[pageMode - 1].blit();
                 }
             }
+            return blitted;
         },
         getState: function() {
             return {

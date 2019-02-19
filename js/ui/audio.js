@@ -23,6 +23,7 @@ function Audio(io) {
     var audioContext;
     var AudioContext = window.AudioContext || window.webkitAudioContext;
     var audioNode;
+    var started = false;
 
     if (AudioContext) {
         audioContext = new AudioContext();
@@ -67,6 +68,14 @@ function Audio(io) {
     _initAudio(io);
 
     return {
+        autoStart: function () {
+            if (audioContext && !started) {
+                _samples = [];
+                audioContext.resume();
+                started = true;
+            }
+        },
+
         start: function () {
             if (audioContext) {
                 _samples = [];

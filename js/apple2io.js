@@ -120,25 +120,25 @@ function Apple2IO(cpu, callbacks)
         var delta = now - _trigger;
         switch (off) {
         case LOC.CLR80VID:
-            if ('_80col' in callbacks && val !== undefined) {
+            if (callbacks._80col && val !== undefined) {
                 _debug('80 Column Mode off');
                 callbacks._80col(false);
             }
             break;
         case LOC.SET80VID:
-            if ('_80col' in callbacks && val !== undefined) {
+            if (callbacks._80col && val !== undefined) {
                 _debug('80 Column Mode on');
                 callbacks._80col(true);
             }
             break;
         case LOC.CLRALTCH:
-            if ('altchar' in callbacks && val !== undefined) {
+            if (callbacks.altchar && val !== undefined) {
                 _debug('Alt Char off');
                 callbacks.altchar(false);
             }
             break;
         case LOC.SETALTCH:
-            if ('altchar' in callbacks && val !== undefined) {
+            if (callbacks.altchar && val !== undefined) {
                 _debug('Alt Char on');
                 callbacks.altchar(true);
             }
@@ -174,27 +174,27 @@ function Apple2IO(cpu, callbacks)
             callbacks.page(2);
             break;
         case LOC.RDTEXT:
-            if ('isText' in callbacks)
+            if (callbacks.isText)
                 result = callbacks.isText() ? 0x80 : 0x0;
             break;
         case LOC.RDMIXED:
-            if ('isMixed' in callbacks)
-                result = callbacks.isMixed() ? 0x80 : 0x0;
+            if (callbacks.isText)
+                result = callbacks.isText() ? 0x80 : 0x0;
             break;
         case LOC.RDPAGE2:
-            if ('isPage2' in callbacks)
+            if (callbacks.isPage2)
                 result = callbacks.isPage2() ? 0x80 : 0x0;
             break;
         case LOC.RDHIRES:
-            if ('isHires' in callbacks)
+            if (callbacks.isHires)
                 result = callbacks.isHires() ? 0x80 : 0x0;
             break;
         case LOC.RD80VID:
-            if ('is80Col' in callbacks)
+            if (callbacks.is80Col)
                 result = callbacks.is80Col() ? 0x80 : 0x0;
             break;
         case LOC.RDALTCH:
-            if ('isAltChar' in callbacks)
+            if (callbacks.isAltChar)
                 result = callbacks.isAltChar() ? 0x80 : 0x0;
             break;
         case LOC.SETAN0:
@@ -212,7 +212,7 @@ function Apple2IO(cpu, callbacks)
         case LOC.SETAN3:
             _debug('Annunciator 3 on');
             _annunciators[3] = true;
-            if ('doublehires' in callbacks) callbacks.doublehires(false);
+            if (callbacks.doublehires) callbacks.doublehires(false);
             break;
         case LOC.CLRAN0:
             _debug('Annunciator 0 off');
@@ -229,7 +229,7 @@ function Apple2IO(cpu, callbacks)
         case LOC.CLRAN3:
             _debug('Annunciator 3 off');
             _annunciators[3] = false;
-            if ('doublehires' in callbacks) callbacks.doublehires(true);
+            if (callbacks.doublehires) callbacks.doublehires(true);
             break;
         case LOC.SPEAKER:
             _phase = -_phase;
@@ -275,12 +275,11 @@ function Apple2IO(cpu, callbacks)
             _trigger = cpu.cycles();
             break;
         case LOC.RDDHIRES:
-            if ('isDoubleHires' in callbacks) {
+            if (callbacks.isDoubleHires) {
                 result = callbacks.isDoubleHires() ? 0x80 : 0x0;
             }
             break;
         case LOC.TAPEIN:
-            // var flipped = false;
             if (_tapeOffset == -1) {
                 _tapeOffset = 0;
                 _tapeNext = now;
@@ -339,6 +338,7 @@ function Apple2IO(cpu, callbacks)
                     card.reset();
                 }
             }
+            callbacks.reset();
         },
 
         read: function apple2io_read(page, off) {
@@ -472,8 +472,13 @@ function Apple2IO(cpu, callbacks)
             _cycles_per_sample = _hz / _rate;
         },
 
-        sampleTick: function sampleTick() {
+        tick: function tick() {
             _tick();
+            for (var idx = 0; idx < 8; idx++) {
+                if (_slot[idx] && _slot[idx].tick) {
+                    _slot[idx].tick();
+                }
+            }
         },
 
         addSampleListener: function addSampleListener(cb) {
@@ -482,6 +487,10 @@ function Apple2IO(cpu, callbacks)
 
         annunciator: function annunciator(idx) {
             return _annunciators[idx];
+        },
+
+        cycles: function apple2io_cycles() {
+            return cpu.cycles();
         }
     };
 }

@@ -494,7 +494,7 @@ function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
             }
             break;
 
-            // Graphics Switches
+        // Graphics Switches
 
         case LOC.PAGE1:
             _page2 = false;
@@ -523,7 +523,7 @@ function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
             _debug('Hires on');
             break;
 
-            // Language Card Switches
+        // Language Card Switches
 
         case LOC.READBSR2:  // 0xC080
         case LOC._READBSR2: // 0xC084
@@ -590,7 +590,7 @@ function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
             //_debug('Bank 1 Read/Write');
             break;
 
-            // Status registers
+        // Status registers
 
         case LOC.BSRBANK2:
             _debug('Bank 2 Read ' + !_bank1);

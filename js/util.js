@@ -24,14 +24,25 @@ var hex_digits = '0123456789ABCDEF';
 var bin_digits = '01';
 
 function allocMem(size) {
+    function garbage() {
+        return (Math.random() * 0x100) & 0xff;
+    }
     var result;
     if (window.Uint8Array) {
         result = new Uint8Array(size);
     } else {
         result = new Array(size);
     }
-    for (var idx = 0; idx < size; idx++) {
+    var idx;
+    for (idx = 0; idx < size; idx++) {
         result[idx] = (idx & 0x02) ? 0x00 : 0xff;
+    }
+    // Borrowed from AppleWin (https://github.com/AppleWin/AppleWin)
+    for(idx = 0; idx < size; idx += 0x200 ) {
+        result[idx + 0x28] = garbage();
+        result[idx + 0x29] = garbage();
+        result[idx + 0x68] = garbage();
+        result[idx + 0x69] = garbage();
     }
     return result;
 }

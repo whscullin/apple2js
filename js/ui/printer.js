@@ -1,38 +1,46 @@
-/*globals debug: false */
 /*exported Printer */
 
-function Printer() {
-    var _printer = null;
-    var _linebuffer = '';
+function Printer(paper) {
+    var _lineBuffer;
+    var _line;
+
+    function newLine() {
+        _line = $('<div>').addClass('line').text(_lineBuffer);
+        paper.append(_line);
+        _lineBuffer = '';
+    }
+
+    newLine();
 
     return {
         putChar: function(val) {
-            if (!_printer || _printer.closed) {
-                _printer = window.open('', '_blank','toolbar=0,location=0');
-                if (_printer) {
-                    _printer.document.title = 'Printer';
-                    _printer.document.write('<div style="font: 12px courier">');
-                    _printer.document.write('<span>');
-                    window.focus();
-                }
-            }
-            var c = String.fromCharCode(val & 0x7f);
-            if (_printer) {
-                if (c == '\r') {
-                    _printer.document.write('<br /></span>');
-                } else if (c == ' ') {
-                    _printer.document.write('&nbsp;');
-                } else {
-                    _printer.document.write(c);
-                }
+            var ascii = val & 0x7f;
+            var visible = val >= 0x20;
+            var c = String.fromCharCode(ascii);
+
+            if (c == '\r') {
+                newLine();
+                _lineBuffer = '';
+            } else if (c == '\t') {
+                _lineBuffer += '        ';
+            } else if (c == '\010') {
+                _lineBuffer = _lineBuffer.slice(0, -1);
             } else {
-                if (c == '\r') {
-                    debug(_linebuffer);
-                    _linebuffer = '';
-                } else if (c == ' ') {
-                    _linebuffer += c;
+                if (visible) {
+                    _lineBuffer += c;
                 }
             }
+            _line.text(_lineBuffer);
+        },
+
+        clear: function() {
+            _lineBuffer = '';
+            paper.empty();
+            newLine();
+        },
+
+        hasPrintout: function() {
+            return paper.text().length();
         }
     };
 }
