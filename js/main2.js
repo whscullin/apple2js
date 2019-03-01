@@ -7,7 +7,7 @@ import RAM from './ram';
 import { debug, gup, hup } from './util';
 
 import Audio from './ui/audio';
-import { gamepad, initGamepad, processGamepad } from './ui/gamepad';
+import { gamepad, configGamepad, initGamepad, processGamepad } from './ui/gamepad';
 import KeyBoard from './ui/keyboard';
 import Printer from './ui/printer';
 import Tape from './ui/tape';
@@ -444,7 +444,7 @@ io.setSlot(3, videoterm);
 io.setSlot(6, disk2);
 io.setSlot(7, clock);
 
-var showFPS = false;
+window.showFPS = false;
 
 function updateKHz() {
     var now = Date.now();
@@ -452,7 +452,7 @@ function updateKHz() {
     var cycles = cpu.cycles();
     var delta;
 
-    if (showFPS) {
+    if (window.showFPS) {
         delta = renderedFrames - lastFrames;
         var fps = parseInt(delta/(ms/1000), 10);
         $('#khz').text( fps + 'fps');
@@ -888,6 +888,7 @@ window.updateJoystick = function() {
     flipX = $('#flip_x').prop('checked');
     flipY = $('#flip_y').prop('checked');
     swapXY = $('#swap_x_y').prop('checked');
+    configGamepad(flipX, flipY);
 
     if (disableMouseJoystick) {
         io.paddle(0, 0.5);

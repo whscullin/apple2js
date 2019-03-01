@@ -14,8 +14,6 @@ import { debug, toHex } from './util';
 
 export default function CPU6502(options)
 {
-    'use strict';
-
     options = options || {};
 
     var is65C02 = options['65C02'] ? true : false;

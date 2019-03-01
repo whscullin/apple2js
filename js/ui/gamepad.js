@@ -96,6 +96,11 @@ export function processGamepad(io) {
     }
 }
 
+export function configGamepad(configFlipX, configFlipY) {
+    flipX = configFlipX;
+    flipY = configFlipY;
+}
+
 export function initGamepad(data) {
     for (var idx = 0; idx < 16; idx++) {
         gamepadMap[idx] = undefined;

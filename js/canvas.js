@@ -53,8 +53,6 @@ var blackCol = [0x00, 0x00, 0x00];
 
 export function LoresPage(page, charset, e, context)
 {
-    'use strict';
-
     // $00-$3F inverse
     // $40-$7F flashing
     // $80-$FF normal
@@ -480,8 +478,6 @@ export function LoresPage(page, charset, e, context)
 
 export function HiresPage(page, context)
 {
-    'use strict';
-
     var _page = page;
     var _imageData;
     var _dirty = {
