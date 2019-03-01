@@ -1,4 +1,4 @@
-/* Copyright 2010-2017 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -9,13 +9,10 @@
  * implied warranty.
  */
 
-/*exported Thunderclock */
-/*global debug: false */
+import { debug } from '../util';
 
-function Thunderclock(io, slot)
+export default function Thunderclock(io, slot)
 {
-    'use strict';
-
     var rom = [
         0x08,0x78,0x28,0x2c,0x58,0xff,0x70,0x05, // 00
         0x38,0xb0,0x01,0x18,0xb8,0x08,0x78,0x48,

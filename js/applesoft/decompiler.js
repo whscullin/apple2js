@@ -1,7 +1,6 @@
-/*exported ApplesoftDump */
-/*global debug */
+import { debug } from '../util';
 
-function ApplesoftDump(mem)
+export default function ApplesoftDump(mem)
 {
     var _mem = mem;
 

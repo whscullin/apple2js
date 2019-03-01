@@ -1,4 +1,4 @@
-/* Copyright 2010-2017 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -9,14 +9,12 @@
  * implied warranty.
  */
 
-/*jshint jquery: true, browser: true */
-/*globals flipX: false, flipY: false */
-/*exported processGamepad, initGamepad, gamepad */
-
 var getGamepads = navigator.getGamepads || navigator.webkitGetGamepads;
-var gamepad;
+export var gamepad;
 var gamepadMap = [];
 var gamepadState = [];
+var flipX = false;
+var flipY = false;
 
 var BUTTON = {
     // Buttons
@@ -50,14 +48,14 @@ var DEFAULT_GAMEPAD = {
     'B': 1,
     'L1': 0,
     'R1': 1,
-    'START': '\033'
+    'START': 0x1B
 };
 
 window.addEventListener('gamepadconnected', function(e) {
     gamepad = e.gamepad;
 });
 
-function processGamepad(io) {
+export function processGamepad(io) {
     if (getGamepads) {
         gamepad = getGamepads.call(navigator)[0];
     }
@@ -98,7 +96,7 @@ function processGamepad(io) {
     }
 }
 
-function initGamepad(data) {
+export function initGamepad(data) {
     for (var idx = 0; idx < 16; idx++) {
         gamepadMap[idx] = undefined;
     }

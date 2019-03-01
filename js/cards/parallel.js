@@ -1,4 +1,4 @@
-/* Copyright 2010-2017 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -9,12 +9,9 @@
  * implied warranty.
  */
 
-/*exported Parallel */
-/*globals debug: false */
+import { debug } from '../util';
 
-function Parallel(io, slot, cbs) {
-    'use strict';
-
+export default function Parallel(io, slot, cbs) {
     slot = slot || 1;
 
     debug('Parallel card in slot', slot);

@@ -1,4 +1,4 @@
-/* Copyright 2010-2017 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -9,13 +9,10 @@
  * implied warranty.
  */
 
-/*exported RAMFactor */
-/*globals allocMem: false, bytify: false, debug: false,
-          base64_encode: false, base64_decode: false
-*/
-function RAMFactor(io, slot, size) {
-    'use strict';
+import { base64_decode, base64_encode } from '../base64';
+import { allocMem, bytify, debug } from '../util';
 
+export default function RAMFactor(io, slot, size) {
     var rom = [
         0x43,0x4f,0x50,0x59,0x52,0x49,0x47,0x48,
         0x54,0x20,0x28,0x43,0x29,0x20,0x31,0x39,

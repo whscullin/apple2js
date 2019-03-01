@@ -1,4 +1,4 @@
-/* Copyright 2010-2017 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -9,13 +9,10 @@
  * implied warranty.
  */
 
-/*exported LanguageCard */
-/*globals debug: false
-          RAM: false */
+import RAM from '../ram';
+import { debug } from '../util';
 
-function LanguageCard(io, slot, rom) {
-    'use strict';
-
+export default function LanguageCard(io, slot, rom) {
     var _rom = rom;
     var _bank1 = null;
     var _bank2 = null;

@@ -2,10 +2,11 @@
   "name": "apple2js",
   "version": "0.0.1",
   "description": "Apple II Emulator in JavaScript",
-  "main": "index.js",
   "scripts": {
+    "build": "webpack",
     "index": "scripts/index.pl > json/disks/index.js",
-    "lint": "eslint js"
+    "lint": "eslint js",
+    "start": "webpack-dev-server"
   },
   "repository": {
     "type": "git",
@@ -17,7 +18,11 @@
     "url": "https://github.com/whscullin/apple2js/issues"
   },
   "homepage": "https://github.com/whscullin/apple2js#readme",
-  "dependencies": {
-    "eslint": "^5.12.0"
+  "devDependencies": {
+    "ajv": "^6.9.2",
+    "eslint": "^5.12.0",
+    "webpack": "^4.29.6",
+    "webpack-cli": "^3.2.3",
+    "webpack-dev-server": "^3.2.1"
   }
 }

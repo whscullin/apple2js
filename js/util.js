@@ -1,4 +1,4 @@
-/* Copyright 2010-2017 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -10,20 +10,11 @@
  */
 
 /*eslint no-console: 0*/
-/*exported allocMemPages, bytify, debug, each, gup, hup, toBinary, toHex
-*/
-/*global Uint8Array: false */
-
-if (!Date.now) {
-    Date.now = function now() {
-        return new Date().getTime();
-    };
-}
 
 var hex_digits = '0123456789ABCDEF';
 var bin_digits = '01';
 
-function allocMem(size) {
+export function allocMem(size) {
     function garbage() {
         return (Math.random() * 0x100) & 0xff;
     }
@@ -47,11 +38,11 @@ function allocMem(size) {
     return result;
 }
 
-function allocMemPages(pages) {
+export function allocMemPages(pages) {
     return allocMem(pages * 0x100);
 }
 
-function bytify(ary) {
+export function bytify(ary) {
     var result = ary;
     if (window.Uint8Array) {
         result = new Uint8Array(ary);
@@ -59,13 +50,13 @@ function bytify(ary) {
     return result;
 }
 
-function debug() {
+export function debug() {
     if (typeof console != 'undefined' && 'log' in console) {
         console.log.apply(console, arguments);
     }
 }
 
-function toHex(v, n) {
+export function toHex(v, n) {
     if (!n) {
         n = v < 256 ? 2 : 4;
     }
@@ -77,7 +68,7 @@ function toHex(v, n) {
     return result;
 }
 
-function toBinary(v) {
+export function toBinary(v) {
     var result = '';
     for (var idx = 0; idx < 8; idx++) {
         result = bin_digits[v & 0x01] + result;
@@ -87,7 +78,7 @@ function toBinary(v) {
 }
 
 // From http://www.netlobo.com/url_query_string_javascript.html
-function gup( name )
+export function gup( name )
 {
     name = name.replace(/[[]/,'\\[').replace(/[\]]/,'\\]');
     var regexS = '[\\?&]'+name+'=([^&#]*)';
@@ -99,7 +90,7 @@ function gup( name )
         return results[1];
 }
 
-function hup() {
+export function hup() {
     var regex = new RegExp('#(.*)');
     var results = regex.exec(window.location.hash);
     if ( !results )
@@ -108,7 +99,7 @@ function hup() {
         return results[1];
 }
 
-function keys(obj) {
+export function keys(obj) {
     var result = [];
     for (var key in obj) {
         if (obj.hasOwnProperty(key)) {
@@ -118,6 +109,6 @@ function keys(obj) {
     return result;
 }
 
-function each(obj, fn) {
+export function each(obj, fn) {
     keys(obj).forEach(fn);
 }

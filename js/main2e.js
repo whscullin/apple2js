@@ -1,35 +1,29 @@
-/* globals debug: false, gup: false, hup: false, toHex: false,
-           CPU6502: false,
-           Apple2eROM: false, Apple2eEnhancedROM: false,
-           apple2e_charset: false, rmfont_charset: false,
-           apple2enh_charset: false,
-           Apple2IO: false
-           LoresPage: false, HiresPage: false, VideoModes: false,
-           KeyBoard: false,
-           Parallel: false,
-           DiskII: false,
-           Printer: false,
-           MMU: false,
-           RAMFactor: false,
-           Thunderclock: false,
-           Prefs: false,
-           disk_index: false,
-           Audio: false,
-           initGamepad: false, processGamepad: false, gamepad: false,
-           Tape: false,
-           ApplesoftDump: false, SYMBOLS: false,
-           multiScreen: true
-*/
-/* exported openLoad, openSave, doDelete, handleDragOver, handleDragEnd, handleDrop,
-            selectCategory, selectDisk, clickDisk,
-            multiScreen,
-            updateJoystick,
-            pauseRun, step,
-            toggleSound,
-            restoreState, saveState,
-            dumpProgram, PageDebug,
-            enhanced
-*/
+import Apple2IO from './apple2io';
+import ApplesoftDump from './applesoft/decompiler';
+import { HiresPage, LoresPage, VideoModes } from './canvas';
+import CPU6502 from './cpu6502';
+import MMU from './mmu';
+import Prefs from './prefs';
+import { debug, gup, hup } from './util';
+
+import Audio from './ui/audio';
+import { gamepad, initGamepad, processGamepad } from './ui/gamepad';
+import KeyBoard from './ui/keyboard';
+import Printer from './ui/printer';
+import Tape from './ui/tape';
+
+import DiskII from './cards/disk2';
+import Parallel from './cards/parallel';
+import RAMFactor from './cards/ramfactor';
+import Thunderclock from './cards/thunderclock';
+
+import apple2e_charset from './roms/apple2e_char';
+import apple2enh_charset from './roms/apple2enh_char';
+
+import Apple2eROM from './roms/apple2e';
+import Apple2eEnhancedROM from './roms/apple2enh';
+
+import SYMBOLS from './symbols';
 
 var kHz = 1023;
 
@@ -50,6 +44,7 @@ var trace = [];
  * Page viewer
  */
 
+/*
 function PageDebug(page)
 {
     var _page = page;
@@ -81,6 +76,7 @@ function PageDebug(page)
         }
     };
 }
+*/
 
 var disk_categories = {'Local Saves': []};
 var disk_sets = {};
@@ -126,7 +122,7 @@ var TAPE_TYPES = ['wav','aiff','aif','mp3','m4a'];
 
 var _currentDrive = 1;
 
-function openLoad(drive, event)
+window.openLoad = function(drive, event)
 {
     _currentDrive = parseInt(drive, 10);
     if (event.metaKey) {
@@ -137,9 +133,9 @@ function openLoad(drive, event)
         }
         $('#load').dialog('open');
     }
-}
+};
 
-function openSave(drive, event)
+window.openSave = function(drive, event)
 {
     _currentDrive = parseInt(drive, 10);
 
@@ -157,14 +153,14 @@ function openSave(drive, event)
         $('#save_name').val(drivelights.label(drive));
         $('#save').dialog('open');
     }
-}
+};
 
-function handleDragOver(drive, event) {
+window.handleDragOver = function(drive, event) {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'copy';
-}
+};
 
-function handleDragEnd(drive, event) {
+window.handleDragEnd = function(drive, event) {
     var dt = event.dataTransfer;
     if (dt.items) {
         for (var i = 0; i < dt.items.length; i++) {
@@ -173,9 +169,9 @@ function handleDragEnd(drive, event) {
     } else {
         event.dataTransfer.clearData();
     }
-}
+};
 
-function handleDrop(drive, event) {
+window.handleDrop = function(drive, event) {
     event.preventDefault();
     event.stopPropagation();
 
@@ -195,7 +191,7 @@ function handleDrop(drive, event) {
         doLoadLocal(1, dt.files[0]);
         doLoadLocal(2, dt.files[1]);
     }
-}
+};
 
 var loading = false;
 
@@ -269,11 +265,11 @@ function doSave() {
     $('#save').dialog('close');
 }
 
-function doDelete(name) {
+window.doDelete = function(name) {
     if (window.confirm('Delete ' + name + '?')) {
         deleteLocalStorage(name);
     }
-}
+};
 
 function doLoadLocal(drive, file) {
     var parts = file.name.split('.');
@@ -340,17 +336,18 @@ function openManage() {
 var prefs = new Prefs();
 var romVersion = prefs.readPref('computer_type2e');
 var enhanced = false;
+var multiScreen = false;
 var rom;
 var char_rom = apple2e_charset;
 switch (romVersion) {
 case 'apple2e':
     rom = new Apple2eROM();
     break;
-case 'apple2rm':
-    rom = new Apple2eEnhancedROM();
-    char_rom = rmfont_charset;
-    enhanced = true;
-    break;
+// case 'apple2rm':
+//     rom = new Apple2eEnhancedROM();
+//     char_rom = rmfont_charset;
+//     enhanced = true;
+//     break;
 default:
     rom = new Apple2eEnhancedROM();
     char_rom =apple2enh_charset;
@@ -390,11 +387,13 @@ var hgr = new HiresPage(1, context3);
 var hgr2 = new HiresPage(2, context4);
 
 var vm = new VideoModes(gr, hgr, gr2, hgr2, true);
+vm.enhanced(enhanced);
+vm.multiScreen(multiScreen);
 var dumper = new ApplesoftDump(cpu);
 
 var drivelights = new DriveLights();
 var io = new Apple2IO(cpu, vm);
-var keyboard = new KeyBoard(io, true);
+var keyboard = new KeyBoard(cpu, io, true);
 var audio = new Audio(io);
 var tape = new Tape(io);
 var printer = new Printer($('#printer .paper'));
@@ -436,7 +435,7 @@ function updateKHz() {
     lastFrames = renderedFrames;
 }
 
-function updateSound() {
+window.updateSound = function() {
     var on = $('#enable_sound').prop('checked');
     var label = $('#toggle-sound i');
     audio.enable(on);
@@ -445,7 +444,7 @@ function updateSound() {
     } else {
         label.removeClass('fa-volume-up').addClass('fa-volume-off');
     }
-}
+};
 
 function dumpDisk(drive) {
     var wind = window.open('', '_blank');
@@ -456,16 +455,16 @@ function dumpDisk(drive) {
     wind.document.close();
 }
 
-function dumpProgram() {
+window.dumpProgram = function() {
     var wind = window.open('', '_blank');
     wind.document.title = 'Program Listing';
     wind.document.write('<pre>');
     wind.document.write(dumper.toString());
     wind.document.write('</pre>');
     wind.document.close();
-}
+};
 
-function step()
+window.step = function()
 {
     if (runTimer) {
         clearInterval(runTimer);
@@ -476,11 +475,11 @@ function step()
         debug(cpu.dumpRegisters());
         debug(cpu.dumpPC());
     });
-}
+};
 
 var accelerated = false;
 
-function updateCPU()
+window.updateCPU = function()
 {
     accelerated = $('#accelerator_toggle').prop('checked');
     kHz = accelerated ? 4092 : 1023;
@@ -488,7 +487,7 @@ function updateCPU()
     if (runTimer) {
         run();
     }
-}
+};
 
 var _requestAnimationFrame =
     window.requestAnimationFrame ||
@@ -634,7 +633,7 @@ function loadBinary(bin) {
     run(bin.start);
 }
 
-function selectCategory() {
+window.selectCategory = function() {
     $('#disk_select').empty();
     var cat = disk_categories[$('#category_select').val()];
     if (cat) {
@@ -650,15 +649,15 @@ function selectCategory() {
             }
         }
     }
-}
+};
 
-function selectDisk() {
+window.selectDisk = function() {
     $('#local_file').val('');
-}
+};
 
-function clickDisk() {
+window.clickDisk = function() {
     doLoad();
-}
+};
 
 function loadDisk(drive, disk) {
     var name = disk.name;
@@ -843,20 +842,20 @@ function _keyup(evt) {
     }
 }
 
-function updateScreen() {
+window.updateScreen = function() {
     var green = $('#green_screen').prop('checked');
     var scanlines = $('#show_scanlines').prop('checked');
 
     vm.green(green);
     vm.scanlines(scanlines);
-}
+};
 
 var disableMouseJoystick = false;
 var flipX = false;
 var flipY = false;
 var swapXY = false;
 
-function updateJoystick() {
+window.updateJoystick = function() {
     disableMouseJoystick = $('#disable_mouse').prop('checked');
     flipX = $('#flip_x').prop('checked');
     flipY = $('#flip_y').prop('checked');
@@ -867,7 +866,7 @@ function updateJoystick() {
         io.paddle(1, 0.5);
         return;
     }
-}
+};
 
 function _mousemove(evt) {
     if (gamepad || disableMouseJoystick) {
@@ -889,7 +888,7 @@ function _mousemove(evt) {
     io.paddle(1, flipY ? 1 - y : y);
 }
 
-function pauseRun() {
+window.pauseRun = function() {
     var label = $('#pause-run i');
     if (paused) {
         run();
@@ -899,13 +898,13 @@ function pauseRun() {
         label.removeClass('fa-pause').addClass('fa-play');
     }
     paused = !paused;
-}
+};
 
-function toggleSound() {
+window.toggleSound = function() {
     var enableSound = $('#enable_sound');
     enableSound.prop('checked', !enableSound.prop('checked'));
-    updateSound();
-}
+    window.updateSound();
+};
 
 $(function() {
     hashtag = document.location.hash;
@@ -968,9 +967,9 @@ $(function() {
 
     reset();
     setInterval(updateKHz, 1000);
-    updateSound();
-    updateScreen();
-    updateCPU();
+    window.updateSound();
+    window.updateScreen();
+    window.updateCPU();
 
     var cancel = function() { $(this).dialog('close'); };
     $('#loading').dialog({ autoOpen: false, modal: true });
@@ -1020,8 +1019,8 @@ $(function() {
     }
 
     var oldcat = '';
-    for (var idx = 0; idx < disk_index.length; idx++) {
-        var file = disk_index[idx];
+    for (var idx = 0; idx < window.disk_index.length; idx++) {
+        var file = window.disk_index[idx];
         var cat = file.category;
         var name = file.name, disk = file.disk;
         if (cat != oldcat) {

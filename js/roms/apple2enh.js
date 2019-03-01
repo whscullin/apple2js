@@ -1,6 +1,6 @@
 /*exported Apple2eEnhancedROM */
 
-function Apple2eEnhancedROM()
+export default function Apple2eEnhancedROM()
 {
     var rom = [
         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
