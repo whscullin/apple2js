@@ -769,6 +769,8 @@ function processHash(hash) {
  * Keyboard/Gamepad routines
  */
 
+window.reset = keyboard.reset;
+
 function _keydown(evt) {
     audio.autoStart();
 
