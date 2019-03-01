@@ -786,7 +786,16 @@ function _keydown(evt) {
         evt.preventDefault(); // prevent launching help
     } else if (evt.keyCode === 113) { // F2 - Full Screen
         var elem = document.getElementById('screen');
-        if (document.webkitCancelFullScreen) {
+        if (evt.shiftKey) { // Full window, but not full screen
+            $('#display').toggleClass('zoomwindow');
+            $('#display > div')
+                .toggleClass('overscan')
+                .toggleClass('flexbox-centering');
+            $('#screen').toggleClass('maxhw');
+            $('#header').toggleClass('hidden');
+            $('.inset').toggleClass('hidden');
+            $('#reset').toggleClass('hidden');
+        } else if (document.webkitCancelFullScreen) {
             if (document.webkitIsFullScreen) {
                 document.webkitCancelFullScreen();
             } else {

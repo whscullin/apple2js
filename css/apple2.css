@@ -81,6 +81,45 @@ label {
     border-radius: 10px;
 }
 
+.zoomwindow {
+    width: 100vw;
+    height: 68.5714vw; /* 384px / 560px * 100% */
+    max-height: 100vh;
+    max-width: 145.83vh; /* 560px / 384px * 100% */
+    padding: 0;
+    border: 0;
+    position: fixed;
+    top:0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    justify-content: center;
+    align-items: center;
+    margin: auto !important;
+}
+
+.maxhw {
+    width: 100%;
+    height: 100%;
+}
+
+.flexbox-centering {
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: green;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.fillparent {
+    width: 100%;
+    height: 100%;
+}
+
 #power {
     padding: 2px;
     border: 1px inset #888;
