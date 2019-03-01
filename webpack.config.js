@@ -3,7 +3,6 @@ const path = require('path');
 
 module.exports =
 {
-    mode: 'development',
     devtool: 'source-map',
     entry: {
         main2: path.resolve('js/main2.js'),
