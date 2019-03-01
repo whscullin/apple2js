@@ -19,6 +19,7 @@ import Thunderclock from './cards/thunderclock';
 
 import apple2e_charset from './roms/apple2e_char';
 import apple2enh_charset from './roms/apple2enh_char';
+import rmfont_charset from './roms/rmfont_char';
 
 import Apple2eROM from './roms/apple2e';
 import Apple2eEnhancedROM from './roms/apple2enh';
@@ -343,11 +344,11 @@ switch (romVersion) {
 case 'apple2e':
     rom = new Apple2eROM();
     break;
-// case 'apple2rm':
-//     rom = new Apple2eEnhancedROM();
-//     char_rom = rmfont_charset;
-//     enhanced = true;
-//     break;
+case 'apple2rm':
+    rom = new Apple2eEnhancedROM();
+    char_rom = rmfont_charset;
+    enhanced = true;
+    break;
 default:
     rom = new Apple2eEnhancedROM();
     char_rom =apple2enh_charset;

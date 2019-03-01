@@ -20,8 +20,12 @@ import Thunderclock from './cards/thunderclock';
 import Videoterm from './cards/videoterm';
 
 import apple2_charset from './roms/apple2_char';
+import apple2j_charset from './roms/apple2j_char';
+import apple2lc_charset from './roms/apple2lc_char';
+import pigfont_charset from './roms/pigfont_char';
 
 import Apple2ROM from './roms/fpbasic';
+import Apple2jROM from './roms/apple2j_char';
 import IntBASIC from './roms/intbasic';
 import OriginalROM from './roms/original';
 
@@ -357,18 +361,18 @@ case 'apple2':
 case'original':
     rom = new OriginalROM();
     break;
-// case 'apple2jplus':
-//     rom = new Apple2jROM();
-//     char_rom = apple2j_charset;
-//     break;
-// case 'apple2pig':
-//     rom = new Apple2ROM();
-//     char_rom = pigfont_charset;
-//     break;
-// case 'apple2lc':
-//     rom = new Apple2ROM();
-//     char_rom = apple2lc_charset;
-//     break;
+case 'apple2jplus':
+    rom = new Apple2jROM();
+    char_rom = apple2j_charset;
+    break;
+case 'apple2pig':
+    rom = new Apple2ROM();
+    char_rom = pigfont_charset;
+    break;
+case 'apple2lc':
+    rom = new Apple2ROM();
+    char_rom = apple2lc_charset;
+    break;
 default:
     rom = new Apple2ROM();
 }
@@ -467,7 +471,7 @@ function updateKHz() {
     lastFrames = renderedFrames;
 }
 
-function updateSound() {
+window.updateSound = function updateSound() {
     var on = $('#enable_sound').prop('checked');
     var label = $('#toggle-sound i');
     audio.enable(on);
@@ -476,7 +480,7 @@ function updateSound() {
     } else {
         label.removeClass('fa-volume-up').addClass('fa-volume-off');
     }
-}
+};
 
 function dumpDisk(drive) {
     var wind = window.open('', '_blank');
@@ -511,7 +515,7 @@ window.step = function()
 
 var accelerated = false;
 
-function updateCPU()
+window.updateCPU = function updateCPU()
 {
     accelerated = $('#accelerator_toggle').prop('checked');
     kHz = accelerated ? 4092 : 1023;
@@ -519,7 +523,7 @@ function updateCPU()
     if (runTimer) {
         run();
     }
-}
+};
 
 var _requestAnimationFrame =
     window.requestAnimationFrame ||
@@ -870,13 +874,13 @@ function _keyup(evt) {
     }
 }
 
-function updateScreen() {
+window.updateScreen = function updateScreen() {
     var green = $('#green_screen').prop('checked');
     var scanlines = $('#show_scanlines').prop('checked');
 
     vm.green(green);
     vm.scanlines(scanlines);
-}
+};
 
 var disableMouseJoystick = false;
 var flipX = false;
@@ -932,7 +936,7 @@ window.pauseRun = function() {
 window.toggleSound = function() {
     var enableSound = $('#enable_sound');
     enableSound.prop('checked', !enableSound.prop('checked'));
-    updateSound();
+    window.updateSound();
 };
 
 $(function() {
@@ -996,9 +1000,9 @@ $(function() {
 
     reset();
     setInterval(updateKHz, 1000);
-    updateSound();
-    updateScreen();
-    updateCPU();
+    window.updateSound();
+    window.updateScreen();
+    window.updateCPU();
 
     var cancel = function() { $(this).dialog('close'); };
     $('#loading').dialog({ autoOpen: false, modal: true });
