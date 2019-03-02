@@ -7,9 +7,10 @@ module.exports =
     entry: {
         main2: path.resolve('js/main2.js'),
         main2e: path.resolve('js/main2e.js'),
+        test: path.resolve('js/test.js')
     },
     output: {
-        path: path.resolve('dist/'),
+        path: path.resolve('dist/')
     },
     devServer: {
         compress: true,
