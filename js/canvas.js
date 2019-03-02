@@ -1,4 +1,4 @@
-/* Copyright 2010-2017 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -9,11 +9,10 @@
  * implied warranty.
  */
 
-/*globals allocMemPages: false, debug: false,
-  base64_encode: false, base64_decode: false,
-  enhanced: false */
-/*exported LoresPage, HiresPage, VideoModes, scanlines, multiScreen */
+import { base64_decode, base64_encode } from './base64';
+import { allocMemPages, debug } from './util';
 
+var enhanced = false;
 var multiScreen = false;
 var textMode = true;
 var mixedMode = false;
@@ -52,10 +51,8 @@ var blackCol = [0x00, 0x00, 0x00];
  *
  ***************************************************************************/
 
-function LoresPage(page, charset, e, context)
+export function LoresPage(page, charset, e, context)
 {
-    'use strict';
-
     // $00-$3F inverse
     // $40-$7F flashing
     // $80-$FF normal
@@ -479,10 +476,8 @@ function LoresPage(page, charset, e, context)
  *
  ***************************************************************************/
 
-function HiresPage(page, context)
+export function HiresPage(page, context)
 {
-    'use strict';
-
     var _page = page;
     var _imageData;
     var _dirty = {
@@ -912,7 +907,7 @@ function HiresPage(page, context)
     };
 }
 
-function VideoModes(gr, hgr, gr2, hgr2, e) {
+export function VideoModes(gr, hgr, gr2, hgr2, e) {
     var _grs = [gr, gr2];
     var _hgrs = [hgr, hgr2];
     var _seq = '';
@@ -1051,6 +1046,12 @@ function VideoModes(gr, hgr, gr2, hgr2, e) {
             if (old != pageNo) {
                 _refresh();
             }
+        },
+        enhanced: function(on) {
+            enhanced = on;
+        },
+        multiScreen: function(on) {
+            multiScreen = on;
         },
         isText: function() {
             return textMode;

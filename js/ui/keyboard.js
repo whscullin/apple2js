@@ -1,4 +1,4 @@
-/* Copyright 2010-2017 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -9,11 +9,9 @@
  * implied warranty.
  */
 
-/*jshint jquery: true, browser: true */
-/*globals debug: false, toHex: false, reset: false */
-/*exported KeyBoard */
+import { debug, toHex } from '../util';
 
-function KeyBoard(io, e) {
+export default function KeyBoard(cpu, io, e) {
     // keycode: [plain, cntl, shift]
     var keymap = {
         // Most of these won't happen
@@ -219,7 +217,7 @@ function KeyBoard(io, e) {
             }
 
             if (key == 0x7F && evt.shiftKey && evt.ctrlKey) {
-                reset();
+                cpu.reset();
                 key = 0xff;
             }
 
@@ -281,7 +279,7 @@ function KeyBoard(io, e) {
         reset: function keyboard_reset(event) {
             event.preventDefault();
             event.stopPropagation();
-            reset();
+            cpu.reset();
         },
 
         create: function keyboard_create(el) {
@@ -316,25 +314,25 @@ function KeyBoard(io, e) {
                     key = '\t';
                     break;
                 case 'DELETE':
-                    key = '\177';
+                    key = 0x7F;
                     break;
                 case '&larr;':
-                    key = '\010';
+                    key = 0x04;
                     break;
                 case '&rarr;':
-                    key = '\025';
+                    key = 0x15;
                     break;
                 case '&darr;':
-                    key = '\012';
+                    key = 0x0A;
                     break;
                 case '&uarr;':
-                    key = '\013';
+                    key = 0x0B;
                     break;
                 case '&nbsp;':
                     key = ' ';
                     break;
                 case 'ESC':
-                    key = '\033';
+                    key = 0x1B;
                     break;
                 default:
                     break;
@@ -358,7 +356,7 @@ function KeyBoard(io, e) {
                             window.location.reload();
                         break;
                     case 'RESET':
-                        reset();
+                        cpu.reset();
                         break;
                     case 'OPEN_APPLE':
                         self.commandKey(!commanded);

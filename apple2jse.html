@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
- Copyright 2010-2016 Will Scullin <scullin@scullinsteel.com>
+ Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
 
  Permission to use, copy, modify, distribute, and sell this software and its
  documentation for any purpose is hereby granted without fee, provided that
@@ -43,31 +43,6 @@
 </script>
 <script type="text/javascript" src="http://code.jquery.com/ui/1.10.3/jquery-ui.js">
 </script>
-
-<!-- Emulator Scripts -->
-<script type="text/javascript" src="js/util.js"></script>
-<script type="text/javascript" src="js/prefs.js"></script>
-<script type="text/javascript" src="js/ram.js"></script>
-<script type="text/javascript" src="js/mmu.js"></script>
-<script type="text/javascript" src="js/applesoft/decompiler.js"></script>
-<script type="text/javascript" src="js/intbasic/decompiler.js"></script>
-<script type="text/javascript" src="js/canvas.js"></script>
-<script type="text/javascript" src="js/apple2io.js"></script>
-<script type="text/javascript" src="js/cards/parallel.js"></script>
-<script type="text/javascript" src="js/cards/disk2.js"></script>
-<script type="text/javascript" src="js/cards/ramfactor.js"></script>
-<script type="text/javascript" src="js/cards/thunderclock.js"></script>
-<script type="text/javascript" src="js/cpu6502.js"></script>
-<script type="text/javascript" src="js/base64.js"></script>
-<script type="text/javascript" src="js/roms/apple2e.js"></script>
-<script type="text/javascript" src="js/roms/apple2enh.js"></script>
-<script type="text/javascript" src="js/roms/apple2e_char.js"></script>
-<script type="text/javascript" src="js/roms/apple2enh_char.js"></script>
-<script type="text/javascript" src="js/ui/audio.js"></script>
-<script type="text/javascript" src="js/ui/keyboard.js"></script>
-<script type="text/javascript" src="js/ui/gamepad.js"></script>
-<script type="text/javascript" src="js/ui/printer.js"></script>
-<script type="text/javascript" src="js/ui/tape.js"></script>
 
 <!-- Disk Index -->
 <script type="text/javascript" src="json/disks/index.js"></script>
@@ -149,8 +124,8 @@
         </div>
       </div>
       <input id="reset" type="button" value="Reset"
-             onclick="keyboard.reset(event)"
-             oncontextmenu="keyboard.reset(event)" />
+             onclick="reset(event)"
+             oncontextmenu="reset(event)" />
     </div>
     <div class="inset">
       <div id="keyboard"></div>
@@ -166,6 +141,7 @@
         <select id="computer_type2e" value="apple2enh" onchange="updateCPU()">
           <option value="apple2enh">Enhanced Apple //e</option>
           <option value="apple2e">Apple //e</option>
+          <option value="apple2rm">Enhanced Apple //e (Reactive Micro)</option>
         </select>
       </li>
       <li>
@@ -287,6 +263,6 @@
     <div class="paper">
     </div>
   </div>
-  <script src="js/main2e.js"></script>
+  <script type="text/javascript" src="dist/main2e.js"></script>
 </body>
 </html>

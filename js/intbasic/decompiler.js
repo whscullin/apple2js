@@ -1,6 +1,6 @@
 /*exported IntBasicDump */
 
-function IntBasicDump(mem)
+export default function IntBasicDump(mem)
 {
     var _mem = mem;
 

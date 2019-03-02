@@ -1,6 +1,6 @@
 /*exported base64_encode, base64_decode */
 
-function base64_encode (data) {
+export function base64_encode (data) {
     // Twacked by Will Scullin to handle arrays of "bytes"
 
     // http://kevin.vanzonneveld.net
@@ -57,7 +57,7 @@ function base64_encode (data) {
     return enc;
 }
 
-function base64_decode(data) {
+export function base64_decode(data) {
     // Twacked by Will Scullin to handle arrays of "bytes"
 
     // http://kevin.vanzonneveld.net

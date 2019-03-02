@@ -1,4 +1,4 @@
-/* Copyright 2010-2017 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -9,13 +9,10 @@
  * implied warranty.
  */
 
-/*globals debug: false */
-/*exported Apple2IO */
+import { debug } from './util';
 
-function Apple2IO(cpu, callbacks)
+export default function Apple2IO(cpu, callbacks)
 {
-    'use strict';
-
     var _slot = [];
     var _auxRom = null;
 

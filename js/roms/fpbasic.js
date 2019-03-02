@@ -1,5 +1,4 @@
-/*exported Apple2ROM */
-function Apple2ROM()
+export default function Apple2ROM()
 {
     var rom = [
         0x6f,0xd8,0x65,0xd7,0xf8,0xdc,0x94,0xd9,

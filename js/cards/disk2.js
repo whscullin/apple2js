@@ -1,4 +1,4 @@
-/* Copyright 2010-2017 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -9,16 +9,11 @@
  * implied warranty.
  */
 
-/*exported DiskII */
-/*globals bytify: false, debug: false
-          base64_decode: false, base64_encode: false
-          Uint8Array: false
-*/
+import { base64_decode, base64_encode } from '../base64';
+import { bytify, debug } from '../util';
 
-function DiskII(io, slot, callbacks)
+export default function DiskII(io, slot, callbacks)
 {
-    'use strict';
-
     slot = slot || 6;
     var _drives = [
         {   // Drive 1
@@ -790,6 +785,22 @@ function DiskII(io, slot, callbacks)
         rwts: function disk2_rwts(disk, track, sector) {
             var s = _drives[disk - 1].fmt == 'po' ? _PO[sector] : _DO[sector];
             return _readSector(disk, track, s);
+        },
+        getMetadata: function disk_getMetadata(driveNo) {
+            var drive = _drives[driveNo - 1];
+            if (drive.tracks.length) {
+                return {
+                    format: drive.format,
+                    volume: drive.volume,
+                    track: drive.track,
+                    head: drive.head,
+                    phase: drive.phase,
+                    readOnly: drive.readOnly,
+                    dirty: drive.dirty
+                };
+            } else {
+                return null;
+            }
         },
         setDisk: function disk2_setDisk(drive, disk) {
             var fmt = disk.type, readOnly = disk.readOnly;

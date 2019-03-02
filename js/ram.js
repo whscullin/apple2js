@@ -1,4 +1,4 @@
-/* Copyright 2010-2017 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -9,14 +9,10 @@
  * implied warranty.
  */
 
-/*exported RAM */
-/*globals allocMemPages: false
-          base64_encode: false, base64_decode: false
-*/
+import { base64_decode, base64_encode } from './base64';
+import { allocMemPages } from './util';
 
-function RAM(sp, ep) {
-    'use strict';
-
+export default function RAM(sp, ep) {
     var mem;
     var start_page = sp;
     var end_page = ep;

@@ -1,6 +1,4 @@
-/*exported IntBASIC */
-
-function IntBASIC()
+export default function IntBASIC()
 {
     var rom = [
         0xa9,0x20,0x8d,0x26,0x03,0xad,0x57,0xc0,

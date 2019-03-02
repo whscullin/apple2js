@@ -740,3 +740,5 @@ var SYMBOLS = {
     0xFEFD: 'MON.READ',
     0xFF02: 'MON.READ2'
 };
+
+export default SYMBOLS;

@@ -1,4 +1,4 @@
-/* Copyright 2010-2017 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -9,15 +9,11 @@
  * implied warranty.
  */
 
-/*exported MMU */
-/*globals debug: false, toHex: false
-          RAM: false
-*/
+import RAM from './ram';
+import { debug, toHex } from './util';
 
-function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
+export default function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
 {
-    'use strict';
-
     var idx;
 
     var _readPages = new Array(0x100);
@@ -494,7 +490,7 @@ function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
             }
             break;
 
-        // Graphics Switches
+            // Graphics Switches
 
         case LOC.PAGE1:
             _page2 = false;
@@ -523,7 +519,7 @@ function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
             _debug('Hires on');
             break;
 
-        // Language Card Switches
+            // Language Card Switches
 
         case LOC.READBSR2:  // 0xC080
         case LOC._READBSR2: // 0xC084
@@ -590,7 +586,7 @@ function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
             //_debug('Bank 1 Read/Write');
             break;
 
-        // Status registers
+            // Status registers
 
         case LOC.BSRBANK2:
             _debug('Bank 2 Read ' + !_bank1);

@@ -9,12 +9,9 @@
  * implied warranty.
  */
 
-/*exported Videoterm */
-/*globals debug: false, allocMemPages: false */
+import { allocMemPages, debug } from '../util';
 
-function Videoterm(io, slot, context) {
-    'use strict';
-
+export default function Videoterm(io, slot, context) {
     slot = slot || 3;
 
     debug('Videx Videoterm card in slot', slot);
