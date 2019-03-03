@@ -1,0 +1,133 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const argv = require('yargs').argv;
+
+function numToString(num) {
+    let result = '';
+    for (let idx = 0; idx < 4; idx++) {
+        result += String.fromCharCode(num & 0xff);
+        num >>= 8;
+    }
+    return result;
+}
+
+function read2MG(fileData) {
+    const dv = new DataView(fileData.buffer);
+
+    // Magic
+    const magic = dv.getUint32(0, true);
+    console.error('Magic', numToString(magic));
+
+    // Creator
+    const creator = dv.getUint32(4, true);
+    console.error('Creator:', numToString(creator));
+
+    // Header Length
+    const headerLength = dv.getUint16(8, true);
+    console.error('Header length:', headerLength);
+
+    // Version
+    const version = dv.getUint16(10, true);
+    console.error('Version:', version);
+
+    // Image format
+    const format = dv.getUint32(12, true);
+    const type = format === 0 ? 'dsk' : 'po';
+    console.error('Format:', format, type);
+
+    // Flags
+    const flags = dv.getUint32(16, true);
+    const readOnly = flags & 0x80000000 ? true : undefined;
+    console.error('Flags:', flags.toString(2), readOnly);
+
+    return {
+        diskData: fileData.slice(headerLength),
+        type: type,
+        readOnly: readOnly
+    };
+}
+
+function readTracks(type, diskData) {
+    const tracks = [];
+
+    if (type === 'nib') {
+        let start = 0;
+        let end = 0x1A00;
+        while (start < diskData.length) {
+            const trackData = diskData.slice(start, end);
+            start += 0x1A00;
+            end += 0x1A00;
+
+            tracks.push(trackData.toString('base64'));
+        }
+    } else {
+        let start = 0;
+        let end = 0x100;
+        const numSectors = type === 'd13' ? 13 : 16;
+        for (let track = 0; track < 35; track++) {
+            const sectors = [];
+            for (let sector = 0; sector < numSectors; sector++) {
+                const sectorData = diskData.slice(start, end);
+                start += 0x100;
+                end += 0x100;
+
+                sectors.push(sectorData.toString('base64'));
+            }
+            tracks.push(sectors);
+        }
+    }
+    return tracks;
+}
+
+const fileName = argv._[0];
+
+
+let readOnly = argv.r || argv.readOnly ? true : undefined;
+const name = argv.n || argv.name;
+const category = argv.c || argv.category;
+const disk = argv.d || argv.disk;
+const e = argv.e ? true : undefined;
+
+if (!name || !category || !fileName || argv.h || argv.help) {
+    console.error('dsk2json [-c category] [-n name] [-t type] imagefile');
+    process.exit(0);
+}
+
+let type = 'dsk';
+const match = /\.([a-z0-9]+)$/.exec(fileName);
+if (match && match.length > 1) {
+    type = match[1];
+}
+
+type = argv.t || argv.type || type;
+
+fs.readFile(fileName, (err, fileData) => {
+    if (err) {
+        console.error('Unable to read disk image');
+        process.exit(1);
+    }
+    let diskData;
+
+    if (type === '2mg') {
+        ({diskData, readOnly, type} = read2MG(fileData));
+    } else {
+        diskData = fileData;
+    }
+
+    const entry = {
+        name,
+        type,
+        category,
+        encoding: 'base64',
+        readOnly,
+        disk,
+        '2e': e,
+        data: readTracks(type, diskData)
+    };
+
+    Object.keys(entry).forEach((key) => {
+        if (entry[key] === undefined) delete entry[key];
+    });
+    console.log(JSON.stringify(entry, null, 4));
+});

@@ -1,0 +1,32 @@
+#!/usr/bin/env node
+
+
+const fs = require('fs');
+const path = require('path');
+
+const diskPath = path.resolve('json/disks');
+const dir = fs.readdirSync(diskPath);
+
+const index = [];
+
+for (const fileName of dir.sort()) {
+    if (/\.json$/.test(fileName)) {
+        const json = fs.readFileSync(path.resolve(diskPath, fileName));
+        const data = JSON.parse(json);
+        if (data.private) { continue; }
+
+        const entry = {
+            filename: `json/disks/${fileName}`,
+            e: data['2e'],
+            name: data.name,
+            disk: data.disk,
+            category: data.category,
+        };
+        index.push(entry);
+    }
+}
+
+fs.writeFileSync(
+    path.resolve(diskPath, 'index.js'),
+    `disk_index = ${JSON.stringify(index, null, 2)};`
+);

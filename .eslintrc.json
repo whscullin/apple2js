@@ -26,5 +26,18 @@
     "parserOptions": {
         "sourceType": "module"
     },
-    "extends": "eslint:recommended"
+    "extends": "eslint:recommended",
+    "overrides": [
+        {
+            "files": [ "bin/*", "webpack.config.js" ],
+            "rules": {
+                "no-console": 0
+            },
+            "env": {
+                "node": true,
+                "jquery": false,
+                "browser": false
+            }
+        }
+    ]
 }
