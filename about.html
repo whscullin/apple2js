@@ -24,8 +24,8 @@
     <meta property="og:title" content="About Apple ][js" />
     <meta property="og:type" content="website" />
     <meta property="og:description" content="Apple ][js is an Apple ][ (or Apple II or Apple2) emulator written using only JavaScript and HTML5." />
-    <meta property="og:url" content="http://www.scullinsteel.com/apple2/about.html" />
-    <meta property="og:image" content="http://www.scullinsteel.com/apple2/img/image.png" />
+    <meta property="og:url" content="//www.scullinsteel.com/apple2/about.html" />
+    <meta property="og:image" content="//www.scullinsteel.com/apple2/img/image.png" />
     <meta property="fb:admins" content="700585391" />
   </head>
   <body id="about">
@@ -34,15 +34,41 @@
     </div>
     <div style="max-width: 800px; margin: auto">
     <h2>What is this?</h2>
-    <span class="motter"><a href="../apple2/">Apple ][js</a></span> and
-    <span class="motter"><a href="../apple//e">Apple //jse</a></span>
-    are Apple ][ and Apple //e emulators written entirely in JavaScript
-    and HTML5.
+    <p>
+      <span class="motter"><a href="../apple2/">Apple ][js</a></span> and
+      <span class="motter"><a href="../apple//e">Apple //jse</a></span>
+      are Apple ][ and Apple //e emulators written entirely in JavaScript
+      and HTML5.
+    </p>
+    <p>
+      Source code at <a href="https://github.com/whscullin/apple2js">
+        https://github.com/whscullin/apple2js
+      </a>
+    </p>
+    <h2>Updates (2019-03-02)</h2>
+    <ul>
+      <li><h3>Behind the scenes</h3>
+        A lot of not so visible changes behind the scenes. The website now
+        runs directly off of github, and has a more modern toolchain
+        (Goodbye make, Perl and closure compiler, hello Webpack!)
+        to facilitate development.
+      </li>
+      <li><h3>Performance</h3>
+        In particular, the screen no longer redraws as quickly as possible.
+      </li>
+      <li><h3>Drag and Drop</h3>
+        Disk images can be dragged into the window to load them.
+      </li>
+      <li><h3>Contributions</h3>
+        Thanks to <a href="https://github.com/iflan">Ian Flanigan</a> for
+        additions to improve ChromeBook behavior.
+      </li>
+    </ul>
     <h2>Updates (2017-10-08)</h2>
     <ul>
       <li><h3>Better iOS support</h3>
         Bluetooth keyboards now work better.
-        Reset is <tt>Ctrl-Shift-Delete</tt>. iOS now allows loadinging disks
+        Reset is <tt>Ctrl-Shift-Delete</tt>. iOS now allows loading disks
         from iCloud and services like Drop Box. Saving locally is still not
         supported by iOS. I now understand why sound doesn't work, and
         I'm working on a work-around.
@@ -143,19 +169,19 @@
     <ul>
       <li><h3>A Browser with HTML5 Support</h3>
         The most recent versions of
-        <a href="http://www.google.com/chrome/" target="_blank">
+        <a href="https://www.google.com/chrome/" target="_blank">
           Google Chrome</a>,
-        <a href="http://www.apple.com/safari/" target="_blank">
+        <a href="https://www.apple.com/safari/" target="_blank">
           Safari</a>,
-        <a href="http://www.firefox.com/" target="_blank" >
+        <a href="https://www.firefox.com/" target="_blank" >
           Firefox</a>, and
-        <a href="http://www.opera.com/" target="_blank">
+        <a href="https//www.opera.com/" target="_blank">
           Opera</a>
         all seem to work reasonably well these days, although
         variations in HTML5 support pop up, and occasionally a major release
         will move things around out from under me.
         IE prior to 9 lacks canvas tag support and is unsupported.
-        <a href="http://windows.microsoft.com/ie9">IE 9+</a> renders nicely on
+        <a href="https://windows.microsoft.com/ie9">IE 9+</a> renders nicely on
         a modern machine.<br/>
         <br />
         In updating this section I realized just how long
@@ -186,8 +212,8 @@
         <h3>I'm using the following libraries:</h3>
         <ul>
           <li>
-            <a href="http://jquery.com">jQuery</a> and
-            <a href="http://jqueryui.com">jQuery UI</a>
+            <a href="https://jquery.com">jQuery</a> and
+            <a href="https://jqueryui.com">jQuery UI</a>
           </li>
           <li>
             Base64 Utilities via
