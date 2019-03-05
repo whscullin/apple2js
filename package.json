@@ -4,9 +4,9 @@
   "description": "Apple II Emulator in JavaScript",
   "scripts": {
     "build": "webpack --mode=production",
+    "dev": "webpack-dev-server",
     "index": "scripts/index.pl > json/disks/index.js",
-    "lint": "eslint js",
-    "start": "webpack-dev-server"
+    "lint": "eslint js"
   },
   "repository": {
     "type": "git",

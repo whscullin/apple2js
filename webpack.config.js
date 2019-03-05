@@ -14,7 +14,7 @@ module.exports =
     },
     devServer: {
         compress: true,
-        watchContentBase: true,
-        writeToDisk: true
+        publicPath: '/dist/',
+        watchContentBase: true
     }
 };
