@@ -30,8 +30,7 @@ npm run build
 To add additional disk images, use
 
 ```sh
-./bin/dsk2json -c Category -n Name path/to/image.dsk > json/disks/
-image.json`
+./bin/dsk2json -c Category -n Name path/to/image.dsk > json/disks/image.json`
 ```
 
 then
