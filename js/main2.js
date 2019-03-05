@@ -1,6 +1,6 @@
 import Apple2IO from './apple2io';
 import ApplesoftDump from './applesoft/decompiler';
-import { HiresPage, LoresPage, VideoModes, multiScreen } from './canvas';
+import { HiresPage, LoresPage, VideoModes } from './canvas';
 import CPU6502 from './cpu6502';
 import Prefs from './prefs';
 import RAM from './ram';
@@ -351,14 +351,14 @@ function openManage() {
 
 var prefs = new Prefs();
 var romVersion = prefs.readPref('computer_type2');
-export var enhanced = false;
+var multiScreen = false;
 var rom;
 var char_rom = apple2_charset;
 switch (romVersion) {
 case 'apple2':
     rom = new IntBASIC();
     break;
-case'original':
+case 'original':
     rom = new OriginalROM();
     break;
 case 'apple2jplus':
@@ -415,6 +415,7 @@ var ram1 = new RAM(0x00, 0x03),
 
 
 var vm = new VideoModes(gr, hgr, gr2, hgr2, false);
+vm.multiScreen(multiScreen);
 var dumper = new ApplesoftDump(cpu);
 
 var drivelights = new DriveLights();
