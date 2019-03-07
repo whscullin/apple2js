@@ -204,21 +204,21 @@ export default function KeyBoard(cpu, io, e) {
 
     return {
         mapKeyEvent: function keyboard_mapKeyEvent(evt) {
-            var code = evt.keyCode, key = 0xff;
+            var code = evt.keyCode, key = '\xff';
 
             if (evt.key in uiKitMap) {
                 key = uiKitMap[evt.key];
             } else if (code in keymap) {
                 key = keymap[code][evt.shiftKey ? 2 : (evt.ctrlKey ? 1 : 0)];
                 if (capslocked && key >= 0x61 && key <= 0x7A)
-                    key -= 0x20;
+                    key -= '\x20';
             } else {
                 debug('Unhandled key = ' + toHex(code));
             }
 
             if (key == 0x7F && evt.shiftKey && evt.ctrlKey) {
                 cpu.reset();
-                key = 0xff;
+                key = '\xff';
             }
 
             return key;
@@ -314,25 +314,25 @@ export default function KeyBoard(cpu, io, e) {
                     key = '\t';
                     break;
                 case 'DELETE':
-                    key = 0x7F;
+                    key = '\x7F';
                     break;
                 case '&larr;':
-                    key = 0x04;
+                    key = '\x04';
                     break;
                 case '&rarr;':
-                    key = 0x15;
+                    key = '\x15';
                     break;
                 case '&darr;':
-                    key = 0x0A;
+                    key = '\x0A';
                     break;
                 case '&uarr;':
-                    key = 0x0B;
+                    key = '\x0B';
                     break;
                 case '&nbsp;':
                     key = ' ';
                     break;
                 case 'ESC':
-                    key = 0x1B;
+                    key = '\x1B'
                     break;
                 default:
                     break;
