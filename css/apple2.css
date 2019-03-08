@@ -221,6 +221,15 @@ canvas {
     height: 300px;
 }
 
+#keyboard {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
 #keyboard .row {
     display: block;
     margin: 0;
@@ -267,8 +276,7 @@ canvas {
 }
 
 #keyboard .key {
-    display: block;
-    float: left;
+    display: inline-block;
     margin: 0;
     padding: 0;
     width: 32px;

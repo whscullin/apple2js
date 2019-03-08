@@ -202,6 +202,8 @@ export default function KeyBoard(cpu, io, e) {
     var optioned = false;
     var commanded = false;
 
+    var kb;
+
     return {
         mapKeyEvent: function keyboard_mapKeyEvent(evt) {
             var code = evt.keyCode, key = '\xff';
@@ -225,53 +227,58 @@ export default function KeyBoard(cpu, io, e) {
         },
 
         shiftKey: function keyboard_shiftKey(down) {
+            var shiftKeys = kb.querySelectorAll('.key-SHIFT');
             shifted = down;
             if (down) {
                 io.buttonUp(2);
-                $('#keyboard .key-SHIFT').addClass('active');
+                shiftKeys.forEach(function(key) { key.classList.add('active'); });
             } else {
                 io.buttonDown(2);
-                $('#keyboard .key-SHIFT').removeClass('active');
+                shiftKeys.forEach(function(key) { key.classList.remove('active'); });
             }
         },
 
         controlKey: function keyboard_controlKey(down) {
+            var ctrlKey = kb.querySelector('.key-CTRL');
             controlled = down;
             if (down) {
-                $('#keyboard .key-CTRL').addClass('active');
+                ctrlKey.classList.add('active');
             } else {
-                $('#keyboard .key-CTRL').removeClass('active');
+                ctrlKey.classList.remove('active');
             }
         },
 
         commandKey: function keyboard_commandKey(down) {
+            var commandKey = kb.querySelector('.key-OPEN_APPLE');
             commanded = down;
             if (down) {
                 io.buttonDown(0);
-                $('#keyboard .key-OPEN_APPLE').addClass('active');
+                commandKey.classList.add('active');
             } else {
                 io.buttonUp(0);
-                $('#keyboard .key-OPEN_APPLE').removeClass('active');
+                commandKey.classList.remove('active');
             }
         },
 
         optionKey: function keyboard_optionKey(down) {
+            var optionKey = kb.querySelector('.key-CLOSED_APPLE');
             optioned = down;
             if (down) {
                 io.buttonDown(1);
-                $('#keyboard .key-CLOSED_APPLE').addClass('active');
+                optionKey.classList.add('active');
             } else {
                 io.buttonUp(1);
-                $('#keyboard .key-CLOSED_APPLE').removeClass('active');
+                optionKey.classList.remove('active');
             }
         },
 
         capslockKey: function keyboard_caplockKey(down) {
+            var capsLock = kb.querySelector('.key-LOCK');
             capslocked = down;
             if (down) {
-                $('#keyboard .key-LOCK').addClass('active');
+                capsLock.classList.add('active');
             } else {
-                $('#keyboard .key-LOCK').removeClass('active');
+                capsLock.classList.remove('active');
             }
 
         },
@@ -283,26 +290,25 @@ export default function KeyBoard(cpu, io, e) {
         },
 
         create: function keyboard_create(el) {
-            var kb = $(el);
+            kb = document.querySelector(el);
             var x, y, row, key, key1, key2, label, label1, label2, self = this;
 
-            kb.disableSelection();
-
             function buildLabel(k) {
-                var span = $('<span>' + k + '</span>');
+                var span = document.createElement('span');
+                span.innerHTML = k;
                 if (k.length > 1 && k.substr(0,1) != '&')
-                    span.addClass('small');
+                    span.classList.add('small');
                 return span;
             }
 
-            function _mouseup(ev) {
-                $(ev.currentTarget).removeClass('pressed');
+            function _mouseup() {
+                this.classList.remove('pressed');
             }
 
             function _mousedown(ev) {
                 ev.preventDefault();
-                $(this).addClass('pressed');
-                var key = $(ev.currentTarget).data(shifted ? 'key2' : 'key1');
+                this.classList.add('pressed');
+                var key = this.dataset[shifted ? 'key2' : 'key1'];
                 switch (key) {
                 case 'BELL':
                     key = 'G';
@@ -317,7 +323,7 @@ export default function KeyBoard(cpu, io, e) {
                     key = '\x7F';
                     break;
                 case '&larr;':
-                    key = '\x04';
+                    key = '\x08';
                     break;
                 case '&rarr;':
                     key = '\x15';
@@ -332,7 +338,7 @@ export default function KeyBoard(cpu, io, e) {
                     key = ' ';
                     break;
                 case 'ESC':
-                    key = '\x1B'
+                    key = '\x1B';
                     break;
                 default:
                     break;
@@ -380,50 +386,55 @@ export default function KeyBoard(cpu, io, e) {
             }
 
             for (y = 0; y < 5; y++) {
-                row = $('<div class="row row' + y + '"/>');
+                row = document.createElement('div');
+                row.classList.add('row');
+                row.classList.add('row' + y);
                 kb.append(row);
                 for (x = 0; x < keys[0][y].length; x++) {
                     key1 = keys[0][y][x];
                     key2 = keys[1][y][x];
 
-                    label = $('<div />');
+                    label = document.createElement('div');
                     label1 = buildLabel(key1);
                     label2 = buildLabel(key2);
 
-                    key = $('<div class="key">');
-                    key.addClass('key-' + key1.replace(/[&#;]/g,''));
+                    key = document.createElement('div');
+                    key.classList.add('key');
+                    key.classList.add('key-' + key1.replace(/[&#;]/g,''));
 
                     if (key1.length > 1) {
                         if (key1 == 'LOCK')
-                            key.addClass('vcenter2');
+                            key.classList.add('vcenter2');
                         else
-                            key.addClass('vcenter');
+                            key.classList.add('vcenter');
                     }
                     if (key1 != key2) {
-                        key.addClass('key-' + key2.replace(/[&;]/g,''));
+                        key.classList.add('key-' + key2.replace(/[&;]/g,''));
                         label.append(label2);
-                        label.append('<br/>');
+                        label.append(document.createElement('br'));
                     }
-                    if (key1 == 'LOCK')
-                        key.addClass('active');
+                    if (key1 == 'LOCK') {
+                        key.classList.add('active');
+                    }
 
                     label.append(label1);
                     key.append(label);
-                    key.data({'key1': key1, 'key2': key2});
+                    key.dataset.key1 = key1;
+                    key.dataset.key2 = key2;
 
                     if (window.ontouchstart === undefined) {
-                        key.bind('mousedown', _mousedown);
-                        key.bind('mouseup mouseout', _mouseup);
+                        key.addEventListener('mousedown', _mousedown);
+                        key.addEventListener('mouseup', _mouseup);
+                        key.addEventListener('mouseleave', _mouseup);
                     } else {
-                        key.bind('touchstart', _mousedown);
-                        key.bind('touchend touchleave', _mouseup);
+                        key.addEventListener('touchstart', _mousedown);
+                        key.addEventListener('touchend', _mouseup);
+                        key.addEventListener('touchleave', _mouseup);
                     }
 
                     row.append(key);
                 }
-                row.append('<div class="clear" />');
             }
-            kb.append('<div class="clear" />');
         }
     };
 }
