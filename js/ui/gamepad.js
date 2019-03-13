@@ -106,7 +106,8 @@ export function initGamepad(data) {
         gamepadMap[idx] = undefined;
     }
     var map = data || DEFAULT_GAMEPAD;
-    $.each(map, function(key, val) {
+    Object.keys(map).forEach(function(key) {
+        var val = map[key];
         if (typeof val == 'string') {
             val = val.charCodeAt(0);
         } else {

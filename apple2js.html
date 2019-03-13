@@ -27,25 +27,7 @@
 <link rel="apple-touch-icon" size="72x72" href="img/webapp-ipad.png" />
 <link rel="shortcut icon" href="img/logoicon.png" />
 <link rel="stylesheet" type="text/css" href="css/apple2.css" />
-<link rel="stylesheet" type="text/css"
-      href="//code.jquery.com/ui/1.10.3/themes/mint-choc/jquery-ui.css" />
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.2/css/all.css" />
-
-<!-- white text in controls -->
-<style type="text/css">
-.ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default {
-  color: white;
-}
-.ui-state-default .ui-icon {
-  background-image: url(//code.jquery.com/ui/1.10.3/themes/mint-choc/images/ui-icons_ffffff_256x240.png);
-}
-</style>
-
-<!-- jQuery -->
-<script type="text/javascript" src="//code.jquery.com/jquery-1.9.1.js">
-</script>
-<script type="text/javascript" src="//code.jquery.com/ui/1.10.3/jquery-ui.js">
-</script>
 
 <!-- Disk Index -->
 <script type="text/javascript" src="json/disks/index.js"></script>
@@ -55,12 +37,8 @@
       ondragover="handleDragOver(0, event)"
       ondrop="handleDrop(0, event)"
       ondragend="handleDragEnd(0, event)">
-  <div id="fb-root"></div>
   <div style="margin: auto; width: 614px">
     <div id="header">
-      <a href="//www.w3.org/html/logo/" target="_blank">
-        <img src="//www.w3.org/html/logo/badge/html5-badge-h-solo.png" style="float: right" />
-      </a>
       <a href="about.html" target="_blank">
         <img src="img/badge.png" id="badge" />
       </a>
@@ -75,7 +53,7 @@
       <div style="float: left; width: 50%"
            ondragover="handleDragOver(1, event)"
            ondrop="handleDrop(1, event)"
-           ondragend="handleDragEnd(2, event)">
+           ondragend="handleDragEnd(1, event)">
         <button id="diskload1" class="diskload" title="Load Disk"
                 onclick="openLoad(1, event);">
           <i class="fas fa-folder-open"></i>
@@ -112,14 +90,14 @@
       <button id="toggle-sound" onclick="toggleSound()" title="Toggle Sound">
         <i class="fas fa-volume-off"></i>
       </button>
-      <button id="toggle-printer" onclick="$('#printer').dialog('open')" title="Toggle Printer">
+      <button id="toggle-printer" onclick="openPrinterModal()" title="Toggle Printer">
         <i class="fas fa-print"></i>
       </button>
       <div style="float: right">
-        <a class="button" href="about.html" target="_blank" title="About">
+        <button onclick="window.open('about.html', 'blank')" title="About">
           <i class="fas fa-info"></i>
-        </a>
-        <button onclick="$('#options').dialog('open')" title="Options">
+        </button>
+        <button onclick="openOptions()" title="Options">
           <i class="fas fa-cog"></i>
         </button>
       </div>
@@ -143,151 +121,263 @@
             <label for="text_input">Text Input</label>
             <textarea rows="10" style="width: 99%" id="text_input"></textarea>
           <br />
-          <button onclick="io.setKeyBuffer($('#text_input').val())">
+          <button onclick="io.setKeyBuffer(document.querySelector('#text_input').innerText)">
             Send
           </button>
           <input type="checkbox" id="buffering" />
           <label for="buffering">Buffer</label>
           <button style="float: right"
-                  onclick="$('#keyboard').show(); $('#textarea').hide()">
+                  onclick="document.querySelector('#keyboard').style.display = 'block'; document.querySelector('#textarea').style.display = 'none'">
             Keyboard
           </button>
         </div>
       </div>
     </div>
-  <div id="loading" title="Loading" style="display: none">
-    Loading...
   </div>
-  <div id="options" title="Options" style="display: none">
-    <h3>Type</h3>
-    <ul>
-      <li>
-        <select id="computer_type2" value="apple2plus" onchange="updateCPU()">
-          <option value="apple2plus">Apple ][+</option>
-          <option value="apple2">Autostart Apple ][</option>
-          <option value="original">Apple ][</option>
-          <option value="apple2j">Apple ][j+</option>
-          <option value="apple2lc">Apple ][+ (lowercase font)</option>
-          <option value="apple2pig">Apple ][+ (pig font)</option>
-        </select>
-      </li>
-      <li>
-        <i>* Reload page to take effect</i>
-      </li>
-    </ul>
-    <h3>CPU</h3>
-    <ul>
-      <li>
-        <input type="checkbox" id="accelerator_toggle" onclick="updateCPU()"/>
-        <label for="accelerator_toggle">
-          Accelerated CPU
-        </label>
-      </li>
-    </ul>
-    <h3>Joystick</h3>
-    <ul>
-      <li>
-        <input type="checkbox" id="disable_mouse"
-               onclick="updateJoystick()" />
-        <label for="disable_mouse">
-          Disable Mouse Joystick
-        </label>
-      </li>
-      <li>
-        <input type="checkbox" id="flip_x"
-               onclick="updateJoystick()" />
-        <label for="flip_x">
-          Flip X-Axis
-        </label>
-      </li>
-      <li>
-        <input type="checkbox" id="flip_y"
-               onclick="updateJoystick()" />
-        <label for="flip_y">
-          Flip Y-Axis
-        </label>
-      </li>
-      <li>
-        <input type="checkbox" id="swap_x_y"
-               onclick="updateJoystick()" />
-        <label for="swap_x_y">
-          Swap X-Y Axis
-        </label>
-      </li>
-    </ul>
-    <h3>Monitor</h3>
-    <ul>
-      <li>
-        <input type="checkbox" id="green_screen"
-               onclick="updateScreen()" />
-        <label for="green_screen">
-          Green Screen
-        </label>
-      </li>
-      <li>
-        <input type="checkbox" id="show_scanlines"
-               onclick="updateScreen()" />
-        <label for="show_scanlines">
-          Show Scanlines
-        </label>
-      </li>
-    </ul>
-    <h3>Sound</h3>
-    <ul>
-      <li>
-        <input type="checkbox" id="enable_sound"
-               onclick="updateSound()" checked="checked" />
-        <label for="enable_sound">
-          Enable (Experimental)
-        </label>
-      </li>
-    </ul>
-  </div>
-  <div id="save" title="Save Disk" style="display: none">
-    <form action="#" onsubmit="return false;">
-      <b>Save to Browser</b>
-      <br /><br />
-      Save Name: <input type="text" name="name" id="save_name"
-                  style="width: 200px" />
-    </form>
-    <hr />
-    <div>
-      <b>Download to Local Disk</b>
-      <br /><br />
-      <a id="local_save_link" class="button">Download</a>
+
+  <div class="modal" id="loading-modal" aria-hidden="true">
+    <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+      <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="Loading" >
+        <header class="modal__header">
+          <span id="loading-modal-title">
+            Loading...
+          </span>
+        </header>
+      </div>
     </div>
   </div>
-  <div id="manage" title="Manage Disks" style="display: none">
+
+  <div class="modal" id="options-modal" aria-hidden="true">
+    <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+      <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="Options">
+        <header class="modal__header">
+          <span id="options-modal-title">
+            Options
+          </span>
+          <button class="modal__close" aria-label="Close modal" data-micromodal-close>
+          </button>
+        </header>
+        <main class="modal__content" id="options-modal-content">
+          <h3>Type</h3>
+          <ul>
+            <li>
+              <select id="computer_type2" value="apple2plus" onchange="updateCPU()">
+                <option value="apple2plus">Apple ][+</option>
+                <option value="apple2">Autostart Apple ][</option>
+                <option value="original">Apple ][</option>
+                <option value="apple2j">Apple ][j+</option>
+                <option value="apple2lc">Apple ][+ (lowercase font)</option>
+                <option value="apple2pig">Apple ][+ (pig font)</option>
+              </select>
+            </li>
+            <li>
+              <i>* Reload page to take effect</i>
+            </li>
+          </ul>
+          <h3>CPU</h3>
+          <ul>
+            <li>
+              <input type="checkbox" id="accelerator_toggle" onclick="updateCPU()"/>
+              <label for="accelerator_toggle">
+                Accelerated CPU
+              </label>
+            </li>
+          </ul>
+          <h3>Joystick</h3>
+          <ul>
+            <li>
+              <input type="checkbox" id="disable_mouse"
+                    onclick="updateJoystick()" />
+              <label for="disable_mouse">
+                Disable Mouse Joystick
+              </label>
+            </li>
+            <li>
+              <input type="checkbox" id="flip_x"
+                    onclick="updateJoystick()" />
+              <label for="flip_x">
+                Flip X-Axis
+              </label>
+            </li>
+            <li>
+              <input type="checkbox" id="flip_y"
+                    onclick="updateJoystick()" />
+              <label for="flip_y">
+                Flip Y-Axis
+              </label>
+            </li>
+            <li>
+              <input type="checkbox" id="swap_x_y"
+                    onclick="updateJoystick()" />
+              <label for="swap_x_y">
+                Swap X-Y Axis
+              </label>
+            </li>
+          </ul>
+          <h3>Monitor</h3>
+          <ul>
+            <li>
+              <input type="checkbox" id="green_screen"
+                    onclick="updateScreen()" />
+              <label for="green_screen">
+                Green Screen
+              </label>
+            </li>
+            <li>
+              <input type="checkbox" id="show_scanlines"
+                    onclick="updateScreen()" />
+              <label for="show_scanlines">
+                Show Scanlines
+              </label>
+            </li>
+          </ul>
+          <h3>Sound</h3>
+          <ul>
+            <li>
+              <input type="checkbox" id="enable_sound"
+                    onclick="updateSound()" checked="checked" />
+              <label for="enable_sound">
+                Enable (Experimental)
+              </label>
+            </li>
+          </ul>
+        </main>
+        <footer class="modal__footer">
+          <button class="modal__btn" data-micromodal-close aria-label="Close this dialog window">Close</button>
+        </footer>
+      </div>
+    </div>
   </div>
-  <div id="http_load" title="Load URL" style="display: none">
-    <form action="#">
-      <input type="text" id="http_url" style="width: 500px"/>
-    </form>
+
+  <div class="modal" id="save-modal" aria-hidden="true">
+    <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+      <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="Save Disk">
+        <header class="modal__header">
+          <span id="save-modal-title">
+            Save Disk
+          </span>
+          <button class="modal__close" aria-label="Close modal" data-micromodal-close>
+          </button>
+        </header>
+        <main class="modal__content" id="save-modal-content">
+          <form action="#" onsubmit="return false;">
+            <b>Save to Browser</b>
+            <br /><br />
+            Save Name: <input type="text" name="name" id="save_name"
+                        style="width: 200px" />
+          </form>
+          <hr />
+          <div>
+            <b>Download to Local Disk</b>
+            <br /><br />
+            <a id="local_save_link" class="button">Download</a>
+          </div>
+        </main>
+        <footer class="modal__footer">
+          <button class="modal__btn" onclick="doSave()" aria-label="Save disk locally">Save</button>
+        </footer>
+      </div>
+    </div>
   </div>
-  <div id="load" title="Load Disk" style="display: none">
-    <table>
-      <tr>
-        <td>
-          <select id="category_select" multiple="multiple"
-                  class="ui-widget ui-state-default"
-                  onchange="selectCategory(event)" >
-          </select>
-        </td>
-        <td>
-          <select id="disk_select" multiple="multiple"
-                  class="ui-widget ui-state-default"
-                  onchange="selectDisk(event)"
-                  ondblclick="clickDisk(event)">
-          </select>
-        </td>
-      </tr>
-    </table>
-    <form action="#">
-      <input type="file" id="local_file" />
-    </form>
+
+  <div class="modal" id="manage-modal" aria-hidden="true">
+    <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+      <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="Load Disk">
+        <header class="modal__header">
+          <span class="modal__title" id="manage-modal-title">
+            Manage Local Saves
+          </span>
+          <button class="modal__close" aria-label="Close modal" data-micromodal-close>
+          </button>
+        </header>
+        <main class="modal__content" id="manage-modal-content">
+        </main>
+        <footer class="modal__footer">
+          <button class="modal__btn" data-micromodal-close aria-label="Close this dialog window">OK</button>
+        </footer>
+      </div>
+    </div>
   </div>
-  <div id="printer" title="Printer" style="display: none">
-    <div class="paper">
+
+  <div class="modal" id="http-modal" aria-hidden="true">
+    <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+      <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="Load Disk">
+        <header class="modal__header">
+          <span class="modal__title" id="http-modal-title">
+            Load URL
+          </span>
+          <button class="modal__close" aria-label="Close modal" data-micromodal-close>
+          </button>
+        </header>
+        <main class="modal__content" id="http-modal-content">
+          <form action="#">
+            <input type="text" id="http_url" style="width: 500px"/>
+          </form>
+        </main>
+        <footer class="modal__footer">
+          <button class="modal__btn" data-micromodal-close aria-label="Close this dialog window">OK</button>
+        </footer>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="load-modal" aria-hidden="true">
+    <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+      <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="Load Disk">
+        <header class="modal__header">
+          <span class="modal__title" id="load-modal-title">
+            Load Disk
+          </span>
+          <button class="modal__close" aria-label="Close modal" data-micromodal-close>
+          </button>
+        </header>
+        <main class="modal__content" id="load-modal-content">
+          <table>
+            <tr>
+              <td>
+                <select id="category_select" multiple="multiple"
+                        class="ui-widget ui-state-default"
+                        onchange="selectCategory(event)" >
+                </select>
+              </td>
+              <td>
+                <select id="disk_select" multiple="multiple"
+                        class="ui-widget ui-state-default"
+                        onchange="selectDisk(event)"
+                        ondblclick="clickDisk(event)">
+                </select>
+              </td>
+            </tr>
+          </table>
+          <form action="#">
+            <input type="file" id="local_file" />
+          </form>
+        </main>
+        <footer class="modal__footer">
+          <button class="modal__btn" data-micromodal-close aria-label="Close this dialog window">Cancel</button>
+          <button class="modal__btn" onclick="doLoad()" aria-label="Open the selected disk">Open</button>
+        </footer>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="printer-modal" aria-hidden="true">
+    <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+      <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="Printer">
+        <header class="modal__header">
+          <span class="modal__title" id="printer-modal-title">
+              Printer
+          </span>
+          <button class="modal__close" aria-label="Close modal" data-micromodal-close>
+          </button>
+        </header>
+        <main class="modal__content" id="printer-modal-content">
+          <div class="paper"></div>
+        </main>
+        <footer class="modal__footer">
+          <button class="modal__btn" data-micromodal-close aria-label="Close this dialog window">Close</button>
+        </footer>
+      </div>
     </div>
   </div>
   <script src="dist/main2.js"></script>

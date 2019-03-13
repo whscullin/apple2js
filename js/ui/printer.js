@@ -9,12 +9,15 @@
  * implied warranty.
  */
 
-export default function Printer(paper) {
-    var _lineBuffer;
+export default function Printer(el) {
+    var paper = document.querySelector(el);
+    var _lineBuffer = '';
     var _line;
 
     function newLine() {
-        _line = $('<div>').addClass('line').text(_lineBuffer);
+        _line = document.createElement('div');
+        _line.classList.add('line');
+        _line.innerText = _lineBuffer;
         paper.append(_line);
         _lineBuffer = '';
     }
@@ -39,7 +42,7 @@ export default function Printer(paper) {
                     _lineBuffer += c;
                 }
             }
-            _line.text(_lineBuffer);
+            _line.innerText = _lineBuffer;
         },
 
         clear: function() {
@@ -49,7 +52,7 @@ export default function Printer(paper) {
         },
 
         hasPrintout: function() {
-            return paper.text().length();
+            return paper.text.length;
         }
     };
 }

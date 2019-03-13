@@ -216,9 +216,102 @@ canvas {
     color: #000;
 }
 
-#load select {
+#load-modal select {
     width: 250px;
     height: 300px;
+}
+
+.modal {
+    display: none;
+}
+
+.modal.is-open {
+    display: block;
+}
+
+.modal__overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal__container {
+    background-color: #c4c1a0;
+    padding: 10px;
+    max-height: 100vh;
+    border-radius: 4px;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.modal__header {
+    display: flex;
+    font-size: 14px;
+    justify-content: space-between;
+    align-items: center;
+    background: #44372C;
+    color: #fff;
+    padding: 5px 11px;
+    border: 1px outset #66594E;
+    border-radius: 3px;
+}
+
+.modal__title {
+    margin-top: 0;
+    margin-bottom: 0;
+    font-weight: 600;
+    font-size: 1.25rem;
+    line-height: 1.25;
+    color: #fff;
+    box-sizing: border-box;
+}
+
+.modal__close, .modal__close:active, .modal__close:hover {
+    background: transparent;
+    padding: 3px;
+}
+
+.modal__header .modal__close:before {
+    content: "\2715";
+}
+
+.modal__content {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    line-height: 1.5;
+    color: #000;
+}
+
+.modal__footer {
+    text-align: right;
+}
+
+button {
+    background: #44372C;
+    color: #fff;
+    padding: 5px 11px;
+    border: 1px outset #66594E;
+    border-radius: 3px;
+}
+
+button:hover {
+    background-color: #55473D;
+    border: 1px outset #66594E;
+}
+
+button:active {
+    background-color: #22150A;
+    border: 1px outset #44372C;
+}
+
+button:focus {
+    outline: none;
 }
 
 #keyboard {
@@ -472,7 +565,7 @@ canvas {
   width: 100%;
 }
 
-.standalone #header, .standalone #social {
+.standalone #header {
     display: none;
 }
 
@@ -480,11 +573,25 @@ canvas {
     font-family: courier;
 }
 
-#options {
-  line-height: 1.75em;
-  height: auto !important;
+#options-modal {
+    width: 300px;
+    font-size: 11px;
+    line-height: 1.75em;
 }
 
-#options li {
+#options-modal h3 {
+    font-size: 13px;
+}
+
+#options-modal li {
     list-style-type: none;
+}
+
+.paper {
+    width: 640px;
+    height: 480px;
+    overflow: auto;
+    background-color: white;
+    color: black;
+    font-family: monospace;
 }
