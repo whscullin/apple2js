@@ -32,7 +32,8 @@ export default function Printer(el) {
 
             if (c == '\r') {
                 newLine();
-                _lineBuffer = '';
+            } else if (c == '\n') {
+                // eat for now
             } else if (c == '\t') {
                 _lineBuffer += '        ';
             } else if (c == 0x04) {

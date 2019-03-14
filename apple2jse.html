@@ -118,7 +118,7 @@
     <div class="modal__overlay" tabindex="-1" data-micromodal-close>
       <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="Loading" >
         <header class="modal__header">
-          <span id="loading-modal-title">
+          <span class="modal__title" id="loading-modal-title">
             Loading...
           </span>
         </header>
@@ -130,7 +130,7 @@
     <div class="modal__overlay" tabindex="-1" data-micromodal-close>
       <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="Options">
         <header class="modal__header">
-          <span id="options-modal-title">
+          <span class="modal__title" id="options-modal-title">
             Options
           </span>
           <button class="modal__close" aria-label="Close modal" data-micromodal-close>
@@ -213,7 +213,7 @@
               <input type="checkbox" id="enable_sound"
                     onclick="updateSound()" checked="checked" />
               <label for="enable_sound">
-                Enable (Experimental)
+                Enable
               </label>
             </li>
           </ul>
@@ -237,15 +237,13 @@
         </header>
         <main class="modal__content" id="save-modal-content">
           <form action="#" onsubmit="return false;">
-            <b>Save to Browser</b>
-            <br /><br />
+            <h3>Save to Browser</h3>
             Save Name: <input type="text" name="name" id="save_name"
                         style="width: 200px" />
           </form>
           <hr />
           <div>
-            <b>Download to Local Disk</b>
-            <br /><br />
+            <h3>Download to Local Disk</h3>
             <a id="local_save_link" class="button">Download</a>
           </div>
         </main>
@@ -312,13 +310,11 @@
             <tr>
               <td>
                 <select id="category_select" multiple="multiple"
-                        class="ui-widget ui-state-default"
                         onchange="selectCategory(event)" >
                 </select>
               </td>
               <td>
                 <select id="disk_select" multiple="multiple"
-                        class="ui-widget ui-state-default"
                         onchange="selectDisk(event)"
                         ondblclick="clickDisk(event)">
                 </select>

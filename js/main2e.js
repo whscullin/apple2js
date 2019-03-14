@@ -762,7 +762,7 @@ function _keydown(evt) {
     } else if (evt.keyCode == 91 || evt.keyCode == 93) { // Command
         keyboard.commandKey(true);
     } else if (evt.keyCode == 18) { // Alt
-        if (evt.originalEvent.location == 1) {
+        if (evt.location == 1) {
             keyboard.commandKey(true);
         } else {
             keyboard.optionKey(true);
@@ -781,7 +781,7 @@ function _keyup(evt) {
     } else if (evt.keyCode == 91 || evt.keyCode == 93) { // Command
         keyboard.commandKey(false);
     } else if (evt.keyCode == 18) { // Alt
-        if (evt.originalEvent.location == 1) {
+        if (evt.location == 1) {
             keyboard.commandKey(false);
         } else {
             keyboard.optionKey(false);

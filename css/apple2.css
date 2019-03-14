@@ -52,7 +52,7 @@ input[type="text"] {
 
 body {
     margin: 16px 0;
-    font-size: 10px;
+    font-size: 14px;
     background-color: #c4c1a0; /* Pantone 453 */
     font-family: sans-serif;
 }
@@ -60,10 +60,6 @@ body {
 .outer {
     margin: auto;
     width: 620px;
-}
-
-label {
-    font-weight: bold;
 }
 
 #display {
@@ -134,7 +130,6 @@ label {
 }
 
 .disklabel {
-    font-size: 11px;
     font-family: sans-serif;
 }
 
@@ -165,6 +160,10 @@ th {
     border: 3px inset #f0edd0;
     padding: 6px;
     margin: 10px 0;
+}
+
+.inset button {
+    min-width: 36px;
 }
 
 #khz {
@@ -219,6 +218,12 @@ canvas {
 #load-modal select {
     width: 250px;
     height: 300px;
+    font-size: 14px;
+}
+
+#load-modal input {
+    font-size: 14px;
+    line-height: 14px;
 }
 
 .modal {
@@ -295,9 +300,10 @@ canvas {
 button {
     background: #44372C;
     color: #fff;
-    padding: 5px 11px;
+    padding: 2px 8px;
     border: 1px outset #66594E;
     border-radius: 3px;
+    font-size: 15px;
 }
 
 button:hover {
@@ -321,6 +327,7 @@ button:focus {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    font-size: 10px;
 }
 
 #keyboard .row {
@@ -575,7 +582,6 @@ button:focus {
 
 #options-modal {
     width: 300px;
-    font-size: 11px;
     line-height: 1.75em;
 }
 
@@ -587,10 +593,15 @@ button:focus {
     list-style-type: none;
 }
 
-.paper {
+#printer-modal .feed {
     width: 640px;
     height: 480px;
     overflow: auto;
+}
+
+#printer-modal .paper {
+    min-width: 640px;
+    min-height: 480px;
     background-color: white;
     color: black;
     font-family: monospace;
