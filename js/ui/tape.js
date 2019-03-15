@@ -12,6 +12,8 @@
 
 import { debug } from '../util';
 
+export const TAPE_TYPES = ['wav','aiff','aif','mp3','m4a'];
+
 export default function Tape(io) {
     var AudioContext = window.AudioContext || window.webkitAudioContext;
 

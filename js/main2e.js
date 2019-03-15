@@ -1,3 +1,5 @@
+import MicroModal from 'micromodal';
+
 import Apple2IO from './apple2io';
 import ApplesoftDump from './applesoft/decompiler';
 import { HiresPage, LoresPage, VideoModes } from './canvas';
@@ -7,12 +9,13 @@ import Prefs from './prefs';
 import { debug, gup, hup } from './util';
 
 import Audio from './ui/audio';
+import DriveLights from './ui/drive_lights';
 import { gamepad, configGamepad, initGamepad, processGamepad } from './ui/gamepad';
 import KeyBoard from './ui/keyboard';
 import Printer from './ui/printer';
-import Tape from './ui/tape';
+import Tape, { TAPE_TYPES } from './ui/tape';
 
-import DiskII from './cards/disk2';
+import DiskII, { DISK_TYPES } from './cards/disk2';
 import Parallel from './cards/parallel';
 import RAMFactor from './cards/ramfactor';
 import Thunderclock from './cards/thunderclock';
@@ -41,85 +44,10 @@ var TRACE = false;
 var MAX_TRACE = 256;
 var trace = [];
 
-/*
- * Page viewer
- */
-
-/*
-function PageDebug(page)
-{
-    var _page = page;
-
-    function _init() {
-        var r, c;
-        var row = $('<tr />').appendTo('#page' + toHex(_page));
-        $('<th>\\</th>').appendTo(row);
-        for (c = 0; c < 16; c++) {
-            $('<th>' + toHex(c) + '</th>').appendTo(row);
-        }
-        for (r = 0; r < 16; r++) {
-            row = $('<tr />').appendTo('#page' + toHex(_page));
-            $('<th>' + toHex(r * 16) + '</th>').appendTo(row);
-            for (c = 0; c < 16; c++) {
-                $('<td>--</td>').appendTo(row).attr('id', 'page' + toHex(_page) + '-' + toHex(r * 16 + c));
-            }
-        }
-    }
-
-    _init();
-
-    return {
-        start: function() { return _page; },
-        end: function() { return _page; },
-        read: null,
-        write: function(page, off, val) {
-            $('#page' + toHex(page) + '-' + toHex(off)).text(toHex(val));
-        }
-    };
-}
-*/
-
 var disk_categories = {'Local Saves': []};
 var disk_sets = {};
 var disk_cur_name = [];
 var disk_cur_cat = [];
-
-function DriveLights()
-{
-    return {
-        driveLight: function(drive, on) {
-            $('#disk' + drive).css('background-image',
-                on ? 'url(css/red-on-16.png)' :
-                    'url(css/red-off-16.png)');
-        },
-        dirty: function() {
-            // $('#disksave' + drive).button('option', 'disabled', !dirty);
-        },
-        label: function(drive, label) {
-            if (label) {
-                $('#disklabel' + drive).text(label);
-            }
-            return $('#disklabel' + drive).text();
-        },
-        getState: function() {
-            return {
-                disks: [
-                    this.label(1),
-                    this.label(2)
-                ]
-            };
-        },
-        setState: function(state) {
-            if (state && state.disks) {
-                this.label(1, state.disks[0].label);
-                this.label(2, state.disks[1].label);
-            }
-        }
-    };
-}
-
-var DISK_TYPES = ['dsk','d13','do','po','raw','nib','2mg'];
-var TAPE_TYPES = ['wav','aiff','aif','mp3','m4a'];
 
 var _currentDrive = 1;
 
@@ -130,9 +58,10 @@ window.openLoad = function(drive, event)
         openLoadHTTP(drive);
     } else {
         if (disk_cur_cat[drive]) {
-            $('#category_select').val(disk_cur_cat[drive]).change();
+            document.querySelector('#category_select').value = disk_cur_cat[drive];
+            window.selectCategory();
         }
-        $('#load').dialog('open');
+        MicroModal.show('load-modal');
     }
 };
 
@@ -142,17 +71,17 @@ window.openSave = function(drive, event)
 
     var mimetype = 'application/octet-stream';
     var data = disk2.getBinary(drive);
-    var a = $('#local_save_link');
+    var a = document.querySelector('#local_save_link');
 
     var blob = new Blob([data], { 'type': mimetype });
-    a.attr('href', window.URL.createObjectURL(blob));
-    a.attr('download', drivelights.label(drive) + '.dsk');
+    a.href = window.URL.createObjectURL(blob);
+    a.download = drivelights.label(drive) + '.dsk';
 
     if (event.metaKey) {
         dumpDisk(drive);
     } else {
-        $('#save_name').val(drivelights.label(drive));
-        $('#save').dialog('open');
+        document.querySelector('#save_name').value = drivelights.label(drive);
+        MicroModal.show('save-modal');
     }
 };
 
@@ -191,6 +120,16 @@ window.handleDrop = function(drive, event) {
     } else if (dt.files.length == 2) {
         doLoadLocal(1, dt.files[0]);
         doLoadLocal(2, dt.files[1]);
+    } else {
+        for (var idx = 0; idx < dt.items.length; idx++) {
+            if (dt.items[idx].type === 'text/uri-list') {
+                dt.items[idx].getAsString(function(url) {
+                    var parts = document.location.hash.split('|');
+                    parts[drive - 1] = url;
+                    document.location.hash = parts.join('|');
+                });
+            }
+        }
     }
 };
 
@@ -198,32 +137,29 @@ var loading = false;
 
 function loadAjax(drive, url) {
     loading = true;
-    $('#loading').dialog('open');
+    MicroModal.show('loading-modal');
 
-    $.ajax({
-        url: url,
-        dataType: 'json',
-        modifiedSince: true,
-        error: function(xhr, status, error) {
-            alert(error || status);
-            $('#loading').dialog('close');
-            loading = false;
-        },
-        success: function(data) {
-            if (data.type == 'binary') {
-                loadBinary(drive, data);
-            } else if ($.inArray(data.type, DISK_TYPES) >= 0) {
-                loadDisk(drive, data);
-            }
-            initGamepad(data.gamepad);
-            $('#loading').dialog('close');
-            loading = false;
+    fetch(url).then(function(response) {
+        return response.json();
+    }).then(function(data) {
+        if (data.type == 'binary') {
+            loadBinary(drive, data);
+        } else if (DISK_TYPES.includes(data.type)) {
+            loadDisk(drive, data);
         }
+        initGamepad(data.gamepad);
+        MicroModal.close('loading-modal');
+        loading = false;
+    }).catch(function(error) {
+        window.alert(error || status);
+        MicroModal.close('loading-modal');
+        loading = false;
     });
 }
 
-function doLoad() {
-    var urls = $('#disk_select').val(), url;
+window.doLoad = function doLoad() {
+    MicroModal.close('load-modal');
+    var urls = document.querySelector('#disk_select').value, url;
     if (urls && urls.length) {
         if (typeof(urls) == 'string') {
             url = urls;
@@ -232,12 +168,12 @@ function doLoad() {
         }
     }
 
-    var files = $('#local_file').prop('files');
+    var files = document.querySelector('#local_file').files;
     if (files.length == 1) {
         doLoadLocal(_currentDrive, files[0]);
     } else if (url) {
         var filename;
-        $('#load').dialog('close');
+        MicroModal.close('load-modal');
         if (url.substr(0,6) == 'local:') {
             filename = url.substr(6);
             if (filename == '__manage') {
@@ -255,16 +191,15 @@ function doLoad() {
             var parts = document.location.hash.split('|');
             parts[_currentDrive - 1] = filename;
             document.location.hash = parts.join('|');
-            loadAjax(_currentDrive, url);
         }
     }
-}
+};
 
-function doSave() {
-    var name = $('#save_name').val();
+window.doSave = function doSave() {
+    var name = document.querySelector('#save_name').value;
     saveLocalStorage(_currentDrive, name);
-    $('#save').dialog('close');
-}
+    MicroModal.close('save-modal');
+};
 
 window.doDelete = function(name) {
     if (window.confirm('Delete ' + name + '?')) {
@@ -275,15 +210,15 @@ window.doDelete = function(name) {
 function doLoadLocal(drive, file) {
     var parts = file.name.split('.');
     var ext = parts[parts.length - 1].toLowerCase();
-    if ($.inArray(ext, DISK_TYPES) >= 0) {
+    if (DISK_TYPES.includes(ext)) {
         doLoadLocalDisk(drive, file);
     } else if ($.inArray(ext, TAPE_TYPES) >= 0) {
         tape.doLoadLocalTape(file, function() {
-            $('#load').dialog('close');
+            MicroModal.close('load-modal');
         });
     } else {
         window.alert('Unknown file type: ' + ext);
-        $('#load').dialog('close');
+        MicroModal.close('load-modal');
     }
 }
 
@@ -295,7 +230,7 @@ function doLoadLocalDisk(drive, file) {
         var name = parts.join('.');
         if (disk2.setBinary(drive, name, ext, this.result)) {
             drivelights.label(drive, name);
-            $('#load').dialog('close');
+            MicroModal.close('load-modal');
             initGamepad();
         }
     };
@@ -303,7 +238,7 @@ function doLoadLocalDisk(drive, file) {
 }
 
 function doLoadHTTP(drive, _url) {
-    var url = _url || $('#http_url').val();
+    var url = _url || document.querySelector('#http_url').value;
     if (url) {
         var req = new XMLHttpRequest();
         req.open('GET', url, true);
@@ -317,7 +252,7 @@ function doLoadHTTP(drive, _url) {
             var name = decodeURIComponent(fileParts.join('.'));
             if (disk2.setBinary(drive, name, ext, req.response)) {
                 drivelights.label(drive, name);
-                $('#http_load').dialog('close');
+                MicroModal.close('http-modal');
                 initGamepad();
             }
         };
@@ -327,11 +262,11 @@ function doLoadHTTP(drive, _url) {
 
 function openLoadHTTP(drive) {
     _currentDrive = parseInt(drive, 10);
-    $('#http_load').dialog('open');
+    MicroModal.show('http-modal');
 }
 
 function openManage() {
-    $('#manage').dialog('open');
+    MicroModal.show('manage-modal');
 }
 
 var prefs = new Prefs();
@@ -397,7 +332,7 @@ var io = new Apple2IO(cpu, vm);
 var keyboard = new KeyBoard(cpu, io, true);
 var audio = new Audio(io);
 var tape = new Tape(io);
-var printer = new Printer($('#printer .paper'));
+var printer = new Printer('#printer-modal .paper');
 
 var mmu = new MMU(cpu, vm, gr, gr2, hgr, hgr2, io, rom);
 
@@ -424,11 +359,11 @@ function updateKHz() {
     if (window.showFPS) {
         delta = renderedFrames - lastFrames;
         var fps = parseInt(delta/(ms/1000), 10);
-        $('#khz').text( fps + 'fps');
+        document.querySelector('#khz').innerText = fps + 'fps';
     } else {
         delta = cycles - lastCycles;
         var khz = parseInt(delta/ms);
-        $('#khz').text( khz + 'KHz');
+        document.querySelector('#khz').innerText = khz + 'KHz';
     }
 
     startTime = now;
@@ -436,14 +371,16 @@ function updateKHz() {
     lastFrames = renderedFrames;
 }
 
-window.updateSound = function() {
-    var on = $('#enable_sound').prop('checked');
-    var label = $('#toggle-sound i');
+window.updateSound = function updateSound() {
+    var on = document.querySelector('#enable_sound').checked;
+    var label = document.querySelector('#toggle-sound i');
     audio.enable(on);
     if (on) {
-        label.removeClass('fa-volume-off').addClass('fa-volume-up');
+        label.classList.remove('fa-volume-off');
+        label.classList.add('fa-volume-up');
     } else {
-        label.removeClass('fa-volume-up').addClass('fa-volume-off');
+        label.classList.remove('fa-volume-up');
+        label.classList.add('fa-volume-off');
     }
 };
 
@@ -480,9 +417,9 @@ window.step = function()
 
 var accelerated = false;
 
-window.updateCPU = function()
+window.updateCPU = function updateCPU()
 {
-    accelerated = $('#accelerator_toggle').prop('checked');
+    accelerated = document.querySelector('#accelerator_toggle').checked;
     kHz = accelerated ? 4092 : 1023;
     io.updateHz(kHz * 1000);
     if (runTimer) {
@@ -510,7 +447,6 @@ function run(pc) {
     var now, last = Date.now();
     var runFn = function() {
         now = Date.now();
-        renderedFrames++;
 
         var step = (now - last) * kHz, stepMax = kHz * ival;
         last = now;
@@ -543,7 +479,9 @@ function run(pc) {
             } else {
                 cpu.stepCycles(step);
             }
-            vm.blit();
+	    if (vm.blit()) {
+		renderedFrames++;
+	    }
             io.tick();
         }
 
@@ -635,29 +573,31 @@ function loadBinary(bin) {
 }
 
 window.selectCategory = function() {
-    $('#disk_select').empty();
-    var cat = disk_categories[$('#category_select').val()];
+    document.querySelector('#disk_select').innerHTML = '';
+    var cat = disk_categories[document.querySelector('#category_select').value];
     if (cat) {
         for (var idx = 0; idx < cat.length; idx++) {
             var file = cat[idx], name = file.name;
             if (file.disk) {
                 name += ' - ' + file.disk;
             }
-            var option = $('<option />').val(file.filename).text(name)
-                .appendTo('#disk_select');
+            var option = document.createElement('option');
+            option.value = file.filename;
+            option.innerText = name;
+            document.querySelector('#disk_select').append(option);
             if (disk_cur_name[_currentDrive] == name) {
-                option.attr('selected', 'selected');
+                option.selected = true;
             }
         }
     }
 };
 
 window.selectDisk = function() {
-    $('#local_file').val('');
+    document.querySelector('#local_file').value = '';
 };
 
 window.clickDisk = function() {
-    doLoad();
+    window.doLoad();
 };
 
 function loadDisk(drive, disk) {
@@ -691,7 +631,7 @@ function updateLocalStorage() {
     }
 
     cat = disk_categories['Local Saves'] = [];
-    $('#manage').empty();
+    document.querySelector('#manage-modal-content').innerHTML = '';
 
     names.forEach(function(name) {
         cat.push({
@@ -699,13 +639,12 @@ function updateLocalStorage() {
             'name': name,
             'filename': 'local:' + name
         });
-        $('#manage').append(
+        document.querySelector('#manage-modal-content').innerHTML =
             '<span class="local_save">' +
             name +
             ' <a href="#" onclick="doDelete(\'' +
             name +
-            '\')">Delete</a><br /></span>'
-        );
+            '\')">Delete</a><br /></span>';
     });
     cat.push({
         'category': 'Local Saves',
@@ -773,9 +712,7 @@ function processHash(hash) {
 window.reset = keyboard.reset;
 
 function _keydown(evt) {
-    audio.autoStart();
-
-    if (!focused) {
+    if (!focused && (!evt.metaKey || evt.ctrlKey)) {
         evt.preventDefault();
 
         var key = keyboard.mapKeyEvent(evt);
@@ -789,14 +726,12 @@ function _keydown(evt) {
     } else if (evt.keyCode === 113) { // F2 - Full Screen
         var elem = document.getElementById('screen');
         if (evt.shiftKey) { // Full window, but not full screen
-            $('#display').toggleClass('zoomwindow');
-            $('#display > div')
-                .toggleClass('overscan')
-                .toggleClass('flexbox-centering');
-            $('#screen').toggleClass('maxhw');
-            $('#header').toggleClass('hidden');
-            $('.inset').toggleClass('hidden');
-            $('#reset').toggleClass('hidden');
+            document.querySelector('#display').classList.toggle('zoomwindow');
+            document.querySelector('#display > div').classList.toggle('overscan', 'flexbox-centering');
+            document.querySelector('#screen').classList.toggle('maxhw');
+            document.querySelector('#header').classList.toggle('hidden');
+            document.querySelector('.inset').classList.toggle('hidden');
+            document.querySelector('#reset').classList.toggle('hidden');
         } else if (document.webkitCancelFullScreen) {
             if (document.webkitIsFullScreen) {
                 document.webkitCancelFullScreen();
@@ -827,7 +762,7 @@ function _keydown(evt) {
     } else if (evt.keyCode == 91 || evt.keyCode == 93) { // Command
         keyboard.commandKey(true);
     } else if (evt.keyCode == 18) { // Alt
-        if (evt.originalEvent.location == 1) {
+        if (evt.location == 1) {
             keyboard.commandKey(true);
         } else {
             keyboard.optionKey(true);
@@ -846,7 +781,7 @@ function _keyup(evt) {
     } else if (evt.keyCode == 91 || evt.keyCode == 93) { // Command
         keyboard.commandKey(false);
     } else if (evt.keyCode == 18) { // Alt
-        if (evt.originalEvent.location == 1) {
+        if (evt.location == 1) {
             keyboard.commandKey(false);
         } else {
             keyboard.optionKey(false);
@@ -854,9 +789,9 @@ function _keyup(evt) {
     }
 }
 
-window.updateScreen = function() {
-    var green = $('#green_screen').prop('checked');
-    var scanlines = $('#show_scanlines').prop('checked');
+window.updateScreen = function updateScreen() {
+    var green = document.querySelector('#green_screen').checked;
+    var scanlines = document.querySelector('#show_scanlines').checked;
 
     vm.green(green);
     vm.scanlines(scanlines);
@@ -868,10 +803,10 @@ var flipY = false;
 var swapXY = false;
 
 window.updateJoystick = function() {
-    disableMouseJoystick = $('#disable_mouse').prop('checked');
-    flipX = $('#flip_x').prop('checked');
-    flipY = $('#flip_y').prop('checked');
-    swapXY = $('#swap_x_y').prop('checked');
+    disableMouseJoystick = document.querySelector('#disable_mouse').checked;
+    flipX = document.querySelector('#flip_x').checked;
+    flipY = document.querySelector('#flip_y').checked;
+    swapXY = document.querySelector('#swap_x_y').checked;
     configGamepad(flipX, flipY);
 
     if (disableMouseJoystick) {
@@ -886,10 +821,10 @@ function _mousemove(evt) {
         return;
     }
 
-    var s = $('#screen');
-    var offset = s.offset();
-    var x = (evt.pageX - offset.left) / s.width(),
-        y = (evt.pageY - offset.top) / s.height(),
+    var s = document.querySelector('#screen');
+    var offset = { top: s.clientTop, left: s.clientLeft };
+    var x = (evt.pageX - offset.left) / s.clientWidth,
+        y = (evt.pageY - offset.top) / s.clientHeight,
         z = x;
 
     if (swapXY) {
@@ -902,79 +837,87 @@ function _mousemove(evt) {
 }
 
 window.pauseRun = function() {
-    var label = $('#pause-run i');
+    var label = document.querySelector('#pause-run i');
     if (paused) {
         run();
-        label.removeClass('fa-play').addClass('fa-pause');
+        label.classList.remove('fa-play');
+        label.classList.add('fa-pause');
     } else {
         stop();
-        label.removeClass('fa-pause').addClass('fa-play');
+        label.classList.remove('fa-pause');
+        label.classList.add('fa-play');
     }
     paused = !paused;
 };
 
 window.toggleSound = function() {
-    var enableSound = $('#enable_sound');
-    enableSound.prop('checked', !enableSound.prop('checked'));
+    var enableSound = document.querySelector('#enable_sound');
+    enableSound.checked = !enableSound.checked;
     window.updateSound();
 };
 
-$(function() {
-    hashtag = document.location.hash;
+window.openOptions = function () {
+    MicroModal.show('options-modal');
+};
 
-    $('button,input[type=button],a.button').button().focus(function() {
-        // Crazy hack required by Chrome
-        var self = this;
-        window.setTimeout(function() {
-            self.blur();
-        }, 1);
-    });
+window.openPrinterModal = function () {
+    MicroModal.show('printer-modal');
+};
+
+MicroModal.init();
+
+document.addEventListener('DOMContentLoaded', function() {
+    hashtag = document.location.hash;
 
     /*
      * Input Handling
      */
 
-    $(window)
-        .keydown(_keydown)
-        .keyup(_keyup)
-        .mousedown(function() { audio.autoStart(); });
+    window.addEventListener('keydown', _keydown);
+    window.addEventListener('keyup', _keyup);
+    window.addEventListener('mousedown', function() { audio.autoStart(); });
 
-    $('canvas')
-        .mousedown(function(evt) {
+    document.querySelectorAll('canvas').forEach(function(canvas) {
+        canvas.addEventListener('mousedown', function(evt) {
             if (!gamepad) {
                 io.buttonDown(evt.which == 1 ? 0 : 1);
             }
             evt.preventDefault();
-        })
-        .mouseup(function(evt) {
+        });
+        canvas.addEventListener('mouseup', function(evt) {
             if (!gamepad) {
                 io.buttonUp(evt.which == 1 ? 0 : 1);
             }
-        })
-        .bind('contextmenu', function(evt) { evt.preventDefault(); });
+        });
+    });
 
-    $('body').mousemove(_mousemove);
+    document.body.addEventListener('mousemove', _mousemove);
 
-    $('input,textarea')
-        .focus(function() { focused = true; })
-        .blur(function() { focused = false; });
+    document.querySelectorAll('input,textarea').forEach(function(input) {
+        input.addEventListener('input', function() { focused = true; });
+        input.addEventListener('blur', function() { focused = false; });
+    });
 
     keyboard.create('#keyboard');
 
     if (prefs.havePrefs()) {
-        $('#options input[type=checkbox]').each(function() {
-            var val = prefs.readPref(this.id);
-            if (val)
-                this.checked = JSON.parse(val);
-        }).change(function() {
-            prefs.writePref(this.id, JSON.stringify(this.checked));
+        document.querySelectorAll('#options-modal input[type=checkbox]').forEach(function(el) {
+            var val = prefs.readPref(el.id);
+            if (val) {
+                el.checked = JSON.parse(val);
+            }
+            el.addEventListener('change', function() {
+                prefs.writePref(el.id, JSON.stringify(el.checked));
+            });
         });
-        $('#options select').each(function() {
-            var val = prefs.readPref(this.id);
-            if (val)
-                this.value = val;
-        }).change(function() {
-            prefs.writePref(this.id, this.value);
+        document.querySelectorAll('#options-modal select').forEach(function(el) {
+            var val = prefs.readPref(el.id);
+            if (val) {
+                el.value = val;
+            }
+            el.addEventListener('change', function() {
+                prefs.writePref(el.id, el.value);
+            });
         });
     }
 
@@ -984,60 +927,22 @@ $(function() {
     window.updateScreen();
     window.updateCPU();
 
-    var cancel = function() { $(this).dialog('close'); };
-    $('#loading').dialog({ autoOpen: false, modal: true });
-    $('#options').dialog({
-        autoOpen: false,
-        modal: true,
-        width: 320,
-        buttons: {'Close': cancel }
-    });
-    $('#load').dialog({
-        autoOpen: false,
-        modal: true,
-        width: 540,
-        buttons: {'Cancel': cancel, 'Load': doLoad }
-    });
-    $('#save').dialog({
-        autoOpen: false,
-        modal: true,
-        width: 320,
-        buttons: {'Cancel': cancel, 'Save': doSave }
-    });
-    $('#manage').dialog({
-        autoOpen: false,
-        modal: true,
-        width: 320,
-        buttons: {'Close': cancel }
-    });
-    $('#printer').dialog({
-        autoOpen: false,
-        modal: true,
-        resizeable: false,
-        width: 570,
-        buttons: {
-            'Clear': printer.clear,
-            'Close': cancel
-        }
-    });
-    $('#http_load').dialog({
-        autoOpen: false,
-        modal: true,
-        width: 530,
-        buttons: {'Cancel': cancel, 'OK': doLoadHTTP }
-    });
-
     if (window.localStorage !== undefined) {
-        $('.disksave').show();
+        document.querySelectorAll('.disksave').forEach(function (el) { el.style.display = 'inline-block';});
     }
 
     var oldcat = '';
+    var option;
     for (var idx = 0; idx < window.disk_index.length; idx++) {
         var file = window.disk_index[idx];
         var cat = file.category;
         var name = file.name, disk = file.disk;
         if (cat != oldcat) {
-            $('<option />').val(cat).text(cat).appendTo('#category_select');
+            option = document.createElement('option');
+            option.value = cat;
+            option.innerText = cat;
+            document.querySelector('#category_select').append(option);
+
             disk_categories[cat] = [];
             oldcat = cat;
         }
@@ -1049,7 +954,9 @@ $(function() {
             disk_sets[name].push(file);
         }
     }
-    $('<option/>').text('Local Saves').appendTo('#category_select');
+    option = document.createElement('option');
+    option.innerText = 'Local Saves';
+    document.querySelector('#category_select').append(option);
 
     updateLocalStorage();
     initGamepad();
@@ -1061,12 +968,8 @@ $(function() {
         processHash(hash);
     }
 
-    if (navigator.userAgent.match(/(iPod|iPhone|iPad)/)) {
-        $('select').removeAttr('multiple').css('height', 'auto');
-    }
-
     if (navigator.standalone) {
-        $('body').addClass('standalone');
+        document.body.classList.add('standalone');
     }
 
     run();

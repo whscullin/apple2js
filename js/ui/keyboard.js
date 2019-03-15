@@ -213,7 +213,7 @@ export default function KeyBoard(cpu, io, e) {
             } else if (code in keymap) {
                 key = keymap[code][evt.shiftKey ? 2 : (evt.ctrlKey ? 1 : 0)];
                 if (capslocked && key >= 0x61 && key <= 0x7A)
-                    key -= '\x20';
+                    key -= 0x20;
             } else {
                 debug('Unhandled key = ' + toHex(code));
             }
