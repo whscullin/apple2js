@@ -6,7 +6,8 @@
     "build": "webpack --mode=production",
     "dev": "webpack-dev-server",
     "index": "scripts/index.pl > json/disks/index.js",
-    "lint": "eslint js"
+    "lint": "eslint js",
+    "start": "webpack-dev-server"
   },
   "repository": {
     "type": "git",

@@ -479,9 +479,9 @@ function run(pc) {
             } else {
                 cpu.stepCycles(step);
             }
-	    if (vm.blit()) {
-		renderedFrames++;
-	    }
+            if (vm.blit()) {
+                renderedFrames++;
+            }
             io.tick();
         }
 
@@ -727,10 +727,11 @@ function _keydown(evt) {
         var elem = document.getElementById('screen');
         if (evt.shiftKey) { // Full window, but not full screen
             document.querySelector('#display').classList.toggle('zoomwindow');
-            document.querySelector('#display > div').classList.toggle('overscan', 'flexbox-centering');
+            document.querySelector('#display > div').classList.toggle('overscan');
+            document.querySelector('#display > div').classList.toggle('flexbox-centering');
             document.querySelector('#screen').classList.toggle('maxhw');
             document.querySelector('#header').classList.toggle('hidden');
-            document.querySelector('.inset').classList.toggle('hidden');
+            document.querySelectorAll('.inset').forEach((el) => el.classList.toggle('hidden'));
             document.querySelector('#reset').classList.toggle('hidden');
         } else if (document.webkitCancelFullScreen) {
             if (document.webkitIsFullScreen) {
