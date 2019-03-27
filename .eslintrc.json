@@ -29,7 +29,7 @@
     "extends": "eslint:recommended",
     "overrides": [
         {
-            "files": [ "bin/*", "webpack.config.js" ],
+            "files": [ "bin/*", "babel.config.js", "webpack.config.js" ],
             "rules": {
                 "no-console": 0
             },
@@ -37,6 +37,11 @@
                 "node": true,
                 "jquery": false,
                 "browser": false
+            }
+        }, {
+            "files": [ "test/*"],
+            "env": {
+                "jest": true
             }
         }
     ]
