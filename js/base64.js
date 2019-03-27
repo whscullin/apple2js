@@ -1,5 +1,3 @@
-/*exported base64_encode, base64_decode */
-
 export function base64_encode (data) {
     // Twacked by Will Scullin to handle arrays of "bytes"
 

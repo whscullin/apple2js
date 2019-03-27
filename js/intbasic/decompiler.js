@@ -1,5 +1,3 @@
-/*exported IntBasicDump */
-
 export default function IntBasicDump(mem)
 {
     var _mem = mem;

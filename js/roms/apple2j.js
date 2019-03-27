@@ -1,5 +1,3 @@
-/*exported Apple2jROM */
-
 export default function Apple2jROM()
 {
     var rom = [

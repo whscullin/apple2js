@@ -1,7 +1,6 @@
 // From https://github.com/Klaus2m5/6502_65C02_functional_tests
 
-/*exported Test65C02 */
-/*global toHex */
+import { toHex } from '../util';
 
 var LOG = false;
 

@@ -1,5 +1,3 @@
-/*exported Apple2eEnhancedROM */
-
 export default function Apple2eEnhancedROM()
 {
     var rom = [

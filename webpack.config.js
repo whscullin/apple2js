@@ -6,8 +6,7 @@ module.exports =
     devtool: 'source-map',
     entry: {
         main2: path.resolve('js/main2.js'),
-        main2e: path.resolve('js/main2e.js'),
-        test: path.resolve('js/test.js')
+        main2e: path.resolve('js/main2e.js')
     },
     output: {
         path: path.resolve('dist/')

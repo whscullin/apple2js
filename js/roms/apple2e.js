@@ -1,5 +1,3 @@
-/*exported Apple2eROM*/
-
 export default function Apple2eROM()
 {
     var rom = [

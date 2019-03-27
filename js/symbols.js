@@ -1,5 +1,3 @@
-/*exported SYMBOLS */
-
 var SYMBOLS = {
 /*
     0x00: 'GOWARM',
