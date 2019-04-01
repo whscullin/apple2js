@@ -43,6 +43,11 @@
             "env": {
                 "jest": true
             }
+        }, {
+            "files": [ "js/entry2.js", "js/entry2e.js"],
+            "env": {
+                "commonjs": true
+            }
         }
     ]
 }

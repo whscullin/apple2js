@@ -11,18 +11,20 @@
 
 export default function Prefs()
 {
+    var havePrefs = typeof window.localStorage !== 'undefined';
+
     return {
         havePrefs: function() {
-            return typeof(localStorage) != 'undefined';
+            return havePrefs;
         },
         readPref: function(name) {
-            if (localStorage)
-                return localStorage.getItem(name);
+            if (havePrefs)
+                return window.localStorage.getItem(name);
             return null;
         },
         writePref: function(name, value) {
-            if (localStorage)
-                localStorage.setItem(name, value);
+            if (havePrefs)
+                window.localStorage.setItem(name, value);
         }
     };
 }

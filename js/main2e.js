@@ -51,7 +51,7 @@ var disk_cur_cat = [];
 
 var _currentDrive = 1;
 
-window.openLoad = function(drive, event)
+export function openLoad(drive, event)
 {
     _currentDrive = parseInt(drive, 10);
     if (event.metaKey) {
@@ -59,13 +59,13 @@ window.openLoad = function(drive, event)
     } else {
         if (disk_cur_cat[drive]) {
             document.querySelector('#category_select').value = disk_cur_cat[drive];
-            window.selectCategory();
+            selectCategory();
         }
         MicroModal.show('load-modal');
     }
-};
+}
 
-window.openSave = function(drive, event)
+export function openSave(drive, event)
 {
     _currentDrive = parseInt(drive, 10);
 
@@ -83,14 +83,14 @@ window.openSave = function(drive, event)
         document.querySelector('#save_name').value = drivelights.label(drive);
         MicroModal.show('save-modal');
     }
-};
+}
 
-window.handleDragOver = function(drive, event) {
+export function handleDragOver(drive, event) {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'copy';
-};
+}
 
-window.handleDragEnd = function(drive, event) {
+export function handleDragEnd(drive, event) {
     var dt = event.dataTransfer;
     if (dt.items) {
         for (var i = 0; i < dt.items.length; i++) {
@@ -99,9 +99,9 @@ window.handleDragEnd = function(drive, event) {
     } else {
         event.dataTransfer.clearData();
     }
-};
+}
 
-window.handleDrop = function(drive, event) {
+export function handleDrop(drive, event) {
     event.preventDefault();
     event.stopPropagation();
 
@@ -131,7 +131,7 @@ window.handleDrop = function(drive, event) {
             }
         }
     }
-};
+}
 
 var loading = false;
 
@@ -157,7 +157,7 @@ function loadAjax(drive, url) {
     });
 }
 
-window.doLoad = function doLoad() {
+export function doLoad() {
     MicroModal.close('load-modal');
     var urls = document.querySelector('#disk_select').value, url;
     if (urls && urls.length) {
@@ -195,17 +195,17 @@ window.doLoad = function doLoad() {
     }
 };
 
-window.doSave = function doSave() {
+export function doSave() {
     var name = document.querySelector('#save_name').value;
     saveLocalStorage(_currentDrive, name);
     MicroModal.close('save-modal');
 };
 
-window.doDelete = function(name) {
+export function doDelete(name) {
     if (window.confirm('Delete ' + name + '?')) {
         deleteLocalStorage(name);
     }
-};
+}
 
 function doLoadLocal(drive, file) {
     var parts = file.name.split('.');
@@ -348,7 +348,7 @@ io.setSlot(2, slinky);
 io.setSlot(6, disk2);
 io.setSlot(7, clock);
 
-window.showFPS = false;
+var showFPS = false;
 
 function updateKHz() {
     var now = Date.now();
@@ -356,7 +356,7 @@ function updateKHz() {
     var cycles = cpu.cycles();
     var delta;
 
-    if (window.showFPS) {
+    if (showFPS) {
         delta = renderedFrames - lastFrames;
         var fps = parseInt(delta/(ms/1000), 10);
         document.querySelector('#khz').innerText = fps + 'fps';
@@ -371,7 +371,11 @@ function updateKHz() {
     lastFrames = renderedFrames;
 }
 
-window.updateSound = function updateSound() {
+export function toggleShowFPS() {
+    showFPS = !showFPS;
+}
+
+export function updateSound() {
     var on = document.querySelector('#enable_sound').checked;
     var label = document.querySelector('#toggle-sound i');
     audio.enable(on);
@@ -393,16 +397,16 @@ function dumpDisk(drive) {
     wind.document.close();
 }
 
-window.dumpProgram = function() {
+export function dumpProgram() {
     var wind = window.open('', '_blank');
     wind.document.title = 'Program Listing';
     wind.document.write('<pre>');
     wind.document.write(dumper.toString());
     wind.document.write('</pre>');
     wind.document.close();
-};
+}
 
-window.step = function()
+export function step()
 {
     if (runTimer) {
         clearInterval(runTimer);
@@ -413,11 +417,11 @@ window.step = function()
         debug(cpu.dumpRegisters());
         debug(cpu.dumpPC());
     });
-};
+}
 
 var accelerated = false;
 
-window.updateCPU = function updateCPU()
+export function updateCPU()
 {
     accelerated = document.querySelector('#accelerator_toggle').checked;
     kHz = accelerated ? 4092 : 1023;
@@ -505,7 +509,7 @@ function stop() {
     runTimer = null;
 }
 
-function reset()
+export function reset()
 {
     cpu.reset();
 }
@@ -572,7 +576,7 @@ function loadBinary(bin) {
     run(bin.start);
 }
 
-window.selectCategory = function() {
+export function selectCategory() {
     document.querySelector('#disk_select').innerHTML = '';
     var cat = disk_categories[document.querySelector('#category_select').value];
     if (cat) {
@@ -590,15 +594,15 @@ window.selectCategory = function() {
             }
         }
     }
-};
+}
 
-window.selectDisk = function() {
+export function selectDisk() {
     document.querySelector('#local_file').value = '';
-};
+}
 
-window.clickDisk = function() {
-    window.doLoad();
-};
+export function clickDisk() {
+    doLoad();
+}
 
 function loadDisk(drive, disk) {
     var name = disk.name;
@@ -709,8 +713,6 @@ function processHash(hash) {
  * Keyboard/Gamepad routines
  */
 
-window.reset = keyboard.reset;
-
 function _keydown(evt) {
     if (!focused && (!evt.metaKey || evt.ctrlKey)) {
         evt.preventDefault();
@@ -790,7 +792,7 @@ function _keyup(evt) {
     }
 }
 
-window.updateScreen = function updateScreen() {
+export function updateScreen() {
     var green = document.querySelector('#green_screen').checked;
     var scanlines = document.querySelector('#show_scanlines').checked;
 
@@ -803,7 +805,7 @@ var flipX = false;
 var flipY = false;
 var swapXY = false;
 
-window.updateJoystick = function() {
+export function updateJoystick() {
     disableMouseJoystick = document.querySelector('#disable_mouse').checked;
     flipX = document.querySelector('#flip_x').checked;
     flipY = document.querySelector('#flip_y').checked;
@@ -815,7 +817,7 @@ window.updateJoystick = function() {
         io.paddle(1, 0.5);
         return;
     }
-};
+}
 
 function _mousemove(evt) {
     if (gamepad || disableMouseJoystick) {
@@ -837,7 +839,7 @@ function _mousemove(evt) {
     io.paddle(1, flipY ? 1 - y : y);
 }
 
-window.pauseRun = function() {
+export function pauseRun() {
     var label = document.querySelector('#pause-run i');
     if (paused) {
         run();
@@ -849,19 +851,19 @@ window.pauseRun = function() {
         label.classList.add('fa-play');
     }
     paused = !paused;
-};
+}
 
-window.toggleSound = function() {
+export function toggleSound() {
     var enableSound = document.querySelector('#enable_sound');
     enableSound.checked = !enableSound.checked;
-    window.updateSound();
-};
+    updateSound();
+}
 
-window.openOptions = function () {
+export function openOptions() {
     MicroModal.show('options-modal');
 };
 
-window.openPrinterModal = function () {
+export function openPrinterModal() {
     MicroModal.show('printer-modal');
 };
 
@@ -922,11 +924,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    reset();
+    cpu.reset();
     setInterval(updateKHz, 1000);
-    window.updateSound();
-    window.updateScreen();
-    window.updateCPU();
+    updateSound();
+    updateScreen();
+    updateCPU();
 
     if (window.localStorage !== undefined) {
         document.querySelectorAll('.disksave').forEach(function (el) { el.style.display = 'inline-block';});
