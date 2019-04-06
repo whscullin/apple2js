@@ -68,7 +68,9 @@ export default function Tape(io) {
                         }
                     }
                     io.setTape(buf);
-                    done();
+                    if (done) {
+                        done();
+                    }
                 });
             };
             fileReader.readAsArrayBuffer(file);
