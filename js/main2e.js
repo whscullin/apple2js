@@ -193,13 +193,13 @@ export function doLoad() {
             document.location.hash = parts.join('|');
         }
     }
-};
+}
 
 export function doSave() {
     var name = document.querySelector('#save_name').value;
     saveLocalStorage(_currentDrive, name);
     MicroModal.close('save-modal');
-};
+}
 
 export function doDelete(name) {
     if (window.confirm('Delete ' + name + '?')) {
@@ -212,13 +212,10 @@ function doLoadLocal(drive, file) {
     var ext = parts[parts.length - 1].toLowerCase();
     if (DISK_TYPES.includes(ext)) {
         doLoadLocalDisk(drive, file);
-    } else if ($.inArray(ext, TAPE_TYPES) >= 0) {
-        tape.doLoadLocalTape(file, function() {
-            MicroModal.close('load-modal');
-        });
+    } else if (TAPE_TYPES.includes(ext)) {
+        tape.doLoadLocalTape(file);
     } else {
         window.alert('Unknown file type: ' + ext);
-        MicroModal.close('load-modal');
     }
 }
 
@@ -386,7 +383,7 @@ export function updateSound() {
         label.classList.remove('fa-volume-up');
         label.classList.add('fa-volume-off');
     }
-};
+}
 
 function dumpDisk(drive) {
     var wind = window.open('', '_blank');
@@ -429,7 +426,7 @@ export function updateCPU()
     if (runTimer) {
         run();
     }
-};
+}
 
 var _requestAnimationFrame =
     window.requestAnimationFrame ||
@@ -798,7 +795,7 @@ export function updateScreen() {
 
     vm.green(green);
     vm.scanlines(scanlines);
-};
+}
 
 var disableMouseJoystick = false;
 var flipX = false;
@@ -861,11 +858,11 @@ export function toggleSound() {
 
 export function openOptions() {
     MicroModal.show('options-modal');
-};
+}
 
 export function openPrinterModal() {
     MicroModal.show('printer-modal');
-};
+}
 
 MicroModal.init();
 

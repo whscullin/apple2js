@@ -178,7 +178,6 @@ export function doLoad() {
         doLoadLocal(_currentDrive, files[0]);
     } else if (url) {
         var filename;
-        MicroModal.close('load-modal');
         if (url.substr(0,6) == 'local:') {
             filename = url.substr(6);
             if (filename == '__manage') {
@@ -217,13 +216,10 @@ function doLoadLocal(drive, file) {
     var ext = parts[parts.length - 1].toLowerCase();
     if (DISK_TYPES.includes(ext)) {
         doLoadLocalDisk(drive, file);
-    } else if ($.inArray(ext, TAPE_TYPES) >= 0) {
-        tape.doLoadLocalTape(file, function() {
-            MicroModal.close('load-modal');
-        });
+    } else if (TAPE_TYPES.includes(ext)) {
+        tape.doLoadLocalTape(file);
     } else {
         window.alert('Unknown file type: ' + ext);
-        MicroModal.close('load-modal');
     }
 }
 
@@ -235,7 +231,6 @@ function doLoadLocalDisk(drive, file) {
         var name = parts.join('.');
         if (disk2.setBinary(drive, name, ext, this.result)) {
             drivelights.label(drive, name);
-            MicroModal.close('load-modal');
             initGamepad();
         }
     };
@@ -412,7 +407,7 @@ export function updateSound() {
         label.classList.remove('fa-volume-up');
         label.classList.add('fa-volume-off');
     }
-};
+}
 
 function dumpDisk(drive) {
     var wind = window.open('', '_blank');
@@ -455,7 +450,7 @@ export function updateCPU()
     if (runTimer) {
         run();
     }
-};
+}
 
 var _requestAnimationFrame =
     window.requestAnimationFrame ||
@@ -816,7 +811,7 @@ export function updateScreen() {
 
     vm.green(green);
     vm.scanlines(scanlines);
-};
+}
 
 var disableMouseJoystick = false;
 var flipX = false;
@@ -879,11 +874,11 @@ export function toggleSound() {
 
 export function openOptions() {
     MicroModal.show('options-modal');
-};
+}
 
 export function openPrinterModal() {
     MicroModal.show('printer-modal');
-};
+}
 
 MicroModal.init();
 
