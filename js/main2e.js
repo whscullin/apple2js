@@ -730,7 +730,7 @@ function _keydown(evt) {
             document.querySelector('#display > div').classList.toggle('flexbox-centering');
             document.querySelector('#screen').classList.toggle('maxhw');
             document.querySelector('#header').classList.toggle('hidden');
-            document.querySelectorAll('.inset').forEach((el) => el.classList.toggle('hidden'));
+            document.querySelectorAll('.inset').forEach(function(el) { el.classList.toggle('hidden'); });
             document.querySelector('#reset').classList.toggle('hidden');
         } else if (document.webkitCancelFullScreen) {
             if (document.webkitIsFullScreen) {
