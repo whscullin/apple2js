@@ -12,7 +12,7 @@
 import { base64_decode, base64_encode } from '../base64';
 import { bytify, debug } from '../util';
 
-export const DISK_TYPES = ['dsk','d13','do','po','raw','nib','2mg'];
+export var DISK_TYPES = ['dsk','d13','do','po','raw','nib','2mg'];
 
 export default function DiskII(io, slot, callbacks)
 {

@@ -149,7 +149,7 @@ function loadAjax(drive, url) {
     }).then(function(data) {
         if (data.type == 'binary') {
             loadBinary(drive, data);
-        } else if (DISK_TYPES.includes(data.type)) {
+        } else if (DISK_TYPES.indexOf(data.type) > -1) {
             loadDisk(drive, data);
         }
         initGamepad(data.gamepad);
@@ -214,9 +214,9 @@ export function doDelete(name) {
 function doLoadLocal(drive, file) {
     var parts = file.name.split('.');
     var ext = parts[parts.length - 1].toLowerCase();
-    if (DISK_TYPES.includes(ext)) {
+    if (DISK_TYPES.indexOf(ext) > -1) {
         doLoadLocalDisk(drive, file);
-    } else if (TAPE_TYPES.includes(ext)) {
+    } else if (TAPE_TYPES.indexOf(ext) > -1) {
         tape.doLoadLocalTape(file);
     } else {
         window.alert('Unknown file type: ' + ext);
