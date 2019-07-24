@@ -780,7 +780,9 @@ export function HiresPage(page, context)
                         _refreshing = false;
                     }
                 } else {
-                    val = _buffer[0][base] & 0x7f;
+                    val = _buffer[0][base];
+                    hbs = val & 0x80;
+                    val &= 0x7f;
                     dx = col * 14 - 2;
                     b0 = col > 0 ? _buffer[0][base - 1] : 0;
                     b2 = col < 39 ? _buffer[0][base + 1] : 0;

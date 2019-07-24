@@ -9,9 +9,17 @@
  * implied warranty.
  */
 
+import { debug } from './util';
+
 export default function Prefs()
 {
-    var havePrefs = typeof window.localStorage !== 'undefined';
+    var havePrefs = false;
+
+    try {
+        havePrefs = typeof window.localStorage !== 'undefined';
+    } catch (e) {
+        debug('prefs not available');
+    }
 
     return {
         havePrefs: function() {

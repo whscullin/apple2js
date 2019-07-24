@@ -2,10 +2,11 @@ const path = require('path');
 
 module.exports =
 {
-    devtool: 'source-map',
+    devtool: 'inline-source-map',
     entry: {
         main2: path.resolve('js/entry2.js'),
-        main2e: path.resolve('js/entry2e.js')
+        main2e: path.resolve('js/entry2e.js'),
+        vis2e: path.resolve('js/vis2e.js')
     },
     output: {
         path: path.resolve('dist/'),
@@ -16,6 +17,7 @@ module.exports =
     devServer: {
         compress: true,
         publicPath: '/dist/',
-        watchContentBase: true
+        watchContentBase: true,
+        writeToDisk: true
     }
 };
