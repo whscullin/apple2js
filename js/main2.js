@@ -838,7 +838,7 @@ function _mousemove(evt) {
     }
 
     var s = document.querySelector('#screen');
-    var offset = { top: s.clientTop, left: s.clientLeft };
+    var offset = s.getBoundingClientRect();
     var x = (evt.pageX - offset.left) / s.clientWidth,
         y = (evt.pageY - offset.top) / s.clientHeight,
         z = x;
