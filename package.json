@@ -10,6 +10,9 @@
     "start": "webpack-dev-server",
     "test": "jest"
   },
+  "engines": {
+    "node": ">= 6"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/whscullin/apple2js.git"
