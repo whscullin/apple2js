@@ -75,12 +75,12 @@ export function openSave(drive, event)
 
     var blob = new Blob([data], { 'type': mimetype });
     a.href = window.URL.createObjectURL(blob);
-    a.download = drivelights.label(drive) + '.dsk';
+    a.download = driveLights.label(drive) + '.dsk';
 
     if (event.metaKey) {
         dumpDisk(drive);
     } else {
-        document.querySelector('#save_name').value = drivelights.label(drive);
+        document.querySelector('#save_name').value = driveLights.label(drive);
         MicroModal.show('save-modal');
     }
 }
@@ -226,7 +226,7 @@ function doLoadLocalDisk(drive, file) {
         var ext = parts.pop().toLowerCase();
         var name = parts.join('.');
         if (disk2.setBinary(drive, name, ext, this.result)) {
-            drivelights.label(drive, name);
+            driveLights.label(drive, name);
             initGamepad();
         }
     };
@@ -247,7 +247,7 @@ function doLoadHTTP(drive, _url) {
             var ext = fileParts.pop().toLowerCase();
             var name = decodeURIComponent(fileParts.join('.'));
             if (disk2.setBinary(drive, name, ext, req.response)) {
-                drivelights.label(drive, name);
+                driveLights.label(drive, name);
                 MicroModal.close('http-modal');
                 initGamepad();
             }
@@ -323,7 +323,7 @@ vm.enhanced(enhanced);
 vm.multiScreen(multiScreen);
 var dumper = new ApplesoftDump(cpu);
 
-var drivelights = new DriveLights();
+var driveLights = new DriveLights();
 var io = new Apple2IO(cpu, vm);
 var keyboard = new KeyBoard(cpu, io, true);
 var audio = new Audio(io);
@@ -336,7 +336,7 @@ cpu.addPageHandler(mmu);
 
 var parallel = new Parallel(io, 1, printer);
 var slinky = new RAMFactor(io, 2, 1024 * 1024);
-var disk2 = new DiskII(io, 6, drivelights);
+var disk2 = new DiskII(io, 6, driveLights);
 var clock = new Thunderclock(io, 7);
 
 io.setSlot(1, parallel);
@@ -386,7 +386,7 @@ export function updateSound() {
 
 function dumpDisk(drive) {
     var wind = window.open('', '_blank');
-    wind.document.title = drivelights.label(drive);
+    wind.document.title = driveLights.label(drive);
     wind.document.write('<pre>');
     wind.document.write(disk2.getJSON(drive, true));
     wind.document.write('</pre>');
@@ -534,7 +534,7 @@ function saveState() {
         mmu: mmu.getState(),
         vm: vm.getState(),
         disk2: disk2.getState(),
-        drivelights: drivelights.getState()
+        driveLights: driveLights.getState()
     };
     if (slinky) {
         state.slinky = slinky.getState();
@@ -557,7 +557,7 @@ function restoreState() {
     mmu.setState(state.mmu);
     vm.setState(state.vm);
     disk2.setState(state.disk2);
-    drivelights.setState(state.drivelights);
+    driveLights.setState(state.driveLights);
     if (slinky && state.slinky) {
         slinky.setState(state.slinky);
     }
@@ -611,7 +611,7 @@ function loadDisk(drive, disk) {
     disk_cur_cat[drive] = category;
     disk_cur_name[drive] = name;
 
-    drivelights.label(drive, name);
+    driveLights.label(drive, name);
     disk2.setDisk(drive, disk);
     initGamepad(disk.gamepad);
 }
@@ -663,8 +663,8 @@ function saveLocalStorage(drive, name) {
 
     window.alert('Saved');
 
-    drivelights.label(drive, name);
-    drivelights.dirty(drive, false);
+    driveLights.label(drive, name);
+    driveLights.dirty(drive, false);
     updateLocalStorage();
 }
 
@@ -682,8 +682,8 @@ function loadLocalStorage(drive, name) {
     var diskIndex = JSON.parse(window.localStorage.diskIndex || '{}');
     if (diskIndex[name]) {
         disk2.setJSON(drive, diskIndex[name]);
-        drivelights.label(drive, name);
-        drivelights.dirty(drive, false);
+        driveLights.label(drive, name);
+        driveLights.dirty(drive, false);
     }
 }
 

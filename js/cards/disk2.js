@@ -798,11 +798,6 @@ export default function DiskII(io, slot, callbacks, sectors = 16)
             break;
         }
 
-        if (_writeMode && !readMode) {
-            debug('Writing', toHex(val), 'to bus');
-            _bus = val;
-        }
-
         _moveHead();
 
         if (readMode) {
@@ -811,6 +806,8 @@ export default function DiskII(io, slot, callbacks, sectors = 16)
             } else {
                 result = 0;
             }
+        } else {
+            _bus = val;
         }
 
         return result;

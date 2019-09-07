@@ -1,4 +1,4 @@
-import { debug } from '../util';
+import { debug, toHex } from '../util';
 
 var WOZ_HEADER_START = 0;
 var WOZ_HEADER_SIZE = 12;
@@ -240,8 +240,11 @@ export default function Woz(data) {
             case 0x4154454D: // META
                 chunks.meta = new MetaChunk(chunk.data);
                 break;
+            case 0x54495257: // WRIT
+                // Ignore
+                break;
             default:
-                debug('Unsupported chunk', chunk.type.toHex(16));
+                debug('Unsupported chunk', toHex(chunk.type, 8));
             }
             chunk = readChunk();
         }
