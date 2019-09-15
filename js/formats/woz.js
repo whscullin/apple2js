@@ -1,3 +1,14 @@
+/* Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
+ *
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both that
+ * copyright notice and this permission notice appear in supporting
+ * documentation.  No representations are made about the suitability of this
+ * software for any purpose.  It is provided "as is" without express or
+ * implied warranty.
+ */
+
 import { debug, toHex } from '../util';
 
 var WOZ_HEADER_START = 0;
@@ -173,10 +184,13 @@ function MetaChunk(data) {
     return this;
 }
 
-export default function Woz(data) {
-    var dv = new DataView(data, 0);
+export default function Woz(options) {
+    var { rawData } = options;
+    var dv = new DataView(rawData, 0);
     var dvOffset = 0;
-    var disk = {};
+    var disk = {
+        format: 'woz'
+    };
 
     var wozVersion;
     var chunks = {};
@@ -252,11 +266,11 @@ export default function Woz(data) {
 
     debug(chunks);
 
-    disk.format = 'woz';
     disk.trackMap = chunks.tmap.trackMap;
     disk.tracks = chunks.trks.tracks;
     disk.rawTracks = chunks.trks.rawTracks;
     disk.readOnly = chunks.info.writeProtected === 1;
+    disk.name = chunks.info.title;
 
     return disk;
 }
