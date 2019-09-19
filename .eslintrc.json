@@ -41,7 +41,8 @@
         }, {
             "files": [ "test/*"],
             "env": {
-                "jest": true
+                "jest": true,
+                "node": true
             }
         }, {
             "files": [ "js/entry2.js", "js/entry2e.js"],
