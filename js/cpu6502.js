@@ -242,10 +242,7 @@ export default function CPU6502(options)
     }
 
     function pushWord(val) {
-        writeByte(loc.STACK | sp, val >> 8);
-        sp = (sp + 0xff) & 0xff;
-        writeByte(loc.STACK | sp, val) & 0xff;
-        sp = (sp + 0xff) & 0xff;
+        rawPushWord(val);
         cycles += 1;
     }
 
