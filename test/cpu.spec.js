@@ -3,17 +3,17 @@ import CPU6502 from '../js/cpu6502';
 import Test6502 from '../js/roms/6502test';
 import Test65C02 from '../js/roms/65C02test';
 
-var cpu;
-var lastPC = 0;
-var done = false;
-
-function traceCB() {
-    var pc = cpu.getPC();
-    done = lastPC == pc;
-    lastPC = pc;
-}
-
 describe('CPU', function () {
+    var cpu;
+    var lastPC = 0;
+    var done = false;
+
+    function traceCB() {
+        var pc = cpu.getPC();
+        done = lastPC == pc;
+        lastPC = pc;
+    }
+
     describe('6502', function () {
         it('completes the test ROM', function () {
             cpu = new CPU6502();

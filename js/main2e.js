@@ -227,7 +227,6 @@ function doLoadLocalDisk(drive, file) {
         var name = parts.join('.');
         if (disk2.setBinary(drive, name, ext, this.result)) {
             drivelights.label(drive, name);
-            MicroModal.close('load-modal');
             initGamepad();
         }
     };
