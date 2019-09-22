@@ -175,8 +175,8 @@ export default function Apple2IO(cpu, callbacks)
                 result = callbacks.isText() ? 0x80 : 0x0;
             break;
         case LOC.RDMIXED:
-            if (callbacks.isText)
-                result = callbacks.isText() ? 0x80 : 0x0;
+            if (callbacks.isMixed)
+                result = callbacks.isMixed() ? 0x80 : 0x0;
             break;
         case LOC.RDPAGE2:
             if (callbacks.isPage2)
