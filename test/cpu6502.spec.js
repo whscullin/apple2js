@@ -190,7 +190,7 @@ describe('CPU6502', function() {
             cpu.irq();
 
             expectState(DEFAULT_STATE, {
-                cycles: 7,
+                cycles: 5,
                 s: FLAGS.DEFAULT | FLAGS.I,
                 sp: 0xfc,
                 pc: 0xff00
@@ -214,7 +214,7 @@ describe('CPU6502', function() {
             cpu.nmi();
 
             expectState(DEFAULT_STATE, {
-                cycles: 7,
+                cycles: 5,
                 s: FLAGS.DEFAULT | FLAGS.I,
                 sp: 0xfc,
                 pc: 0xff00
@@ -1544,7 +1544,7 @@ describe('65c02', function() {
             cpu.irq();
 
             expectState(DEFAULT_STATE, {
-                cycles: 7,
+                cycles: 5,
                 s: FLAGS.DEFAULT | FLAGS.I,
                 sp: 0xfc,
                 pc: 0xff00
@@ -1559,7 +1559,7 @@ describe('65c02', function() {
             cpu.nmi();
 
             expectState(DEFAULT_STATE, {
-                cycles: 7,
+                cycles: 5,
                 s: FLAGS.DEFAULT | FLAGS.I,
                 sp: 0xfc,
                 pc: 0xff00
