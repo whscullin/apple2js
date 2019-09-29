@@ -1785,7 +1785,7 @@ describe('65c02', function() {
         it('BBR0 should branch if bit 0 clear', function() {
             initMemory([[0x00, 0x33, [0xFE]]]);
             testCode([0x0F, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0482
             });
         });
@@ -1793,7 +1793,7 @@ describe('65c02', function() {
         it('BBR0 should branch backward', function () {
             initMemory([[0x00, 0x33, [0xFE]]]);
             testCode([0x0F, 0x33, 0xFF], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0402
             });
         });
@@ -1801,7 +1801,7 @@ describe('65c02', function() {
         it('BBR1 should branch if bit 1 clear', function() {
             initMemory([[0x00, 0x33, [0xFD]]]);
             testCode([0x1F, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0482
             });
         });
@@ -1809,7 +1809,7 @@ describe('65c02', function() {
         it('BBR2 should branch if bit 2 clear', function() {
             initMemory([[0x00, 0x33, [0xFB]]]);
             testCode([0x2F, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0482
             });
         });
@@ -1817,7 +1817,7 @@ describe('65c02', function() {
         it('BBR3 should branch if bit 3 clear', function() {
             initMemory([[0x00, 0x33, [0xF7]]]);
             testCode([0x3F, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0482
             });
         });
@@ -1825,7 +1825,7 @@ describe('65c02', function() {
         it('BBR4 should branch if bit 4 clear', function() {
             initMemory([[0x00, 0x33, [0xEF]]]);
             testCode([0x4F, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0482
             });
         });
@@ -1833,7 +1833,7 @@ describe('65c02', function() {
         it('BBR5 should branch if bit 5 clear', function() {
             initMemory([[0x00, 0x33, [0xDF]]]);
             testCode([0x5F, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0482
             });
         });
@@ -1841,7 +1841,7 @@ describe('65c02', function() {
         it('BBR6 should branch if bit 6 clear', function() {
             initMemory([[0x00, 0x33, [0xBF]]]);
             testCode([0x6F, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0482
             });
         });
@@ -1849,7 +1849,7 @@ describe('65c02', function() {
         it('BBR7 should branch if bit 7 clear', function() {
             initMemory([[0x00, 0x33, [0x7F]]]);
             testCode([0x7F, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0482
             });
         });
@@ -1922,7 +1922,7 @@ describe('65c02', function() {
         it('BBS0 should branch if bit 0 set', function() {
             initMemory([[0x00, 0x33, [0x01]]]);
             testCode([0x8F, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0482
             });
         });
@@ -1930,7 +1930,7 @@ describe('65c02', function() {
         it('BBS0 should branch backward', function () {
             initMemory([[0x00, 0x33, [0x01]]]);
             testCode([0x8F, 0x33, 0xFF], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0402
             });
         });
@@ -1938,7 +1938,7 @@ describe('65c02', function() {
         it('BBS1 should branch if bit 1 set', function() {
             initMemory([[0x00, 0x33, [0x02]]]);
             testCode([0x9F, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0482
             });
         });
@@ -1946,7 +1946,7 @@ describe('65c02', function() {
         it('BBS2 should branch if bit 2 set', function() {
             initMemory([[0x00, 0x33, [0x04]]]);
             testCode([0xAF, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0482
             });
         });
@@ -1954,7 +1954,7 @@ describe('65c02', function() {
         it('BBS3 should branch if bit 3 set', function() {
             initMemory([[0x00, 0x33, [0x08]]]);
             testCode([0xBF, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0482
             });
         });
@@ -1962,7 +1962,7 @@ describe('65c02', function() {
         it('BBS4 should branch if bit 4 set', function() {
             initMemory([[0x00, 0x33, [0x10]]]);
             testCode([0xCF, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0482
             });
         });
@@ -1970,7 +1970,7 @@ describe('65c02', function() {
         it('BBS5 should branch if bit 5 set', function() {
             initMemory([[0x00, 0x33, [0x20]]]);
             testCode([0xDF, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0482
             });
         });
@@ -1978,7 +1978,7 @@ describe('65c02', function() {
         it('BBS6 should branch if bit 6 set', function() {
             initMemory([[0x00, 0x33, [0x40]]]);
             testCode([0xEF, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0482
             });
         });
@@ -1986,7 +1986,7 @@ describe('65c02', function() {
         it('BBS7 should branch if bit 7 set', function() {
             initMemory([[0x00, 0x33, [0x80]]]);
             testCode([0xFF, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0482
             });
         });

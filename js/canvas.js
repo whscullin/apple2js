@@ -314,7 +314,10 @@ export function LoresPage(page, charset, e, context)
                         }
                     }
                 } else {
-                    if (_80colMode) {
+                    if (!doubleHiresMode && bank == 1) {
+                        return;
+                    }
+                    if (_80colMode && doubleHiresMode) {
                         off = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8 * 2) * 4;
                         if (_greenMode) {
                             fore = _green;
