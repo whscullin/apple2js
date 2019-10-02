@@ -269,7 +269,7 @@ export default function Woz(options) {
     disk.trackMap = chunks.tmap.trackMap;
     disk.tracks = chunks.trks.tracks;
     disk.rawTracks = chunks.trks.rawTracks;
-    disk.readOnly = chunks.info.writeProtected === 1;
+    disk.readOnly = true; //chunks.info.writeProtected === 1;
     disk.name = chunks.info.title;
 
     return disk;
