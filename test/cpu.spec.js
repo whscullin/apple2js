@@ -3,6 +3,8 @@ import CPU6502 from '../js/cpu6502';
 import Test6502 from '../js/roms/6502test';
 import Test65C02 from '../js/roms/65C02test';
 
+import { toHex } from '../js/util';
+
 describe('CPU', function () {
     var cpu;
     var lastPC = 0;
@@ -25,7 +27,7 @@ describe('CPU', function () {
                 cpu.stepCyclesDebug(1000, traceCB);
             } while (!done);
 
-            expect(lastPC).toEqual(0x3469);
+            expect(toHex(lastPC)).toEqual(toHex(0x3469));
         });
     });
 
@@ -40,7 +42,7 @@ describe('CPU', function () {
                 cpu.stepCyclesDebug(1000, traceCB);
             } while (!done);
 
-            expect(lastPC).toEqual(0x24f1);
+            expect(toHex(lastPC)).toEqual(toHex(0x24f1));
         });
     });
 });

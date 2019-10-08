@@ -616,7 +616,7 @@ export default function CPU6502(options)
     function rol(readAddrFn) {
         var addr = readAddrFn({rwm: true});
         var oldVal = readByte(addr);
-        writeByte(oldVal);
+        writeByte(addr, oldVal);
         var val = rotateLeft(oldVal);
         writeByte(addr, val);
     }
