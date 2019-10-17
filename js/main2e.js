@@ -39,7 +39,7 @@ var paused = false;
 
 var hashtag;
 
-var DEBUG = false;
+var DEBUG = true;
 var TRACE = false;
 var MAX_TRACE = 256;
 var trace = [];
@@ -49,7 +49,19 @@ var disk_sets = {};
 var disk_cur_name = [];
 var disk_cur_cat = [];
 
+var tape;
+var disk2;
+var driveLights;
 var _currentDrive = 1;
+
+export function setTrace(debug, trace) {
+    DEBUG = debug;
+    TRACE = trace;
+}
+
+export function getTrace() {
+    return trace;
+}
 
 export function openLoad(drive, event)
 {
@@ -241,6 +253,9 @@ function doLoadHTTP(drive, _url) {
         req.responseType = 'arraybuffer';
 
         req.onload = function() {
+            if (req.status !== 200) {
+                return window.alert('Unable to load "' + url + '"');
+            }
             var urlParts = url.split('/');
             var file = urlParts.pop();
             var fileParts = file.split('.');
@@ -248,7 +263,9 @@ function doLoadHTTP(drive, _url) {
             var name = decodeURIComponent(fileParts.join('.'));
             if (disk2.setBinary(drive, name, ext, req.response)) {
                 driveLights.label(drive, name);
-                MicroModal.close('http-modal');
+                if (!_url) {
+                    MicroModal.close('http-modal');
+                }
                 initGamepad();
             }
         };
@@ -323,11 +340,11 @@ vm.enhanced(enhanced);
 vm.multiScreen(multiScreen);
 var dumper = new ApplesoftDump(cpu);
 
-var driveLights = new DriveLights();
+driveLights = new DriveLights();
 var io = new Apple2IO(cpu, vm);
 var keyboard = new KeyBoard(cpu, io, true);
 var audio = new Audio(io);
-var tape = new Tape(io);
+tape = new Tape(io);
 var printer = new Printer('#printer-modal .paper');
 
 var mmu = new MMU(cpu, vm, gr, gr2, hgr, hgr2, io, rom);
@@ -336,7 +353,7 @@ cpu.addPageHandler(mmu);
 
 var parallel = new Parallel(io, 1, printer);
 var slinky = new RAMFactor(io, 2, 1024 * 1024);
-var disk2 = new DiskII(io, 6, driveLights);
+disk2 = new DiskII(io, 6, driveLights);
 var clock = new Thunderclock(io, 7);
 
 io.setSlot(1, parallel);

@@ -1,9 +1,5 @@
 // From https://github.com/Klaus2m5/6502_65C02_functional_tests
 
-import { toHex } from '../util';
-
-var LOG = false;
-
 export default function Test6502() {
     var data = [
         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -8211,12 +8207,7 @@ export default function Test6502() {
             return data[page * 0x100 + off];
         },
         write: function(page, off, val) {
-            /*eslint no-console: 0 */
             data[page * 0x100 + off] = val;
-            if (LOG) {
-                console.log(toHex(page * 0x100 + off, 4) + ' = ' + toHex(val) +
-                            ' ('+ String.fromCharCode(val) + ')');
-            }
         }
     };
 }

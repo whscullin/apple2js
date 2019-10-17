@@ -286,7 +286,7 @@ export function explodeSector13(volume, track, sector, data) {
 }
 
 export function readSector(drive, track, sector) {
-    var _sector = cur.fmt == 'po' ? _PO[sector] : _DO[sector];
+    var _sector = drive.fmt == 'po' ? _PO[sector] : _DO[sector];
     var val, state = 0;
     var idx = 0;
     var retry = 0;

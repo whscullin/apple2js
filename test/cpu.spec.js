@@ -1,7 +1,7 @@
 
 import CPU6502 from '../js/cpu6502';
-import Test6502 from '../js/roms/6502test';
-import Test65C02 from '../js/roms/65C02test';
+import Test6502 from './roms/6502test';
+import Test65C02 from './roms/65C02test';
 
 import { toHex } from '../js/util';
 

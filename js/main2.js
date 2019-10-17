@@ -54,6 +54,9 @@ var disk_sets = {};
 var disk_cur_name = [];
 var disk_cur_cat = [];
 
+var tape;
+var disk2;
+var driveLights;
 var _currentDrive = 1;
 
 export function openLoad(drive, event)
@@ -252,7 +255,9 @@ function doLoadHTTP(drive, _url) {
             var name = decodeURIComponent(fileParts.join('.'));
             if (disk2.setBinary(drive, name, ext, req.response)) {
                 driveLights.label(drive, name);
-                MicroModal.close('http-modal');
+                if (!_url) {
+                    MicroModal.close('http-modal');
+                }
                 initGamepad();
             }
         };
@@ -338,18 +343,18 @@ var vm = new VideoModes(gr, hgr, gr2, hgr2, false);
 vm.multiScreen(multiScreen);
 var dumper = new ApplesoftDump(cpu);
 
-var driveLights = new DriveLights();
-var io = new Apple2IO(cpu, vm);
+driveLights = new DriveLights();
+export var io = new Apple2IO(cpu, vm);
 var keyboard = new KeyBoard(cpu, io);
 var audio = new Audio(io);
-var tape = new Tape(io);
+tape = new Tape(io);
 var printer = new Printer('#printer-modal .paper');
 
 var lc = new LanguageCard(io, 0, rom);
 var parallel = new Parallel(io, 1, printer);
 var slinky = new RAMFactor(io, 2, 1024 * 1024);
 var videoterm = new Videoterm(io, 3, context1);
-var disk2 = new DiskII(io, 6, driveLights);
+disk2 = new DiskII(io, 6, driveLights);
 var clock = new Thunderclock(io, 7);
 
 cpu.addPageHandler(ram1);
@@ -536,6 +541,11 @@ function stop() {
         clearInterval(runTimer);
     }
     runTimer = null;
+}
+
+export function reset()
+{
+    cpu.reset();
 }
 
 var state = null;
@@ -910,8 +920,12 @@ document.addEventListener('DOMContentLoaded', function() {
     document.body.addEventListener('mousemove', _mousemove);
 
     document.querySelectorAll('input,textarea').forEach(function(input) {
-        input.addEventListener('input', function() { focused = true; });
-        input.addEventListener('blur', function() { focused = false; });
+        input.addEventListener('focus', function() {
+            focused = true;
+        });
+        input.addEventListener('blur', function() {
+            focused = false;
+        });
     });
 
     keyboard.create('#keyboard');
@@ -995,7 +1009,7 @@ document.addEventListener('DOMContentLoaded', function() {
     reptKey.addEventListener('click', function() {
         document.querySelector('#keyboard').style.display = 'none';
         document.querySelector('#textarea').style.display = 'block';
-        document.querySelector.focus();
+        document.querySelector('#textarea').focus();
     });
     document.querySelector('#text_input').addEventListener('keydown', function() {
         focused = document.querySelector('#buffering').checked;

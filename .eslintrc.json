@@ -15,6 +15,10 @@
         "semi": [
             2,
             "always"
+        ],
+        "no-use-before-define": [
+            2,
+            { "functions": false }
         ]
     },
     "env": {
@@ -38,11 +42,15 @@
                 "browser": false
             }
         }, {
-            "files": [ "test/*"],
+            "files": [ "test/**/*"],
             "env": {
                 "jest": true,
                 "node": true
+            },
+            "rules": {
+                "no-console": 0
             }
+
         }, {
             "files": [ "js/entry2.js", "js/entry2e.js"],
             "env": {

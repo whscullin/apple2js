@@ -1,5 +1,10 @@
 import CPU6502 from '../js/cpu6502';
 
+function assertByte(b) {
+    expect(b <= 0xFF).toEqual(true);
+    expect(b >= 0x00).toEqual(true);
+}
+
 function Memory(size) {
     var data = Buffer.alloc(size << 8);
 
@@ -13,10 +18,17 @@ function Memory(size) {
         },
 
         read: function(page, off) {
+            assertByte(page);
+            assertByte(off);
+
             return data[(page << 8) | off];
         },
 
         write: function(page, off, val) {
+            assertByte(page);
+            assertByte(off);
+            assertByte(val);
+
             data[(page << 8) | off] = val;
         },
 
@@ -38,6 +50,8 @@ function Program(page, code) {
         },
 
         read: function(page, off) {
+            assertByte(page);
+            assertByte(off);
             return data[off];
         }
     };
