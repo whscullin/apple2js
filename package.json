@@ -30,6 +30,7 @@
     "babel-jest": "^24.5.0",
     "eslint": "^5.16.0",
     "jest": "^24.8.0",
+    "handlebars": "^4.3.0",
     "webpack": "^4.29.6",
     "webpack-cli": "^3.2.3",
     "webpack-dev-server": "^3.2.1"
