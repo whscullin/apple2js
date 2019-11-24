@@ -5,7 +5,7 @@ import Test65C02 from './roms/65C02test';
 
 import { toHex } from '../js/util';
 
-describe('CPU', function () {
+describe.skip('CPU', function () {
     var cpu;
     var lastPC = 0;
     var done = false;
