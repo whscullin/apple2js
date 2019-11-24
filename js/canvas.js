@@ -106,14 +106,15 @@ export function LoresPage(page, charset, e, context)
         data[off + 0] = data[off + 4] = c0;
         data[off + 1] = data[off + 5] = c1;
         data[off + 2] = data[off + 6] = c2;
+        var nextOff = off + 560 * 4;
         if (!scanlines) {
-            data[off + 560 * 4] = data[off + 560 * 4 + 4] = c0;
-            data[off + 560 * 4 + 1] = data[off + 560 * 4 + 5] = c1;
-            data[off + 560 * 4 + 2] = data[off + 560 * 4 + 6] = c2;
+            data[nextOff] = data[nextOff + 4] = c0;
+            data[nextOff + 1] = data[nextOff + 5] = c1;
+            data[nextOff + 2] = data[nextOff + 6] = c2;
         } else {
-            data[off + 560 * 4] = data[off + 560 * 4 + 4] = c0 >> 1;
-            data[off + 560 * 4 + 1] = data[off + 560 * 4 + 5] = c1 >> 1;
-            data[off + 560 * 4 + 2] = data[off + 560 * 4 + 6] = c2 >> 1;
+            data[nextOff] = data[nextOff + 4] = c0 >> 1;
+            data[nextOff + 1] = data[nextOff + 5] = c1 >> 1;
+            data[nextOff + 2] = data[nextOff + 6] = c2 >> 1;
         }
     }
 
@@ -122,14 +123,15 @@ export function LoresPage(page, charset, e, context)
         data[off + 0] = c0;
         data[off + 1] = c1;
         data[off + 2] = c2;
+        var nextOff = off + 560 * 4;
         if (!scanlines) {
-            data[off + 560 * 4] = c0;
-            data[off + 560 * 4 + 1] = c1;
-            data[off + 560 * 4 + 2] = c2;
+            data[nextOff] = c0;
+            data[nextOff + 1] = c1;
+            data[nextOff + 2] = c2;
         } else {
-            data[off + 560 * 4] = c0 >> 1;
-            data[off + 560 * 4 + 1] = c1 >> 1;
-            data[off + 560 * 4 + 2] = c2 >> 1;
+            data[nextOff] = c0 >> 1;
+            data[nextOff + 1] = c1 >> 1;
+            data[nextOff + 2] = c2 >> 1;
         }
     }
 
@@ -207,7 +209,7 @@ export function LoresPage(page, charset, e, context)
 
             var data = _imageData.data;
             if ((row < 24) && (col < 40)) {
-                var y = row * 16;
+                var y = row << 4;
                 if (y < _dirty.top) { _dirty.top = y; }
                 y += 16;
                 if (y > _dirty.bottom) { _dirty.bottom = y; }
@@ -553,14 +555,15 @@ export function HiresPage(page, context)
         data[off + 0] = data[off + 4] = c0;
         data[off + 1] = data[off + 5] = c1;
         data[off + 2] = data[off + 6] = c2;
+        var nextOff = off + 560 * 4;
         if (!scanlines) {
-            data[off + 560 * 4] = data[off + 560 * 4 + 4] = c0;
-            data[off + 560 * 4 + 1] = data[off + 560 * 4 + 5] = c1;
-            data[off + 560 * 4 + 2] = data[off + 560 * 4 + 6] = c2;
+            data[nextOff] = data[nextOff + 4] = c0;
+            data[nextOff + 1] = data[nextOff + 5] = c1;
+            data[nextOff + 2] = data[nextOff + 6] = c2;
         } else {
-            data[off + 560 * 4] = data[off + 560 * 4 + 4] = c0 >> 1;
-            data[off + 560 * 4 + 1] = data[off + 560 * 4 + 5] = c1 >> 1;
-            data[off + 560 * 4 + 2] = data[off + 560 * 4 + 6] = c2 >> 1;
+            data[nextOff] = data[nextOff + 4] = c0 >> 1;
+            data[nextOff + 1] = data[nextOff + 5] = c1 >> 1;
+            data[nextOff + 2] = data[nextOff + 6] = c2 >> 1;
         }
     }
 
@@ -569,14 +572,16 @@ export function HiresPage(page, context)
         data[off + 0] = c0;
         data[off + 1] = c1;
         data[off + 2] = c2;
+
+        var nextOff = off + 560 * 4;
         if (!scanlines) {
-            data[off + 560 * 4] = c0;
-            data[off + 560 * 4 + 1] = c1;
-            data[off + 560 * 4 + 2] = c2;
+            data[nextOff] = c0;
+            data[nextOff + 1] = c1;
+            data[nextOff + 2] = c2;
         } else {
-            data[off + 560 * 4] = c0 >> 1;
-            data[off + 560 * 4 + 1] = c1 >> 1;
-            data[off + 560 * 4 + 2] = c2 >> 1;
+            data[nextOff] = c0 >> 1;
+            data[nextOff + 1] = c1 >> 1;
+            data[nextOff + 2] = c2 >> 1;
         }
     }
 
@@ -661,7 +666,7 @@ export function HiresPage(page, context)
                     return;
                 }
 
-                var y = rowa * 16 + rowb * 2;
+                var y = rowa << 4 | rowb << 1;
                 if (y < _dirty.top) { _dirty.top = y; }
                 y += 2;
                 if (y > _dirty.bottom) { _dirty.bottom = y; }
@@ -670,7 +675,7 @@ export function HiresPage(page, context)
                 x += 14;
                 if (x > _dirty.right) { _dirty.right = x; }
 
-                dy = rowa * 16 + rowb * 2;
+                dy = rowa << 4 | rowb << 1;
                 var bz, b0, b1, b2, b3, b4, c, hb;
                 if (doubleHiresMode) {
                     // Every 4 bytes is 7 pixels
@@ -681,13 +686,13 @@ export function HiresPage(page, context)
                     // 76543210 76543210 76543210 76543210
                     //  1111222  2333344  4455556  6667777
 
-                    var mod = col % 2, mcol = col - mod;
-                    bz = _buffer[0][base - mod - 1];
-                    b0 = _buffer[1][base - mod];
-                    b1 = _buffer[0][base - mod];
-                    b2 = _buffer[1][base - mod + 1];
-                    b3 = _buffer[0][base - mod + 1];
-                    b4 = _buffer[1][base - mod + 2];
+                    var mod = col % 2, mcol = col - mod, baseOff = base - mod;
+                    bz = _buffer[0][baseOff - 1];
+                    b0 = _buffer[1][baseOff];
+                    b1 = _buffer[0][baseOff];
+                    b2 = _buffer[1][baseOff + 1];
+                    b3 = _buffer[0][baseOff + 1];
+                    b4 = _buffer[1][baseOff + 2];
                     c = [
                         0,
                         ((b0 & 0x0f) >> 0), // 0

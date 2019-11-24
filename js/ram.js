@@ -19,12 +19,6 @@ export default function RAM(sp, ep) {
 
     mem = allocMemPages(ep - sp + 1);
 
-    for (var page = 0; page <= ep; page++) {
-        for (var off = 0; off < 0x100; off++) {
-            mem[page * 0x100 + off] = 0; // Math.floor(Math.random()*256);
-        }
-    }
-
     return {
         start: function() {
             return start_page;
@@ -33,10 +27,10 @@ export default function RAM(sp, ep) {
             return end_page;
         },
         read: function(page, off) {
-            return mem[(page - start_page) * 0x100 + off];
+            return mem[(page - start_page) << 8 | off];
         },
         write: function(page, off, val) {
-            mem[(page - start_page) * 0x100 + off] = val;
+            mem[(page - start_page) << 8 | off] = val;
         },
 
         getState: function() {

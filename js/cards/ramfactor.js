@@ -1159,9 +1159,9 @@ export default function RAMFactor(io, slot, size) {
         read: function ramfactor_read(page, off) {
             var result;
             if (page == 0xc0 + slot) {
-                result = rom[slot * 0x100 + off];
+                result = rom[slot << 8 | off];
             } else {
-                result = rom[_firmware * 0x1000 + (page - 0xC0) * 0x100 + off];
+                result = rom[_firmware << 12 | (page - 0xC0) << 8 | off];
             }
             return result;
         },

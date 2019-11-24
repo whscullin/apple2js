@@ -493,8 +493,8 @@ export default function Videoterm(io, slot, context) {
         var row = (saddr / 80) & 0xff;
         var col = saddr % 80;
         var x = col * 7;
-        var y = row * 16;
-        var c = val * 16;
+        var y = row << 4;
+        var c = val << 4;
         var color;
 
         if (row < 25) {

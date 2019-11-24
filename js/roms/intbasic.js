@@ -1547,7 +1547,7 @@ export default function IntBASIC()
             return 0xff;
         },
         read: function(page, off) {
-            return rom[((page - 0xD0) << 8) + off];
+            return rom[(page - 0xD0) << 8 | off];
         },
         write: function() {
         }

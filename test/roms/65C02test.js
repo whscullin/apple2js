@@ -8204,10 +8204,10 @@ export default function Test65C02() {
             return 0xff;
         },
         read: function(page, off) {
-            return data[page * 0x100 + off];
+            return data[page << 8 | off];
         },
         write: function(page, off, val) {
-            data[page * 0x100 + off] = val;
+            data[page << 8 | off] = val;
         }
     };
 }
