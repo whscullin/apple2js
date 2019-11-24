@@ -39,7 +39,7 @@ export function allocMem(size) {
 }
 
 export function allocMemPages(pages) {
-    return allocMem(pages * 0x100);
+    return allocMem(pages << 8);
 }
 
 export function bytify(ary) {
