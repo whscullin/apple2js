@@ -19,6 +19,10 @@
         "no-use-before-define": [
             2,
             { "functions": false }
+        ],
+        "no-console": [
+            2,
+            { "allow": ["info", "warn", "error"] }
         ]
     },
     "env": {

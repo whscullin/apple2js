@@ -3,6 +3,7 @@ import Prefs from './prefs';
 import { driveLights, initUI, updateUI } from './ui/apple2';
 import Printer from './ui/printer';
 
+import CFFA from './cards/cffa';
 import DiskII from './cards/disk2';
 import Parallel from './cards/parallel';
 import RAMFactor from './cards/ramfactor';
@@ -82,6 +83,7 @@ var parallel = new Parallel(io, printer);
 var slinky = new RAMFactor(io, 1024 * 1024);
 var disk2 = new DiskII(io, driveLights);
 var clock = new Thunderclock(io);
+var cffa = new CFFA(io);
 
 initUI(apple2, disk2, options.e);
 
@@ -89,5 +91,6 @@ io.setSlot(1, parallel);
 io.setSlot(2, slinky);
 io.setSlot(4, clock);
 io.setSlot(6, disk2);
+io.setSlot(7, cffa);
 
 
