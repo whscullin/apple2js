@@ -232,7 +232,7 @@ export default function DiskII(io, slot, callbacks, sectors = 16)
 
                 if (_writeMode) {
                     if (!_cur.readOnly) {
-                        track[_cur.head] = _latch;
+                        track[_cur.head] = _bus;
                         if (!_cur.dirty) {
                             _updateDirty(_drive, true);
                         }
@@ -366,7 +366,7 @@ export default function DiskII(io, slot, callbacks, sectors = 16)
         case LOC.DRIVEREAD: // 0x0c (Q6L) Shift
             _q6 = 0;
             if (_writeMode) {
-                debug('clearing _q6/SHIFT');
+                _debug('clearing _q6/SHIFT');
             }
             if (!_cur.rawTracks) {
                 _readWriteNext();
@@ -376,7 +376,7 @@ export default function DiskII(io, slot, callbacks, sectors = 16)
         case LOC.DRIVEWRITE: // 0x0d (Q6H) LOAD
             _q6 = 1;
             if (_writeMode) {
-                debug('setting _q6/LOAD');
+                _debug('setting _q6/LOAD');
             }
             if (!_cur.rawTracks) {
                 if (readMode && !_writeMode) {
