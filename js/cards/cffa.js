@@ -11,9 +11,38 @@
 
 import { debug, toHex } from '../util';
 import { rom } from '../roms/cards/cffa';
-import disk from '../../disks/totalreplay.2mg';
+import _2MG from '../formats/2mg';
+import ProDOS from '../formats/prodos';
+import BlockVolume from '../formats/block';
 
-export default function SmartPort() {
+export default function CFFA() {
+    var COMMANDS = {
+        ATACRead:    0x20,
+        ATACWrite:   0x30,
+        ATAIdentify: 0xEC
+    };
+
+    // CFFA Card Settings
+
+    var SETTINGS = {
+        Max32MBPartitionsDev0: 0x800,
+        Max32MBPartitionsDev1: 0x801,
+        DefaultBootDevice:     0x802,
+        DefaultBootPartition:  0x803,
+        Reserved:              0x804, // 4 bytes
+        WriteProtectBits:      0x808,
+        MenuSnagMask:          0x809,
+        MenuSnagKey:           0x80A,
+        BootTimeDelayTenths:   0x80B,
+        BusResetSeconds:       0x80C,
+        CheckDeviceTenths:     0x80D,
+        ConfigOptionBits:      0x80E,
+        BlockOffsetDev0:       0x80F, // 3 bytes
+        BlockOffsetDev1:       0x812, // 3 bytes
+        Unused:                0x815
+    };
+
+    // CFFA ATA Register Locations
 
     var LOC = {
         ATADataHigh:   0x80,
@@ -34,6 +63,8 @@ export default function SmartPort() {
         ATAStatus:     0x8f
     };
 
+    // ATA Status Bits
+
     var STATUS = {
         BSY:  0x80, // Busy
         DRDY: 0x40, // Drive ready. 1 when ready
@@ -45,47 +76,130 @@ export default function SmartPort() {
         ERR:  0x01  // Error. 1 on error
     };
 
-    var _disableSignalling = false;
-    var _interruptsEnabled = false;
-    var _writeEEPROM = false;
+    // ATA Identity Block Locations
 
-    var _sectorCnt = 0;
+    var IDENTITY = {
+        SectorCountLow:  58,
+        SectorCountHigh: 57
+    };
+
+    // CFFA internal Flags
+
+    var _disableSignalling = false;
+    var _writeEEPROM = true;
+
+    var _lba = true;
+
+    // LBA/CHS registers
+
+    var _sectorCnt = 1;
     var _sector = 0;
     var _cylinder = 0;
     var _cylinderH = 0;
     var _head = 0;
+    var _drive = 0;
+
+    // CFFA Data High register
 
     var _dataHigh = 0;
-    var _dataLow = 0;
 
+    // Current Sector
+
+    var _curSector = [];
+    var _curWord = 0;
+
+    // ATA Status registers
+
+    var _interruptsEnabled = false;
     var _status = STATUS.BSY;
     var _altStatus = 0;
     var _error = 0;
 
-    var _disk = null;
+    var _identity = [[], []];
+
+    // Disk data
+
+    var _partitions = [
+        // Drive 1
+        [],
+        // Drive 2
+        []
+    ];
+
+    var _sectors = [
+        // Drive 1
+        [],
+        // Drive 2
+        []
+    ];
 
     function _init() {
         debug('CFFA');
-        fetch('dist/' + disk).then(function(result) {
-            return result.arrayBuffer();
-        }).then(function(data) {
-            debug('loaded', data, 'bytes');
-            _disk = data;
-            _status = STATUS.DRDY;
-        }).catch(console.error);
+
+        for (var idx = 0; idx < 0x100; idx++) {
+            _identity[0][idx] = 0;
+            _identity[1][idx] = 0;
+        }
+
+        rom[SETTINGS.Max32MBPartitionsDev0] = 0x1;
+        rom[SETTINGS.Max32MBPartitionsDev1] = 0x1;
     }
 
+    // Verbose debug method
+
     function _debug() {
-        debug.apply(this, arguments);
+        // debug.apply(this, arguments);
     }
 
     function _reset() {
         _debug('reset');
+
+        _sectorCnt = 1;
+        _sector = 0;
+        _cylinder = 0;
+        _cylinderH = 0;
+        _head = 0;
+        _drive = 0;
+
+        _dataHigh = 0;
     }
+
+    // Convert status register into readable string
+
+    function _statusString() {
+        var status = [];
+        for (var flag in STATUS) {
+            if(_status & STATUS[flag]) {
+                status.push(flag);
+            }
+        }
+        return status.join('|');
+    }
+
+    // Dump sector as hex and ascii
+
+    function _dumpSector(sector) {
+        for (var idx = 0; idx < 16; idx++) {
+            var row = [];
+            var charRow = [];
+            for (var jdx = 0; jdx < 16; jdx++) {
+                var val = _sectors[_drive][sector][idx * 16 + jdx];
+                row.push(toHex(val, 4));
+                var low = val & 0x7f;
+                var hi = val >> 8 & 0x7f;
+                charRow.push(low > 0x1f ? String.fromCharCode(low) : '.');
+                charRow.push(hi > 0x1f ? String.fromCharCode(hi) : '.');
+            }
+            _debug(row.join(' '), ' ', charRow.join(''));
+        }
+    }
+
+    // Card I/O access
 
     function _access(off, val) {
         var readMode = val === undefined;
         var retVal = readMode ? 0 : undefined;
+        var sector;
 
         if (readMode) {
             switch (off & 0x8f) {
@@ -108,7 +222,11 @@ export default function SmartPort() {
                 retVal = _altStatus;
                 break;
             case LOC.ATADataLow:    // 0x08
-                retVal = _dataLow;
+                _dataHigh = _curSector[_curWord] >> 8;
+                retVal = _curSector[_curWord] & 0xff;
+                if (!_disableSignalling) {
+                    _curWord++;
+                }
                 break;
             case LOC.AError:        // 0x09
                 retVal = _error;
@@ -130,13 +248,16 @@ export default function SmartPort() {
                 break;
             case LOC.ATAStatus:     // 0x0F
                 retVal = _status;
-                debug('returning status', toHex(retVal));
+                _debug('returning status', _statusString());
                 break;
             default:
                 debug('read unknown soft switch', toHex(off));
             }
-            _debug('read soft switch', toHex(off), toHex(retVal));
+
+            // _debug('read soft switch', toHex(off), toHex(retVal));
         } else {
+            // _debug('write soft switch', toHex(off), toHex(val));
+
             switch (off & 0x8f) {
             case LOC.ATADataHigh:   // 0x00
                 _dataHigh = val;
@@ -162,30 +283,62 @@ export default function SmartPort() {
                 }
                 break;
             case LOC.ATADataLow:    // 0x08
-                _dataLow = val;
+                _curSector[_curWord] = _dataHigh << 8 | val;
+                _curWord++;
                 break;
             case LOC.ASectorCnt:    // 0x0a
+                _debug('setting sector count', val);
                 _sectorCnt = val;
                 break;
             case LOC.ASector:       // 0x0b
+                _debug('setting sector', toHex(val));
                 _sector = val;
                 break;
             case LOC.ATACylinder:   // 0x0c
+                _debug('setting cylinder', toHex(val));
                 _cylinder = val;
                 break;
             case LOC.ATACylinderH:  // 0x0d
+                _debug('setting cylinder high', toHex(val));
                 _cylinderH = val;
                 break;
             case LOC.ATAHead:       // 0x0e
-                _head = val;
+                _head = val & 0xf;
+                _lba = val & 0x40 ? true : false;
+                _drive = val & 0x10 ? 1 : 0;
+                _debug('setting head', toHex(val & 0xf), 'drive', _drive);
+                if (!_lba) {
+                    console.error('CHS mode not supported');
+                }
                 break;
             case LOC.ATACommand:    // 0x0f
                 _debug('command:', toHex(val));
+                sector = _head << 24 | _cylinderH << 16 | _cylinder << 8 | _sector;
+                _dumpSector(sector);
+
+                switch (val) {
+                case COMMANDS.ATAIdentify:
+                    _debug('ATA identify');
+                    _curSector = _identity[_drive];
+                    _curWord = 0;
+                    break;
+                case COMMANDS.ATACRead:
+                    _debug('ATA read sector', toHex(_cylinderH), toHex(_cylinder), toHex(_sector), sector);
+                    _curSector = _sectors[_drive][sector];
+                    _curWord = 0;
+                    break;
+                case COMMANDS.ATACWrite:
+                    _debug('ATA write sector', toHex(_cylinderH), toHex(_cylinder), toHex(_sector), sector);
+                    _curSector = _sectors[_drive][sector];
+                    _curWord = 0;
+                    break;
+                default:
+                    debug('unknown command', toHex(val));
+                }
                 break;
             default:
                 debug('write unknown soft switch', toHex(off), toHex(val));
             }
-            _debug('write soft switch', toHex(off), toHex(val));
         }
 
         return retVal;
@@ -197,14 +350,45 @@ export default function SmartPort() {
         ioSwitch: function (off, val) {
             return _access(off, val);
         },
+
         read: function(page, off) {
             return rom[(page - 0xc0) << 8 | off];
         },
+
         write: function(page, off, val) {
             if (_writeEEPROM) {
                 _debug('writing', toHex(page << 8 | off), toHex(val));
                 rom[(page - 0xc0) << 8 | off] - val;
             }
+        },
+
+        // Assign a raw disk image to a drive. Must be 2mg or raw PO image.
+
+        setDisk: function(drive, name, ext, rawData) {
+            var disk;
+            var options = {
+                rawData,
+                name
+            };
+
+            if (ext === '2mg') {
+                disk = new _2MG(options);
+            } else {
+                disk = new BlockVolume(options);
+            }
+
+            _status = STATUS.DRDY | STATUS.DSC;
+            // Convert 512 byte blocks into 256 word sectors
+            _sectors[drive - 1] = disk.blocks.map(function(block) {
+                return new Uint16Array(block.buffer);
+            });
+
+            _identity[drive - 1][IDENTITY.SectorCountHigh] = _sectors[0].length & 0xffff;
+            _identity[drive - 1][IDENTITY.SectorCountLow] = _sectors[0].length >> 16;
+
+            var prodos = new ProDOS(disk);
+            debug('drive:', drive, 'volume:', prodos.vtoc().name);
+            _partitions[drive - 1] = prodos;
         }
     };
 }

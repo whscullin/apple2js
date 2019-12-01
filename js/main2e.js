@@ -89,7 +89,7 @@ initUI(apple2, disk2, options.e);
 
 io.setSlot(1, parallel);
 io.setSlot(2, slinky);
-io.setSlot(4, clock);
+io.setSlot(5, clock);
 io.setSlot(6, disk2);
 io.setSlot(7, cffa);
 
