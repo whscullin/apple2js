@@ -9,7 +9,7 @@
  * implied warranty.
  */
 
-import { debug } from '../util';
+import { debug, toHex } from '../util';
 import { rom } from '../roms/cards/thunderclock';
 
 export default function Thunderclock(io, slot)
@@ -17,6 +17,13 @@ export default function Thunderclock(io, slot)
     var LOC = {
         CONTROL: 0x80,
         AUX: 0x88
+    };
+
+    var COMMANDS = {
+        MASK: 0x18,
+        REGHOLD: 0x00,
+        REGSHIFT: 0x08,
+        TIMED: 0x18
     };
 
     var FLAGS = {
@@ -29,10 +36,18 @@ export default function Thunderclock(io, slot)
         debug('Thunderclock card in slot', slot);
     }
 
-    var _command = 0;
+    var _clock = false;
+    var _strobe = false;
+    var _shiftMode = false;
+    var _register = 0;
     var _bits = [];
+    var _command = COMMANDS.HOLD;
 
-    function _calcbits() {
+    function _debug() {
+        // debug.apply(this, arguments);
+    }
+
+    function _calcBits() {
         function shift(val) {
             for (var idx = 0; idx < 4; idx++) {
                 _bits.push((val & 0x08) !== 0);
@@ -61,35 +76,62 @@ export default function Thunderclock(io, slot)
         shiftBCD(seconds);
     }
 
+    function _shift() {
+        if (_shiftMode) {
+            if (_bits.pop()) {
+                _debug('shifting 1');
+                _register |= 0x80;
+            } else {
+                _debug('shifting 0');
+                _register &= 0x7f;
+            }
+        }
+    }
+
     function _access(off, val) {
         switch (off & 0x8F) {
         case LOC.CONTROL:
             if (val !== undefined) {
-                if ((val & FLAGS.STROBE) !== 0) {
-                    if ((_command & 0x78) == 0x18) {
-                        _calcbits();
+                var strobe = val & FLAGS.STROBE ? true : false;
+                if (strobe !== _strobe) {
+                    _debug('strobe', _strobe ? 'high' : 'low');
+                    if (strobe) {
+                        _command = val & COMMANDS.MASK;
+                        switch (_command) {
+                        case COMMANDS.TIMED:
+                            _debug('TIMED');
+                            _calcBits();
+                            break;
+                        case COMMANDS.REGSHIFT:
+                            _debug('REGSHIFT');
+                            _shiftMode = true;
+                            _shift();
+                            break;
+                        case COMMANDS.REGHOLD:
+                            _debug('REGHOLD');
+                            _shiftMode = false;
+                            break;
+                        default:
+                            _debug('Unknown command', toHex(_command));
+                        }
                     }
                 }
-                _command = val;
-            } else {
-                if (_bits.pop()) {
-                    _command |= 0x80;
-                } else {
-                    _command &= 0x7f;
+
+                var clock = val & FLAGS.CLOCK ? true : false;
+
+                if (clock !== _clock) {
+                    _clock = clock;
+                    _debug('clock', _clock ? 'high' : 'low');
+                    if (clock) {
+                        _shift();
+                    }
                 }
             }
             break;
         case LOC.AUX:
             break;
         }
-        /*
-        if (val === undefined) {
-            debug("Read " + toHex(_command) + " from " + toHex(off))
-        } else {
-            debug("Wrote " + toHex(val) + " to " + toHex(off))
-        }
-        */
-        return _command;
+        return _register;
     }
 
     _init();
