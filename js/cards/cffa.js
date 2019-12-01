@@ -111,7 +111,6 @@ export default function CFFA() {
     // ATA Status registers
 
     var _interruptsEnabled = false;
-    var _status = STATUS.BSY;
     var _altStatus = 0;
     var _error = 0;
 
@@ -142,7 +141,7 @@ export default function CFFA() {
         }
 
         rom[SETTINGS.Max32MBPartitionsDev0] = 0x1;
-        rom[SETTINGS.Max32MBPartitionsDev1] = 0x1;
+        rom[SETTINGS.Max32MBPartitionsDev1] = 0x0;
     }
 
     // Verbose debug method
@@ -166,19 +165,23 @@ export default function CFFA() {
 
     // Convert status register into readable string
 
-    function _statusString() {
-        var status = [];
+    function _statusString(status) {
+        var statusArray = [];
         for (var flag in STATUS) {
-            if(_status & STATUS[flag]) {
-                status.push(flag);
+            if(status & STATUS[flag]) {
+                statusArray.push(flag);
             }
         }
-        return status.join('|');
+        return statusArray.join('|');
     }
 
     // Dump sector as hex and ascii
 
     function _dumpSector(sector) {
+        if (sector >= _sectors[_drive].length) {
+            _debug('dump sector out of range', sector);
+            return;
+        }
         for (var idx = 0; idx < 16; idx++) {
             var row = [];
             var charRow = [];
@@ -244,19 +247,23 @@ export default function CFFA() {
                 retVal = _cylinderH;
                 break;
             case LOC.ATAHead:       // 0x0E
-                retVal = _head;
+                retVal = _head | (_lba ? 0x40 : 0) | (_drive ? 0x10 : 0) | 0xA0;
                 break;
             case LOC.ATAStatus:     // 0x0F
-                retVal = _status;
-                _debug('returning status', _statusString());
+                retVal = _sectors[_drive].length > 0 ? STATUS.DRDY | STATUS.DSC : 0;
+                _debug('returning status', _statusString(retVal));
                 break;
             default:
                 debug('read unknown soft switch', toHex(off));
             }
 
-            // _debug('read soft switch', toHex(off), toHex(retVal));
+            if (off & 0x7) { // Anything but data high/low
+                _debug('read soft switch', toHex(off), toHex(retVal));
+            }
         } else {
-            // _debug('write soft switch', toHex(off), toHex(val));
+            if (off & 0x7) { // Anything but data high/low
+                _debug('write soft switch', toHex(off), toHex(val));
+            }
 
             switch (off & 0x8f) {
             case LOC.ATADataHigh:   // 0x00
@@ -302,7 +309,7 @@ export default function CFFA() {
                 _debug('setting cylinder high', toHex(val));
                 _cylinderH = val;
                 break;
-            case LOC.ATAHead:       // 0x0e
+            case LOC.ATAHead:
                 _head = val & 0xf;
                 _lba = val & 0x40 ? true : false;
                 _drive = val & 0x10 ? 1 : 0;
@@ -365,6 +372,7 @@ export default function CFFA() {
         // Assign a raw disk image to a drive. Must be 2mg or raw PO image.
 
         setDisk: function(drive, name, ext, rawData) {
+            drive = drive - 1;
             var disk;
             var options = {
                 rawData,
@@ -377,18 +385,23 @@ export default function CFFA() {
                 disk = new BlockVolume(options);
             }
 
-            _status = STATUS.DRDY | STATUS.DSC;
             // Convert 512 byte blocks into 256 word sectors
-            _sectors[drive - 1] = disk.blocks.map(function(block) {
+            _sectors[drive] = disk.blocks.map(function(block) {
                 return new Uint16Array(block.buffer);
             });
 
-            _identity[drive - 1][IDENTITY.SectorCountHigh] = _sectors[0].length & 0xffff;
-            _identity[drive - 1][IDENTITY.SectorCountLow] = _sectors[0].length >> 16;
+            _identity[drive][IDENTITY.SectorCountHigh] = _sectors[0].length & 0xffff;
+            _identity[drive][IDENTITY.SectorCountLow] = _sectors[0].length >> 16;
 
             var prodos = new ProDOS(disk);
             debug('drive:', drive, 'volume:', prodos.vtoc().name);
-            _partitions[drive - 1] = prodos;
+            _partitions[drive] = prodos;
+
+            if (drive) {
+                rom[SETTINGS.Max32MBPartitionsDev1] = 0x1;
+            } else {
+                rom[SETTINGS.Max32MBPartitionsDev0] = 0x1;
+            }
         }
     };
 }
