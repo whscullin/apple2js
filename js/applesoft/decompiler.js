@@ -1,5 +1,3 @@
-import { debug } from '../util';
-
 export default function ApplesoftDump(mem)
 {
     var _mem = mem;
@@ -123,14 +121,14 @@ export default function ApplesoftDump(mem)
         var page = addr >> 8,
             off = addr & 0xff;
 
-        return _mem.read(page, off);
+        return _mem.read(page, off, true);
     }
 
     function readWord(addr) {
         var lsb, msb;
 
-        lsb = readByte(addr, debug);
-        msb = readByte(addr + 1, debug);
+        lsb = readByte(addr);
+        msb = readByte(addr + 1);
 
         return (msb << 8) | lsb;
     }

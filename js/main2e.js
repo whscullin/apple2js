@@ -2,6 +2,7 @@ import MicroModal from 'micromodal';
 
 import Apple2IO from './apple2io';
 import ApplesoftDump from './applesoft/decompiler';
+import ApplesoftCompiler from './applesoft/compiler';
 import { HiresPage, LoresPage, VideoModes } from './canvas';
 import CPU6502 from './cpu6502';
 import MMU from './mmu';
@@ -304,7 +305,7 @@ default:
 }
 
 var runTimer = null;
-var cpu = new CPU6502({'65C02': enhanced});
+export var cpu = new CPU6502({'65C02': enhanced});
 
 var context1, context2, context3, context4;
 
@@ -339,6 +340,7 @@ var vm = new VideoModes(gr, hgr, gr2, hgr2, true);
 vm.enhanced(enhanced);
 vm.multiScreen(multiScreen);
 var dumper = new ApplesoftDump(cpu);
+var compiler = new ApplesoftCompiler(cpu);
 
 driveLights = new DriveLights();
 var io = new Apple2IO(cpu, vm);
@@ -411,12 +413,11 @@ function dumpDisk(drive) {
 }
 
 export function dumpProgram() {
-    var wind = window.open('', '_blank');
-    wind.document.title = 'Program Listing';
-    wind.document.write('<pre>');
-    wind.document.write(dumper.toString());
-    wind.document.write('</pre>');
-    wind.document.close();
+    debug(dumper.toString());
+}
+
+export function compileProgram(program) {
+    compiler.compile(program);
 }
 
 export function step()
