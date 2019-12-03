@@ -12,8 +12,9 @@
 import { debug, toHex } from '../util';
 import { rom } from '../roms/cards/cffa';
 import _2MG from '../formats/2mg';
-import ProDOS from '../formats/prodos';
+import { ProDOSVolume } from '../formats/prodos';
 import BlockVolume from '../formats/block';
+import { dump } from '../formats/prodos/utils';
 
 export default function CFFA() {
     var COMMANDS = {
@@ -393,8 +394,9 @@ export default function CFFA() {
             _identity[drive][IDENTITY.SectorCountHigh] = _sectors[0].length & 0xffff;
             _identity[drive][IDENTITY.SectorCountLow] = _sectors[0].length >> 16;
 
-            var prodos = new ProDOS(disk);
-            debug('drive:', drive, 'volume:', prodos.vtoc().name);
+            var prodos = new ProDOSVolume(disk);
+            dump(prodos);
+
             _partitions[drive] = prodos;
 
             if (drive) {
