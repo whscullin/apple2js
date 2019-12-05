@@ -3,3 +3,4 @@
 .vscode
 /dist
 /node_modules
+/tmp
