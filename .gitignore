@@ -1,5 +1,6 @@
 .*~
 .checked-*.js
+.DS_Store
 .vscode
 /dist
 /node_modules
