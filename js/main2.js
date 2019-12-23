@@ -33,6 +33,7 @@ import OriginalROM from './roms/original';
 import SYMBOLS from './symbols';
 
 export {
+    compileAppleSoftProgram, dumpAppleSoftProgram,
     handleDrop, handleDragOver, handleDragEnd,
     openLoad, openSave,
     selectCategory, selectDisk, clickDisk, doLoad

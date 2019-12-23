@@ -28,6 +28,7 @@ import Apple2eEnhancedROM from './roms/apple2enh';
 import SYMBOLS from './symbols';
 
 export {
+    compileAppleSoftProgram, dumpAppleSoftProgram,
     handleDrop, handleDragOver, handleDragEnd,
     openLoad, openSave,
     selectCategory, selectDisk, clickDisk, doLoad

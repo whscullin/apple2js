@@ -34,12 +34,12 @@ function dumpDisk(drive) {
     wind.document.close();
 }
 
-export function dumpProgram() {
+export function dumpAppleSoftProgram() {
     var dumper = new ApplesoftDump(_cpu);
     debug(dumper.toString());
 }
 
-export function compileProgram(program) {
+export function compileAppleSoftProgram(program) {
     var compiler = new ApplesoftCompiler(_cpu);
     compiler.compile(program);
 }
@@ -109,6 +109,7 @@ export function handleDrop(drive, event) {
     }
     var dt = event.dataTransfer;
     if (dt.files.length == 1) {
+
         doLoadLocal(drive, dt.files[0]);
     } else if (dt.files.length == 2) {
         doLoadLocal(1, dt.files[0]);
@@ -130,7 +131,11 @@ export function loadAjax(drive, url) {
     MicroModal.show('loading-modal');
 
     fetch(url).then(function(response) {
-        return response.json();
+        if (response.ok) {
+            return response.json();
+        } else {
+            throw new Error('Error loading: ' + response.statusText);
+        }
     }).then(function(data) {
         if (data.type == 'binary') {
             loadBinary(drive, data);
@@ -140,7 +145,7 @@ export function loadAjax(drive, url) {
         initGamepad(data.gamepad);
         MicroModal.close('loading-modal');
     }).catch(function(error) {
-        window.alert(error || status);
+        window.alert(error.message);
         MicroModal.close('loading-modal');
     });
 }
@@ -208,6 +213,7 @@ function doLoadLocal(drive, file) {
 }
 
 function doLoadLocalDisk(drive, file) {
+    MicroModal.show('load-modal');
     var fileReader = new FileReader();
     fileReader.onload = function() {
         var parts = file.name.split('.');
@@ -225,23 +231,27 @@ function doLoadLocalDisk(drive, file) {
 export function doLoadHTTP(drive, _url) {
     var url = _url || document.querySelector('#http_url').value;
     if (url) {
-        var req = new XMLHttpRequest();
-        req.open('GET', url, true);
-        req.responseType = 'arraybuffer';
-
-        req.onload = function() {
+        fetch(url).then(function(response) {
+            if (response.ok) {
+                return response.arrayBuffer();
+            } else {
+                throw new Error('Error loading: ' + response.statusText);
+            }
+        }).then(function(data) {
             var urlParts = url.split('/');
             var file = urlParts.pop();
             var fileParts = file.split('.');
             var ext = fileParts.pop().toLowerCase();
             var name = decodeURIComponent(fileParts.join('.'));
-            if (_disk2.setBinary(drive, name, ext, req.response)) {
+            if (_disk2.setBinary(drive, name, ext, data)) {
                 driveLights.label(drive, name);
-                if (!_url) { MicroModal.close('http-modal'); }
                 initGamepad();
             }
-        };
-        req.send(null);
+            if (!_url) { MicroModal.close('http-modal'); }
+        }).catch(function(error) {
+            window.alert(error.message);
+            if (!_url) { MicroModal.close('http-modal'); }
+        });
     }
 }
 

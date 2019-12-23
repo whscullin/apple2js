@@ -201,7 +201,7 @@ export default function ApplesoftCompiler(mem)
                                                 if (lookAhead === 'O') {
                                                     result.push(lookAhead.charCodeAt(0));
                                                     foundToken = 'TO';
-                                                    tokenIdx++;                                                    foundToken = 'TO';
+                                                    tokenIdx++;
                                                 }
                                             }
                                             foundToken = possibleToken;
