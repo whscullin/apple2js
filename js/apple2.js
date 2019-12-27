@@ -31,6 +31,7 @@ export function Apple2(options) {
 
     var vm = new VideoModes(gr, hgr, gr2, hgr2, options.e);
     vm.multiScreen(options.multiScreen);
+    vm.enhanced(options.enhanced);
 
     var io = new Apple2IO(cpu, vm);
 
