@@ -30,18 +30,16 @@ export default function Printer(el) {
             var visible = val >= 0x20;
             var c = String.fromCharCode(ascii);
 
-            if (c == '\r') {
+            if (c === '\r') {
                 newLine();
-            } else if (c == '\n') {
+            } else if (c === '\n') {
                 // eat for now
-            } else if (c == '\t') {
+            } else if (c === '\t') {
                 _lineBuffer += '        ';
-            } else if (c == 0x04) {
+            } else if (ascii === 0x04) {
                 _lineBuffer = _lineBuffer.slice(0, -1);
-            } else {
-                if (visible) {
-                    _lineBuffer += c;
-                }
+            } else if (visible) {
+                _lineBuffer += c;
             }
             _line.innerText = _lineBuffer;
         },
