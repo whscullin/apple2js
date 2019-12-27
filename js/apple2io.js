@@ -341,8 +341,9 @@ export default function Apple2IO(cpu, callbacks)
         blit: function apple2io_blit() {
             var card = _slot[3];
             if (card && card.blit) {
-                card.blit();
+                return card.blit();
             }
+            return false;
         },
 
         read: function apple2io_read(page, off) {

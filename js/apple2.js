@@ -96,7 +96,9 @@ export function Apple2(options) {
                 if (options.multiScreen) {
                     vm.blit();
                 }
-                io.blit();
+                if (io.blit()) {
+                    stats.renderedFrames++;
+                }
             } else {
                 if (vm.blit()) {
                     stats.renderedFrames++;
