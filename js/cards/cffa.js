@@ -372,7 +372,7 @@ export default function CFFA() {
 
         // Assign a raw disk image to a drive. Must be 2mg or raw PO image.
 
-        setDisk: function(drive, name, ext, rawData) {
+        setBinary: function(drive, name, ext, rawData) {
             drive = drive - 1;
             var disk;
             var options = {

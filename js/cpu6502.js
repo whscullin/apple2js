@@ -170,11 +170,7 @@ export default function CPU6502(options)
         return testNZ((a + 0xff) & 0xff);
     }
 
-<<<<<<< HEAD
     function readBytePC() {
-=======
-    function readBytePC(dbg) {
->>>>>>> CFFA multi-disk and write functionaliity.
         var addr = pc,
             page = addr >> 8,
             off = addr & 0xff;
@@ -183,13 +179,7 @@ export default function CPU6502(options)
 
         pc = (pc + 1) & 0xffff;
 
-<<<<<<< HEAD
         cycles++;
-=======
-        if (!dbg) {
-            cycles++;
-        }
->>>>>>> CFFA multi-disk and write functionaliity.
 
         return result;
     }

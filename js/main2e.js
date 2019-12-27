@@ -85,7 +85,7 @@ var disk2 = new DiskII(io, driveLights);
 var clock = new Thunderclock(io);
 var cffa = new CFFA(io);
 
-initUI(apple2, disk2, options.e);
+initUI(apple2, disk2, cffa, options.e);
 
 io.setSlot(1, parallel);
 io.setSlot(2, slinky);
