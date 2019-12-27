@@ -12,7 +12,7 @@
 import { debug, toHex } from '../util';
 import { rom } from '../roms/cards/thunderclock';
 
-export default function Thunderclock(io, slot)
+export default function Thunderclock()
 {
     var LOC = {
         CONTROL: 0x80,
@@ -33,7 +33,7 @@ export default function Thunderclock(io, slot)
     };
 
     function _init() {
-        debug('Thunderclock card in slot', slot);
+        debug('Thunderclock');
     }
 
     var _clock = false;

@@ -32,9 +32,8 @@ export const DISK_TYPES = [
     'woz'
 ];
 
-export default function DiskII(io, slot, callbacks, sectors = 16)
+export default function DiskII(io, callbacks, sectors = 16)
 {
-    slot = slot || 6;
     var _drives = [
         {   // Drive 1
             format: 'dsk',
@@ -134,7 +133,7 @@ export default function DiskII(io, slot, callbacks, sectors = 16)
     }
 
     function _init() {
-        debug('Disk ][ in slot', slot);
+        debug('Disk ][');
     }
 
     var _clock = 0;

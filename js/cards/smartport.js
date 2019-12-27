@@ -12,7 +12,7 @@
 import { base64_decode } from '../base64';
 import { debug, toHex } from '../util';
 
-export default function SmartPort(io, slot, cpu) {
+export default function SmartPort(io, cpu) {
 
     /*
         $Cn01=$20

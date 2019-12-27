@@ -12,10 +12,9 @@
 import { debug } from '../util';
 import { rom } from '../roms/cards/parallel';
 
-export default function Parallel(io, slot, cbs) {
-    slot = slot || 1;
+export default function Parallel(io, cbs) {
 
-    debug('Parallel card in slot', slot);
+    debug('Parallel card');
 
     var LOC = {
         IOREG: 0x80

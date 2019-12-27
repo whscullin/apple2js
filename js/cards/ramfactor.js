@@ -13,7 +13,7 @@ import { base64_decode, base64_encode } from '../base64';
 import { allocMem, debug } from '../util';
 import { rom } from '../roms/cards/ramfactor';
 
-export default function RAMFactor(io, slot, size) {
+export default function RAMFactor(io, size) {
     var mem = [];
 
     var _firmware = 0;
@@ -37,7 +37,7 @@ export default function RAMFactor(io, slot, size) {
     };
 
     function _init() {
-        debug('RAMFactor card in slot', slot);
+        debug('RAMFactor card');
 
         mem = allocMem(size);
         for (var off = 0; off < size; off++) {
@@ -130,13 +130,7 @@ export default function RAMFactor(io, slot, size) {
             return _access(off, val);
         },
         read: function ramfactor_read(page, off) {
-            var result;
-            if (page == 0xc0 + slot) {
-                result = rom[slot << 8 | off];
-            } else {
-                result = rom[_firmware << 12 | (page - 0xC0) << 8 | off];
-            }
-            return result;
+            return rom[_firmware << 12 | (page - 0xC0) << 8 | off];
         },
         write: function ramfactor_write() {},
         reset: function ramfactor_reset() {

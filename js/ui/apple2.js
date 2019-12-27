@@ -1,51 +1,56 @@
 import MicroModal from 'micromodal';
+
+import Audio from './audio';
 import DriveLights from './drive_lights';
 import { DISK_TYPES } from '../cards/disk2';
-import { initGamepad } from './gamepad';
+import { gamepad, configGamepad, initGamepad } from './gamepad';
+import KeyBoard from './keyboard';
 import Tape, { TAPE_TYPES } from './tape';
 
 import ApplesoftDump from '../applesoft/decompiler';
 import ApplesoftCompiler from '../applesoft/compiler';
 
-import { debug } from '../util';
+import { debug, gup, hup } from '../util';
+import Prefs from '../prefs';
+
+var kHz = 1023;
+
+var focused = false;
+var startTime = Date.now();
+var lastCycles = 0;
+var lastFrames = 0;
+
+var hashtag;
 
 var disk_categories = {'Local Saves': []};
 var disk_sets = {};
 var disk_cur_name = [];
 var disk_cur_cat = [];
 
+var _apple2;
+var cpu;
+var stats;
+var vm;
+var tape;
+var _disk2;
+var audio;
+var keyboard;
+var io;
 var _currentDrive = 1;
-var _cpu, _tape, _disk2;
 
 export const driveLights = new DriveLights();
 
-export function initUI(cpu, io, disk2) {
-    _cpu = cpu;
-    _tape = new Tape(io);
-    _disk2 = disk2;
-}
-
-function dumpDisk(drive) {
-    var wind = window.open('', '_blank');
-    wind.document.title = driveLights.label(drive);
-    wind.document.write('<pre>');
-    wind.document.write(_disk2.getJSON(drive, true));
-    wind.document.write('</pre>');
-    wind.document.close();
-}
-
 export function dumpAppleSoftProgram() {
-    var dumper = new ApplesoftDump(_cpu);
+    var dumper = new ApplesoftDump(cpu);
     debug(dumper.toString());
 }
 
 export function compileAppleSoftProgram(program) {
-    var compiler = new ApplesoftCompiler(_cpu);
+    var compiler = new ApplesoftCompiler(cpu);
     compiler.compile(program);
 }
 
-export function openLoad(drive, event)
-{
+export function openLoad(drive, event) {
     _currentDrive = parseInt(drive, 10);
     if (event.metaKey) {
         openLoadHTTP(drive);
@@ -58,8 +63,7 @@ export function openLoad(drive, event)
     }
 }
 
-export function openSave(drive, event)
-{
+export function openSave(drive, event) {
     _currentDrive = parseInt(drive, 10);
 
     var mimeType = 'application/octet-stream';
@@ -206,7 +210,7 @@ function doLoadLocal(drive, file) {
     if (DISK_TYPES.indexOf(ext) > -1) {
         doLoadLocalDisk(drive, file);
     } else if (TAPE_TYPES.indexOf(ext) > -1) {
-        _tape.doLoadLocalTape(file);
+        tape.doLoadLocalTape(file);
     } else {
         window.alert('Unknown file type: ' + ext);
     }
@@ -264,13 +268,67 @@ function openManage() {
     MicroModal.show('manage-modal');
 }
 
+var prefs = new Prefs();
+var showFPS = false;
+
+export function updateKHz() {
+    var now = Date.now();
+    var ms = now - startTime;
+    var cycles = cpu.cycles();
+    var delta;
+
+    if (showFPS) {
+        delta = stats.renderedFrames - lastFrames;
+        var fps = parseInt(delta/(ms/1000), 10);
+        document.querySelector('#khz').innerText = fps + 'fps';
+    } else {
+        delta = cycles - lastCycles;
+        var khz = parseInt(delta/ms);
+        document.querySelector('#khz').innerText = khz + 'KHz';
+    }
+
+    startTime = now;
+    lastCycles = cycles;
+    lastFrames = stats.renderedFrames;
+}
+
+export function toggleShowFPS() {
+    showFPS = !showFPS;
+}
+
+export function updateSound() {
+    var on = document.querySelector('#enable_sound').checked;
+    var label = document.querySelector('#toggle-sound i');
+    audio.enable(on);
+    if (on) {
+        label.classList.remove('fa-volume-off');
+        label.classList.add('fa-volume-up');
+    } else {
+        label.classList.remove('fa-volume-up');
+        label.classList.add('fa-volume-off');
+    }
+}
+
+function dumpDisk(drive) {
+    var wind = window.open('', '_blank');
+    wind.document.title = driveLights.label(drive);
+    wind.document.write('<pre>');
+    wind.document.write(_disk2.getJSON(drive, true));
+    wind.document.write('</pre>');
+    wind.document.close();
+}
+
+export function reset() {
+    _apple2.reset();
+}
+
 function loadBinary(bin) {
     for (var idx = 0; idx < bin.length; idx++) {
         var pos = bin.start + idx;
-        _cpu.write(pos >> 8, pos & 0xff, bin.data[idx]);
+        cpu.write(pos >> 8, pos & 0xff, bin.data[idx]);
     }
-    _cpu.reset();
-    _cpu.setPC(bin.start);
+    cpu.reset();
+    cpu.setPC(bin.start);
 }
 
 export function selectCategory() {
@@ -423,3 +481,283 @@ option.innerText = 'Local Saves';
 document.querySelector('#category_select').append(option);
 
 updateLocalStorage();
+
+function processHash(hash) {
+    var files = hash.split('|');
+    for (var idx = 0; idx < files.length; idx++) {
+        var file = files[idx];
+        if (file.indexOf('://') > 0) {
+            var parts = file.split('.');
+            var ext = parts[parts.length - 1].toLowerCase();
+            if (ext == 'json') {
+                loadAjax(idx + 1, file);
+            } else {
+                doLoadHTTP(idx + 1, file);
+            }
+        } else {
+            loadAjax(idx + 1, 'json/disks/' + file + '.json');
+        }
+    }
+}
+
+/*
+ * Keyboard/Gamepad routines
+ */
+
+function _keydown(evt) {
+    if (!focused && (!evt.metaKey || evt.ctrlKey)) {
+        evt.preventDefault();
+
+        var key = keyboard.mapKeyEvent(evt);
+        if (key != 0xff) {
+            io.keyDown(key);
+        }
+    }
+    if (evt.keyCode === 112) { // F1 - Reset
+        cpu.reset();
+        evt.preventDefault(); // prevent launching help
+    } else if (evt.keyCode === 113) { // F2 - Full Screen
+        var elem = document.getElementById('screen');
+        if (evt.shiftKey) { // Full window, but not full screen
+            document.querySelector('#display').classList.toggle('zoomwindow');
+            document.querySelector('#display > div').classList.toggle('overscan');
+            document.querySelector('#display > div').classList.toggle('flexbox-centering');
+            document.querySelector('#screen').classList.toggle('maxhw');
+            document.querySelector('#header').classList.toggle('hidden');
+            document.querySelectorAll('.inset').forEach(function(el) { el.classList.toggle('hidden'); });
+            document.querySelector('#reset').classList.toggle('hidden');
+        } else if (document.webkitCancelFullScreen) {
+            if (document.webkitIsFullScreen) {
+                document.webkitCancelFullScreen();
+            } else {
+                if (Element.ALLOW_KEYBOARD_INPUT) {
+                    elem.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+                } else {
+                    elem.webkitRequestFullScreen();
+                }
+            }
+        } else if (document.mozCancelFullScreen) {
+            if (document.mozIsFullScreen) {
+                document.mozCancelFullScreen();
+            } else {
+                elem.mozRequestFullScreen();
+            }
+        }
+    } else if (evt.keyCode === 114) { // F3
+        io.keyDown(0x1b);
+    } else if (evt.keyCode === 117) { // F6 Quick Save
+        _apple2.saveState();
+    } else if (evt.keyCode === 120) { // F9 Quick Restore
+        _apple2.restoreState();
+    } else if (evt.keyCode == 16) { // Shift
+        keyboard.shiftKey(true);
+    } else if (evt.keyCode == 17) { // Control
+        keyboard.controlKey(true);
+    } else if (evt.keyCode == 91 || evt.keyCode == 93) { // Command
+        keyboard.commandKey(true);
+    } else if (evt.keyCode == 18) { // Alt
+        if (evt.location == 1) {
+            keyboard.commandKey(true);
+        } else {
+            keyboard.optionKey(true);
+        }
+    }
+}
+
+function _keyup(evt) {
+    if (!focused)
+        io.keyUp();
+
+    if (evt.keyCode == 16) { // Shift
+        keyboard.shiftKey(false);
+    } else if (evt.keyCode == 17) { // Control
+        keyboard.controlKey(false);
+    } else if (evt.keyCode == 91 || evt.keyCode == 93) { // Command
+        keyboard.commandKey(false);
+    } else if (evt.keyCode == 18) { // Alt
+        if (evt.location == 1) {
+            keyboard.commandKey(false);
+        } else {
+            keyboard.optionKey(false);
+        }
+    }
+}
+
+export function updateScreen() {
+    var green = document.querySelector('#green_screen').checked;
+    var scanlines = document.querySelector('#show_scanlines').checked;
+
+    vm.green(green);
+    vm.scanlines(scanlines);
+}
+
+export function updateCPU() {
+    var accelerated = document.querySelector('#accelerator_toggle').checked;
+    kHz = accelerated ? 4092 : 1023;
+    io.updateHz(kHz * 1000);
+}
+
+export function updateUI() {
+    if (document.location.hash != hashtag) {
+        hashtag = document.location.hash;
+        var hash = hup();
+        if (hash) {
+            processHash(hash);
+        }
+    }
+}
+
+var disableMouseJoystick = false;
+var flipX = false;
+var flipY = false;
+var swapXY = false;
+
+export function updateJoystick() {
+    disableMouseJoystick = document.querySelector('#disable_mouse').checked;
+    flipX = document.querySelector('#flip_x').checked;
+    flipY = document.querySelector('#flip_y').checked;
+    swapXY = document.querySelector('#swap_x_y').checked;
+    configGamepad(flipX, flipY);
+
+    if (disableMouseJoystick) {
+        io.paddle(0, 0.5);
+        io.paddle(1, 0.5);
+        return;
+    }
+}
+
+function _mousemove(evt) {
+    if (gamepad || disableMouseJoystick) {
+        return;
+    }
+
+    var s = document.querySelector('#screen');
+    var offset = s.getBoundingClientRect();
+    var x = (evt.pageX - offset.left) / s.clientWidth,
+        y = (evt.pageY - offset.top) / s.clientHeight,
+        z = x;
+
+    if (swapXY) {
+        x = y;
+        y = z;
+    }
+
+    io.paddle(0, flipX ? 1 - x : x);
+    io.paddle(1, flipY ? 1 - y : y);
+}
+
+var paused = false;
+
+export function pauseRun() {
+    var label = document.querySelector('#pause-run i');
+    if (paused) {
+        cpu.run();
+        label.classList.remove('fa-play');
+        label.classList.add('fa-pause');
+    } else {
+        cpu.stop();
+        label.classList.remove('fa-pause');
+        label.classList.add('fa-play');
+    }
+    paused = !paused;
+}
+
+export function toggleSound() {
+    var enableSound = document.querySelector('#enable_sound');
+    enableSound.checked = !enableSound.checked;
+    updateSound();
+}
+
+export function openOptions() {
+    MicroModal.show('options-modal');
+}
+
+export function openPrinterModal() {
+    MicroModal.show('printer-modal');
+}
+
+export function initUI(apple2, disk2, e) {
+    _apple2 = apple2;
+    cpu = _apple2.getCPU();
+    io = _apple2.getIO();
+    stats = apple2.getStats();
+    vm = apple2.getVideoModes();
+    tape = new Tape(io);
+    _disk2 = disk2;
+
+    keyboard = new KeyBoard(cpu, io, e);
+    keyboard.create('#keyboard');
+    audio = new Audio(io);
+
+    MicroModal.init();
+
+    /*
+     * Input Handling
+     */
+
+    window.addEventListener('keydown', _keydown);
+    window.addEventListener('keyup', _keyup);
+    window.addEventListener('mousedown', function() { audio.autoStart(); });
+
+    document.querySelectorAll('canvas').forEach(function(canvas) {
+        canvas.addEventListener('mousedown', function(evt) {
+            if (!gamepad) {
+                io.buttonDown(evt.which == 1 ? 0 : 1);
+            }
+            evt.preventDefault();
+        });
+        canvas.addEventListener('mouseup', function(evt) {
+            if (!gamepad) {
+                io.buttonUp(evt.which == 1 ? 0 : 1);
+            }
+        });
+    });
+
+    document.body.addEventListener('mousemove', _mousemove);
+
+    document.querySelectorAll('input,textarea').forEach(function(input) {
+        input.addEventListener('input', function() { focused = true; });
+        input.addEventListener('blur', function() { focused = false; });
+    });
+
+    if (prefs.havePrefs()) {
+        document.querySelectorAll('#options-modal input[type=checkbox]').forEach(function(el) {
+            var val = prefs.readPref(el.id);
+            if (val) {
+                el.checked = JSON.parse(val);
+            }
+            el.addEventListener('change', function() {
+                prefs.writePref(el.id, JSON.stringify(el.checked));
+            });
+        });
+        document.querySelectorAll('#options-modal select').forEach(function(el) {
+            var val = prefs.readPref(el.id);
+            if (val) {
+                el.value = val;
+            }
+            el.addEventListener('change', function() {
+                prefs.writePref(el.id, el.value);
+            });
+        });
+    }
+
+    cpu.reset();
+    setInterval(updateKHz, 1000);
+    updateSound();
+    updateScreen();
+    updateCPU();
+    initGamepad();
+
+    // Check for disks in hashtag
+
+    var hash = gup('disk') || hup();
+    if (hash) {
+        processHash(hash);
+    }
+
+    if (navigator.standalone) {
+        document.body.classList.add('standalone');
+    }
+
+    _apple2.run();
+}
