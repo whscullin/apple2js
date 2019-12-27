@@ -12,7 +12,7 @@
 import RAM from '../ram';
 import { debug } from '../util';
 
-export default function LanguageCard(io, slot, rom) {
+export default function LanguageCard(io, rom) {
     var _rom = rom;
     var _bank1 = null;
     var _bank2 = null;
@@ -30,7 +30,7 @@ export default function LanguageCard(io, slot, rom) {
     var _write2 = null;
 
     function _init() {
-        debug('Language card in slot', slot);
+        debug('Language card');
 
         _bank1 = new RAM(0xd0, 0xdf);
         _bank2 = new RAM(0xd0, 0xdf);

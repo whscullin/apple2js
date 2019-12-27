@@ -154,7 +154,7 @@ export default function ApplesoftDump(mem)
                         return str;
 
                     val = readByte(addr++);
-                    if (val > 0x80) {
+                    if (val >= 0x80) {
                         line += ' ';
                         line += TOKENS[val];
                         line += ' ';

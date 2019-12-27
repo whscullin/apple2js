@@ -593,16 +593,15 @@ button:focus {
     list-style-type: none;
 }
 
-#printer-modal .feed {
-    width: 640px;
-    height: 480px;
-    overflow: auto;
-}
-
 #printer-modal .paper {
-    min-width: 640px;
-    min-height: 480px;
+    width: 70em;
+    height: 90ch;
+    overflow: auto;
     background-color: white;
     color: black;
+}
+
+#printer-modal .line {
     font-family: monospace;
+    white-space: pre;
 }

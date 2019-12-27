@@ -12,10 +12,8 @@
 import { allocMemPages, debug } from '../util';
 import { ROM, VIDEO_ROM } from '../roms/cards/videoterm';
 
-export default function Videoterm(io, slot, context) {
-    slot = slot || 3;
-
-    debug('Videx Videoterm card in slot', slot);
+export default function Videoterm(io, context) {
+    debug('Videx Videoterm');
 
     var LOC = {
         IOREG: 0x80,
