@@ -217,7 +217,7 @@ function doLoadLocal(drive, file) {
 }
 
 function doLoadLocalDisk(drive, file) {
-    MicroModal.show('load-modal');
+    MicroModal.show('loading-modal');
     var fileReader = new FileReader();
     fileReader.onload = function() {
         var parts = file.name.split('.');
@@ -225,7 +225,7 @@ function doLoadLocalDisk(drive, file) {
         var name = parts.join('.');
         if (_disk2.setBinary(drive, name, ext, this.result)) {
             driveLights.label(drive, name);
-            MicroModal.close('load-modal');
+            MicroModal.close('loading-modal');
             initGamepad();
         }
     };

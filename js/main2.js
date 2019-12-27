@@ -26,7 +26,6 @@ export * from './ui/apple2';
 
 var prefs = new Prefs();
 var romVersion = prefs.readPref('computer_type2');
-var multiScreen = false;
 var rom;
 var characterRom = apple2_charset;
 
@@ -55,6 +54,7 @@ default:
 
 var options = {
     screen: [],
+    multiScreen: false,
     rom: rom,
     characterRom: characterRom,
     e: false,
@@ -70,12 +70,12 @@ var canvas4 = document.getElementById('screen4');
 
 options.screen[0] = canvas1.getContext('2d');
 if (canvas4) {
-    multiScreen = true;
+    options.multiScreen = true;
     options.screen[1] = canvas2.getContext('2d');
     options.screen[2] = canvas3.getContext('2d');
     options.screen[3] = canvas4.getContext('2d');
 } else if (canvas2) {
-    multiScreen = true;
+    options.multiScreen = true;
     options.screen[1] = options.screen[0];
     options.screen[2] = canvas2.getContext('2d');
     options.screen[3] = options.screen[2];
@@ -88,9 +88,6 @@ if (canvas4) {
 var apple2 = new Apple2(options);
 var cpu = apple2.getCPU();
 var io = apple2.getIO();
-var vm = apple2.getVideoModes();
-
-vm.multiScreen(multiScreen);
 
 var printer = new Printer('#printer-modal .paper');
 

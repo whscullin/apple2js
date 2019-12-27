@@ -21,19 +21,16 @@ export function Apple2(options) {
     var MAX_TRACE = 256;
     var trace = [];
 
-    var multiScreen = false;
-
     var runTimer = null;
-    var cpu = new CPU6502({ '65c02': options.enhanced });
+    var cpu = new CPU6502({ '65C02': options.enhanced });
 
     var gr = new LoresPage(1, options.characterRom, options.e, options.screen[0]);
     var gr2 = new LoresPage(2, options.characterRom, options.e, options.screen[1]);
     var hgr = new HiresPage(1, options.screen[2]);
     var hgr2 = new HiresPage(2, options.screen[3]);
-    var cardBlit = null;
 
-    var vm = new VideoModes(gr, hgr, gr2, hgr2, false);
-    vm.multiScreen(multiScreen);
+    var vm = new VideoModes(gr, hgr, gr2, hgr2, options.e);
+    vm.multiScreen(options.multiScreen);
 
     var io = new Apple2IO(cpu, vm);
 
@@ -96,12 +93,10 @@ export function Apple2(options) {
                 cpu.stepCycles(step);
             }
             if (io.annunciator(0)) {
-                if (multiScreen) {
+                if (options.multiScreen) {
                     vm.blit();
                 }
-                if (cardBlit && cardBlit()) {
-                    stats.renderedFrames++;
-                }
+                io.blit();
             } else {
                 if (vm.blit()) {
                     stats.renderedFrames++;
