@@ -13,6 +13,8 @@ import ApplesoftCompiler from '../applesoft/compiler';
 import { debug, gup, hup } from '../util';
 import Prefs from '../prefs';
 
+var paused = false;
+
 var focused = false;
 var startTime = Date.now();
 var lastCycles = 0;
@@ -142,8 +144,31 @@ export function handleDrop(drive, event) {
     }
 }
 
-export function loadAjax(drive, url) {
+function loadingStart () {
+    var meter = document.querySelector('#loading-modal .meter');
+    meter.style.display = 'none';
     MicroModal.show('loading-modal');
+}
+
+function loadingProgress (current, total) {
+    if (total) {
+        var meter = document.querySelector('#loading-modal .meter');
+        var progress = document.querySelector('#loading-modal .progress');
+        meter.style.display = 'block';
+        progress.style.width = current / total * meter.clientWidth + 'px';
+    }
+}
+
+function loadingStop () {
+    MicroModal.close('loading-modal');
+
+    if (!paused) {
+        _apple2.run();
+    }
+}
+
+export function loadAjax(drive, url) {
+    loadingStart();
 
     fetch(url).then(function(response) {
         if (response.ok) {
@@ -158,9 +183,9 @@ export function loadAjax(drive, url) {
             loadDisk(drive, data);
         }
         initGamepad(data.gamepad);
-        MicroModal.close('loading-modal');
+        loadingStop();
     }).catch(function(error) {
-        MicroModal.close('loading-modal');
+        loadingStop();
         openAlert(error.message);
     });
 }
@@ -228,7 +253,7 @@ function doLoadLocal(drive, file) {
 }
 
 function doLoadLocalDisk(drive, file) {
-    MicroModal.show('loading-modal');
+    loadingStart();
     var fileReader = new FileReader();
     fileReader.onload = function() {
         var parts = file.name.split('.');
@@ -245,19 +270,45 @@ function doLoadLocalDisk(drive, file) {
                 initGamepad();
             }
         }
-        MicroModal.close('loading-modal');
+        loadingStop();
     };
     fileReader.readAsArrayBuffer(file);
 }
 
 export function doLoadHTTP(drive, _url) {
-    if (!_url) { MicroModal.close('http-modal'); }
-    MicroModal.show('loading-modal');
+    if (!_url) {
+        MicroModal.close('http-modal');
+    }
+
+    loadingStart();
     var url = _url || document.querySelector('#http_url').value;
     if (url) {
         fetch(url).then(function(response) {
             if (response.ok) {
-                return response.arrayBuffer();
+                var reader = response.body.getReader();
+                var received = 0;
+                var chunks = [];
+                var contentLength = parseInt(response.headers.get('content-length'), 10);
+
+                return reader.read().then(function readChunk(result) {
+                    if (result.done) {
+                        var data = new Uint8Array(received);
+                        var offset = 0;
+                        for (var idx = 0; idx < chunks.length; idx++) {
+                            data.set(chunks[idx], offset);
+                            offset += chunks[idx].length;
+                        }
+                        return data.buffer;
+                    }
+
+                    received += result.value.length;
+                    if (contentLength) {
+                        loadingProgress(received, contentLength);
+                    }
+                    chunks.push(result.value);
+
+                    return reader.read().then(readChunk);
+                });
             } else {
                 throw new Error('Error loading: ' + response.statusText);
             }
@@ -278,9 +329,9 @@ export function doLoadHTTP(drive, _url) {
                     initGamepad();
                 }
             }
-            MicroModal.close('loading-modal');
+            loadingStop();
         }).catch(function(error) {
-            MicroModal.close('loading-modal');
+            loadingStop();
             openAlert(error.message);
         });
     }
@@ -680,8 +731,6 @@ function _mousemove(evt) {
     io.paddle(1, flipY ? 1 - y : y);
 }
 
-var paused = false;
-
 export function pauseRun() {
     var label = document.querySelector('#pause-run i');
     if (paused) {
@@ -776,6 +825,10 @@ export function initUI(apple2, disk2, cffa, e) {
         });
     }
 
+    if (navigator.standalone) {
+        document.body.classList.add('standalone');
+    }
+
     cpu.reset();
     setInterval(updateKHz, 1000);
     updateSound();
@@ -787,12 +840,9 @@ export function initUI(apple2, disk2, cffa, e) {
 
     var hash = gup('disk') || hup();
     if (hash) {
+        _apple2.stop();
         processHash(hash);
+    } else {
+        _apple2.run();
     }
-
-    if (navigator.standalone) {
-        document.body.classList.add('standalone');
-    }
-
-    _apple2.run();
 }
