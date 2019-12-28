@@ -22,6 +22,7 @@ export function Apple2(options) {
     var trace = [];
 
     var runTimer = null;
+    var runAnimationFrame = null;
     var cpu = new CPU6502({ '65C02': options.enhanced });
 
     var gr = new LoresPage(1, options.characterRom, options.e, options.screen[0]);
@@ -60,9 +61,15 @@ export function Apple2(options) {
         window.webkitRequestAnimationFrame ||
         window.msRequestAnimationFrame;
 
+    var _cancelAnimationFrame =
+        window.cancelAnimationFrame ||
+        window.mozCancelAnimationFrame ||
+        window.webkitCancelAnimationFrame ||
+        window.msCancelAnimationFrame;
+
     function run() {
-        if (runTimer) {
-            clearInterval(runTimer);
+        if (runTimer || runAnimationFrame) {
+            return; // already running
         }
 
         var interval = 30;
@@ -109,7 +116,7 @@ export function Apple2(options) {
             options.tick();
 
             if (!paused && _requestAnimationFrame) {
-                _requestAnimationFrame(runFn);
+                runAnimationFrame = _requestAnimationFrame(runFn);
             }
         };
         if (_requestAnimationFrame) {
@@ -123,7 +130,11 @@ export function Apple2(options) {
         if (runTimer) {
             clearInterval(runTimer);
         }
+        if (runAnimationFrame) {
+            _cancelAnimationFrame(runAnimationFrame);
+        }
         runTimer = null;
+        runAnimationFrame = null;
     }
 
     function saveState() {

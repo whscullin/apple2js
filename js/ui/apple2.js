@@ -651,11 +651,11 @@ var paused = false;
 export function pauseRun() {
     var label = document.querySelector('#pause-run i');
     if (paused) {
-        cpu.run();
+        _apple2.run();
         label.classList.remove('fa-play');
         label.classList.add('fa-pause');
     } else {
-        cpu.stop();
+        _apple2.stop();
         label.classList.remove('fa-pause');
         label.classList.add('fa-play');
     }
