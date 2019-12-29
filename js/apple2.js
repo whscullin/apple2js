@@ -35,9 +35,10 @@ export function Apple2(options) {
     vm.enhanced(options.enhanced);
 
     var io = new Apple2IO(cpu, vm);
+    var mmu = null;
 
     if (options.e) {
-        var mmu = new MMU(cpu, vm, gr, gr2, hgr, hgr2, io, options.rom);
+        mmu = new MMU(cpu, vm, gr, gr2, hgr, hgr2, io, options.rom);
         cpu.addPageHandler(mmu);
     } else {
         var ram1 = new RAM(0x00, 0x03),
@@ -99,6 +100,9 @@ export function Apple2(options) {
                 });
             } else {
                 cpu.stepCycles(step);
+            }
+            if (mmu) {
+                mmu.resetVB();
             }
             if (io.annunciator(0)) {
                 if (options.multiScreen) {
