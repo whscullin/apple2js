@@ -17,6 +17,7 @@ var focused = false;
 var startTime = Date.now();
 var lastCycles = 0;
 var lastFrames = 0;
+var lastRenderedFrames = 0;
 
 var hashtag;
 
@@ -267,31 +268,44 @@ function openManage() {
 }
 
 var prefs = new Prefs();
-var showFPS = false;
+var showStats = 0;
 
 export function updateKHz() {
     var now = Date.now();
     var ms = now - startTime;
     var cycles = cpu.cycles();
     var delta;
+    var fps;
+    var khz;
 
-    if (showFPS) {
-        delta = stats.renderedFrames - lastFrames;
-        var fps = parseInt(delta/(ms/1000), 10);
-        document.querySelector('#khz').innerText = fps + 'fps';
-    } else {
+    switch (showStats) {
+    case 0: {
         delta = cycles - lastCycles;
-        var khz = parseInt(delta/ms);
-        document.querySelector('#khz').innerText = khz + 'KHz';
+        khz = parseInt(delta/ms);
+        document.querySelector('#khz').innerText = khz + ' kHz';
+        break;
+    }
+    case 1: {
+        delta = stats.renderedFrames - lastRenderedFrames;
+        fps = parseInt(delta/(ms/1000), 10);
+        document.querySelector('#khz').innerText = fps + ' rps';
+        break;
+    }
+    default: {
+        delta = stats.frames - lastFrames;
+        fps = parseInt(delta/(ms/1000), 10);
+        document.querySelector('#khz').innerText = fps + ' fps';
+    }
     }
 
     startTime = now;
     lastCycles = cycles;
-    lastFrames = stats.renderedFrames;
+    lastRenderedFrames = stats.renderedFrames;
+    lastFrames = stats.frames;
 }
 
 export function toggleShowFPS() {
-    showFPS = !showFPS;
+    showStats = ++showStats % 3;
 }
 
 export function updateSound() {

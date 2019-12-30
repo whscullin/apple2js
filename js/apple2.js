@@ -9,6 +9,7 @@ import SYMBOLS from './symbols';
 
 export function Apple2(options) {
     var stats = {
+        frames: 0,
         renderedFrames: 0
     };
 
@@ -115,6 +116,7 @@ export function Apple2(options) {
                     stats.renderedFrames++;
                 }
             }
+            stats.frames++;
             io.tick();
             options.tick();
 
