@@ -659,7 +659,7 @@ export default function DiskII(io, callbacks, sectors = 16)
                     data[idx++] = cur.tracks[t];
                 } else {
                     for (var s = 0; s < 0x10; s++) {
-                        var sector = readSector(cur, t);
+                        var sector = readSector(cur, t, s);
                         for (var b = 0; b < 256; b++) {
                             data[idx++] = sector[b];
                         }
@@ -679,7 +679,7 @@ export default function DiskII(io, callbacks, sectors = 16)
                     data += base64_encode(cur.tracks[t]);
                 } else {
                     for (var s = 0; s < 0x10; s++) {
-                        data += base64_encode(readSector(cur, t));
+                        data += base64_encode(readSector(cur, t, s));
                     }
                 }
             }
