@@ -390,7 +390,7 @@ export function jsonEncode(cur, pretty) {
             data[t] = base64_encode(cur.tracks[t]);
         } else {
             for (var s = 0; s < 0x10; s++) {
-                data[t][s] = base64_encode(readSector(cur, t));
+                data[t][s] = base64_encode(readSector(cur, t, s));
             }
         }
     }
