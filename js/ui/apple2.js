@@ -638,6 +638,8 @@ function _keydown(evt) {
         _apple2.restoreState();
     } else if (evt.keyCode == 16) { // Shift
         keyboard.shiftKey(true);
+    } else if (evt.keyCode == 20) { // Caps lock
+        keyboard.capslockKey();
     } else if (evt.keyCode == 17) { // Control
         keyboard.controlKey(true);
     } else if (evt.keyCode == 91 || evt.keyCode == 93) { // Command
