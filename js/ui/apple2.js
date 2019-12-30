@@ -224,6 +224,7 @@ function doLoadLocalDisk(drive, file) {
         if (_disk2.setBinary(drive, name, ext, this.result)) {
             driveLights.label(drive, name);
             MicroModal.close('loading-modal');
+            focused = false;
             initGamepad();
         }
     };
@@ -715,6 +716,7 @@ export function initUI(apple2, disk2, e) {
 
     document.querySelectorAll('input,textarea').forEach(function(input) {
         input.addEventListener('input', function() { focused = true; });
+        input.addEventListener('focus', function() { focused = true; });
         input.addEventListener('blur', function() { focused = false; });
     });
 
