@@ -262,11 +262,13 @@ function doLoadLocalDisk(drive, file) {
         if (this.result.byteLength >= 800 * 1024) {
             if (_cffa.setBinary(drive, name, ext, this.result)) {
                 driveLights.label(drive, name);
+                focused = false;
                 initGamepad();
             }
         } else {
             if (_disk2.setBinary(drive, name, ext, this.result)) {
                 driveLights.label(drive, name);
+                focused = false;
                 initGamepad();
             }
         }
@@ -820,6 +822,7 @@ export function initUI(apple2, disk2, cffa, e) {
 
     document.querySelectorAll('input,textarea').forEach(function(input) {
         input.addEventListener('input', function() { focused = true; });
+        input.addEventListener('focus', function() { focused = true; });
         input.addEventListener('blur', function() { focused = false; });
     });
 
