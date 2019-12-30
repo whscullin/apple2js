@@ -494,7 +494,7 @@ function updateLocalStorage() {
         document.querySelector('#manage-modal-content').innerHTML =
             '<span class="local_save">' +
             name +
-            ' <a href="#" onclick="doDelete(\'' +
+            ' <a href="#" onclick="Apple2.doDelete(\'' +
             name +
             '\')">Delete</a><br /></span>';
     });
