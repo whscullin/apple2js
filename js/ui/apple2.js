@@ -558,9 +558,9 @@ function _keydown(evt) {
         keyboard.commandKey(true);
     } else if (evt.keyCode == 18) { // Alt
         if (evt.location == 1) {
-            keyboard.commandKey(true);
-        } else {
             keyboard.optionKey(true);
+        } else {
+            keyboard.commandKey(true);
         }
     }
 }
@@ -577,9 +577,9 @@ function _keyup(evt) {
         keyboard.commandKey(false);
     } else if (evt.keyCode == 18) { // Alt
         if (evt.location == 1) {
-            keyboard.commandKey(false);
-        } else {
             keyboard.optionKey(false);
+        } else {
+            keyboard.commandKey(false);
         }
     }
 }
