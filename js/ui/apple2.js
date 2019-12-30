@@ -13,8 +13,6 @@ import ApplesoftCompiler from '../applesoft/compiler';
 import { debug, gup, hup } from '../util';
 import Prefs from '../prefs';
 
-var kHz = 1023;
-
 var focused = false;
 var startTime = Date.now();
 var lastCycles = 0;
@@ -149,8 +147,8 @@ export function loadAjax(drive, url) {
         initGamepad(data.gamepad);
         MicroModal.close('loading-modal');
     }).catch(function(error) {
-        window.alert(error.message);
         MicroModal.close('loading-modal');
+        window.alert(error.message);
     });
 }
 
@@ -494,7 +492,7 @@ function processHash(hash) {
             } else {
                 doLoadHTTP(idx + 1, file);
             }
-        } else {
+        } else if (file) {
             loadAjax(idx + 1, 'json/disks/' + file + '.json');
         }
     }
@@ -593,8 +591,8 @@ export function updateScreen() {
 
 export function updateCPU() {
     var accelerated = document.querySelector('#accelerator_toggle').checked;
-    kHz = accelerated ? 4092 : 1023;
-    io.updateHz(kHz * 1000);
+    var kHz = accelerated ? 4092 : 1023;
+    io.updateKHz(kHz);
 }
 
 export function updateUI() {

@@ -16,11 +16,11 @@ export default function Apple2IO(cpu, callbacks)
     var _slot = [];
     var _auxRom = null;
 
-    var _hz = 1023000;
+    var _khz = 1023;
     var _rate = 44000;
     var _sample_size = 4096;
 
-    var _cycles_per_sample = _hz / _rate;
+    var _cycles_per_sample;
 
     var _buffer = [];
     var _key = 0;
@@ -88,9 +88,14 @@ export default function Apple2IO(cpu, callbacks)
         PADDLE3:  0x67, // bit 7: status of pdl-3 timer (read)
         PDLTRIG:  0x70, // trigger paddles
         BANK:     0x73, // Back switched RAM card bank
+        ACCEL:    0x74, // CPU Speed control
         SETIOUDIS:0x7E, // Enable double hires
         CLRIOUDIS:0x7F  // Disable double hires
     };
+
+    function init() {
+        _calcSampleRate();
+    }
 
     function _debug() {
         // debug.apply(this, arguments);
@@ -110,6 +115,17 @@ export default function Apple2IO(cpu, callbacks)
             }
         }
     }
+
+    function _calcSampleRate() {
+        _cycles_per_sample = _khz * 1000 / _rate;
+    }
+
+    function _updateKHz(khz) {
+        _khz = khz;
+        _calcSampleRate();
+    }
+
+    init();
 
     function _access(off, val) {
         var result = 0;
@@ -271,6 +287,11 @@ export default function Apple2IO(cpu, callbacks)
         case LOC.PDLTRIG:
             _trigger = cpu.cycles();
             break;
+        case LOC.ACCEL:
+            if (val !== undefined) {
+                _updateKHz(val & 0x01 ? 1023 : 4096);
+            }
+            break;
         case LOC.RDDHIRES:
             if (callbacks.isDoubleHires) {
                 result = callbacks.isDoubleHires() ? 0x80 : 0x0;
@@ -353,7 +374,7 @@ export default function Apple2IO(cpu, callbacks)
 
             switch (page) {
             case 0xc0:
-                result = this.ioSwitch(off);
+                result = this.ioSwitch(off, undefined);
                 break;
             case 0xc1:
             case 0xc2:
@@ -448,14 +469,12 @@ export default function Apple2IO(cpu, callbacks)
             _paddle[p] = v;
         },
 
-        updateHz: function apple2io_updateHz(hz) {
-            _hz = hz;
-
-            _cycles_per_sample = _hz / _rate;
+        updateKHz: function apple2io_updateKHz(khz) {
+            _updateKHz(khz);
         },
 
-        getHz: function apple2io_updateHz() {
-            return _hz;
+        getKHz: function apple2io_updateKHz() {
+            return _khz;
         },
 
         setKeyBuffer: function apple2io_setKeyBuffer(buffer) {
@@ -474,7 +493,7 @@ export default function Apple2IO(cpu, callbacks)
 
         sampleRate: function sampleRate(rate) {
             _rate = rate;
-            _cycles_per_sample = _hz / _rate;
+            _calcSampleRate();
         },
 
         tick: function tick() {

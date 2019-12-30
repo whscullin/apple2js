@@ -203,12 +203,12 @@ export default function LanguageCard(io, rom) {
         ioSwitch: function(off, val) {
             return _access(off, val);
         },
-        read: function(page, off, dbg) {
+        read: function(page, off) {
             var result = 0;
             if (page < 0xe0) {
-                result = _read1.read(page, off, dbg);
+                result = _read1.read(page, off);
             } else {
-                result = _read2.read(page, off, dbg);
+                result = _read2.read(page, off);
             }
             return result;
         },

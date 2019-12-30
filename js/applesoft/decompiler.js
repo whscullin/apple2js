@@ -121,7 +121,7 @@ export default function ApplesoftDump(mem)
         var page = addr >> 8,
             off = addr & 0xff;
 
-        return _mem.read(page, off, true);
+        return _mem.read(page, off);
     }
 
     function readWord(addr) {
