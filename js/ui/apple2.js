@@ -531,13 +531,7 @@ function _keydown(evt) {
     } else if (evt.keyCode === 113) { // F2 - Full Screen
         var elem = document.getElementById('screen');
         if (evt.shiftKey) { // Full window, but not full screen
-            document.querySelector('#display').classList.toggle('zoomwindow');
-            document.querySelector('#display > div').classList.toggle('overscan');
-            document.querySelector('#display > div').classList.toggle('flexbox-centering');
-            document.querySelector('#screen').classList.toggle('maxhw');
-            document.querySelector('#header').classList.toggle('hidden');
-            document.querySelectorAll('.inset').forEach(function(el) { el.classList.toggle('hidden'); });
-            document.querySelector('#reset').classList.toggle('hidden');
+            document.body.classList.toggle('full-page');
         } else if (document.webkitCancelFullScreen) {
             if (document.webkitIsFullScreen) {
                 document.webkitCancelFullScreen();

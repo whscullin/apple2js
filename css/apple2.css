@@ -77,7 +77,11 @@ body {
     border-radius: 10px;
 }
 
-.zoomwindow {
+.full-page {
+    background: black;
+}
+
+.full-page #display {
     width: 100vw;
     height: 68.5714vw; /* 384px / 560px * 100% */
     max-height: 100vh;
@@ -94,26 +98,26 @@ body {
     margin: auto !important;
 }
 
-.maxhw {
-    width: 100%;
-    height: 100%;
-}
-
-.flexbox-centering {
+.full-page .overscan {
+    margin: initial;
+    padding: 0;
+    width: initial;
+    height: 384px;
+    border: 0;
+    border-radius: 0;
     height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
-    background: green;
 }
 
-.hidden {
-    display: none !important;
-}
-
-.fillparent {
+.full-page #screen {
     width: 100%;
     height: 100%;
+}
+
+.full-page #header, .full-page .inset, .full-page #reset {
+    display: none;
 }
 
 #power {
