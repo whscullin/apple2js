@@ -12,8 +12,6 @@ export function Apple2(options) {
         renderedFrames: 0
     };
 
-    var kHz = 1023;
-
     var paused = false;
 
     var DEBUG = false;
@@ -77,6 +75,7 @@ export function Apple2(options) {
 
         var now, last = Date.now();
         var runFn = function() {
+            var kHz = io.getKHz();
             now = Date.now();
 
             var step = (now - last) * kHz, stepMax = kHz * interval;

@@ -170,31 +170,36 @@ export default function CPU6502(options)
         return testNZ((a + 0xff) & 0xff);
     }
 
-    function readBytePC(dbg) {
-        var addr = (pc++) & 0xffff,
+    function readBytePC() {
+        var addr = pc,
             page = addr >> 8,
             off = addr & 0xff;
 
-        var result = readPages[page].read(page, off, dbg);
+        var result = readPages[page].read(page, off);
 
-        if (!dbg) {
-            cycles++;
-        }
+        pc = (pc + 1) & 0xffff;
+
+        cycles++;
 
         return result;
     }
 
-    function readByte(addr, dbg) {
+    function readByte(addr) {
         var page = addr >> 8,
             off = addr & 0xff;
 
-        var result = readPages[page].read(page, off, dbg);
+        var result = readPages[page].read(page, off);
 
-        if (!dbg) {
-            cycles++;
-        }
+        cycles++;
 
         return result;
+    }
+
+    function readByteDebug(addr) {
+        var page = addr >> 8,
+            off = addr & 0xff;
+
+        return readPages[page].read(page, off);
     }
 
     function writeByte(addr, val) {
@@ -206,19 +211,23 @@ export default function CPU6502(options)
         cycles++;
     }
 
-    function readWord(addr, dbg) {
-        return readByte(addr, dbg) | (readByte(addr + 1, dbg) << 8);
+    function readWord(addr) {
+        return readByte(addr) | (readByte(addr + 1) << 8);
     }
 
-    function readWordPC(dbg) {
-        return readBytePC(dbg) | (readBytePC(dbg) << 8);
+    function readWordDebug(addr) {
+        return readByteDebug(addr) | (readByteDebug(addr + 1) << 8);
     }
 
-    function readZPWord(addr, dbg) {
+    function readWordPC() {
+        return readBytePC() | (readBytePC() << 8);
+    }
+
+    function readZPWord(addr) {
         var lsb, msb;
 
-        lsb = readByte(addr & 0xff, dbg);
-        msb = readByte((addr + 1) & 0xff, dbg);
+        lsb = readByte(addr & 0xff);
+        msb = readByte((addr + 1) & 0xff);
 
         return (msb << 8) | lsb;
     }
@@ -1310,17 +1319,17 @@ export default function CPU6502(options)
         case modes.implied:
             break;
         case modes.immediate:
-            result = '#' + toHexOrSymbol(readByte(addr, true));
+            result = '#' + toHexOrSymbol(readByteDebug(addr));
             break;
         case modes.absolute:
-            result = '' + toHexOrSymbol(readWord(addr, true), 4);
+            result = '' + toHexOrSymbol(readWordDebug(addr), 4);
             break;
         case modes.zeroPage:
-            result = '' + toHexOrSymbol(readByte(addr, true));
+            result = '' + toHexOrSymbol(readByteDebug(addr));
             break;
         case modes.relative:
             {
-                off = readByte(addr, true);
+                off = readByteDebug(addr);
                 if (off > 127) {
                     off -= 256;
                 }
@@ -1329,38 +1338,38 @@ export default function CPU6502(options)
             }
             break;
         case modes.absoluteX:
-            result = '' + toHexOrSymbol(readWord(addr, true), 4) + ',X';
+            result = '' + toHexOrSymbol(readWordDebug(addr), 4) + ',X';
             break;
         case modes.absoluteY:
-            result = '' + toHexOrSymbol(readWord(addr, true), 4) + ',Y';
+            result = '' + toHexOrSymbol(readWordDebug(addr), 4) + ',Y';
             break;
         case modes.zeroPageX:
-            result = '' + toHexOrSymbol(readByte(addr, true)) + ',X';
+            result = '' + toHexOrSymbol(readByteDebug(addr)) + ',X';
             break;
         case modes.zeroPageY:
-            result = '' + toHexOrSymbol(readByte(addr, true)) + ',Y';
+            result = '' + toHexOrSymbol(readByteDebug(addr)) + ',Y';
             break;
         case modes.absoluteIndirect:
-            result = '(' + toHexOrSymbol(readWord(addr, true), 4) + ')';
+            result = '(' + toHexOrSymbol(readWordDebug(addr), 4) + ')';
             break;
         case modes.zeroPageXIndirect:
-            result = '(' + toHexOrSymbol(readByte(addr, true)) + ',X)';
+            result = '(' + toHexOrSymbol(readByteDebug(addr)) + ',X)';
             break;
         case modes.zeroPageIndirectY:
-            result = '(' + toHexOrSymbol(readByte(addr, true)) + '),Y';
+            result = '(' + toHexOrSymbol(readByteDebug(addr)) + '),Y';
             break;
         case modes.accumulator:
             result = 'A';
             break;
         case modes.zeroPageIndirect:
-            result = '(' + toHexOrSymbol(readByte(addr, true)) + ')';
+            result = '(' + toHexOrSymbol(readByteDebug(addr)) + ')';
             break;
         case modes.absoluteXIndirect:
-            result = '(' + toHexOrSymbol(readWord(addr, true), 4) + ',X)';
+            result = '(' + toHexOrSymbol(readWordDebug(addr), 4) + ',X)';
             break;
         case modes.zeroPage_relative:
-            val = readByte(addr, true);
-            off = readByte(addr + 1, true);
+            val = readByteDebug(addr);
+            off = readByteDebug(addr + 1);
             if (off > 127) {
                 off -= 256;
             }
@@ -1534,7 +1543,7 @@ export default function CPU6502(options)
                 for (idx = 0; idx < 16; idx++) {
                     result += toHex(page) + toHex(idx << 4) + ': ';
                     for (jdx = 0; jdx < 16; jdx++) {
-                        b = readByte(page * 256 + idx * 16 + jdx, true);
+                        b = readByteDebug(page * 256 + idx * 16 + jdx);
                         result += toHex(b) + ' ';
                     }
                     result += '        ';
@@ -1618,7 +1627,7 @@ export default function CPU6502(options)
         },
 
         read: function(page, off) {
-            return readPages[page].read(page, off, false);
+            return readPages[page].read(page, off);
         },
 
         write: function(page, off, val) {

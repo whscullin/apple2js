@@ -19,7 +19,7 @@ export default function Tape(io) {
 
     return {
         doLoadLocalTape: function(file, done) {
-            var kHz = io.getHz() / 1000;
+            var kHz = io.getKHz();
 
             // Audio Buffer Source
             var context;

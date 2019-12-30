@@ -153,7 +153,7 @@ export default function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
                 if (off in locs) {
                     result = _access(off);
                 } else {
-                    result = io.ioSwitch(off);
+                    result = io.ioSwitch(off, undefined);
                 }
                 return result;
             },
@@ -656,8 +656,8 @@ export default function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
             vm.reset();
             io.reset();
         },
-        read: function mmu_read(page, off, debug) {
-            return _readPages[page].read(page, off, debug);
+        read: function mmu_read(page, off) {
+            return _readPages[page].read(page, off);
         },
         write: function mmu_write(page, off, val) {
             _writePages[page].write(page, off, val);
