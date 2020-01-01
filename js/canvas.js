@@ -38,12 +38,12 @@ function dim(c) {
 }
 
 // hires colors
-var orangeCol = [0xff, 0x65, 0x00];
-var greenCol = [0x00, 0xff, 0x00];
-var blueCol = [0x09, 0x2a, 0xff];
-var violetCol = [0xc9, 0x39, 0xc7];
-var whiteCol = [0xff, 0xff, 0xff];
-var blackCol = [0x00, 0x00, 0x00];
+var orangeCol = [255, 106,  60];
+var greenCol =  [ 20, 245,  60];
+var blueCol =   [ 20, 207, 253];
+var violetCol = [255,  68, 253];
+var whiteCol =  [255, 255, 255];
+var blackCol =  [  0,   0,   0];
 
 /****************************************************************************
  *
@@ -73,22 +73,22 @@ export function LoresPage(page, charset, e, context)
     var _green = [0x00,0xff,0x80];
 
     var _colors = [
-        [0x00,0x00,0x00],  // black
-        [0xdd,0x00,0x33],  // 0x1 deep red
-        [0x00,0x00,0x99],  // 0x2 dark blue
-        [0xdd,0x00,0xdd],  // 0x3 purple
-        [0x00,0x77,0x00],  // 0x4 dark green
-        [0x55,0x55,0x55],  // 0x5 dark gray
-        [0x23,0x22,0xff],  // 0x6 medium blue
-        [0x66,0xaa,0xff],  // 0x7 light blue
-        [0x88,0x55,0x22],  // 0x8 brown
-        [0xff,0x66,0x00],  // 0x9 orange
-        [0xaa,0xaa,0xaa],  // 0xa light gray
-        [0xff,0x99,0x88],  // 0xb pink
-        [0x00,0xdd,0x00],  // 0xc green
-        [0xff,0xff,0x00],  // 0xd yellow
-        [0x00,0xff,0x99],  // 0xe aquamarine
-        [0xff,0xff,0xff]   // 0xf white
+        [  0,   0,   0], // 0x0 black
+        [227,  30,  96], // 0x1 deep red
+        [ 96,  78, 189], // 0x2 dark blue
+        [255,  68, 253], // 0x3 purple
+        [  0, 163,  96], // 0x4 dark green
+        [156, 156, 156], // 0x5 dark gray
+        [ 20, 207, 253], // 0x6 medium blue
+        [208, 195, 255], // 0x7 light blue
+        [ 96, 114,   3], // 0x8 brown
+        [255, 106,  60], // 0x9 orange
+        [156, 156, 156], // 0xa light gray
+        [255, 160, 208], // 0xb pink
+        [ 20, 245,  60], // 0xc green
+        [208, 221, 141], // 0xd yellow
+        [114, 255, 208], // 0xe aquamarine
+        [255, 255, 255], // 0xf white
     ];
 
     function _init() {
@@ -515,22 +515,22 @@ export function HiresPage(page, context)
     ];
 
     var dcolors = [
-        [0x00,0x00,0x00],  // black
-        [0xdd,0x00,0x33],  // 0x1 deep red
-        [0x00,0x00,0x99],  // 0x2 dark blue
-        [0xdd,0x00,0xdd],  // 0x3 purple
-        [0x00,0x77,0x00],  // 0x4 dark green
-        [0x55,0x55,0x55],  // 0x5 dark gray
-        [0x23,0x22,0xff],  // 0x6 medium blue
-        [0x66,0xaa,0xff],  // 0x7 light blue
-        [0x88,0x55,0x22],  // 0x8 brown
-        [0xff,0x66,0x00],  // 0x9 orange
-        [0xaa,0xaa,0xaa],  // 0xa light gray
-        [0xff,0x99,0x88],  // 0xb pink
-        [0x00,0xdd,0x00],  // 0xc green
-        [0xff,0xff,0x00],  // 0xd yellow
-        [0x00,0xff,0x99],  // 0xe aquamarine
-        [0xff,0xff,0xff]   // 0xf white
+        [  0,   0,   0], // 0x0 black
+        [227,  30,  96], // 0x1 deep red
+        [ 96,  78, 189], // 0x2 dark blue
+        [255,  68, 253], // 0x3 purple
+        [  0, 163,  96], // 0x4 dark green
+        [156, 156, 156], // 0x5 dark gray
+        [ 20, 207, 253], // 0x6 medium blue
+        [208, 195, 255], // 0x7 light blue
+        [ 96, 114,   3], // 0x8 brown
+        [255, 106,  60], // 0x9 orange
+        [156, 156, 156], // 0xa light gray
+        [255, 160, 208], // 0xb pink
+        [ 20, 245,  60], // 0xc green
+        [208, 221, 141], // 0xd yellow
+        [114, 255, 208], // 0xe aquamarine
+        [255, 255, 255], // 0xf white
     ];
 
     var _buffer = [];
@@ -670,9 +670,9 @@ export function HiresPage(page, context)
                 if (y < _dirty.top) { _dirty.top = y; }
                 y += 2;
                 if (y > _dirty.bottom) { _dirty.bottom = y; }
-                var x = col * 14;
+                var x = col * 14 - 2;
                 if (x < _dirty.left) { _dirty.left = x; }
-                x += 14;
+                x += 18;
                 if (x > _dirty.right) { _dirty.right = x; }
 
                 dy = rowa << 4 | rowb << 1;
