@@ -17,5 +17,25 @@ module.exports =
         compress: true,
         publicPath: '/dist/',
         watchContentBase: true
-    }
+    },
+    module: {
+        rules: [
+            {
+                test: /\.2mg$/i,
+                use: [
+                    {
+                        loader: 'file-loader',
+                    },
+                ],
+            },
+            {
+                test: /\.rom$/i,
+                use: [
+                    {
+                        loader: 'raw-loader',
+                    },
+                ],
+            },
+        ],
+    },
 };

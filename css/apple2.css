@@ -230,6 +230,19 @@ canvas {
     line-height: 14px;
 }
 
+#loading-modal .meter {
+    width: 200px;
+    height: 15px;
+    background-color: black;
+    border: 1px inset #888;
+}
+
+#loading-modal .progress {
+    position: absolute;
+    height: 15px;
+    background-color: #0f0;
+}
+
 .modal {
     display: none;
 }
@@ -608,4 +621,9 @@ button:focus {
 #printer-modal .line {
     font-family: monospace;
     white-space: pre;
+}
+
+#alert-modal-content {
+    min-width: 200px;
+    min-height: 50px;
 }

@@ -4,6 +4,7 @@ import { driveLights, initUI, updateUI } from './ui/apple2';
 import Printer from './ui/printer';
 
 import DiskII from './cards/disk2';
+import CFFA from './cards/cffa';
 import LanguageCard from './cards/langcard';
 import Parallel from './cards/parallel';
 import RAMFactor from './cards/ramfactor';
@@ -97,8 +98,9 @@ var videoTerm = new VideoTerm(io, options.screen[0]);
 var slinky = new RAMFactor(io, 1024 * 1024);
 var disk2 = new DiskII(io, driveLights);
 var clock = new Thunderclock(io);
+var cffa = new CFFA(io);
 
-initUI(apple2, disk2, false);
+initUI(apple2, disk2, cffa, false);
 
 io.setSlot(0, lc);
 io.setSlot(1, parallel);

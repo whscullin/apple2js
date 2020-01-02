@@ -51,9 +51,7 @@ export function bytify(ary) {
 }
 
 export function debug() {
-    if (typeof console != 'undefined' && 'log' in console) {
-        console.log.apply(console, arguments);
-    }
+    console.log.apply(console, arguments);
 }
 
 export function toHex(v, n) {
@@ -111,4 +109,13 @@ export function keys(obj) {
 
 export function each(obj, fn) {
     keys(obj).forEach(fn);
+}
+
+export function numToString(num) {
+    let result = '';
+    for (let idx = 0; idx < 4; idx++) {
+        result += String.fromCharCode(num & 0xff);
+        num >>= 8;
+    }
+    return result;
 }
