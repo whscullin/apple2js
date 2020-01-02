@@ -159,6 +159,7 @@ then
   * [6502.org](http://6502.org/)
   * The [comp.sys.apple2.programmer](http://www.faqs.org/faqs/apple2/programmerfaq/part1/) FAQ
   * [Understanding the Apple \]\[](https://archive.org/details/understanding_the_apple_ii) and [Understanding the Apple //e](https://archive.org/details/Understanding_the_Apple_IIe) by Jim Sather.
+  * [Apple II Colors](https://mrob.com/pub/xapple2/colors.html) by Robert Munafo.
 
 * And special thanks to:
 
