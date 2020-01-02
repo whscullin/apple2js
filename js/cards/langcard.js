@@ -44,40 +44,23 @@ export default function LanguageCard(io, rom) {
     }
 
     function _debug() {
-        /*eslint no-console: 0 */
-        // console.debug.apply(null, arguments);
+        // debug.apply(null, arguments);
     }
 
     _init();
 
     var LOC = {
-        // Status
-        BSRBANK2: 0x11,
-        BSRREADRAM: 0x12,
-
         // Bank 2
         READBSR2: 0x80,
         WRITEBSR2: 0x81,
         OFFBSR2: 0x82,
         READWRBSR2: 0x83,
 
-        // Shadow Bank 2
-        _READBSR2: 0x84,
-        _WRITEBSR2: 0x85,
-        _OFFBSR2: 0x86,
-        _READWRBSR2: 0x87,
-
         // Bank 1
         READBSR1: 0x88,
         WRITEBSR1: 0x89,
         OFFBSR1: 0x8a,
         READWRBSR1: 0x8b,
-
-        // Shadow Bank 1
-        _READBSR1: 0x8c,
-        _WRITEBSR1: 0x8d,
-        _OFFBSR1: 0x8e,
-        _READWRBSR1: 0x8f
     };
 
     function _updateBanks() {
@@ -101,9 +84,8 @@ export default function LanguageCard(io, rom) {
     function _access(off, val) {
         var readMode = val === undefined;
         var result = 0;
-        switch (off) {
+        switch (off & 0x8B) {
         case LOC.READBSR2: // 0xC080
-        case LOC._READBSR2: // 0xC084
             _readbsr = true;
             _writebsr = false;
             _bsr2 = true;
@@ -111,7 +93,6 @@ export default function LanguageCard(io, rom) {
             _debug('Bank 2 Read');
             break;
         case LOC.WRITEBSR2: // 0xC081
-        case LOC._WRITEBSR2: // 0xC085
             _readbsr = false;
             if (readMode) {
                 _writebsr = _prewrite;
@@ -121,7 +102,6 @@ export default function LanguageCard(io, rom) {
             _debug('Bank 2 Write');
             break;
         case LOC.OFFBSR2: // 0xC082
-        case LOC._OFFBSR2: // 0xC086
             _readbsr = false;
             _writebsr = false;
             _bsr2 = true;
@@ -129,7 +109,6 @@ export default function LanguageCard(io, rom) {
             _debug('Bank 2 Off');
             break;
         case LOC.READWRBSR2: // 0xC083
-        case LOC._READWRBSR2: // 0xC087
             _readbsr = true;
             if (readMode) {
                 _writebsr = _prewrite;
@@ -140,7 +119,6 @@ export default function LanguageCard(io, rom) {
             break;
 
         case LOC.READBSR1: // 0xC088
-        case LOC._READBSR1: // 0xC08C
             _readbsr = true;
             _writebsr = false;
             _bsr2 = false;
@@ -148,7 +126,6 @@ export default function LanguageCard(io, rom) {
             _debug('Bank 1 Read');
             break;
         case LOC.WRITEBSR1: // 0xC089
-        case LOC._WRITEBSR1: // 0xC08D
             _readbsr = false;
             if (readMode) {
                 _writebsr = _prewrite;
@@ -158,7 +135,6 @@ export default function LanguageCard(io, rom) {
             _debug('Bank 1 Write');
             break;
         case LOC.OFFBSR1: // 0xC08A
-        case LOC._OFFBSR1: // 0xC08E
             _readbsr = false;
             _writebsr = false;
             _bsr2 = false;
@@ -166,7 +142,6 @@ export default function LanguageCard(io, rom) {
             _debug('Bank 1 Off');
             break;
         case LOC.READWRBSR1: // 0xC08B
-        case LOC._READWRBSR1: // 0xC08F
             _readbsr = true;
             if (readMode) {
                 _writebsr = _prewrite;
@@ -174,15 +149,6 @@ export default function LanguageCard(io, rom) {
             _bsr2 = false;
             _prewrite = readMode;
             _debug('Bank 1 Read/Write');
-            break;
-
-        case LOC.BSRBANK2:
-            result = _bsr2 ? 0x80 : 0x00;
-            _debug('Bank 2 Read ' + _bsr2);
-            break;
-        case LOC.BSRREADRAM:
-            result = _readbsr ? 0x80 : 0x00;
-            _debug('Bank SW RAM Read ' + _readbsr);
             break;
         default:
             break;

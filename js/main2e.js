@@ -83,7 +83,7 @@ var slinky = new RAMFactor(io, 1024 * 1024);
 var disk2 = new DiskII(io, driveLights);
 var clock = new Thunderclock(io);
 
-initUI(apple2, disk2, enhanced);
+initUI(apple2, disk2, options.e);
 
 io.setSlot(1, parallel);
 io.setSlot(2, slinky);

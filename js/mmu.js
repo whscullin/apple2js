@@ -128,8 +128,7 @@ export default function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
     }
 
     function _debug() {
-        /*eslint no-console: 0*/
-        // console.debug.apply(this, arguments);
+        // debug.apply(this, arguments);
     }
 
     function Switches() {
@@ -411,6 +410,7 @@ export default function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
             if (val !== undefined) {
                 _80store = false;
                 _debug('80 Store Off');
+                vm.page(_page2 ? 2 : 1);
             } else {
                 // Chain to io for keyboard
                 result = io.ioSwitch(off, val);

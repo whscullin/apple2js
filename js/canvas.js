@@ -181,14 +181,13 @@ export function LoresPage(page, charset, e, context)
         },
         _end: function() { return (0x04 * _page) + 0x03; },
         _read: function(page, off, bank) {
-            var addr = (page << 8) | off,
-                base = addr - 0x400 * _page;
+            var addr = (page << 8) | off, base = addr & 0x3FF;
             return _buffer[bank][base];
         },
 
         _write: function(page, off, val, bank) {
             var addr = (page << 8) | off,
-                base = addr - 0x400 * _page,
+                base = addr & 0x3FF,
                 fore, back;
 
             if (_buffer[bank][base] == val && !_refreshing) {
@@ -629,17 +628,13 @@ export function HiresPage(page, context)
         _end: function() { return (0x020 * _page) + 0x1f; },
 
         _read: function(page, off, bank) {
-            var addr = (page << 8) | off, base = addr - 0x2000 * _page;
+            var addr = (page << 8) | off, base = addr & 0x1FFF;
             return _buffer[bank][base];
         },
 
         _write: function(page, off, val, bank) {
-            var addr = (page << 8) | off, base = addr - 0x2000 * _page,
+            var addr = (page << 8) | off, base = addr & 0x1FFF,
                 idx, jdx;
-
-            if (addr < (0x2000 * _page) || addr >= (0x2000 * _page + 0x2000)) {
-                return;
-            }
 
             if (_buffer[bank][base] == val && !_refreshing) {
                 return;
