@@ -225,6 +225,7 @@ function doLoadLocalDisk(drive, file) {
         if (_disk2.setBinary(drive, name, ext, this.result)) {
             driveLights.label(drive, name);
             MicroModal.close('loading-modal');
+            focused = false;
             initGamepad();
         }
     };
@@ -413,7 +414,7 @@ function updateLocalStorage() {
         document.querySelector('#manage-modal-content').innerHTML =
             '<span class="local_save">' +
             name +
-            ' <a href="#" onclick="doDelete(\'' +
+            ' <a href="#" onclick="Apple2.doDelete(\'' +
             name +
             '\')">Delete</a><br /></span>';
     });
@@ -557,15 +558,17 @@ function _keydown(evt) {
         _apple2.restoreState();
     } else if (evt.keyCode == 16) { // Shift
         keyboard.shiftKey(true);
+    } else if (evt.keyCode == 20) { // Caps lock
+        keyboard.capslockKey();
     } else if (evt.keyCode == 17) { // Control
         keyboard.controlKey(true);
     } else if (evt.keyCode == 91 || evt.keyCode == 93) { // Command
         keyboard.commandKey(true);
     } else if (evt.keyCode == 18) { // Alt
         if (evt.location == 1) {
-            keyboard.commandKey(true);
-        } else {
             keyboard.optionKey(true);
+        } else {
+            keyboard.commandKey(true);
         }
     }
 }
@@ -582,9 +585,9 @@ function _keyup(evt) {
         keyboard.commandKey(false);
     } else if (evt.keyCode == 18) { // Alt
         if (evt.location == 1) {
-            keyboard.commandKey(false);
-        } else {
             keyboard.optionKey(false);
+        } else {
+            keyboard.commandKey(false);
         }
     }
 }
@@ -723,6 +726,7 @@ export function initUI(apple2, disk2, e) {
 
     document.querySelectorAll('input,textarea').forEach(function(input) {
         input.addEventListener('input', function() { focused = true; });
+        input.addEventListener('focus', function() { focused = true; });
         input.addEventListener('blur', function() { focused = false; });
     });
 

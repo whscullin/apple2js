@@ -26,6 +26,25 @@ for (const fileName of dir.sort()) {
     }
 }
 
+index.sort((x,y) => {
+  const xc = x.category.toLowerCase();
+  const yc = y.category.toLowerCase();
+  const xn = x.name.toLowerCase();
+  const yn = y.name.toLowerCase();
+
+  if (xc < yc) {
+    return -1;
+  } else if (xc > yc) {
+    return 1;
+  } else if (xn < yn) {
+    return -1;
+  } else if (xn > yn) {
+    return 1;
+  } else {
+    return 0;
+  }
+});
+
 fs.writeFileSync(
     path.resolve(diskPath, 'index.js'),
     `disk_index = ${JSON.stringify(index, null, 2)};`
