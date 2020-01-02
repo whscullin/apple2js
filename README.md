@@ -149,6 +149,7 @@ then
   * [jQuery](https://jquery.com) and [jQuery UI](https://jqueryui.com)
   * Base64 Utilities via [KvZ](http://kevin.vanzonneveld.net/)
   * LED graphics from [Modern Life](http://modernl.com/).
+  * [CFFA2 Firmware](http://dreher.net/?s=projects/CFforAppleII&c=projects/CFforAppleII/downloads1.php) by Chris Schumann, Rich Dreher and Dave Lyons
 
 * I heavily referenced:
 
