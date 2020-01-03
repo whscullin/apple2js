@@ -27,8 +27,6 @@ var mixedDHRMode = false;
 var highColorHGRMode = false;
 var highColorTextMode = false;
 
-var scanlines = false;
-
 function dim(c) {
     return [
         c[0] * 0.75 & 0xff,
@@ -61,7 +59,7 @@ export function LoresPage(page, charset, e, context)
     var _imageData;
     var _buffer = [];
     var _refreshing = false;
-    var _greenMode = false;
+    var _monoMode = false;
     var _blink = false;
     var _dirty = {
         top: 385,
@@ -69,8 +67,6 @@ export function LoresPage(page, charset, e, context)
         left: 561,
         right: -1
     };
-
-    var _green = [0x00,0xff,0x80];
 
     var _colors = [
         [  0,   0,   0], // 0x0 black
@@ -107,15 +103,9 @@ export function LoresPage(page, charset, e, context)
         data[off + 1] = data[off + 5] = c1;
         data[off + 2] = data[off + 6] = c2;
         var nextOff = off + 560 * 4;
-        if (!scanlines) {
-            data[nextOff] = data[nextOff + 4] = c0;
-            data[nextOff + 1] = data[nextOff + 5] = c1;
-            data[nextOff + 2] = data[nextOff + 6] = c2;
-        } else {
-            data[nextOff] = data[nextOff + 4] = c0 >> 1;
-            data[nextOff + 1] = data[nextOff + 5] = c1 >> 1;
-            data[nextOff + 2] = data[nextOff + 6] = c2 >> 1;
-        }
+        data[nextOff] = data[nextOff + 4] = c0;
+        data[nextOff + 1] = data[nextOff + 5] = c1;
+        data[nextOff + 2] = data[nextOff + 6] = c2;
     }
 
     function _drawHalfPixel(data, off, color) {
@@ -124,15 +114,9 @@ export function LoresPage(page, charset, e, context)
         data[off + 1] = c1;
         data[off + 2] = c2;
         var nextOff = off + 560 * 4;
-        if (!scanlines) {
-            data[nextOff] = c0;
-            data[nextOff + 1] = c1;
-            data[nextOff + 2] = c2;
-        } else {
-            data[nextOff] = c0 >> 1;
-            data[nextOff + 1] = c1 >> 1;
-            data[nextOff + 2] = c2 >> 1;
-        }
+        data[nextOff] = c0;
+        data[nextOff + 1] = c1;
+        data[nextOff + 2] = c2;
     }
 
     _init();
@@ -228,8 +212,8 @@ export function LoresPage(page, charset, e, context)
                         inverse = !((val & 0x80) || (val & 0x40) && _blink);
                     }
 
-                    fore = inverse ? blackCol : (_greenMode ? _green : whiteCol);
-                    back = inverse ? (_greenMode ? _green : whiteCol) : blackCol;
+                    fore = inverse ? blackCol : whiteCol;
+                    back = inverse ? whiteCol : blackCol;
 
                     if (_80colMode) {
                         if (!enhanced) {
@@ -278,7 +262,7 @@ export function LoresPage(page, charset, e, context)
                                 off += 546 * 4 + 560 * 4;
                             }
                         } else {
-                            var colorMode = mixedMode && !textMode && !_greenMode;
+                            var colorMode = mixedMode && !textMode && !_monoMode;
                             // var val0 = col > 0 ? _buffer[0][base - 1] : 0;
                             // var val2 = col < 39 ? _buffer[0][base + 1] : 0;
 
@@ -320,8 +304,8 @@ export function LoresPage(page, charset, e, context)
                     }
                     if (_80colMode && doubleHiresMode) {
                         off = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8 * 2) * 4;
-                        if (_greenMode) {
-                            fore = _green;
+                        if (_monoMode) {
+                            fore = whiteCol;
                             back = blackCol;
                             for (jdx = 0; jdx < 8; jdx++) {
                                 b = (jdx < 8) ? (val & 0x0f) : (val >> 4);
@@ -354,8 +338,8 @@ export function LoresPage(page, charset, e, context)
                     } else {
                         off = (col * 14 + row * 560 * 8 * 2) * 4;
 
-                        if (_greenMode) {
-                            fore = _green;
+                        if (_monoMode) {
+                            fore = whiteCol;
                             back = blackCol;
                             for (jdx = 0; jdx < 8; jdx++) {
                                 b = (jdx < 4) ? (val & 0x0f) : (val >> 4);
@@ -411,8 +395,8 @@ export function LoresPage(page, charset, e, context)
             }
             _refreshing = false;
         },
-        green: function(on) {
-            _greenMode = on;
+        mono: function(on) {
+            _monoMode = on;
             this.refresh();
         },
         blit: function(mixed) {
@@ -456,7 +440,7 @@ export function LoresPage(page, charset, e, context)
         getState: function() {
             return {
                 page: _page,
-                green: _greenMode,
+                mono: _monoMode,
                 buffer: [
                     base64_encode(_buffer[0]),
                     base64_encode(_buffer[1])
@@ -465,7 +449,7 @@ export function LoresPage(page, charset, e, context)
         },
         setState: function(state) {
             _page = state.page;
-            _greenMode = state.green;
+            _monoMode = state.mono;
             _buffer[0] = base64_decode(state.buffer[0]);
             _buffer[1] = base64_decode(state.buffer[1]);
 
@@ -535,8 +519,7 @@ export function HiresPage(page, context)
     var _buffer = [];
     var _refreshing = false;
 
-    var _greenMode = false;
-    var _green = [0x00, 0xff, 0x80];
+    var _monoMode = false;
 
     function _init() {
         var idx;
@@ -555,15 +538,9 @@ export function HiresPage(page, context)
         data[off + 1] = data[off + 5] = c1;
         data[off + 2] = data[off + 6] = c2;
         var nextOff = off + 560 * 4;
-        if (!scanlines) {
-            data[nextOff] = data[nextOff + 4] = c0;
-            data[nextOff + 1] = data[nextOff + 5] = c1;
-            data[nextOff + 2] = data[nextOff + 6] = c2;
-        } else {
-            data[nextOff] = data[nextOff + 4] = c0 >> 1;
-            data[nextOff + 1] = data[nextOff + 5] = c1 >> 1;
-            data[nextOff + 2] = data[nextOff + 6] = c2 >> 1;
-        }
+        data[nextOff] = data[nextOff + 4] = c0;
+        data[nextOff + 1] = data[nextOff + 5] = c1;
+        data[nextOff + 2] = data[nextOff + 6] = c2;
     }
 
     function _drawHalfPixel(data, off, color) {
@@ -571,17 +548,10 @@ export function HiresPage(page, context)
         data[off + 0] = c0;
         data[off + 1] = c1;
         data[off + 2] = c2;
-
         var nextOff = off + 560 * 4;
-        if (!scanlines) {
-            data[nextOff] = c0;
-            data[nextOff + 1] = c1;
-            data[nextOff + 2] = c2;
-        } else {
-            data[nextOff] = c0 >> 1;
-            data[nextOff + 1] = c1 >> 1;
-            data[nextOff + 2] = c2 >> 1;
-        }
+        data[nextOff] = c0;
+        data[nextOff + 1] = c1;
+        data[nextOff + 2] = c2;
     }
 
     _init();
@@ -722,9 +692,7 @@ export function HiresPage(page, context)
                     off = dx * 4 + dy * 280 * 4 * 2;
 
                     var monoColor = null;
-                    if (_greenMode) {
-                        monoColor = _green;
-                    } else if (monoDHRMode) {
+                    if (_monoMode || monoDHRMode) {
                         monoColor = whiteCol;
                     }
 
@@ -798,7 +766,7 @@ export function HiresPage(page, context)
 
                     off = dx * 4 + dy * 280 * 4 * 2;
 
-                    monoColor = _greenMode ? _green : null;
+                    monoColor = _monoMode ? whiteCol : null;
 
                     for (idx = 0; idx < 9; idx++, off += 8) {
                         val >>= 1;
@@ -853,8 +821,8 @@ export function HiresPage(page, context)
             }
             _refreshing = false;
         },
-        green: function(on) {
-            _greenMode = on;
+        mono: function(on) {
+            _monoMode = on;
             this.refresh();
         },
         blit: function(mixed) {
@@ -894,7 +862,7 @@ export function HiresPage(page, context)
         getState: function() {
             return {
                 page: _page,
-                green: _greenMode,
+                mono: _monoMode,
                 buffer: [
                     base64_encode(_buffer[0]),
                     base64_encode(_buffer[1])
@@ -903,7 +871,7 @@ export function HiresPage(page, context)
         },
         setState: function(state) {
             _page = state.page;
-            _greenMode = state.green;
+            _monoMode = state.mono;
             _buffer[0] = base64_decode(state.buffer[0]);
             _buffer[1] = base64_decode(state.buffer[1]);
 
@@ -1124,15 +1092,11 @@ export function VideoModes(gr, hgr, gr2, hgr2, e) {
             _hgrs[0].setState(state.hgrs[0]);
             _hgrs[1].setState(state.hgrs[1]);
         },
-        green: function(on) {
-            _grs[0].green(on);
-            _grs[1].green(on);
-            _hgrs[0].green(on);
-            _hgrs[1].green(on);
-        },
-        scanlines: function(on) {
-            scanlines = on;
-            _refresh();
+        mono: function(on) {
+            _grs[0].mono(on);
+            _grs[1].mono(on);
+            _hgrs[0].mono(on);
+            _hgrs[1].mono(on);
         }
     };
 }

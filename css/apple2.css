@@ -191,6 +191,21 @@ canvas {
   float: left;
 }
 
+.green {
+    filter: url('filters.svg#green');
+}
+
+.scanlines:after {
+    display: block;
+    background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 1px, #000 1px, #000 2px);
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
+
 #screen {
     cursor: crosshair;
     -moz-image-rendering: -moz-crisp-edges;

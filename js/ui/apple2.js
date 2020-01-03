@@ -672,8 +672,19 @@ export function updateScreen() {
     var green = document.querySelector('#green_screen').checked;
     var scanlines = document.querySelector('#show_scanlines').checked;
 
-    vm.green(green);
-    vm.scanlines(scanlines);
+    var screen = document.querySelector('#screen');
+    var overscan = document.querySelector('.overscan');
+    if (scanlines) {
+        overscan.classList.add('scanlines');
+    } else {
+        overscan.classList.remove('scanlines');
+    }
+    if (green) {
+        screen.classList.add('green');
+    } else {
+        screen.classList.remove('green');
+    }
+    vm.mono(green);
 }
 
 export function updateCPU() {
@@ -781,7 +792,12 @@ export function initUI(apple2, disk2, cffa, e) {
 
     window.addEventListener('keydown', _keydown);
     window.addEventListener('keyup', _keyup);
-    window.addEventListener('mousedown', function() { audio.autoStart(); });
+
+    window.addEventListener('keydown', audio.autoStart);
+    if (window.ontouchstart !== undefined) {
+        window.addEventListener('touchstart', audio.autoStart);
+    }
+    window.addEventListener('mousedown', audio.autoStart);
 
     document.querySelectorAll('canvas').forEach(function(canvas) {
         canvas.addEventListener('mousedown', function(evt) {
