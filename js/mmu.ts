@@ -172,9 +172,9 @@ export interface MMUState {
 }
 
 export default class MMU implements Memory, Restorable<MMUState> {
-    private _readPages = new Array(0x100);
-    private _writePages = new Array(0x100);
-    private _pages = new Array(0x100);
+    private _readPages = new Array<Memory>(0x100);
+    private _writePages = new Array<Memory>(0x100);
+    private _pages = new Array<Memory[]>(0x100);
 
     // Language Card RAM Softswitches
     private _bank1: boolean;
@@ -835,6 +835,10 @@ export default class MMU implements Memory, Restorable<MMUState> {
 
     public write(page: byte, off: byte, val: byte) {
         this._writePages[page].write(page, off, val);
+    }
+
+    public writeBank(bank: number,page: byte, off: byte, val: byte) {
+        this._pages[page][bank].write(page, off, val);
     }
 
     public resetVB() {

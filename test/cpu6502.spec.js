@@ -178,7 +178,7 @@ function testCode(code, steps, setupState, expectedState) {
     cpu.addPageHandler(program);
 
     cpu.setState(initialState);
-    cpu.stepDebug(steps);
+    cpu.stepN(steps);
     expectState(initialState, finalState);
 }
 

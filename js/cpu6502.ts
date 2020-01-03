@@ -76,6 +76,16 @@ const sizes: Modes = {
 /** Status register flag numbers. */
 type flag = 0x80 | 0x40 | 0x20 | 0x10 | 0x08 | 0x04 | 0x02 | 0x01;
 
+export type DebugInfo = [
+    pc: byte,
+    ar: byte,
+    xr: byte,
+    yr: byte,
+    sr: byte,
+    sp: byte,
+    cmd: byte[],
+]
+
 /** Flags to status byte mask. */
 const flags: { [key: string]: flag } = {
     N: 0x80, // Negative
@@ -292,10 +302,6 @@ export default class CPU6502 {
 
     private readWord(addr: word): word {
         return this.readByte(addr) | (this.readByte(addr + 1) << 8);
-    }
-
-    private readWordDebug(addr: word): word {
-        return this.readByteDebug(addr) | (this.readByteDebug(addr + 1) << 8);
     }
 
     private readWordPC(): word {
@@ -991,77 +997,94 @@ export default class CPU6502 {
         return unk;
     }
 
-    private dumpArgs(addr: word, m: Mode, symbols: symbols) {
-        function toHexOrSymbol(v: word, n?: number) {
+    private dumpRawOp(parts: byte[]) {
+        const result = new Array(4);
+        for (let idx = 0; idx < 4; idx++) {
+            if (idx < parts.length) {
+                result[idx] = toHex(parts[idx]);
+            } else {
+                result[idx] = '  ';
+            }
+        }
+        return result.join(' ');
+    }
+
+    private dumpOp(pc: word, parts: byte[], symbols: symbols) {
+        const op = this.opary[parts[0]];
+        const lsb = parts[1];
+        const msb = parts[2];
+        const addr = (msb << 8) | lsb;
+        let val;
+        let off;
+        const toHexOrSymbol = (v: word, n?: number) => {
             if (symbols && symbols[v]) {
                 return symbols[v];
             } else {
                 return '$' + toHex(v, n);
             }
-        }
+        };
 
-        let off, val;
-        let result = '';
-        switch (m) {
+        let result = op.name + ' ';
+        switch (op.mode) {
             case 'implied':
                 break;
             case 'immediate':
-                result = '#' + toHexOrSymbol(this.readByteDebug(addr));
+                result += '#' + toHexOrSymbol(lsb);
                 break;
             case 'absolute':
-                result = '' + toHexOrSymbol(this.readWordDebug(addr), 4);
+                result += '' + toHexOrSymbol(addr, 4);
                 break;
             case 'zeroPage':
-                result = '' + toHexOrSymbol(this.readByteDebug(addr));
+                result += '' + toHexOrSymbol(lsb);
                 break;
             case 'relative':
                 {
-                    let off = this.readByteDebug(addr);
+                    off = lsb;
                     if (off > 127) {
                         off -= 256;
                     }
-                    addr += off + 1;
-                    result = '' + toHexOrSymbol(addr, 4) + ' (' + off + ')';
+                    pc += off + 1;
+                    result += '' + toHexOrSymbol(pc, 4) + ' (' + off + ')';
                 }
                 break;
             case 'absoluteX':
-                result = '' + toHexOrSymbol(this.readWordDebug(addr), 4) + ',X';
+                result += '' + toHexOrSymbol(addr, 4)+ ',X';
                 break;
             case 'absoluteY':
-                result = '' + toHexOrSymbol(this.readWordDebug(addr), 4) + ',Y';
+                result += '' + toHexOrSymbol(addr, 4) + ',Y';
                 break;
             case 'zeroPageX':
-                result = '' + toHexOrSymbol(this.readByteDebug(addr)) + ',X';
+                result += '' + toHexOrSymbol(lsb) + ',X';
                 break;
             case 'zeroPageY':
-                result = '' + toHexOrSymbol(this.readByteDebug(addr)) + ',Y';
+                result += '' + toHexOrSymbol(lsb) + ',Y';
                 break;
             case 'absoluteIndirect':
-                result = '(' + toHexOrSymbol(this.readWordDebug(addr), 4) + ')';
+                result += '(' + toHexOrSymbol(addr, 4) + ')';
                 break;
             case 'zeroPageXIndirect':
-                result = '(' + toHexOrSymbol(this.readByteDebug(addr)) + ',X)';
+                result += '(' + toHexOrSymbol(lsb) + ',X)';
                 break;
             case 'zeroPageIndirectY':
-                result = '(' + toHexOrSymbol(this.readByteDebug(addr)) + '),Y';
+                result += '(' + toHexOrSymbol(lsb) + '),Y';
                 break;
             case 'accumulator':
-                result = 'A';
+                result += 'A';
                 break;
             case 'zeroPageIndirect':
-                result = '(' + toHexOrSymbol(this.readByteDebug(addr)) + ')';
+                result += '(' + toHexOrSymbol(lsb) + ')';
                 break;
             case 'absoluteXIndirect':
-                result = '(' + toHexOrSymbol(this.readWordDebug(addr), 4) + ',X)';
+                result += '(' + toHexOrSymbol(addr, 4) + ',X)';
                 break;
             case 'zeroPage_relative':
-                val = this.readByteDebug(addr);
-                off = this.readByteDebug(addr + 1);
+                val = lsb;
+                off = msb;
                 if (off > 127) {
                     off -= 256;
                 }
-                addr += off + 2;
-                result = '' + toHexOrSymbol(val) + ',' + toHexOrSymbol(addr, 4) + ' (' + off + ')';
+                pc += off + 2;
+                result += '' + toHexOrSymbol(val) + ',' + toHexOrSymbol(pc, 4) + ' (' + off + ')';
                 break;
             default:
                 break;
@@ -1080,7 +1103,7 @@ export default class CPU6502 {
         }
     }
 
-    public stepDebug(n: number, cb: callback) {
+    public stepN(n: number, cb: callback) {
         for (let idx = 0; idx < n; idx++) {
             this.sync = true;
             const op = this.opary[this.readBytePC()];
@@ -1173,36 +1196,82 @@ export default class CPU6502 {
         this.pc = pc;
     }
 
-    public dumpPC(pc: word | undefined, symbols: symbols) {
-        if (pc === undefined) {
-            pc = this.pc;
+    public getDebugInfo(): DebugInfo {
+        const b = this.readByteDebug(this.pc);
+        const op = this.opary[b];
+        const size = sizes[op.mode];
+        const cmd = new Array(size);
+        cmd[0] = b;
+        for (let idx = 1; idx < size; idx++) {
+            cmd[idx] = this.readByteDebug(this.pc + idx);
         }
-        const b = this.readByteDebug(pc),
-            op = this.opary[b],
-            size = sizes[op.mode];
-        let result = toHex(pc, 4) + '- ';
+
+        return [
+            this.pc,
+            this.ar,
+            this.xr,
+            this.yr,
+            this.sr,
+            this.sp,
+            cmd
+        ];
+    }
+
+    public printDebugInfo(info: DebugInfo, symbols: symbols) {
+        let symbol = '          ';
+        if (symbols && symbols[info[0]]) {
+            symbol = symbols[info[0]];
+            symbol +=  '          '.substring(symbol.length);
+        }
+
+        return [
+            toHex(info[0], 4),
+            '- ', symbol,
+            ' A=', toHex(info[1]),
+            ' X=', toHex(info[2]),
+            ' Y=', toHex(info[3]),
+            ' P=', toHex(info[4]),
+            ' S=', toHex(info[5]),
+            ' ',
+            ((info[4] & flags.N) ? 'N' : '-'),
+            ((info[4] & flags.V) ? 'V' : '-'),
+            '-',
+            ((info[4] & flags.B) ? 'B' : '-'),
+            ((info[4] & flags.D) ? 'D' : '-'),
+            ((info[4] & flags.I) ? 'I' : '-'),
+            ((info[4] & flags.Z) ? 'Z' : '-'),
+            ((info[4] & flags.C) ? 'C' : '-'),
+            ' ',
+            this.dumpRawOp(info[6]),
+            ' ',
+            this.dumpOp(info[0], info[6], symbols)
+        ].join('');
+    }
+
+    public dumpPC(_pc: word, symbols: symbols) {
+        if (_pc === undefined) {
+            _pc = this.pc;
+        }
+        const b = this.readByteDebug(_pc);
+        const op = this.opary[b];
+        const size = sizes[op.mode];
+        let result = toHex(_pc, 4) + '- ';
 
         if (symbols) {
-            if (symbols[pc]) {
-                result += symbols[pc] +
-                    '          '.substring(symbols[pc].length);
+            if (symbols[_pc]) {
+                result += symbols[_pc] +
+                    '          '.substring(symbols[_pc].length);
             } else {
                 result += '          ';
             }
         }
 
-        for (let idx = 0; idx < 4; idx++) {
-            if (idx < size) {
-                result += toHex(this.readByteDebug(pc + idx)) + ' ';
-            } else {
-                result += '   ';
-            }
+        const cmd = new Array(size);
+        for (let idx = 0; idx < size; idx++) {
+            cmd[idx] = this.readByteDebug(_pc + idx);
         }
 
-        if (op === undefined)
-            result += '??? (' + toHex(b) + ')';
-        else
-            result += op.name + ' ' + this.dumpArgs(pc + 1, op.mode, symbols);
+        result += this.dumpRawOp(cmd) + ' ' + this.dumpOp(_pc, cmd, symbols);
 
         return result;
     }

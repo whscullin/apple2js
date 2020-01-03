@@ -52,7 +52,7 @@ var options = {
     tick: updateUI
 };
 
-var apple2 = new Apple2(options);
+export var apple2 = new Apple2(options);
 var io = apple2.getIO();
 var cpu = apple2.getCPU();
 
