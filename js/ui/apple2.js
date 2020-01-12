@@ -811,6 +811,9 @@ export function initUI(apple2, disk2, cffa, e) {
                 io.buttonUp(evt.which == 1 ? 0 : 1);
             }
         });
+        canvas.addEventListener('contextmenu', function(evt) {
+            evt.preventDefault();
+        });
     });
 
     document.body.addEventListener('mousemove', _mousemove);
