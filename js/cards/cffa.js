@@ -143,8 +143,8 @@ export default function CFFA() {
 
         rom[SETTINGS.Max32MBPartitionsDev0] = 0x1;
         rom[SETTINGS.Max32MBPartitionsDev1] = 0x0;
-        rom[SETTINGS.BootTimeDelayTenths] = 0x14; // 2 seconds
-        rom[SETTINGS.CheckDeviceTenths] = 0x14; // 2 seconds
+        rom[SETTINGS.BootTimeDelayTenths] = 0x5; // 0.5 seconds
+        rom[SETTINGS.CheckDeviceTenths] = 0x5; // 0.5 seconds
     }
 
     // Verbose debug method
