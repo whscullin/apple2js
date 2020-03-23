@@ -170,3 +170,6 @@ then
   * [Gil Megidish](http://www.megidish.net/apple2js/), for the kick in the pants to finally post my version, once I realized there was, in fact, another apple2js in the world.
   * [AppleWin](https://github.com/AppleWin/AppleWin/), whose source code is a goldmine of useful references.
   * [Zellyn Hunter](https://github.com/zellyn/a2audit) and a2audit, for allowing me to get really nitpicky in my memory emulation.
+
+* Contributors
+  * [Snapperfish](http://github.com/Snapperfish) Various fixes
