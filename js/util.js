@@ -97,20 +97,6 @@ export function hup() {
         return results[1];
 }
 
-export function keys(obj) {
-    var result = [];
-    for (var key in obj) {
-        if (obj.hasOwnProperty(key)) {
-            result.push(key);
-        }
-    }
-    return result;
-}
-
-export function each(obj, fn) {
-    keys(obj).forEach(fn);
-}
-
 export function numToString(num) {
     let result = '';
     for (let idx = 0; idx < 4; idx++) {

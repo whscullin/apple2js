@@ -134,11 +134,9 @@ export default function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
     function Switches() {
         var locs = {};
 
-        for (var loc in LOC) {
-            if (LOC.hasOwnProperty(loc)) {
-                locs[LOC[loc]] = loc;
-            }
-        }
+        Object.keys(LOC).forEach(function(loc) {
+            locs[LOC[loc]] = loc;
+        });
 
         return {
             start: function() {

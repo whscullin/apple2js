@@ -472,13 +472,7 @@ function loadDisk(drive, disk) {
 
 function updateLocalStorage() {
     var diskIndex = JSON.parse(window.localStorage.diskIndex || '{}');
-    var names = [], name, cat;
-
-    for (name in diskIndex) {
-        if (diskIndex.hasOwnProperty(name)) {
-            names.push(name);
-        }
-    }
+    var names = Object.keys(diskIndex), cat;
 
     cat = disk_categories['Local Saves'] = [];
     document.querySelector('#manage-modal-content').innerHTML = '';
