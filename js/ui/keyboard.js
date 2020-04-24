@@ -218,7 +218,7 @@ export default function KeyBoard(cpu, io, e) {
                 key = keymap[code][evt.shiftKey ? 2 : (evt.ctrlKey ? 1 : 0)];
 
                 if (code != 20 && capslockKeyUsed) {
-                    this.capslockKey(evt.getModifierState("CapsLock"));
+                    this.capslockKey(evt.getModifierState('CapsLock'));
                 }
 
                 if (capslocked && key >= 0x61 && key <= 0x7A) {
