@@ -138,6 +138,7 @@ export default function KeyBoard(cpu, io, e) {
         0x6F: [0x2F, 0x2F, 0x39], // /
 
         // Stray keys
+        0xAD: [0x2D, 0x2D, 0x5F], // - - _
         0xBA: [0x3B, 0x3B, 0x3A], // ; - :
         0xBB: [0x3D, 0x3D, 0x2B], // = - +
         0xBC: [0x2C, 0x2C, 0x3C], // , - <
@@ -199,6 +200,9 @@ export default function KeyBoard(cpu, io, e) {
     var shifted = false;
     var controlled = false;
     var capslocked = true;
+    // Initially caps lock on physical keyboard is assumed to be off,
+    // but on emulated keyboard it is on.
+    var capslockKeyUsed = false;
     var optioned = false;
     var commanded = false;
 
@@ -212,8 +216,14 @@ export default function KeyBoard(cpu, io, e) {
                 key = uiKitMap[evt.key];
             } else if (code in keymap) {
                 key = keymap[code][evt.shiftKey ? 2 : (evt.ctrlKey ? 1 : 0)];
-                if (capslocked && key >= 0x61 && key <= 0x7A)
+
+                if (code != 20 && capslockKeyUsed) {
+                    this.capslockKey(evt.getModifierState("CapsLock"));
+                }
+
+                if (capslocked && key >= 0x61 && key <= 0x7A) {
                     key -= 0x20;
+                }
             } else {
                 debug('Unhandled key = ' + toHex(code));
             }
@@ -274,13 +284,25 @@ export default function KeyBoard(cpu, io, e) {
 
         capslockKey: function keyboard_caplockKey(down) {
             var capsLock = kb.querySelector('.key-LOCK');
-            capslocked = down;
-            if (down) {
+
+            if (arguments.length == 0) {
+                if (capslockKeyUsed) {
+                    capslocked = !capslocked;
+                } else {
+                    capslockKeyUsed = true;
+                }
+            } else if (down === undefined) {
+                capslocked = !capslocked;
+                capslockKeyUsed = false;
+            } else {
+                capslocked = down;
+            }
+
+            if (capslocked) {
                 capsLock.classList.add('active');
             } else {
                 capsLock.classList.remove('active');
             }
-
         },
 
         reset: function keyboard_reset(event) {
@@ -354,7 +376,7 @@ export default function KeyBoard(cpu, io, e) {
                         break;
                     case 'CAPS':
                     case 'LOCK':
-                        self.capslockKey(!capslocked);
+                        self.capslockKey(undefined);
                         break;
                     case 'POW':
                     case 'POWER':
