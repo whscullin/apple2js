@@ -260,6 +260,9 @@ export default function KeyBoard(cpu, io, e) {
 
         commandKey: function keyboard_commandKey(down) {
             var commandKey = kb.querySelector('.key-OPEN_APPLE');
+            if (!commandKey) {
+                return;
+            }
             commanded = down;
             if (down) {
                 io.buttonDown(0);
@@ -272,6 +275,9 @@ export default function KeyBoard(cpu, io, e) {
 
         optionKey: function keyboard_optionKey(down) {
             var optionKey = kb.querySelector('.key-CLOSED_APPLE');
+            if (!optionKey) {
+                return;
+            }
             optioned = down;
             if (down) {
                 io.buttonDown(1);
@@ -426,9 +432,9 @@ export default function KeyBoard(cpu, io, e) {
 
                     if (key1.length > 1) {
                         if (key1 == 'LOCK')
-                            key.classList.add('vcenter2');
+                            key.classList.add('v-center2');
                         else
-                            key.classList.add('vcenter');
+                            key.classList.add('v-center');
                     }
                     if (key1 != key2) {
                         key.classList.add('key-' + key2.replace(/[&;]/g,''));

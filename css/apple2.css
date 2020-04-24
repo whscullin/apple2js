@@ -5,21 +5,6 @@
   margin: auto;
 }
 
-.motter {
-    font-family: "Motter Tektura";
-}
-
-.clear {
-    clear: both
-}
-
-.disklabel {
-    color: #000;
-    font-weight: bold;
-    vertical-align: middle;
-    margin-right: 0.5em;
-}
-
 img {
     border: none;
 }
@@ -126,19 +111,29 @@ body {
 }
 
 .disk {
+    align-items: center;
+    display: flex;
+    flex-grow: 1;
+    max-width: 50%;
+}
+
+.disk-light {
     margin: 5px;
-    float: left;
     background-image: url(red-off-16.png);
+    flex-shrink: 0;
     width: 16px;
     height: 16px;
 }
 
-.disklabel {
+.disk-label {
+    color: #000;
     font-family: sans-serif;
-}
-
-.disksave {
-    display: none;
+    font-weight: bold;
+    margin-right: 0.5em;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    flex-grow: 1;
 }
 
 .code {
@@ -159,22 +154,25 @@ th {
 }
 
 .inset {
-    width: 594px;
     border-radius: 6px;
     border: 3px inset #f0edd0;
     padding: 6px;
     margin: 10px 0;
+    display: flex;
 }
 
 .inset button {
     min-width: 36px;
 }
 
+.inset button {
+    margin: 0 2px;
+}
+
 #khz {
     margin-right: 4px;
     overflow: hidden;
     padding: 4px;
-    float: left;
     font-family: Courier;
     font-size: 12px;
     width: 60px;
@@ -352,7 +350,7 @@ button:focus {
     outline: none;
 }
 
-#keyboard {
+#keyboard, #reset {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     -khtml-user-select: none;
@@ -435,11 +433,11 @@ button:focus {
     text-align: center;
 }
 
-#keyboard .vcenter div {
+#keyboard .v-center div {
     bottom: 10px;
 }
 
-#keyboard .vcenter2 div {
+#keyboard .v-center2 div {
     bottom: 5px;
 }
 
@@ -552,13 +550,25 @@ button:focus {
     display: inline;
 }
 
-.apple2e #controls {
-    width: calc(100% - 70px)
+#controls {
+    flex-grow: 1;
 }
 
-.apple2e #reset {
-    position: absolute;
-    right: 0; top: 0;
+.spacer {
+    flex-grow: 1;
+}
+
+#reset-row {
+    align-items: center;
+    display: flex;
+    margin: 10px 0;
+}
+
+#reset-row .inset {
+    margin: 0;
+}
+
+#reset {
     background: #44372C;
     border: 3px outset #66594E;
     border-radius: 3px;
@@ -566,15 +576,16 @@ button:focus {
     font: 9px Helvetica;
     height: 42px;
     padding: 0;
+    margin-left: 10px;
     width: 42px;
 }
 
-.apple2e #reset:hover {
+#reset:hover {
   background: #44372C;
   border: 3px outset #66594E;
 }
 
-.apple2e #reset:active {
+#reset:active {
   background: #22150A;
   border: 5px outset #44372C;
 }
@@ -610,6 +621,14 @@ button:focus {
 
 #textarea textarea {
     font-family: courier;
+}
+
+#http_url {
+    width: 500px;
+}
+
+#save_name {
+    width: 200px;
 }
 
 #options-modal {

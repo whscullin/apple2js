@@ -37,12 +37,12 @@
       ondragover="Apple2.handleDragOver(0, event)"
       ondrop="Apple2.handleDrop(0, event)"
       ondragend="Apple2.handleDragEnd(0, event)">
-  <div style="margin: auto; width: 614px">
+  <div class="outer">
     <div id="header">
       <a href="https://github.com/whscullin/apple2js#readme" target="_blank">
         <img src="img/badge.png" id="badge" />
       </a>
-      <h1 id="subtitle">An Apple ][ Emulator in JavaScript</h1>
+      <div id="subtitle">An Apple ][ Emulator in JavaScript</div>
     </div>
     <div id="display">
       <div class="overscan">
@@ -50,37 +50,36 @@
       </div>
     </div>
     <div class="inset">
-      <div style="float: left; width: 50%"
+      <div class="disk"
            ondragover="Apple2.handleDragOver(1, event)"
            ondrop="Apple2.handleDrop(1, event)"
            ondragend="Apple2.handleDragEnd(1, event)">
-        <button id="diskload1" class="diskload" title="Load Disk"
+        <div class="disk-light" id="disk1"></div>
+        <button title="Load Disk"
                 onclick="Apple2.openLoad(1, event);">
           <i class="fas fa-folder-open"></i>
         </button>
-        <button id="disksave1" class="disksave" title="Save Disk"
+        <button title="Save Disk"
                 onclick="Apple2.openSave(1, event);">
           <i class="fas fa-save"></i>
         </button>
-        <div class="disk" id="disk1">&nbsp;</div>
-        <span id="disklabel1" class="disklabel">Disk 1</span>
+        <div id="disk-label1" class="disk-label">Disk 1</div>
       </div>
-      <div style="float: left; width: 50%"
+      <div class="disk"
            ondragover="Apple2.handleDragOver(2, event)"
            ondrop="Apple2.handleDrop(2, event)"
            ondragend="Apple2.handleDragEnd(2, event)">
-        <button id="diskload2" class="diskload" title="Load Disk"
+        <div class="disk-light" id="disk2"></div>
+        <button title="Load Disk"
                 onclick="Apple2.openLoad(2, event);">
           <i class="fas fa-folder-open"></i>
         </button>
-        <button id="disksave2" class="disksave" title="Save Disk"
+        <button title="Save Disk"
                 onclick="Apple2.openSave(2, event);">
           <i class="fas fa-save"></i>
         </button>
-        <div class="disk" id="disk2">&nbsp;</div>
-        <span id="disklabel2" class="disklabel">Disk 2</span>
+        <div id="disk-label2" class="disk-label">Disk 2</div>
       </div>
-      <div style="clear: both"></div>
     </div>
     <div class="inset">
       <div id="khz" onclick="Apple2.toggleShowFPS()">0 kHz</div>
@@ -93,14 +92,13 @@
       <button id="toggle-printer" onclick="Apple2.openPrinterModal()" title="Toggle Printer">
         <i class="fas fa-print"></i>
       </button>
-      <div style="float: right">
-        <button onclick="window.open('https://github.com/whscullin/apple2js#readme', 'blank')" title="About">
-          <i class="fas fa-info"></i>
-        </button>
-        <button onclick="Apple2.openOptions()" title="Options">
-          <i class="fas fa-cog"></i>
-        </button>
-      </div>
+      <div class="spacer"></div>
+      <button onclick="window.open('https://github.com/whscullin/apple2js#readme', 'blank')" title="About">
+        <i class="fas fa-info"></i>
+      </button>
+      <button onclick="Apple2.openOptions()" title="Options">
+        <i class="fas fa-cog"></i>
+      </button>
     </div>
     <div class="inset">
       <div style="margin: 0 10px">
@@ -267,8 +265,7 @@
         <main class="modal__content" id="save-modal-content">
           <form action="#" onsubmit="return false;">
             <h3>Save to Browser</h3>
-            Save Name: <input type="text" name="name" id="save_name"
-                        style="width: 200px" />
+            Save Name: <input type="text" name="name" id="save_name" />
           </form>
           <hr />
           <div>
@@ -314,11 +311,11 @@
         </header>
         <main class="modal__content" id="http-modal-content">
           <form action="#">
-            <input type="text" id="http_url" style="width: 500px"/>
+            <input type="text" id="http_url" />
           </form>
         </main>
         <footer class="modal__footer">
-          <button class="modal__btn" data-micromodal-close aria-label="Close this dialog window">OK</button>
+          <button class="modal__btn" data-micromodal-close aria-label="Load this URL">OK</button>
         </footer>
       </div>
     </div>
@@ -373,9 +370,7 @@
           </button>
         </header>
         <main class="modal__content" id="printer-modal-content">
-          <div class="feed">
-            <div class="paper"></div>
-          </div>
+          <div class="paper"></div>
         </main>
         <footer class="modal__footer">
           <button class="modal__btn" data-micromodal-close aria-label="Close this dialog window">Close</button>
@@ -386,16 +381,16 @@
 
   <div class="modal" id="alert-modal" aria-hidden="true">
     <div class="modal__overlay" tabindex="-1" data-micromodal-close>
-      <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="Printer">
+      <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="Alert">
         <header class="modal__header">
-          <span class="modal__title" id="printer-modal-title">
+          <span class="modal__title" id="alert-modal-title">
               Alert
           </span>
           <button class="modal__close" aria-label="Close modal" data-micromodal-close>
           </button>
         </header>
         <main class="modal__content" id="alert-modal-content">
-          <div class=".message">
+          <div class="message">
           </div>
         </main>
         <footer class="modal__footer">

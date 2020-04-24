@@ -12,9 +12,9 @@ export default function DriveLights()
         },
         label: function(drive, label) {
             if (label) {
-                document.querySelector('#disklabel' + drive).innerText = label;
+                document.querySelector('#disk-label' + drive).innerText = label;
             }
-            return document.querySelector('#disklabel' + drive).innerText;
+            return document.querySelector('#disk-label' + drive).innerText;
         },
         getState: function() {
             return {
