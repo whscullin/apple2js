@@ -225,7 +225,7 @@ export default function Apple2IO(cpu, callbacks)
         case LOC.SETAN3:
             _debug('Annunciator 3 on');
             _annunciators[3] = true;
-            if (callbacks.doublehires) callbacks.doublehires(false);
+            if (callbacks.an3) callbacks.an3(true);
             break;
         case LOC.CLRAN0:
             _debug('Annunciator 0 off');
@@ -242,7 +242,7 @@ export default function Apple2IO(cpu, callbacks)
         case LOC.CLRAN3:
             _debug('Annunciator 3 off');
             _annunciators[3] = false;
-            if (callbacks.doublehires) callbacks.doublehires(true);
+            if (callbacks.an3) callbacks.an3(false);
             break;
         case LOC.SPEAKER:
             _phase = -_phase;

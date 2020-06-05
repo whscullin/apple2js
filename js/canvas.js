@@ -10,7 +10,7 @@
  */
 
 import { base64_decode, base64_encode } from './base64';
-import { allocMemPages, debug } from './util';
+import { allocMemPages } from './util';
 
 var enhanced = false;
 var multiScreen = false;
@@ -20,6 +20,7 @@ var hiresMode = false;
 var pageMode = 1;
 var _80colMode = false;
 var altCharMode = false;
+var an3 = false;
 var doubleHiresMode = false;
 var monoDHRMode = false;
 var colorDHRMode = false;
@@ -299,10 +300,10 @@ export function LoresPage(page, charset, e, context)
                         }
                     }
                 } else {
-                    if (!doubleHiresMode && bank == 1) {
+                    if (!_80colMode && bank == 1) {
                         return;
                     }
-                    if (_80colMode && doubleHiresMode) {
+                    if (_80colMode && !an3) {
                         off = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8 * 2) * 4;
                         if (_monoMode) {
                             fore = whiteCol;
@@ -883,9 +884,16 @@ export function HiresPage(page, context)
 export function VideoModes(gr, hgr, gr2, hgr2, e) {
     var _grs = [gr, gr2];
     var _hgrs = [hgr, hgr2];
-    var _seq = '';
+    var _flag = 0;
 
     function _refresh() {
+        highColorTextMode = !an3 && textMode && !_80colMode;
+        highColorHGRMode = !an3 && hiresMode && !_80colMode;
+        doubleHiresMode = !an3 && hiresMode && _80colMode;
+        // Unsupported 160x192 mode = _flag == 1 && !an3 && hiresMode && _80colMode;
+        mixedDHRMode = _flag == 2 && !an3 && hiresMode && _80colMode;
+        monoDHRMode = _flag == 3 && !an3 && hiresMode && _80colMode;
+
         gr.refresh();
         gr2.refresh();
         hgr.refresh();
@@ -905,7 +913,8 @@ export function VideoModes(gr, hgr, gr2, hgr2, e) {
             _80colMode = false;
             altCharMode = false;
 
-            doubleHiresMode = false;
+            _flag = 0;
+            an3 = true;
             monoDHRMode = false;
             colorDHRMode = false;
             mixedDHRMode = false;
@@ -918,23 +927,15 @@ export function VideoModes(gr, hgr, gr2, hgr2, e) {
             var old = textMode;
             textMode = on;
 
-            highColorTextMode = false;
-
-            _seq = on ? 'T+' : 'T-';
-            // debug('_seq=', _seq);
-
             if (old != on) {
                 _refresh();
             }
         },
         _80col: function(on) {
             if (!e) { return; }
+
             var old = _80colMode;
             _80colMode = on;
-
-            _seq += on ? '8+' : '8-';
-            _seq = _seq.substr(0, 16);
-            // debug('_seq=', _seq);
 
             if (old != on) {
                 _refresh();
@@ -942,6 +943,7 @@ export function VideoModes(gr, hgr, gr2, hgr2, e) {
         },
         altchar: function(on) {
             if (!e) { return; }
+
             var old = altCharMode;
             altCharMode = on;
             if (old != on) {
@@ -951,58 +953,23 @@ export function VideoModes(gr, hgr, gr2, hgr2, e) {
         hires: function(on) {
             var old = hiresMode;
             hiresMode = on;
-            highColorHGRMode = false;
-
-            _seq = on ? 'H+' : 'H-';
-            // debug('_seq=', _seq);
+            _flag = 0;
 
             if (old != on) {
                 _refresh();
             }
         },
-        doublehires: function(on) {
+        an3: function(on) {
             if (!e) { return; }
-            var old = doubleHiresMode;
-            doubleHiresMode = on;
 
-            _seq += on ? 'D+' : 'D-';
-            _seq = _seq.substr(0, 16);
-            // debug('_seq=', _seq);
+            var old = an3;
+            an3 = on;
 
             if (on) {
-                if (_seq == 'T+D+') {
-                    debug('High color text mode');
-                    highColorTextMode = true;
-                    doubleHiresMode = false;
-                } else if (_seq == 'H+8-D+') {
-                    debug('High color hgr');
-                    highColorHGRMode = true;
-                    doubleHiresMode = false;
-                } else if (_seq == 'H+8+D+D-D+D-D+') {
-                    debug('DoubleHires color');
-                    colorDHRMode = true;
-                    monoDHRMode = false;
-                    mixedDHRMode = false;
-                    _seq = '';
-                } else if (_seq == 'H+8-D+D-D+D-8+D+') {
-                    debug('DoubleHires mono');
-                    colorDHRMode = false;
-                    monoDHRMode = true;
-                    mixedDHRMode = false;
-                    _seq = '';
-                } else if (_seq == 'H+8-D+D-8+D+D-D+') {
-                    debug('DoubleHires mixed');
-                    colorDHRMode = false;
-                    monoDHRMode = false;
-                    mixedDHRMode = true;
-                    _seq = '';
-                }
+                _flag = ((_flag << 1) | (_80colMode ? 0x0 : 0x1)) & 0x3;
             }
 
             if (old != on) {
-                if (on) {
-                    this.page(1);
-                }
                 _refresh();
             }
         },
@@ -1075,7 +1042,7 @@ export function VideoModes(gr, hgr, gr2, hgr2, e) {
                 pageMode: pageMode,
                 _80colMode: _80colMode,
                 altCharMode: altCharMode,
-                doubleHiresMode: doubleHiresMode
+                an3: an3
             };
         },
         setState: function(state) {
@@ -1085,7 +1052,7 @@ export function VideoModes(gr, hgr, gr2, hgr2, e) {
             pageMode = state.pageMode;
             _80colMode = state._80colMode;
             altCharMode = state.altCharMode;
-            doubleHiresMode = state.doubleHiresMode;
+            an3 = state.an3;
 
             _grs[0].setState(state.grs[0]);
             _grs[1].setState(state.grs[1]);
