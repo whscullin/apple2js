@@ -190,7 +190,7 @@ canvas {
 }
 
 .green {
-    filter: url('filters.svg#green');
+    filter: url('#green');
 }
 
 .scanlines:after {
