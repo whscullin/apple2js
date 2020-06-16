@@ -27,6 +27,7 @@ var colorDHRMode = false;
 var mixedDHRMode = false;
 var highColorHGRMode = false;
 var highColorTextMode = false;
+var oneSixtyMode = false;
 
 function dim(c) {
     return [
@@ -555,6 +556,34 @@ export function HiresPage(page, context)
         data[nextOff + 2] = c2;
     }
 
+    //
+    // 160x192 pixels alternate 3 and 4 base pixels wide
+    //
+
+    function _draw3Pixel(data, off, color) {
+        var c0 = color[0], c1 = color[1], c2 = color[2];
+
+        data[off + 0] = data[off + 4] = data[off + 8] = c0;
+        data[off + 1] = data[off + 5] = data[off + 9] = c1;
+        data[off + 2] = data[off + 6] = data[off + 10] = c2;
+        var nextOff = off + 560 * 4;
+        data[nextOff] = data[nextOff + 4] = data[nextOff + 8] = c0;
+        data[nextOff + 1] = data[nextOff + 5] = data[nextOff + 9] = c1;
+        data[nextOff + 2] = data[nextOff + 6] = data[nextOff + 10] = c2;
+    }
+
+    function _draw4Pixel(data, off, color) {
+        var c0 = color[0], c1 = color[1], c2 = color[2];
+
+        data[off + 0] = data[off + 4] = data[off + 8] = data[off + 12] = c0;
+        data[off + 1] = data[off + 5] = data[off + 9] = data[off + 13] = c1;
+        data[off + 2] = data[off + 6] = data[off + 10] = data[off + 14] = c2;
+        var nextOff = off + 560 * 4;
+        data[nextOff] = data[nextOff + 4] = data[nextOff + 8] = data[nextOff + 12] = c0;
+        data[nextOff + 1] = data[nextOff + 5] = data[nextOff + 9] = data[nextOff + 13] = c1;
+        data[nextOff + 2] = data[nextOff + 6] = data[nextOff + 10] = data[nextOff + 14] = c2;
+    }
+
     _init();
 
     return {
@@ -613,7 +642,6 @@ export function HiresPage(page, context)
             _buffer[bank][base] = val;
 
             var hbs = val & 0x80;
-            val &= 0x7f;
 
             var col = (base % 0x80) % 0x28,
                 adj = off - col;
@@ -643,7 +671,19 @@ export function HiresPage(page, context)
 
                 dy = rowa << 4 | rowb << 1;
                 var bz, b0, b1, b2, b3, b4, c, hb;
-                if (doubleHiresMode) {
+                if (oneSixtyMode && !_monoMode) {
+                    // 1 byte = two pixels, but 3:4 ratio
+                    var c3 = val & 0xf;
+                    var c4 = val >> 4;
+
+                    dx = col * 2 + (bank ^ 1);
+                    off = dx * 28 + dy * 280 * 4 * 2;
+
+                    _draw3Pixel(data, off, dcolors[c3]);
+                    _draw4Pixel(data, off + 12, dcolors[c4]);
+                } else if (doubleHiresMode) {
+                    val &= 0x7f;
+
                     // Every 4 bytes is 7 pixels
                     // 2 bytes per bank
 
@@ -890,9 +930,9 @@ export function VideoModes(gr, hgr, gr2, hgr2, e) {
         highColorTextMode = !an3 && textMode && !_80colMode;
         highColorHGRMode = !an3 && hiresMode && !_80colMode;
         doubleHiresMode = !an3 && hiresMode && _80colMode;
-        // Unsupported 160x192 mode = _flag == 1 && !an3 && hiresMode && _80colMode;
-        mixedDHRMode = _flag == 2 && !an3 && hiresMode && _80colMode;
-        monoDHRMode = _flag == 3 && !an3 && hiresMode && _80colMode;
+        oneSixtyMode = _flag == 1 && doubleHiresMode;
+        mixedDHRMode = _flag == 2 && doubleHiresMode;
+        monoDHRMode = _flag == 3 && doubleHiresMode;
 
         gr.refresh();
         gr2.refresh();
