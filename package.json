@@ -5,7 +5,7 @@
   "scripts": {
     "build": "webpack --mode=production",
     "dev": "webpack-dev-server",
-    "index": "scripts/index.pl > json/disks/index.js",
+    "index": "bin/index > json/disks/index.js",
     "lint": "eslint .",
     "start": "webpack-dev-server",
     "test": "jest"

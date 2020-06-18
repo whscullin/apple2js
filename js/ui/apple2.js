@@ -543,7 +543,7 @@ for (var idx = 0; idx < window.disk_index.length; idx++) {
     var file = window.disk_index[idx];
     var cat = file.category;
     var name = file.name, disk = file.disk;
-    if (file.e) {
+    if (file.e && !window.e) {
         continue;
     }
     if (cat != oldcat) {
