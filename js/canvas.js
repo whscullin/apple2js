@@ -955,11 +955,6 @@ export function VideoModes(gr, hgr, gr2, hgr2, e) {
 
             _flag = 0;
             an3 = true;
-            monoDHRMode = false;
-            colorDHRMode = false;
-            mixedDHRMode = false;
-            highColorHGRMode = false;
-            highColorTextMode = false;
 
             _refresh();
         },
