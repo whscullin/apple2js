@@ -993,7 +993,9 @@ export function VideoModes(gr, hgr, gr2, hgr2, e) {
         hires: function(on) {
             var old = hiresMode;
             hiresMode = on;
-            _flag = 0;
+            if (!on) {
+                _flag = 0;
+            }
 
             if (old != on) {
                 _refresh();
