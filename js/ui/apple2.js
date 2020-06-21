@@ -592,7 +592,7 @@ function processHash(hash) {
  */
 
 function _keydown(evt) {
-    if (!focused && (!evt.metaKey || evt.ctrlKey)) {
+    if (!focused && (!evt.metaKey || evt.ctrlKey || window.e)) {
         evt.preventDefault();
 
         var key = keyboard.mapKeyEvent(evt);
@@ -817,7 +817,6 @@ export function initUI(apple2, disk2, cffa, e) {
     document.body.addEventListener('mousemove', _mousemove);
 
     document.querySelectorAll('input,textarea').forEach(function(input) {
-        input.addEventListener('input', function() { focused = true; });
         input.addEventListener('focus', function() { focused = true; });
         input.addEventListener('blur', function() { focused = false; });
     });
