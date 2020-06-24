@@ -210,6 +210,10 @@ canvas {
     height: 416px;
 }
 
+#screen.mouseMode {
+    cursor: none;
+}
+
 #screen:-webkit-full-screen {
     background-color: black;
     top: 0;

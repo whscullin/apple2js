@@ -101,16 +101,14 @@ export class OptionsModal {
                 const list = document.createElement('ul');
                 for (const option of options) {
                     const { name, label, defaultVal, type } = option;
-                    const onChange = (evt: InputEvent) => {
-                        if (evt.target) {
-                            const inputElement = evt.target as HTMLInputElement;
-                            switch (type) {
-                                case BOOLEAN_OPTION:
-                                    this.setOption(name, inputElement.checked);
-                                    break;
-                                default:
-                                    this.setOption(name, inputElement.value);
-                            }
+                    const onChange = (evt: InputEvent & { target: HTMLInputElement }) => {
+                        const { target } = evt;
+                        switch (type) {
+                            case BOOLEAN_OPTION:
+                                this.setOption(name, target.checked);
+                                break;
+                            default:
+                                this.setOption(name, target.value);
                         }
                     };
 
