@@ -29,10 +29,15 @@ var prefs = new Prefs();
 var romVersion = prefs.readPref('computer_type2');
 var rom;
 var characterRom = apple2_charset;
+var sectors = 16;
 
 switch (romVersion) {
 case 'apple2':
     rom = new IntBASIC();
+    break;
+case 'apple213':
+    rom = new IntBASIC();
+    sectors = 13;
     break;
 case 'original':
     rom = new OriginalROM();
@@ -96,7 +101,7 @@ var lc = new LanguageCard(io, rom);
 var parallel = new Parallel(io, printer);
 var videoTerm = new VideoTerm(io, options.screen[0]);
 var slinky = new RAMFactor(io, 1024 * 1024);
-var disk2 = new DiskII(io, driveLights);
+var disk2 = new DiskII(io, driveLights, sectors);
 var clock = new Thunderclock(io);
 var cffa = new CFFA(io);
 
