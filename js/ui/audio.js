@@ -15,8 +15,8 @@ import { debug } from '../util';
  * Audio Handling
  */
 
-var SAMPLE_SIZE = 1024
-var SAMPLE_RATE = 44000
+var SAMPLE_SIZE = 1024;
+var SAMPLE_RATE = 44000;
 
 export default function Audio(io) {
     var sound = true;

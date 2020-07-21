@@ -495,7 +495,7 @@ export default function Apple2IO(cpu, callbacks)
 
         sampleRate: function sampleRate(rate, sample_size) {
             _rate = rate;
-            _sample_size = sample_size
+            _sample_size = sample_size;
             _sample = new Array(_sample_size);
             _sampleIdx = 0;
             _calcSampleRate();
