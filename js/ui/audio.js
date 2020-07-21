@@ -15,6 +15,9 @@ import { debug } from '../util';
  * Audio Handling
  */
 
+var SAMPLE_SIZE = 1024
+var SAMPLE_RATE = 44000
+
 export default function Audio(io) {
     var sound = true;
     var _samples = [];
@@ -25,8 +28,10 @@ export default function Audio(io) {
     var started = false;
 
     if (AudioContext) {
-        audioContext = new AudioContext();
-        audioNode = audioContext.createScriptProcessor(4096, 1, 1);
+        audioContext = new AudioContext({
+            sampleRate: SAMPLE_RATE
+        });
+        audioNode = audioContext.createScriptProcessor(SAMPLE_SIZE, 1, 1);
 
         audioNode.onaudioprocess = function(event) {
             var data = event.outputBuffer.getChannelData(0);
@@ -52,12 +57,11 @@ export default function Audio(io) {
     function _initAudio(io) {
         if (audioContext) {
             debug('Using Webkit Audio');
-            io.sampleRate(audioContext.sampleRate);
+            io.sampleRate(audioContext.sampleRate, SAMPLE_SIZE);
             io.addSampleListener(function(sample) {
                 if (sound) {
-                    _samples.push(sample);
-                    while (_samples.length > 5) {
-                        _samples.shift();
+                    if (_samples.length < 5) {
+                        _samples.push(sample);
                     }
                 }
             });

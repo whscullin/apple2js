@@ -29,6 +29,7 @@ export default function Apple2IO(cpu, callbacks)
     var _paddle = [0.0, 0.0, 0.0, 0,0];
     var _phase = -1;
     var _sample = [];
+    var _sampleIdx = 0;
     var _sampleTime = 0;
     var _didAudio = false;
 
@@ -103,17 +104,18 @@ export default function Apple2IO(cpu, callbacks)
 
     function _tick() {
         var now = cpu.cycles();
-        var phase = _phase > 0 ? _high : _low;
+        var phase = _didAudio ? (_phase > 0 ? _high : _low) : 0.0;
         for (; _sampleTime < now; _sampleTime += _cycles_per_sample) {
-            _sample.push(phase);
-            if (_sample.length >= _sample_size) {
+            _sample[_sampleIdx++] = phase;
+            if (_sampleIdx === _sample_size) {
                 if (_audioListener) {
-                    _audioListener(_didAudio ? _sample : []);
+                    _audioListener(_sample);
                 }
-                _sample = [];
-                _didAudio = false;
+                _sample = new Array(_sample_size);
+                _sampleIdx = 0;
             }
         }
+        _didAudio = false;
     }
 
     function _calcSampleRate() {
@@ -491,8 +493,11 @@ export default function Apple2IO(cpu, callbacks)
             _tapeOffset = -1;
         },
 
-        sampleRate: function sampleRate(rate) {
+        sampleRate: function sampleRate(rate, sample_size) {
             _rate = rate;
+            _sample_size = sample_size
+            _sample = new Array(_sample_size);
+            _sampleIdx = 0;
             _calcSampleRate();
         },
 
