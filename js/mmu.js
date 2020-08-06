@@ -26,12 +26,12 @@ export default function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
     var _writebsr;
     var _prewrite;
 
-    // Auxilliary ROM
+    // Auxillary ROM
     var _intcxrom;
     var _slot3rom;
     var _intc8rom;
 
-    // Auxilliary RAM
+    // Auxillary RAM
     var _auxRamRead;
     var _auxRamWrite;
     var _altzp;
@@ -40,6 +40,8 @@ export default function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
     var _80store;
     var _page2;
     var _hires;
+
+    var _iouDisable;
 
     var _vbEnd = 0;
 
@@ -67,6 +69,11 @@ export default function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
         SLOTC3ROMOFF: 0x0A,
         SLOTC3ROMON: 0x0B,
 
+        CLR80VID: 0x0C, // clear 80 column mode
+        SET80VID: 0x0D, // set 80 column mode
+        CLRALTCH: 0x0E, // clear mousetext
+        SETALTCH: 0x0F, // set mousetext
+
         // Status
         BSRBANK2: 0x11,
         BSRREADRAM: 0x12,
@@ -78,10 +85,25 @@ export default function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
         _80STORE: 0x18,
         VERTBLANK: 0x19,
 
+        RDTEXT:   0x1A, // using text mode
+        RDMIXED:  0x1B, // using mixed mode
+        RDPAGE2:  0x1C, // using text/graphics page2
+        RDHIRES:  0x1D, // using Hi-res graphics mode
+        RDALTCH:  0x1E, // using alternate character set
+        RD80VID:  0x1F, // using 80-column display mode
+
         PAGE1: 0x54, // select text/graphics page1 main/aux
         PAGE2: 0x55, // select text/graphics page2 main/aux
         RESET_HIRES: 0x56,
         SET_HIRES: 0x57,
+
+        DHIRESON: 0x5E, // Enable double hires
+        DHIRESOFF: 0x5F, // Disable double hires
+
+        BANK:     0x73, // Back switched RAM card bank
+
+        IOUDISON: 0x7E, // W IOU Disable on / R7 IOU Disable
+        IOUDISOFF: 0x7F, // W IOU Disable off / R7 Double Hires
 
         // Bank 2
         READBSR2: 0x80,
@@ -125,6 +147,8 @@ export default function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
         _80store = false;
         _page2 = false;
         _hires = false;
+
+        _iouDisable = true;
     }
 
     function _debug() {
@@ -400,12 +424,13 @@ export default function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
     function _access(off, val) {
         var result;
         var readMode = val === undefined;
+        var writeMode = val !== undefined;
         switch (off) {
 
         // Apple //e memory management
 
         case LOC._80STOREOFF:
-            if (val !== undefined) {
+            if (writeMode) {
                 _80store = false;
                 _debug('80 Store Off');
                 vm.page(_page2 ? 2 : 1);
@@ -415,35 +440,35 @@ export default function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
             }
             break;
         case LOC._80STOREON:
-            if (val !== undefined) {
+            if (writeMode) {
                 _80store = true;
                 _debug('80 Store On');
             } else
                 result = 0;
             break;
         case LOC.RAMRDOFF:
-            if (val !== undefined) {
+            if (writeMode) {
                 _auxRamRead = false;
                 _debug('Aux RAM Read Off');
             } else
                 result = 0;
             break;
         case LOC.RAMRDON:
-            if (val !== undefined) {
+            if (writeMode) {
                 _auxRamRead = true;
                 _debug('Aux RAM Read On');
             } else
                 result = 0;
             break;
         case LOC.RAMWROFF:
-            if (val !== undefined) {
+            if (writeMode) {
                 _auxRamWrite = false;
                 _debug('Aux RAM Write Off');
             } else
                 result = 0;
             break;
         case LOC.RAMWRON:
-            if (val !== undefined) {
+            if (writeMode) {
                 _auxRamWrite = true;
                 _debug('Aux RAM Write On');
             } else
@@ -451,38 +476,38 @@ export default function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
             break;
 
         case LOC.INTCXROMOFF:
-            if (val !== undefined) {
+            if (writeMode) {
                 _intcxrom = false;
                 _intc8rom = false;
                 _debug('Int CX ROM Off');
             }
             break;
         case LOC.INTCXROMON:
-            if (val !== undefined) {
+            if (writeMode) {
                 _intcxrom = true;
                 _debug('Int CX ROM On');
             }
             break;
         case LOC.ALTZPOFF: // 0x08
-            if (val !== undefined) {
+            if (writeMode) {
                 _altzp = false;
                 _debug('Alt ZP Off');
             }
             break;
         case LOC.ALTZPON: // 0x09
-            if (val !== undefined) {
+            if (writeMode) {
                 _altzp = true;
                 _debug('Alt ZP On');
             }
             break;
         case LOC.SLOTC3ROMOFF: // 0x0A
-            if (val !== undefined) {
+            if (writeMode) {
                 _slot3rom = false;
                 _debug('Slot 3 ROM Off');
             }
             break;
         case LOC.SLOTC3ROMON: // 0x0B
-            if (val !== undefined) {
+            if (writeMode) {
                 _slot3rom = true;
                 _debug('Slot 3 ROM On');
             }
@@ -490,6 +515,30 @@ export default function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
 
             // Graphics Switches
 
+        case LOC.CLR80VID:
+            if (writeMode) {
+                _debug('80 Column Mode off');
+                vm._80col(false);
+            }
+            break;
+        case LOC.SET80VID:
+            if (writeMode) {
+                _debug('80 Column Mode on');
+                vm._80col(true);
+            }
+            break;
+        case LOC.CLRALTCH:
+            if (writeMode) {
+                _debug('Alt Char off');
+                vm.altchar(false);
+            }
+            break;
+        case LOC.SETALTCH:
+            if (writeMode) {
+                _debug('Alt Char on');
+                vm.altchar(true);
+            }
+            break;
         case LOC.PAGE1:
             _page2 = false;
             if (!_80store) {
@@ -511,10 +560,40 @@ export default function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
             _debug('Hires off');
             break;
 
+        case LOC.DHIRESON:
+            if (_iouDisable) {
+                vm.doubleHires(true);
+            } else {
+                result = io.ioSwitch(off, val); // an3
+            }
+            break;
+
+        case LOC.DHIRESOFF:
+            if (_iouDisable) {
+                vm.doubleHires(false);
+            } else {
+                result = io.ioSwitch(off, val); // an3
+            }
+            break;
+
         case LOC.SET_HIRES:
             _hires = true;
             result = io.ioSwitch(off, val);
             _debug('Hires on');
+            break;
+
+        case LOC.IOUDISON:
+            if (writeMode) {
+                _iouDisable = true;
+            }
+            result = _iouDisable ? 0x00 : 0x80;
+            break;
+
+        case LOC.IOUDISOFF:
+            if (writeMode) {
+                _iouDisable = false;
+            }
+            result = vm.isDoubleHires() ? 0x80 : 0x00;
             break;
 
             // Language Card Switches
@@ -621,6 +700,24 @@ export default function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
         case LOC.VERTBLANK: // 0xC019
             // result = cpu.cycles() % 20 < 5 ? 0x80 : 0x00;
             result = (cpu.cycles() < _vbEnd) ? 0x80 : 0x00;
+            break;
+        case LOC.RDTEXT:
+            result = vm.isText() ? 0x80 : 0x0;
+            break;
+        case LOC.RDMIXED:
+            result = vm.isMixed() ? 0x80 : 0x0;
+            break;
+        case LOC.RDPAGE2:
+            result = vm.isPage2() ? 0x80 : 0x0;
+            break;
+        case LOC.RDHIRES:
+            result = vm.isHires() ? 0x80 : 0x0;
+            break;
+        case LOC.RD80VID:
+            result = vm.is80Col() ? 0x80 : 0x0;
+            break;
+        case LOC.RDALTCH:
+            result = vm.isAltChar() ? 0x80 : 0x0;
             break;
 
         default:
