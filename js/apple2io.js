@@ -11,7 +11,7 @@
 
 import { debug } from './util';
 
-export default function Apple2IO(cpu, callbacks)
+export default function Apple2IO(cpu, vm)
 {
     var _slot = [];
     var _auxRom = null;
@@ -48,21 +48,10 @@ export default function Apple2IO(cpu, callbacks)
 
     var LOC = {
         KEYBOARD: 0x00, // keyboard data (latched) (Read),
-        CLR80VID: 0x0C, // clear 80 column mode
-        SET80VID: 0x0D, // set 80 column mode
-        CLRALTCH: 0x0E, // clear mousetext
-        SETALTCH: 0x0F, // set mousetext
         STROBE:   0x10, // clear bit 7 of keyboard data ($C000)
-
-        RDTEXT:   0x1A, // using text mode
-        RDMIXED:  0x1B, // using mixed mode
-        RDPAGE2:  0x1C, // using text/graphics page2
-        RDHIRES:  0x1D, // using Hi-res graphics mode
-        RDALTCH:  0x1E, // using alternate character set
-        RD80VID:  0x1F, // using 80-column display mode
-
         TAPEOUT:  0x20, // toggle the cassette output.
         SPEAKER:  0x30, // toggle speaker diaphragm
+        C040STB:  0x40, // trigger game port sync
         CLRTEXT:  0x50, // display graphics
         SETTEXT:  0x51, // display text
         CLRMIXED: 0x52, // clear mixed mode- enable full graphics
@@ -88,10 +77,7 @@ export default function Apple2IO(cpu, callbacks)
         PADDLE2:  0x66, // bit 7: status of pdl-2 timer (read)
         PADDLE3:  0x67, // bit 7: status of pdl-3 timer (read)
         PDLTRIG:  0x70, // trigger paddles
-        BANK:     0x73, // Back switched RAM card bank
         ACCEL:    0x74, // CPU Speed control
-        SETIOUDIS:0x7E, // Enable double hires
-        CLRIOUDIS:0x7F  // Disable double hires
     };
 
     function init() {
@@ -134,83 +120,35 @@ export default function Apple2IO(cpu, callbacks)
         var now = cpu.cycles();
         var delta = now - _trigger;
         switch (off) {
-        case LOC.CLR80VID:
-            if (callbacks._80col && val !== undefined) {
-                _debug('80 Column Mode off');
-                callbacks._80col(false);
-            }
-            break;
-        case LOC.SET80VID:
-            if (callbacks._80col && val !== undefined) {
-                _debug('80 Column Mode on');
-                callbacks._80col(true);
-            }
-            break;
-        case LOC.CLRALTCH:
-            if (callbacks.altchar && val !== undefined) {
-                _debug('Alt Char off');
-                callbacks.altchar(false);
-            }
-            break;
-        case LOC.SETALTCH:
-            if (callbacks.altchar && val !== undefined) {
-                _debug('Alt Char on');
-                callbacks.altchar(true);
-            }
-            break;
         case LOC.CLRTEXT:
             _debug('Graphics Mode');
-            callbacks.text(false);
+            vm.text(false);
             break;
         case LOC.SETTEXT:
             _debug('Text Mode');
-            callbacks.text(true);
+            vm.text(true);
             break;
         case LOC.CLRMIXED:
             _debug('Mixed Mode off');
-            callbacks.mixed(false);
+            vm.mixed(false);
             break;
         case LOC.SETMIXED:
             _debug('Mixed Mode on');
-            callbacks.mixed(true);
+            vm.mixed(true);
             break;
         case LOC.CLRHIRES:
             _debug('LoRes Mode');
-            callbacks.hires(false);
+            vm.hires(false);
             break;
         case LOC.SETHIRES:
             _debug('HiRes Mode');
-            callbacks.hires(true);
+            vm.hires(true);
             break;
         case LOC.PAGE1:
-            callbacks.page(1);
+            vm.page(1);
             break;
         case LOC.PAGE2:
-            callbacks.page(2);
-            break;
-        case LOC.RDTEXT:
-            if (callbacks.isText)
-                result = callbacks.isText() ? 0x80 : 0x0;
-            break;
-        case LOC.RDMIXED:
-            if (callbacks.isMixed)
-                result = callbacks.isMixed() ? 0x80 : 0x0;
-            break;
-        case LOC.RDPAGE2:
-            if (callbacks.isPage2)
-                result = callbacks.isPage2() ? 0x80 : 0x0;
-            break;
-        case LOC.RDHIRES:
-            if (callbacks.isHires)
-                result = callbacks.isHires() ? 0x80 : 0x0;
-            break;
-        case LOC.RD80VID:
-            if (callbacks.is80Col)
-                result = callbacks.is80Col() ? 0x80 : 0x0;
-            break;
-        case LOC.RDALTCH:
-            if (callbacks.isAltChar)
-                result = callbacks.isAltChar() ? 0x80 : 0x0;
+            vm.page(2);
             break;
         case LOC.SETAN0:
             _debug('Annunciator 0 on');
@@ -227,7 +165,6 @@ export default function Apple2IO(cpu, callbacks)
         case LOC.SETAN3:
             _debug('Annunciator 3 on');
             _annunciators[3] = true;
-            if (callbacks.an3) callbacks.an3(true);
             break;
         case LOC.CLRAN0:
             _debug('Annunciator 0 off');
@@ -244,26 +181,6 @@ export default function Apple2IO(cpu, callbacks)
         case LOC.CLRAN3:
             _debug('Annunciator 3 off');
             _annunciators[3] = false;
-            if (callbacks.an3) callbacks.an3(false);
-            break;
-        case LOC.SPEAKER:
-            _phase = -_phase;
-            _didAudio = true;
-            _tick();
-            break;
-        case LOC.STROBE:
-            _key &= 0x7f;
-            if (_buffer.length > 0) {
-                val =  _buffer.shift();
-                if (val == '\n') {
-                    val = '\r';
-                }
-                _key = val.charCodeAt(0) | 0x80;
-            }
-            result = (_keyDown ? 0x80 : 0x00) | _key;
-            break;
-        case LOC.KEYBOARD:
-            result = _key;
             break;
         case LOC.PB0:
             result = _button[0] ? 0x80 : 0;
@@ -286,17 +203,9 @@ export default function Apple2IO(cpu, callbacks)
         case LOC.PADDLE3:
             result = (delta < (_paddle[3] * 2756) ? 0x80 : 0x00);
             break;
-        case LOC.PDLTRIG:
-            _trigger = cpu.cycles();
-            break;
         case LOC.ACCEL:
             if (val !== undefined) {
                 _updateKHz(val & 0x01 ? 1023 : 4096);
-            }
-            break;
-        case LOC.RDDHIRES:
-            if (callbacks.isDoubleHires) {
-                result = callbacks.isDoubleHires() ? 0x80 : 0x0;
             }
             break;
         case LOC.TAPEIN:
@@ -318,6 +227,41 @@ export default function Apple2IO(cpu, callbacks)
             }
 
             result = _tapeCurrent ? 0x80 : 0x00;
+            break;
+
+        default:
+            switch (off & 0xf0) {
+            case LOC.KEYBOARD: // C00x
+                result = _key;
+                break;
+            case LOC.STROBE: // C01x
+                _key &= 0x7f;
+                if (_buffer.length > 0) {
+                    val =  _buffer.shift();
+                    if (val == '\n') {
+                        val = '\r';
+                    }
+                    _key = val.charCodeAt(0) | 0x80;
+                }
+                result = (_keyDown ? 0x80 : 0x00) | _key;
+                break;
+            case LOC.TAPEOUT: // C02x
+                _phase = -_phase;
+                _didAudio = true;
+                _tick();
+                break;
+            case LOC.SPEAKER: // C03x
+                _phase = -_phase;
+                _didAudio = true;
+                _tick();
+                break;
+            case LOC.C040STB: // C04x
+                // I/O Strobe
+                break;
+            case LOC.PDLTRIG: // C07x
+                _trigger = cpu.cycles();
+                break;
+            }
         }
 
         if (val !== undefined) {
@@ -358,7 +302,7 @@ export default function Apple2IO(cpu, callbacks)
                     card.reset();
                 }
             }
-            callbacks.reset();
+            vm.reset();
         },
 
         blit: function apple2io_blit() {

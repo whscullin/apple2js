@@ -1010,6 +1010,9 @@ export function VideoModes(gr, hgr, gr2, hgr2, e) {
                 _refresh();
             }
         },
+        doubleHires: function(on) {
+            this.an3(!on);
+        },
         mixed: function(on) {
             var old = mixedMode;
             mixedMode = on;
@@ -1041,6 +1044,9 @@ export function VideoModes(gr, hgr, gr2, hgr2, e) {
         },
         isHires: function() {
             return hiresMode;
+        },
+        isDoubleHires: function() {
+            return doubleHiresMode;
         },
         is80Col: function() {
             return _80colMode;
