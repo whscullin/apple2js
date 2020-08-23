@@ -71,6 +71,8 @@ export default function Tape(io) {
                     if (done) {
                         done();
                     }
+                }, function(error) {
+                    window.alert(error.message);
                 });
             };
             fileReader.readAsArrayBuffer(file);
