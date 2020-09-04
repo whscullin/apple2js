@@ -103,32 +103,6 @@
     <div class="inset">
       <div style="margin: 0 10px">
         <div id="keyboard"></div>
-        <div id="textarea" style="display: none">
-          <button onclick="Apple2.io.keyDown(0x1b)">
-            ESC
-          </button>
-          <button onclick="Apple2.reset()" style="float: right; margin-left: 10px">
-            Reset
-          </button>
-          <button onclick="Apple2.io.keyDown(0x15)" style="float: right">
-            &rarr;
-          </button>
-          <button onclick="Apple2.io.keyDown(0x08)" style="float: right">
-            &larr;
-          </button>
-            <label for="text_input">Text Input</label>
-            <textarea rows="10" style="width: 99%" id="text_input"></textarea>
-          <br />
-          <button onclick="Apple2.io.setKeyBuffer(document.querySelector('#text_input').value)">
-            Send
-          </button>
-          <input type="checkbox" id="buffering" />
-          <label for="buffering">Buffer</label>
-          <button style="float: right"
-                  onclick="document.querySelector('#keyboard').style.display = 'block'; document.querySelector('#textarea').style.display = 'none'">
-            Keyboard
-          </button>
-        </div>
       </div>
     </div>
   </div>

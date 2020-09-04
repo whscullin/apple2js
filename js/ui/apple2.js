@@ -587,6 +587,7 @@ function processHash(hash) {
     }
 }
 
+
 /*
  * Keyboard/Gamepad routines
  */
@@ -796,6 +797,18 @@ export function initUI(apple2, disk2, cffa, e) {
         window.addEventListener('touchstart', audio.autoStart);
     }
     window.addEventListener('mousedown', audio.autoStart);
+
+    window.addEventListener('paste', (event) => {
+        var paste = (event.clipboardData || window.clipboardData).getData('text');
+        io.setKeyBuffer(paste);
+        event.preventDefault();
+    });
+
+    window.addEventListener('copy', (event) => {
+        event.clipboardData.setData('text/plain', vm.getText());
+        event.preventDefault();
+    });
+
 
     document.querySelectorAll('canvas').forEach(function(canvas) {
         canvas.addEventListener('mousedown', function(evt) {

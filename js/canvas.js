@@ -456,6 +456,47 @@ export function LoresPage(page, charset, e, context)
             _buffer[1] = base64_decode(state.buffer[1]);
 
             this.refresh();
+        },
+
+        getText() {
+            function rowToBase(row) {
+                var ab = (row >> 3) & 3;
+                var cd = (row >> 1) & 0x3;
+                var e = row & 1;
+                return (cd << 8) | (e << 7) | (ab <<  5) | (ab << 3);
+            }
+
+            function mapCharCode(charCode) {
+                charCode &= 0x7F;
+                if (charCode < 0x20) {
+                    charCode += 0x40;
+                }
+                if (!e && (charCode >= 0x60)) {
+                    charCode -= 0x40;
+                }
+                return charCode;
+            }
+
+            var buffer = '', line, charCode;
+            var row, col, base;
+            for (row = 0; row < 24; row++) {
+                base = rowToBase(row);
+                line = '';
+                if (e && _80colMode) {
+                    for (col = 0; col < 80; col++) {
+                        charCode = mapCharCode(_buffer[1 - col % 2][base + Math.floor(col / 2)]);
+                        line += String.fromCharCode(charCode);
+                    }
+                } else {
+                    for (col = 0; col < 40; col++) {
+                        charCode = mapCharCode(_buffer[0][base + col]);
+                        line += String.fromCharCode(charCode);
+                    }
+                }
+                line = line.trimRight();
+                buffer +=  line + '\n';
+            }
+            return buffer;
         }
     };
 }
@@ -1107,6 +1148,9 @@ export function VideoModes(gr, hgr, gr2, hgr2, e) {
             _grs[1].mono(on);
             _hgrs[0].mono(on);
             _hgrs[1].mono(on);
+        },
+        getText() {
+            return _grs[pageMode - 1].getText();
         }
     };
 }
