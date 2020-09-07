@@ -415,14 +415,22 @@ button:focus {
     color: white;
     text-align: center;
     position: relative;
-    border: 5px outset #66594E;
+    border-left: 5px solid #65594D;
+    border-top: 5px solid #65594D;
+    border-right: 5px solid #110E0D;
+    border-bottom: 5px solid #110E0D;
+    /* border: 5px outset #66594E; */
     border-radius: 5px;
     cursor: pointer;
 }
 
 #keyboard .pressed {
     background-color: #22150A;
-    border: 5px outset #44372C;
+    border-left: 5px solid #44372C;
+    border-top: 5px solid #44372C;
+    border-right: 5px solid #000000;
+    border-bottom: 5px solid #000000;
+    /* border: 5px outset #44372C; */
 }
 
 #keyboard .key div {
@@ -570,7 +578,11 @@ button:focus {
 
 #reset {
     background: #44372C;
-    border: 3px outset #66594E;
+    border-left: 3px solid #65594D;
+    border-top: 3px solid #65594D;
+    border-right: 3px solid #110E0D;
+    border-bottom: 3px solid #110E0D;
+    /* border: 5px outset #66594E; */
     border-radius: 3px;
     color: white;
     font: 9px Helvetica;
