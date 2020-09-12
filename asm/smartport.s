@@ -24,9 +24,9 @@ ROMRTS		EQU 	$FF58
 BOOT		EQU	$0801
 
 		LDX	#$20		; $20 $00 $03 $00 - Smartport signature
-		LDX	#$00
+		LDX	#$00		; $20 $00 $03 $3C - Vanilla disk signature
 		LDX	#$03
-		LDX	#$00
+		LDX	#$00		; Override with $3C for DumbPort
 ; Determine our slot
 		JSR	ROMRTS
 		TSX

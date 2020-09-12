@@ -15,7 +15,7 @@ export function Apple2(options) {
 
     var paused = false;
 
-    var DEBUG = false;
+    var DEBUG = true;
     var TRACE = false;
     var MAX_TRACE = 256;
     var trace = [];

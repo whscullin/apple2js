@@ -12,7 +12,7 @@
 import { base64_decode } from '../base64';
 import { debug, toHex } from '../util';
 
-export default function SmartPort(io, cpu) {
+export default function SmartPort(io, cpu, options ) {
 
     /*
         $Cn01=$20
@@ -29,7 +29,7 @@ export default function SmartPort(io, cpu) {
     // var BLOCK_HI = 0x47;
 
     var ROM = [
-        0xa2,0x20,0xa2,0x00,0xa2,0x03,0xa2,0x00, //
+        0xa2,0x20,0xa2,0x00,0xa2,0x03,0xa2,0x3C, //
         0x20,0x58,0xff,0xba,0xbd,0x00,0x01,0x8d, //
         0xf8,0x07,0x0a,0x0a,0x0a,0x0a,0xa8,0xb9, // 0x10
         0x80,0xc0,0x4a,0xb0,0x11,0xa5,0x00,0xd0, //
@@ -65,6 +65,15 @@ export default function SmartPort(io, cpu) {
 
     var disks = [];
 
+    function _init() {
+        if (options && options.block) {
+            ROM[0x07] = 0x3C;
+            debug('DumbPort card');
+        } else {
+            debug('SmartPort card');
+        }
+    }
+
     function decodeDisk(unit, disk) {
         disks[unit] = [];
         for (var idx = 0; idx < disk.blocks.length; idx++) {
@@ -73,7 +82,7 @@ export default function SmartPort(io, cpu) {
     }
 
     function _debug() {
-        // debug.apply(this, arguments);
+        debug.apply(this, arguments);
     }
 
     function Address() {
@@ -277,6 +286,8 @@ export default function SmartPort(io, cpu) {
 
         return result;
     }
+
+    _init();
 
     /*
      * Interface

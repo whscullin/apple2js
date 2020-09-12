@@ -4,10 +4,10 @@ import { driveLights, initUI, updateUI } from './ui/apple2';
 import Printer from './ui/printer';
 
 import DiskII from './cards/disk2';
-import CFFA from './cards/cffa';
 import LanguageCard from './cards/langcard';
 import Parallel from './cards/parallel';
 import RAMFactor from './cards/ramfactor';
+import SmartPort from './cards/smartport';
 import Thunderclock from './cards/thunderclock';
 import VideoTerm from './cards/videoterm';
 
@@ -103,9 +103,9 @@ var videoTerm = new VideoTerm(io, options.screen[0]);
 var slinky = new RAMFactor(io, 1024 * 1024);
 var disk2 = new DiskII(io, driveLights, sectors);
 var clock = new Thunderclock(io);
-var cffa = new CFFA(io);
+var smartport = new SmartPort(io, cpu, { block: true });
 
-initUI(apple2, disk2, cffa, false);
+initUI(apple2, disk2, smartport, false);
 
 io.setSlot(0, lc);
 io.setSlot(1, parallel);
@@ -113,5 +113,6 @@ io.setSlot(2, slinky);
 io.setSlot(4, clock);
 io.setSlot(3, videoTerm);
 io.setSlot(6, disk2);
+io.setSlot(7, smartport);
 
 cpu.addPageHandler(lc);
