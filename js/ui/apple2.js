@@ -34,7 +34,7 @@ var stats;
 var vm;
 var tape;
 var _disk2;
-var _cffa;
+var _smartPort;
 var audio;
 var keyboard;
 var io;
@@ -260,7 +260,7 @@ function doLoadLocalDisk(drive, file) {
         var ext = parts.pop().toLowerCase();
         var name = parts.join('.');
         if (this.result.byteLength >= 800 * 1024) {
-            if (_cffa.setBinary(drive, name, ext, this.result)) {
+            if (_smartPort.setBinary(drive, name, ext, this.result)) {
                 driveLights.label(drive, name);
                 focused = false;
                 initGamepad();
@@ -321,7 +321,7 @@ export function doLoadHTTP(drive, _url) {
             var ext = fileParts.pop().toLowerCase();
             var name = decodeURIComponent(fileParts.join('.'));
             if (data.byteLength >= 800 * 1024) {
-                if (_cffa.setBinary(drive, name, ext, data)) {
+                if (_smartPort.setBinary(drive, name, ext, data)) {
                     driveLights.label(drive, name);
                     initGamepad();
                 }
@@ -769,7 +769,7 @@ export function openPrinterModal() {
     MicroModal.show('printer-modal');
 }
 
-export function initUI(apple2, disk2, cffa, e) {
+export function initUI(apple2, disk2, smartPort, e) {
     _apple2 = apple2;
     cpu = _apple2.getCPU();
     io = _apple2.getIO();
@@ -777,7 +777,7 @@ export function initUI(apple2, disk2, cffa, e) {
     vm = apple2.getVideoModes();
     tape = new Tape(io);
     _disk2 = disk2;
-    _cffa = cffa;
+    _smartPort = smartPort;
 
     keyboard = new KeyBoard(cpu, io, e);
     keyboard.create('#keyboard');

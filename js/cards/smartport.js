@@ -11,45 +11,37 @@
 
 import { base64_decode } from '../base64';
 import { debug, toHex } from '../util';
+import { rom } from '../roms/cards/smartport';
 
-export default function SmartPort(io, cpu) {
+export default function SmartPort(io, cpu, options ) {
+    var COMMAND = 0x42;
+    var UNIT = 0x43;
+    var ADDRESS_LO = 0x44;
+    // var ADDRESS_HI = 0x45;
+    var BLOCK_LO = 0x46;
+    // var BLOCK_HI = 0x47;
 
-    /*
-        $Cn01=$20
-        $Cn03=$00
-        $Cn05=$03
-        $Cn07=$00
-    */
-
-    var ROM = [
-        0xA2, 0x20, 0xA0, 0x00, 0xA2, 0x03, 0xA0, 0x3C, 0x20, 0x58, 0xFF, 0xBA, 0xBD, 0x00, 0x01, 0x0A,
-        0x0A, 0x0A, 0x0A, 0xAA, 0x4C, 0x01, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x60, 0x00, 0x00, 0x60, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xDF, 0x20
-    ];
 
     var disks = [];
+
+    function _init() {
+        if (options && options.block) {
+            rom[0x07] = 0x3C;
+            debug('DumbPort card');
+        } else {
+            debug('SmartPort card');
+        }
+    }
 
     function decodeDisk(unit, disk) {
         disks[unit] = [];
         for (var idx = 0; idx < disk.blocks.length; idx++) {
             disks[unit][idx] = base64_decode(disk.blocks[idx]);
         }
+    }
+
+    function _debug() {
+        // debug.apply(this, arguments);
     }
 
     function Address() {
@@ -173,9 +165,9 @@ export default function SmartPort(io, cpu) {
      */
 
     function readBlock(state, drive, block, buffer) {
-        debug('read drive=' + drive);
-        debug('read buffer=' + buffer);
-        debug('read block=$' + toHex(block));
+        _debug('read drive=' + drive);
+        _debug('read buffer=' + buffer);
+        _debug('read block=$' + toHex(block));
 
         if (!disks[drive] || !disks[drive].length) {
             debug('Drive', drive, 'is empty');
@@ -198,9 +190,9 @@ export default function SmartPort(io, cpu) {
      */
 
     function writeBlock(state, drive, block, buffer) {
-        debug('write drive=' + drive);
-        debug('write buffer=' + buffer);
-        debug('write block=$' + toHex(block));
+        _debug('write drive=' + drive);
+        _debug('write buffer=' + buffer);
+        _debug('write block=$' + toHex(block));
 
         if (!disks[drive] || !disks[drive].length) {
             debug('Drive', drive, 'is empty');
@@ -233,37 +225,64 @@ export default function SmartPort(io, cpu) {
         state.s &= 0xfe;
     }
 
+    function _access(off, val) {
+        var result;
+        var readMode = val === undefined;
+
+        switch (off & 0x8f) {
+        case 0x80:
+            if (readMode) {
+                result = 0;
+                for (var idx = 0; idx < disks.length; idx++) {
+                    result <<= 1;
+                    if (disks[idx]) {
+                        result |= 0x01;
+                    }
+                }
+            }
+            break;
+        }
+
+        return result;
+    }
+
+    _init();
+
     /*
      * Interface
      */
 
     return {
-        read: function(page, off, debugFlag) {
+        ioSwitch: function (off, val) {
+            return _access(off, val);
+        },
+
+        read: function(page, off) {
             var state = cpu.getState();
             var cmd;
             var unit;
             var buffer;
             var block;
+            var blockOff = rom[0xff];
+            var smartOff = blockOff + 3;
 
-            if (!debugFlag) {
-                debug('read $' + toHex(page) + toHex(off) + '=$' + toHex(ROM[off]), cpu.sync());
-            }
-
-            if (off == 0x00 && cpu.sync()) {
-                readBlock(state, 1, 0, new Address(0x0800));
-            } else if (off == 0x20 && cpu.sync()) { // Regular block device entry POINT
-                debug('block device entry');
-                cmd = cpu.read(0x00, 0x42);
-                unit = cpu.read(0x00, 0x43);
-                var bufferAddr;
-                var blockAddr;
+            if (off === blockOff && cpu.sync()) { // Regular block device entry POINT
+                _debug('block device entry');
+                cmd = cpu.read(0x00, COMMAND);
+                unit = cpu.read(0x00, UNIT);
+                var bufferAddr = new Address(ADDRESS_LO);
+                var blockAddr = new Address(BLOCK_LO);
                 var drive = (unit & 0x80) ? 2 : 1;
                 var driveSlot = (unit & 0x70) >> 4;
 
-                debug('cmd=' + cmd);
-                debug('unit=$' + toHex(unit));
+                buffer = bufferAddr.readAddress();
+                block = blockAddr.readWord();
 
-                debug('slot=' + driveSlot + ' drive=' + drive);
+                _debug('cmd=' + cmd);
+                _debug('unit=$' + toHex(unit));
+
+                _debug('slot=' + driveSlot + ' drive=' + drive);
+                _debug('buffer=' + toHex(buffer) + ' block=' + toHex(block));
 
                 switch (cmd) {
                 case 0: // INFO
@@ -271,41 +290,32 @@ export default function SmartPort(io, cpu) {
                     break;
 
                 case 1: // READ
-                    bufferAddr = new Address(0x44);
-                    buffer = bufferAddr.readAddress();
-                    blockAddr = new Address(0x46);
-                    block = blockAddr.readWord();
-
                     readBlock(state, drive, block, buffer);
                     break;
 
                 case 2: // WRITE
-                    bufferAddr = new Address(0x44);
-                    buffer = bufferAddr.readAddress();
-                    blockAddr = new Address(0x46);
-                    block = blockAddr.readWord();
-
                     writeBlock(state, drive, block, buffer);
                     break;
+
                 case 3: // FORMAT
                     formatDevice(state, unit);
                     break;
                 }
-            } else if (off == 0x23 && cpu.sync()) {
-                debug('smartport entry');
+            } else if (off == smartOff && cpu.sync()) {
+                _debug('smartport entry');
                 var retVal = {};
                 var stackAddr = new Address(state.sp + 1, 0x01);
 
                 retVal = stackAddr.readAddress();
 
-                debug('return=' + retVal);
+                _debug('return=' + retVal);
 
                 var cmdBlockAddr = retVal.inc(1);
                 cmd = cmdBlockAddr.readByte();
                 var cmdListAddr = cmdBlockAddr.inc(1).readAddress();
 
-                debug('cmd=' + cmd);
-                debug('cmdListAddr=' + cmdListAddr);
+                _debug('cmd=' + cmd);
+                _debug('cmdListAddr=' + cmdListAddr);
 
                 stackAddr.writeAddress(retVal.inc(3));
 
@@ -314,13 +324,13 @@ export default function SmartPort(io, cpu) {
                 buffer = cmdListAddr.inc(2).readAddress();
                 var status;
 
-                debug('parameterCount=' + parameterCount);
+                _debug('parameterCount=' + parameterCount);
                 switch (cmd) {
                 case 0x00: // INFO
                     status = cmdListAddr.inc(4).readByte();
-                    debug('info unit=' + unit);
-                    debug('info buffer=' + buffer);
-                    debug('info status=' + status);
+                    _debug('info unit=' + unit);
+                    _debug('info buffer=' + buffer);
+                    _debug('info status=' + status);
                     switch (unit) {
                     case 0:
                         switch (status) {
@@ -396,7 +406,7 @@ export default function SmartPort(io, cpu) {
 
             cpu.setState(state);
 
-            return ROM[off];
+            return rom[off];
         },
 
         write: function() {
