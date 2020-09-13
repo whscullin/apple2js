@@ -41,7 +41,7 @@ export default function SmartPort(io, cpu, options ) {
     }
 
     function _debug() {
-        debug.apply(this, arguments);
+        // debug.apply(this, arguments);
     }
 
     function Address() {
