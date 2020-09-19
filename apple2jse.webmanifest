@@ -1,0 +1,52 @@
+{
+    "name": "Apple //jse",
+    "description": "Apple //jse - An Apple //e Emulator in Javascript",
+    "background_color": "#c4c1a0",
+    "display": "minimal-ui",
+    "orientation": "portrait-primary",
+    "theme_color": "#c4c1a0",
+    "start_url": "apple2jse.html",
+    "icons": [
+        {
+            "src": "img/logo-128.png",
+            "type": "image/png",
+            "sizes": "128x128"
+        },
+        {
+            "src": "img/logo-192.png",
+            "type": "image/png",
+            "sizes": "192x192"
+        },
+        {
+            "src": "img/logo-512.png",
+            "type": "image/png",
+            "sizes": "512x512"
+        }
+    ],
+    "shortcuts": [
+        {
+          "name": "DOS 3.3 Master",
+          "short_name": "DOS 3.3",
+          "description": "DOS 3.3 Boot Diskette",
+          "url": "apple2jse.html#dos33master",
+          "icons": [
+                {
+                    "src": "img/disk-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "ProDOS 1.9",
+            "short_name": "ProDOS",
+            "description": "ProDOS 8 1.9 Boot Diskette",
+            "url": "apple2jse.html#prodos",
+            "icons": [
+                {
+                    "src": "img/disk-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
+    ]
+}

@@ -23,11 +23,19 @@
 <meta name="description" content="Apple //jse is an Apple //e emulator written using only JavaScript and HTML5. It has color display, sound and disk support." />
 <meta name="keywords" content="apple2e,apple,ii,javascript,emulator,html5" />
 
+<script>
+  if('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+  }
+</script>
+
 <link rel="apple-touch-icon" href="img/webapp-iphone.png" />
 <link rel="apple-touch-icon" size="72x72" href="img/webapp-ipad.png" />
 <link rel="shortcut icon" href="img/logoicon.png" />
 <link rel="stylesheet" type="text/css" href="css/apple2.css" />
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.2/css/all.css" />
+
+<link rel="manifest" href="apple2jse.webmanifest">
 
 <!-- Disk Index -->
 <script type="text/javascript" src="json/disks/index.js"></script>
