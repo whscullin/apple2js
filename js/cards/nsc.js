@@ -94,11 +94,11 @@ export default function NoSlotClock(rom)
 
     return {
         start: function nsc_start()  {
-            return rom.nsc_start();
+            return rom.start();
         },
 
         end: function nsc_end() {
-            return rom.nsc_end();
+            return rom.end();
         },
 
         read: function nsc_read(page, off) {
