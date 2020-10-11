@@ -67,6 +67,11 @@ export function Apple2(options) {
         window.webkitCancelAnimationFrame ||
         window.msCancelAnimationFrame;
 
+    /**
+     * Runs the emulator. If the emulator is already running, this does
+     * nothing. When this function exits either `runTimer` or
+     * `runAnimationFrame` will be non-null.
+     */
     function run() {
         if (runTimer || runAnimationFrame) {
             return; // already running
@@ -125,7 +130,7 @@ export function Apple2(options) {
             }
         };
         if (_requestAnimationFrame) {
-            _requestAnimationFrame(runFn);
+            runAnimationFrame = _requestAnimationFrame(runFn);
         } else {
             runTimer = setInterval(runFn, interval);
         }
