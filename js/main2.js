@@ -105,7 +105,7 @@ var disk2 = new DiskII(io, driveLights, sectors);
 var clock = new Thunderclock(io);
 var smartport = new SmartPort(io, cpu, { block: true });
 
-initUI(apple2, disk2, smartport, false);
+initUI(apple2, disk2, smartport, printer, false);
 
 io.setSlot(0, lc);
 io.setSlot(1, parallel);

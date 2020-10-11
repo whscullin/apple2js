@@ -9,6 +9,20 @@
  * implied warranty.
  */
 
+ /**
+  * Printer UI. The "paper" is bound to the element selected by the input.
+  *
+  * Every line that is output to the printer is added as a <div> to the paper.
+  * The high bit of all characters is stripped and only visible characters are
+  * added to the output. The following characters receive special treatment:
+  *
+  * *   `EOT` (ASCII 4): deletes last character
+  * *   `HT` (ASCII 9): replaced with 8 spaces
+  * *   `LF` (ASCII 10): silently removed
+  * *   `CR` (ASCII 13): a newline and carriage return
+  *
+  * @param {string} el The selector of the element on which to bind the "paper".
+  */
 export default function Printer(el) {
     var paper = document.querySelector(el);
     var _lineBuffer = '';
@@ -46,7 +60,7 @@ export default function Printer(el) {
 
         clear: function() {
             _lineBuffer = '';
-            paper.empty();
+            paper.innerHTML = "";
             newLine();
         },
 

@@ -35,6 +35,7 @@ var vm;
 var tape;
 var _disk2;
 var _smartPort;
+var _printer;
 var audio;
 var keyboard;
 var io;
@@ -769,7 +770,11 @@ export function openPrinterModal() {
     MicroModal.show('printer-modal');
 }
 
-export function initUI(apple2, disk2, smartPort, e) {
+export function clearPrinterPaper() {
+    _printer.clear();
+}
+
+export function initUI(apple2, disk2, smartPort, printer, e) {
     _apple2 = apple2;
     cpu = _apple2.getCPU();
     io = _apple2.getIO();
@@ -778,6 +783,7 @@ export function initUI(apple2, disk2, smartPort, e) {
     tape = new Tape(io);
     _disk2 = disk2;
     _smartPort = smartPort;
+    _printer = printer;
 
     keyboard = new KeyBoard(cpu, io, e);
     keyboard.create('#keyboard');
