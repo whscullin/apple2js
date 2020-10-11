@@ -233,6 +233,7 @@ export function doSave() {
     var name = document.querySelector('#save_name').value;
     saveLocalStorage(_currentDrive, name);
     MicroModal.close('save-modal');
+    window.setTimeout(() => openAlert('Saved'), 0);
 }
 
 export function doDelete(name) {
@@ -507,8 +508,6 @@ function saveLocalStorage(drive, name) {
     diskIndex[name] = json;
 
     window.localStorage.diskIndex = JSON.stringify(diskIndex);
-
-    openAlert('Saved');
 
     driveLights.label(drive, name);
     driveLights.dirty(drive, false);
