@@ -27,6 +27,8 @@ export default function Printer(el) {
     var paper = document.querySelector(el);
     var _lineBuffer = '';
     var _line;
+    var _rawLen = 0;
+    var _raw = new Uint8Array(1024);
 
     function newLine() {
         _line = document.createElement('div');
@@ -56,16 +58,29 @@ export default function Printer(el) {
                 _lineBuffer += c;
             }
             _line.innerText = _lineBuffer;
+            _raw[_rawLen] = val;
+            _rawLen++;
+            if (_rawLen > _raw.length) {
+                let newRaw = new Uint8Array(_raw.length * 2);
+                newRaw.set(_raw);
+                _raw = newRaw;
+            }
         },
 
         clear: function() {
             _lineBuffer = '';
             paper.innerHTML = "";
             newLine();
+            _raw = new Uint8Array(1024);
+            _rawLen = 0;
         },
 
         hasPrintout: function() {
             return paper.text.length;
+        },
+
+        getRawOutput: function() {
+            return _raw.slice(0, _rawLen);
         }
     };
 }
