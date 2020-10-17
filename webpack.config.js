@@ -39,6 +39,18 @@ module.exports =
                     },
                 ],
             },
+            {
+                test: /\.ts$/i,
+                use: [
+                    {
+                        loader: 'ts-loader'
+                    },
+                ],
+                exclude: /node_modules/,
+            }
         ],
+    },
+    resolve: {
+        extensions: ['.ts', '.js'],
     },
 };
