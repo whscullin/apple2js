@@ -9,7 +9,7 @@
  * implied warranty.
  */
 
-import { byte, word } from "./types";
+import { byte, memory, word } from "./types";
 
 /*eslint no-console: 0*/
 
@@ -51,12 +51,12 @@ export function allocMem(size: number) {
 }
 
 /** Returns an array or Uint8Array of 256 * `pages` bytes. */
-export function allocMemPages(pages: number) {
+export function allocMemPages(pages: number): memory {
     return allocMem(pages << 8);
 }
 
 /** Returns a new Uint8Array for the input array. */
-export function bytify(ary: number[]) {
+export function bytify(ary: number[]): memory {
     let result: number[] | Uint8Array = ary;
     if (window.Uint8Array) {
         result = new Uint8Array(ary);

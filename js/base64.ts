@@ -1,4 +1,9 @@
-export function base64_encode (data) {
+import { byte, memory } from "./types";
+
+const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+
+/** Encode an array of bytes in base64. */
+export function base64_encode(data: memory) {
     // Twacked by Will Scullin to handle arrays of "bytes"
 
     // http://kevin.vanzonneveld.net
@@ -18,7 +23,7 @@ export function base64_encode (data) {
     //    return atob(data);
     //}
 
-    var b64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+    
     var o1, o2, o3, h1, h2, h3, h4, bits, i = 0, ac = 0, enc='', tmp_arr = [];
 
     if (!data) {
@@ -38,7 +43,7 @@ export function base64_encode (data) {
         h4 = bits & 0x3f;
 
         // use hexets to index into b64, and append result to encoded string
-        tmp_arr[ac++] = b64.charAt(h1) + b64.charAt(h2) + b64.charAt(h3) + b64.charAt(h4);
+        tmp_arr[ac++] = B64.charAt(h1) + B64.charAt(h2) + B64.charAt(h3) + B64.charAt(h4);
     } while (i < data.length);
 
     enc = tmp_arr.join('');
@@ -55,7 +60,12 @@ export function base64_encode (data) {
     return enc;
 }
 
-export function base64_decode(data) {
+/** Returns undefined if the input is null or undefined. */
+export function base64_decode(data: null | undefined): undefined;
+/** Returns an array of bytes from the given base64-encoded string. */
+export function base64_decode(data: string): memory;
+/** Returns an array of bytes from the given base64-encoded string. */
+export function base64_decode(data: string | null | undefined): memory | undefined {
     // Twacked by Will Scullin to handle arrays of "bytes"
 
     // http://kevin.vanzonneveld.net
@@ -78,18 +88,17 @@ export function base64_decode(data) {
     //    return btoa(data);
     //}
 
-    var b64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
     var o1, o2, o3, h1, h2, h3, h4, bits, i = 0, ac = 0, tmp_arr = [];
 
     if (!data) {
-        return data;
+        return undefined;
     }
 
-    do {  // unpack four hexets into three octets using index points in b64
-        h1 = b64.indexOf(data.charAt(i++));
-        h2 = b64.indexOf(data.charAt(i++));
-        h3 = b64.indexOf(data.charAt(i++));
-        h4 = b64.indexOf(data.charAt(i++));
+    do {  // unpack four hexets into three octets using index points in B64
+        h1 = B64.indexOf(data.charAt(i++));
+        h2 = B64.indexOf(data.charAt(i++));
+        h3 = B64.indexOf(data.charAt(i++));
+        h4 = B64.indexOf(data.charAt(i++));
 
         bits = h1<<18 | h2<<12 | h3<<6 | h4;
 

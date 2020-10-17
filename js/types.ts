@@ -5,6 +5,9 @@ export type byte = number;
 /** A word (0..65535). This is not enforced by the compiler. */
 export type word = number;
 
+/** A region of memory. */
+export type memory = number[] | Uint8Array;
+
 export type DiskFormat = '2mg' | 'd13' | 'do' | 'dsk' | 'hdv' | 'po' | 'nib' | 'woz';
 
 export interface Drive {
