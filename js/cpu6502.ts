@@ -13,6 +13,8 @@
 import { byte, word } from './types';
 import { debug, toHex } from './util';
 
+type symbols = { [key: number]: string };
+
 export interface CpuOptions {
     '65C02'?: boolean;
 }
@@ -27,148 +29,237 @@ export interface CpuState {
         cycles: number
 }
 
-export default function CPU6502(options: CpuOptions = {}) {
-    const is65C02 = options['65C02'] ? true : false;
+/** Range of mode numbers. */
+type mode = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
+
+/** Addressing mode name to number mapping. */
+const modes: { [key: string]: mode } = {
+    accumulator: 0,           // A (Accumulator)
+    implied:     1,           // Implied
+    immediate:   2,           // # Immediate
+    absolute:    3,           // a Absolute
+    zeroPage:    4,           // zp Zero Page
+    relative:    5,           // r Relative
+
+    absoluteX:   6,           // a,X Absolute, X
+    absoluteY:   7,           // a,Y Absolute, Y
+    zeroPageX:   8,           // zp,X Zero Page, X
+    zeroPageY:   9,           // zp,Y Zero Page, Y
+
+    absoluteIndirect:   10,  // (a) Indirect
+    zeroPageXIndirect:  11, // (zp,X) Zero Page Indexed Indirect
+    zeroPageIndirectY:  12, // (zp),Y Zero Page Indexed with Y
+
+    /* 65c02 */
+    zeroPageIndirect:   13,  // (zp),
+    absoluteXIndirect:  14,  // (a, X),
+    zeroPage_relative:  15   // zp, Relative
+};
+
+/** Instruction size by addressing mode. */
+const sizes = {
+    0 /* modes.accumulator */: 1,
+    1 /* modes.implied */: 1,
+    2 /* modes.immediate */: 2,
+    3 /* modes.absolute */: 3,
+    4 /* modes.zeroPage */: 2,
+    5 /* modes.relative */: 2,
+    6 /* modes.absoluteX */: 3,
+    7 /* modes.absoluteY */: 3,
+    8 /* modes.zeroPageX */: 2,
+    9 /* modes.zeroPageY */: 2,
+    10 /* modes.indirect */: 3,
+    11 /* modes.zeroPageXIndirect */: 2,
+    12 /* modes.zeroPageYIndirect */: 2,
+
+    13 /* mode.zeroPageIndirect */: 2,
+    14 /* mode.absoluteXIndirect */: 3,
+    15 /* mode.zeroPage_relative */: 3
+};
+
+/** Status register flag numbers. */
+type flag = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
+/** Flags to status byte mask. */
+const flags = {
+    N: 0x80, // Negative
+    V: 0x40, // oVerflow
+    B: 0x10, // Break
+    D: 0x08, // Decimal
+    I: 0x04, // Interrupt
+    Z: 0x02, // Zero
+    C: 0x01  // Carry
+};
+
+/** CPU-referenced memory locations. */
+const loc = {
+    STACK: 0x100,
+    NMI: 0xFFFA,
+    RESET: 0xFFFC,
+    BRK: 0xFFFE
+};
+
+interface ReadablePage {
+    read(page: byte, offset: byte): byte;
+}
+
+function isReadablePage(page: ReadablePage | any): page is ReadablePage {
+    return (page as ReadablePage).read !== undefined;
+}
+
+interface WriteablePage {
+    write(page: byte, offset: byte, value: byte): void;
+}
+
+function isWriteablePage(page: WriteablePage | any): page is WriteablePage {
+    return (page as WriteablePage).write !== undefined;
+}
+
+interface PageHandler {
+    start(): byte;
+    end(): byte;
+}
+
+function isResettablePageHandler(pageHandler: PageHandler | ResettablePageHandler): pageHandler is ResettablePageHandler {
+    return (pageHandler as ResettablePageHandler).reset !== undefined;
+}
+
+interface ResettablePageHandler extends PageHandler {
+    reset(): void;
+}
+
+const BLANK_PAGE: ReadablePage & WriteablePage = {
+    read: function() { return 0; },
+    write: function() {}
+};
+
+interface Opts {
+    rwm?: boolean;
+}
+
+type ReadFn = () => byte;
+type WriteFn = (val: byte) => void;
+type ReadAddrFn = (opts?: Opts) => word;
+
+type readInstruction = [
+    desc: string,
+    op: (readFn: ReadFn) => void,
+    modeFn: ReadFn,
+    mode: mode, // really 0-15
+    cycles: number,
+];
+
+type writeInstruction = [
+    desc: string,
+    op: (writeFn: WriteFn) => void,
+    modeFn: WriteFn,
+    mode: mode, // really 0-15
+    cycles: number,
+];
+
+type impliedInstruction = [
+    desc: string,
+    op: () => void,
+    modeFn: null,
+    mode: mode, // really 0-15
+    cycles: number,
+];
+
+type relativeInstruction = [
+    desc: string,
+    op: (f: byte) => void,
+    modeFn: byte,
+    mode: mode, // really 0-15
+    cycles: number,
+];
+
+type noopInstruction = [
+    desc: string,
+    op: (readAddrFn: ReadAddrFn) => void,
+    modeFn: () => void,
+    mode: mode, // really 0-15
+    cycles: number,
+];
+
+type instruction =
+    readInstruction | writeInstruction |
+    impliedInstruction | relativeInstruction | noopInstruction;
+
+interface Instructions {
+    [key: number]: instruction;
+}
+
+type callback = (cpu: any) => void; // TODO(flan): Hack until there is better typing.
+
+function bind(op: instruction, o: CPU6502): instruction {
+    let op2: instruction[2] = typeof op[2] === "function" ? op[2].bind(o) : op[2];
+    return [op[0], op[1].bind(o), op2, op[3], op[4]];
+}
+
+export default class CPU6502 {
+    private readonly is65C02;
 
     /* Registers */
-    let pc = 0, // Program Counter
-        sr = 0x20, // Process Status Register
-        ar = 0, // Accumulator
-        xr = 0, // X Register
-        yr = 0, // Y Register
-        sp = 0xff; // Stack Pointer
+    private pc = 0; // Program Counter
+    private sr = 0x20; // Process Status Register
+    private ar = 0; // Accumulator
+    private xr = 0; // X Register
+    private yr = 0; // Y Register
+    private sp = 0xff; // Stack Pointer
 
-    type mode = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
+    private readPages: ReadablePage[] = [];
+    private writePages: WriteablePage[] = [];
+    private resetHandlers: ResettablePageHandler[] = [];
+    private cycles = 0;
+    private sync = false;
 
-        /* Addressing Mode */
-    const modes: { [key: string]: mode } = {
-        accumulator: 0,           // A (Accumulator)
-        implied:     1,           // Implied
-        immediate:   2,           // # Immediate
-        absolute:    3,           // a Absolute
-        zeroPage:    4,           // zp Zero Page
-        relative:    5,           // r Relative
+    private readonly ops: Instructions;
+    private readonly opary: instruction[];
 
-        absoluteX:   6,           // a,X Absolute, X
-        absoluteY:   7,           // a,Y Absolute, Y
-        zeroPageX:   8,           // zp,X Zero Page, X
-        zeroPageY:   9,           // zp,Y Zero Page, Y
+    constructor(options: CpuOptions = {}) {
+        this.is65C02 = options['65C02'] ? true : false;
 
-        absoluteIndirect:   10,  // (a) Indirect
-        zeroPageXIndirect:  11, // (zp,X) Zero Page Indexed Indirect
-        zeroPageIndirectY:  12, // (zp),Y Zero Page Indexed with Y
+        for (let idx = 0; idx < 0x100; idx++) {
+            this.readPages[idx] = BLANK_PAGE;
+            this.writePages[idx] = BLANK_PAGE;
+        }
 
-        /* 65c02 */
-        zeroPageIndirect:   13,  // (zp),
-        absoluteXIndirect:  14,  // (a, X),
-        zeroPage_relative:  15   // zp, Relative
-    };
+        // Create this CPU's instruction table
+        let ops: Instructions = [];
+        Object.assign(ops, OPS_6502);
+        if (this.is65C02) {
+            Object.assign(ops, OPS_65C02);
+        }
+        this.ops = ops;
 
-    const sizes = {
-        0 /* modes.accumulator */: 1,
-        1 /* modes.implied */: 1,
-        2 /* modes.immediate */: 2,
-        3 /* modes.absolute */: 3,
-        4 /* modes.zeroPage */: 2,
-        5 /* modes.relative */: 2,
-        6 /* modes.absoluteX */: 3,
-        7 /* modes.absoluteY */: 3,
-        8 /* modes.zeroPageX */: 2,
-        9 /* modes.zeroPageY */: 2,
-        10 /* modes.indirect */: 3,
-        11 /* modes.zeroPageXIndirect */: 2,
-        12 /* modes.zeroPageYIndirect */: 2,
+        // Certain browsers benefit from using arrays over maps
+        let opary: instruction[] = [];
 
-        13 /* mode.zeroPageIndirect */: 2,
-        14 /* mode.absoluteXIndirect */: 3,
-        15 /* mode.zeroPage_relative */: 3
-    };
-
-    type flag = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
-
-    /* Flags */
-    const flags = {
-        N: 0x80, // Negative
-        V: 0x40, // oVerflow
-        B: 0x10, // Break
-        D: 0x08, // Decimal
-        I: 0x04, // Interrupt
-        Z: 0x02, // Zero
-        C: 0x01  // Carry
-    };
-
-    /* Memory Locations */
-    const loc = {
-        STACK: 0x100,
-        NMI: 0xFFFA,
-        RESET: 0xFFFC,
-        BRK: 0xFFFE
-    };
-
-    interface ReadablePage {
-        read(page: byte, offset: byte): byte;
-    }
-
-    function isReadablePage(page: ReadablePage | any): page is ReadablePage {
-        return (page as ReadablePage).read !== undefined;
-    }
-
-    interface WriteablePage {
-        write(page: byte, offset: byte, value: byte): void;
-    }
-
-    function isWriteablePage(page: WriteablePage | any): page is WriteablePage {
-        return (page as WriteablePage).write !== undefined;
-    }
-
-    interface PageHandler {
-        start(): byte;
-        end(): byte;
-    }
-
-    function isResettablePageHandler(pageHandler: PageHandler | ResettablePageHandler): pageHandler is ResettablePageHandler {
-        return (pageHandler as ResettablePageHandler).reset !== undefined;
-    }
-
-    interface ResettablePageHandler extends PageHandler {
-        reset(): void;
-    }
-
-    let readPages: ReadablePage[] = [];
-    let writePages: WriteablePage[] = [];
-    let resetHandlers: ResettablePageHandler[] = [];
-    let cycles = 0;
-    let sync = false;
-
-    let blankPage: ReadablePage & WriteablePage = {
-        read: function() { return 0; },
-        write: function() {}
-    };
-
-    for (let idx = 0; idx < 0x100; idx++) {
-        readPages[idx] = blankPage;
-        writePages[idx] = blankPage;
+        for (let idx = 0; idx < 0x100; idx++) {
+            opary[idx] = bind(ops[idx] || this.unknown(idx), this);
+        }
+        this.opary = opary;
     }
 
     /**
      * Set or clears `f` in the status register. `f` must be a byte with a
      * single bit set.
      */
-    function setFlag(f: byte, on: boolean) {
-        sr = on ? (sr | f) : (sr & ~f);
+    private setFlag(f: byte, on: boolean) {
+        this.sr = on ? (this.sr | f) : (this.sr & ~f);
     }
 
     /** Updates the status register's zero flag and negative flag. */
-    function testNZ(val: byte) {
-        sr = val === 0 ? (sr | flags.Z) : (sr & ~flags.Z);
-        sr = (val & 0x80) ? (sr | flags.N) : (sr & ~flags.N);
+    private testNZ(val: byte) {
+        this.sr = val === 0 ? (this.sr | flags.Z) : (this.sr & ~flags.Z);
+        this.sr = (val & 0x80) ? (this.sr | flags.N) : (this.sr & ~flags.N);
 
         return val;
     }
 
     /** Updates the status register's zero flag. */
-    function testZ(val: byte) {
-        sr = val === 0 ? (sr | flags.Z) : (sr & ~flags.Z);
+    private testZ(val: byte) {
+        this.sr = val === 0 ? (this.sr | flags.Z) : (this.sr & ~flags.Z);
 
         return val;
     }
@@ -177,15 +268,15 @@ export default function CPU6502(options: CpuOptions = {}) {
      * Returns `a + b`, unless `sub` is true, in which case it performs
      * `a - b`. The status register is updated according to the result.
      */
-    function add(a: byte, b: byte, sub: boolean) {
+    private add(a: byte, b: byte, sub: boolean) {
         if (sub)
             b ^= 0xff;
 
         // KEGS
         var c, v;
-        if ((sr & flags.D) !== 0) {
+        if ((this.sr & flags.D) !== 0) {
             // BCD
-            c = (a & 0x0f) + (b & 0x0f) + (sr & flags.C);
+            c = (a & 0x0f) + (b & 0x0f) + (this.sr & flags.C);
             if (sub) {
                 if (c < 0x10)
                     c = (c - 0x06) & 0x0f;
@@ -202,7 +293,7 @@ export default function CPU6502(options: CpuOptions = {}) {
                     c += 0x60;
             }
         } else {
-            c = a + b + (sr & flags.C);
+            c = a + b + (this.sr & flags.C);
             v = (c ^ a) & 0x80;
         }
 
@@ -210,101 +301,101 @@ export default function CPU6502(options: CpuOptions = {}) {
             v = 0;
         }
 
-        setFlag(flags.C, c > 0xff);
-        setFlag(flags.V, !!v);
+        this.setFlag(flags.C, c > 0xff);
+        this.setFlag(flags.V, !!v);
 
-        return testNZ(c & 0xff);
+        return this.testNZ(c & 0xff);
     }
 
     /** Increments `a` and returns the value, setting the status register. */
-    function increment(a: byte) {
-        return testNZ((a + 0x01) & 0xff);
+    private increment(a: byte) {
+        return this.testNZ((a + 0x01) & 0xff);
     }
 
-    function decrement(a: byte) {
-        return testNZ((a + 0xff) & 0xff);
+    private decrement(a: byte) {
+        return this.testNZ((a + 0xff) & 0xff);
     }
 
-    function readBytePC(): byte {
-        let addr = pc,
+    private readBytePC(): byte {
+        let addr = this.pc,
             page = addr >> 8,
             off = addr & 0xff;
 
-        var result = readPages[page].read(page, off);
+        var result = this.readPages[page].read(page, off);
 
-        pc = (pc + 1) & 0xffff;
+        this.pc = (this.pc + 1) & 0xffff;
 
-        cycles++;
-
-        return result;
-    }
-
-    function readByte(addr: word): byte {
-        var page = addr >> 8,
-            off = addr & 0xff;
-
-        var result = readPages[page].read(page, off);
-
-        cycles++;
+        this.cycles++;
 
         return result;
     }
 
-    function readByteDebug(addr: word) {
+    private readByte(addr: word): byte {
         var page = addr >> 8,
             off = addr & 0xff;
 
-        return readPages[page].read(page, off);
+        var result = this.readPages[page].read(page, off);
+
+        this.cycles++;
+
+        return result;
     }
 
-    function writeByte(addr: word, val: byte) {
+    private readByteDebug(addr: word) {
         var page = addr >> 8,
             off = addr & 0xff;
 
-        writePages[page].write(page, off, val);
-
-        cycles++;
+        return this.readPages[page].read(page, off);
     }
 
-    function readWord(addr: word): word {
-        return readByte(addr) | (readByte(addr + 1) << 8);
+    private writeByte(addr: word, val: byte) {
+        var page = addr >> 8,
+            off = addr & 0xff;
+
+        this.writePages[page].write(page, off, val);
+
+        this.cycles++;
     }
 
-    function readWordDebug(addr: word): word {
-        return readByteDebug(addr) | (readByteDebug(addr + 1) << 8);
+    private readWord(addr: word): word {
+        return this.readByte(addr) | (this.readByte(addr + 1) << 8);
     }
 
-    function readWordPC(): word {
-        return readBytePC() | (readBytePC() << 8);
+    private readWordDebug(addr: word): word {
+        return this.readByteDebug(addr) | (this.readByteDebug(addr + 1) << 8);
     }
 
-    function readZPWord(addr: byte): word {
+    private readWordPC(): word {
+        return this.readBytePC() | (this.readBytePC() << 8);
+    }
+
+    private readZPWord(addr: byte): word {
         var lsb, msb;
 
-        lsb = readByte(addr & 0xff);
-        msb = readByte((addr + 1) & 0xff);
+        lsb = this.readByte(addr & 0xff);
+        msb = this.readByte((addr + 1) & 0xff);
 
         return (msb << 8) | lsb;
     }
 
-    function pushByte(val: byte) {
-        writeByte(loc.STACK | sp, val);
-        sp = (sp + 0xff) & 0xff;
+    private pushByte(val: byte) {
+        this.writeByte(loc.STACK | this.sp, val);
+        this.sp = (this.sp + 0xff) & 0xff;
     }
 
-    function pushWord(val: word) {
-        pushByte(val >> 8);
-        pushByte(val & 0xff);
+    private pushWord(val: word) {
+        this.pushByte(val >> 8);
+        this.pushByte(val & 0xff);
     }
 
-    function pullByte(): byte {
-        sp = (sp + 0x01) & 0xff;
-        return readByte(loc.STACK | sp);
+    private pullByte(): byte {
+        this.sp = (this.sp + 0x01) & 0xff;
+        return this.readByte(loc.STACK | this.sp);
     }
 
-    function pullWordRaw(): word {
-        var lsb = pullByte();
-        var msb = pullByte();
+    private pullWordRaw(): word {
+        var lsb = this.pullByte();
+        var msb = this.pullByte();
 
         return (msb << 8) | lsb;
     }
@@ -313,88 +404,88 @@ export default function CPU6502(options: CpuOptions = {}) {
      * Read functions
      */
 
-    function readImplied() {
+    readImplied() {
     }
 
     // #$00
-    function readImmediate(): byte {
-        return readBytePC();
+    readImmediate(): byte {
+        return this.readBytePC();
     }
 
     // $0000
-    function readAbsolute(): byte {
-        return readByte(readWordPC());
+    readAbsolute(): byte {
+        return this.readByte(this.readWordPC());
     }
 
     // $00
-    function readZeroPage(): byte {
-        return readByte(readBytePC());
+    readZeroPage(): byte {
+        return this.readByte(this.readBytePC());
     }
 
     // $0000,X
-    function readAbsoluteX(): byte {
-        var addr = readWordPC();
+    readAbsoluteX(): byte {
+        var addr = this.readWordPC();
         var oldPage = addr >> 8;
-        addr = (addr + xr) & 0xffff;
+        addr = (addr + this.xr) & 0xffff;
         var newPage = addr >> 8;
         if (newPage != oldPage) {
             var off = addr & 0xff;
-            readByte(oldPage << 8 | off);
+            this.readByte(oldPage << 8 | off);
         }
-        return readByte(addr);
+        return this.readByte(addr);
     }
 
     // $0000,Y
-    function readAbsoluteY(): byte {
-        var addr = readWordPC();
+    readAbsoluteY(): byte {
+        var addr = this.readWordPC();
         var oldPage = addr >> 8;
-        addr = (addr + yr) & 0xffff;
+        addr = (addr + this.yr) & 0xffff;
         var newPage = addr >> 8;
         if (newPage != oldPage) {
             var off = addr & 0xff;
-            readByte(oldPage << 8 | off);
+            this.readByte(oldPage << 8 | off);
         }
-        return readByte(addr);
+        return this.readByte(addr);
     }
 
     // $00,X
-    function readZeroPageX(): byte {
-        var zpAddr = readBytePC();
-        readByte(zpAddr);
-        return readByte((zpAddr + xr) & 0xff);
+    readZeroPageX(): byte {
+        var zpAddr = this.readBytePC();
+        this.readByte(zpAddr);
+        return this.readByte((zpAddr + this.xr) & 0xff);
     }
 
     // $00,Y
-    function readZeroPageY(): byte {
-        var zpAddr = readBytePC();
-        readByte(zpAddr);
-        return readByte((zpAddr + yr) & 0xff);
+    readZeroPageY(): byte {
+        var zpAddr = this.readBytePC();
+        this.readByte(zpAddr);
+        return this.readByte((zpAddr + this.yr) & 0xff);
     }
 
     // ($00,X)
-    function readZeroPageXIndirect(): byte {
-        var zpAddr = readBytePC();
-        readByte(zpAddr);
-        var addr = readZPWord((zpAddr + xr) & 0xff);
-        return readByte(addr);
+    readZeroPageXIndirect(): byte {
+        var zpAddr = this.readBytePC();
+        this.readByte(zpAddr);
+        var addr = this.readZPWord((zpAddr + this.xr) & 0xff);
+        return this.readByte(addr);
     }
 
     // ($00),Y
-    function readZeroPageIndirectY(): byte {
-        var addr = readZPWord(readBytePC());
+    readZeroPageIndirectY(): byte {
+        var addr = this.readZPWord(this.readBytePC());
         var oldPage = addr >> 8;
-        addr = (addr + yr) & 0xffff;
+        addr = (addr + this.yr) & 0xffff;
         var newPage = addr >> 8;
         if (newPage != oldPage) {
             var off = addr & 0xff;
-            readByte(oldPage << 8 | off);
+            this.readByte(oldPage << 8 | off);
         }
-        return readByte(addr);
+        return this.readByte(addr);
     }
 
     // ($00) (65C02)
-    function readZeroPageIndirect(): byte {
-        return readByte(readZPWord(readBytePC()));
+    readZeroPageIndirect(): byte {
+        return this.readByte(this.readZPWord(this.readBytePC()));
     }
 
     /*
@@ -402,990 +493,545 @@ export default function CPU6502(options: CpuOptions = {}) {
      */
 
     // $0000
-    function writeAbsolute(val: byte) {
-        writeByte(readWordPC(), val);
+    writeAbsolute(val: byte) {
+        this.writeByte(this.readWordPC(), val);
     }
 
     // $00
-    function writeZeroPage(val: byte) {
-        writeByte(readBytePC(), val);
+    writeZeroPage(val: byte) {
+        this.writeByte(this.readBytePC(), val);
     }
 
     // $0000,X
-    function writeAbsoluteX(val: byte) {
-        var addr = readWordPC(), oldPage = addr >> 8;
-        addr = (addr + xr) & 0xffff;
+    writeAbsoluteX(val: byte) {
+        var addr = this.readWordPC(), oldPage = addr >> 8;
+        addr = (addr + this.xr) & 0xffff;
         var off = addr & 0xff;
-        readByte(oldPage << 8 | off);
-        writeByte(addr, val);
+        this.readByte(oldPage << 8 | off);
+        this.writeByte(addr, val);
     }
 
     // $0000,Y
-    function writeAbsoluteY(val: byte) {
-        var addr = readWordPC(), oldPage = addr >> 8;
-        addr = (addr + yr) & 0xffff;
+    writeAbsoluteY(val: byte) {
+        var addr = this.readWordPC(), oldPage = addr >> 8;
+        addr = (addr + this.yr) & 0xffff;
         var off = addr & 0xff;
-        readByte(oldPage << 8 | off);
-        writeByte(addr, val);
+        this.readByte(oldPage << 8 | off);
+        this.writeByte(addr, val);
     }
 
     // $00,X
-    function writeZeroPageX(val: byte) {
-        var zpAddr = readBytePC();
-        readByte(zpAddr);
-        writeByte((zpAddr + xr) & 0xff, val);
+    writeZeroPageX(val: byte) {
+        var zpAddr = this.readBytePC();
+        this.readByte(zpAddr);
+        this.writeByte((zpAddr + this.xr) & 0xff, val);
     }
 
     // $00,Y
-    function writeZeroPageY(val: byte) {
-        var zpAddr = readBytePC();
-        readByte(zpAddr);
-        writeByte((zpAddr + yr) & 0xff, val);
+    writeZeroPageY(val: byte) {
+        var zpAddr = this.readBytePC();
+        this.readByte(zpAddr);
+        this.writeByte((zpAddr + this.yr) & 0xff, val);
     }
 
     // ($00,X)
-    function writeZeroPageXIndirect(val: byte) {
-        var zpAddr = readBytePC();
-        readByte(zpAddr);
-        var addr = readZPWord((zpAddr + xr) & 0xff);
-        writeByte(addr, val);
+    writeZeroPageXIndirect(val: byte) {
+        var zpAddr = this.readBytePC();
+        this.readByte(zpAddr);
+        var addr = this.readZPWord((zpAddr + this.xr) & 0xff);
+        this.writeByte(addr, val);
     }
 
     // ($00),Y
-    function writeZeroPageIndirectY(val: byte) {
-        var addr = readZPWord(readBytePC()), oldPage = addr >> 8;
-        addr = (addr + yr) & 0xffff;
+    writeZeroPageIndirectY(val: byte) {
+        var addr = this.readZPWord(this.readBytePC()), oldPage = addr >> 8;
+        addr = (addr + this.yr) & 0xffff;
         var off = addr & 0xff;
-        readByte(oldPage << 8 | off);
-        writeByte(addr, val);
+        this.readByte(oldPage << 8 | off);
+        this.writeByte(addr, val);
     }
 
     // ($00) (65C02)
-    function writeZeroPageIndirect(val: byte) {
-        writeByte(readZPWord(readBytePC()), val);
+    writeZeroPageIndirect(val: byte) {
+        this.writeByte(this.readZPWord(this.readBytePC()), val);
     }
 
     // $00
-    function readAddrZeroPage(): byte {
-        return readBytePC();
+    readAddrZeroPage(): byte {
+        return this.readBytePC();
     }
 
     // $00,X
-    function readAddrZeroPageX() {
-        var zpAddr = readBytePC();
-        readByte(zpAddr);
-        return (zpAddr + xr) & 0xff;
+    readAddrZeroPageX() {
+        var zpAddr = this.readBytePC();
+        this.readByte(zpAddr);
+        return (zpAddr + this.xr) & 0xff;
     }
 
     // $0000 (65C02)
-    function readAddrAbsolute(): word {
-        return readWordPC();
+    readAddrAbsolute(): word {
+        return this.readWordPC();
     }
 
     // ($0000) (6502)
-    function readAddrAbsoluteIndirectBug(): word {
-        var addr = readWordPC();
+    readAddrAbsoluteIndirectBug(): word {
+        var addr = this.readWordPC();
         var page = addr & 0xff00;
         var off = addr & 0x00ff;
-        var lsb = readByte(addr);
-        var msb = readByte(page | ((off + 0x01) & 0xff));
+        var lsb = this.readByte(addr);
+        var msb = this.readByte(page | ((off + 0x01) & 0xff));
         return msb << 8 | lsb;
     }
 
     // ($0000) (65C02)
-    function readAddrAbsoluteIndirect(): word {
-        var lsb = readBytePC();
-        var msb = readBytePC();
-        readByte(pc);
-        return readWord(msb << 8 | lsb);
-    }
-
-    interface Opts {
-        rwm?: boolean;
+    readAddrAbsoluteIndirect(): word {
+        var lsb = this.readBytePC();
+        var msb = this.readBytePC();
+        this.readByte(this.pc);
+        return this.readWord(msb << 8 | lsb);
     }
 
     // $0000,X
-    function readAddrAbsoluteX(opts: Opts = {}): word {
-        var addr = readWordPC();
-        if (!is65C02 || opts.rwm) {
-            readByte(addr);
+    readAddrAbsoluteX(opts: Opts = {}): word {
+        var addr = this.readWordPC();
+        if (!this.is65C02 || opts.rwm) {
+            this.readByte(addr);
         } else {
-            readByte(pc);
+            this.readByte(this.pc);
         }
-        return (addr + xr) & 0xffff;
+        return (addr + this.xr) & 0xffff;
     }
 
     // $(0000,X) (65C02)
-    function readAddrAbsoluteXIndirect(): word {
-        var address = readWordPC();
-        readByte(pc);
-        return readWord((address + xr) & 0xffff);
+    readAddrAbsoluteXIndirect(): word {
+        var address = this.readWordPC();
+        this.readByte(this.pc);
+        return this.readWord((address + this.xr) & 0xffff);
     }
 
-    type ReadFn = () => byte;
-
     /* Break */
-    function brk(readFn: ReadFn) {
+    brk(readFn: ReadFn) {
         readFn();
-        pushWord(pc);
-        pushByte(sr | flags.B);
-        if (is65C02) {
-            setFlag(flags.D, false);
+        this.pushWord(this.pc);
+        this.pushByte(this.sr | flags.B);
+        if (this.is65C02) {
+            this.setFlag(flags.D, false);
         }
-        setFlag(flags.I, true);
-        pc = readWord(loc.BRK);
+        this.setFlag(flags.I, true);
+        this.pc = this.readWord(loc.BRK);
     }
 
     /* Load Accumulator */
-    function lda(readFn: ReadFn) {
-        ar = testNZ(readFn());
+    lda(readFn: ReadFn) {
+        this.ar = this.testNZ(readFn());
     }
 
     /* Load X Register */
-    function ldx(readFn: ReadFn) {
-        xr = testNZ(readFn());
+    ldx(readFn: ReadFn) {
+        this.xr = this.testNZ(readFn());
     }
 
     /* Load Y Register */
-    function ldy(readFn: ReadFn) {
-        yr = testNZ(readFn());
+    ldy(readFn: ReadFn) {
+        this.yr = this.testNZ(readFn());
     }
 
-    type WriteFn = (val: byte) => void;
-
     /* Store Accumulator */
-    function sta(writeFn: WriteFn) {
-        writeFn(ar);
+    sta(writeFn: WriteFn) {
+        writeFn(this.ar);
     }
 
     /* Store X Register */
-    function stx(writeFn: WriteFn) {
-        writeFn(xr);
+    stx(writeFn: WriteFn) {
+        writeFn(this.xr);
     }
 
     /* Store Y Register */
-    function sty(writeFn: WriteFn) {
-        writeFn(yr);
+    sty(writeFn: WriteFn) {
+        writeFn(this.yr);
     }
 
     /* Store Zero */
-    function stz(writeFn: WriteFn) {
+    stz(writeFn: WriteFn) {
         writeFn(0);
     }
 
     /* Add with Carry */
-    function adc(readFn: ReadFn) {
-        ar = add(ar, readFn(), /* sub= */ false);
+    adc(readFn: ReadFn) {
+        this.ar = this.add(this.ar, readFn(), /* sub= */ false);
     }
 
     /* Subtract with Carry */
-    function sbc(readFn: ReadFn) {
-        ar = add(ar, readFn(), /* sub= */ true);
+    sbc(readFn: ReadFn) {
+        this.ar = this.add(this.ar, readFn(), /* sub= */ true);
     }
 
     /* Increment Memory */
-    function incA() {
-        readByte(pc);
-        ar = increment(ar);
+    incA() {
+        this.readByte(this.pc);
+        this.ar = this.increment(this.ar);
     }
 
-    type ReadAddrFn = (opts?: Opts) => word;
-
-    function inc(readAddrFn: ReadAddrFn) {
+    inc(readAddrFn: ReadAddrFn) {
         var addr = readAddrFn({rwm: true});
-        var oldVal = readByte(addr);
-        writeByte(addr, oldVal);
-        var val = increment(oldVal);
-        writeByte(addr, val);
+        var oldVal = this.readByte(addr);
+        this.writeByte(addr, oldVal);
+        var val = this.increment(oldVal);
+        this.writeByte(addr, val);
     }
 
     /* Increment X */
-    function inx() {
-        readByte(pc);
-        xr = increment(xr);
+    inx() {
+        this.readByte(this.pc);
+        this.xr = this.increment(this.xr);
     }
 
     /* Increment Y */
-    function iny() {
-        readByte(pc);
-        yr = increment(yr);
+    iny() {
+        this.readByte(this.pc);
+        this.yr = this.increment(this.yr);
     }
 
     /* Decrement Memory */
-    function decA() {
-        readByte(pc);
-        ar = decrement(ar);
+    decA() {
+        this.readByte(this.pc);
+        this.ar = this.decrement(this.ar);
     }
 
-    function dec(readAddrFn: ReadAddrFn) {
+    dec(readAddrFn: ReadAddrFn) {
         var addr = readAddrFn({rwm: true});
-        var oldVal = readByte(addr);
-        writeByte(addr, oldVal);
-        var val = decrement(oldVal);
-        writeByte(addr, val);
+        var oldVal = this.readByte(addr);
+        this.writeByte(addr, oldVal);
+        var val = this.decrement(oldVal);
+        this.writeByte(addr, val);
     }
 
     /* Decrement X */
-    function dex() {
-        readByte(pc);
-        xr = decrement(xr);
+    dex() {
+        this.readByte(this.pc);
+        this.xr = this.decrement(this.xr);
     }
 
     /* Decrement Y */
-    function dey() {
-        readByte(pc);
-        yr = decrement(yr);
+    dey() {
+        this.readByte(this.pc);
+        this.yr = this.decrement(this.yr);
     }
 
-    function shiftLeft(val: byte) {
-        setFlag(flags.C, !!(val & 0x80));
-        return testNZ((val << 1) & 0xff);
+    shiftLeft(val: byte) {
+        this.setFlag(flags.C, !!(val & 0x80));
+        return this.testNZ((val << 1) & 0xff);
     }
 
     /* Arithmetic Shift Left */
-    function aslA() {
-        readByte(pc);
-        ar = shiftLeft(ar);
+    aslA() {
+        this.readByte(this.pc);
+        this.ar = this.shiftLeft(this.ar);
     }
 
-    function asl(readAddrFn: ReadAddrFn) {
+    asl(readAddrFn: ReadAddrFn) {
         var addr = readAddrFn({rwm: true});
-        var oldVal = readByte(addr);
-        writeByte(addr, oldVal);
-        var val = shiftLeft(oldVal);
-        writeByte(addr, val);
+        var oldVal = this.readByte(addr);
+        this.writeByte(addr, oldVal);
+        var val = this.shiftLeft(oldVal);
+        this.writeByte(addr, val);
     }
 
-    function shiftRight(val: byte) {
-        setFlag(flags.C, !!(val & 0x01));
-        return testNZ(val >> 1);
+    shiftRight(val: byte) {
+        this.setFlag(flags.C, !!(val & 0x01));
+        return this.testNZ(val >> 1);
     }
 
     /* Logical Shift Right */
-    function lsrA() {
-        readByte(pc);
-        ar = shiftRight(ar);
+    lsrA() {
+        this.readByte(this.pc);
+        this.ar = this.shiftRight(this.ar);
     }
 
-    function lsr(readAddrFn: ReadAddrFn) {
+    lsr(readAddrFn: ReadAddrFn) {
         var addr = readAddrFn({rwm: true});
-        var oldVal = readByte(addr);
-        writeByte(addr, oldVal);
-        var val = shiftRight(oldVal);
-        writeByte(addr, val);
+        var oldVal = this.readByte(addr);
+        this.writeByte(addr, oldVal);
+        var val = this.shiftRight(oldVal);
+        this.writeByte(addr, val);
     }
 
-    function rotateLeft(val: byte) {
-        var c = (sr & flags.C);
-        setFlag(flags.C, !!(val & 0x80));
-        return testNZ(((val << 1) | (c ? 0x01 : 0x00)) & 0xff);
+    rotateLeft(val: byte) {
+        var c = (this.sr & flags.C);
+        this.setFlag(flags.C, !!(val & 0x80));
+        return this.testNZ(((val << 1) | (c ? 0x01 : 0x00)) & 0xff);
     }
 
     /* Rotate Left */
-    function rolA() {
-        readByte(pc);
-        ar = rotateLeft(ar);
+    rolA() {
+        this.readByte(this.pc);
+        this.ar = this.rotateLeft(this.ar);
     }
 
-    function rol(readAddrFn: ReadAddrFn) {
+    rol(readAddrFn: ReadAddrFn) {
         var addr = readAddrFn({rwm: true});
-        var oldVal = readByte(addr);
-        writeByte(addr, oldVal);
-        var val = rotateLeft(oldVal);
-        writeByte(addr, val);
+        var oldVal = this.readByte(addr);
+        this.writeByte(addr, oldVal);
+        var val = this.rotateLeft(oldVal);
+        this.writeByte(addr, val);
     }
 
-    function rotateRight(a: byte) {
-        var c = (sr & flags.C);
-        setFlag(flags.C, !!(a & 0x01));
-        return testNZ((a >> 1) | (c ? 0x80 : 0x00));
+    private rotateRight(a: byte) {
+        var c = (this.sr & flags.C);
+        this.setFlag(flags.C, !!(a & 0x01));
+        return this.testNZ((a >> 1) | (c ? 0x80 : 0x00));
     }
 
     /* Rotate Right */
-    function rorA() {
-        readByte(pc);
-        ar = rotateRight(ar);
+    rorA() {
+        this.readByte(this.pc);
+        this.ar = this.rotateRight(this.ar);
     }
 
-    function ror(readAddrFn: ReadAddrFn) {
+    ror(readAddrFn: ReadAddrFn) {
         var addr = readAddrFn({rwm: true});
-        var oldVal = readByte(addr);
-        writeByte(addr, oldVal);
-        var val = rotateRight(oldVal);
-        writeByte(addr, val);
+        var oldVal = this.readByte(addr);
+        this.writeByte(addr, oldVal);
+        var val = this.rotateRight(oldVal);
+        this.writeByte(addr, val);
     }
 
     /* Logical And Accumulator */
-    function and(readFn: ReadFn) {
-        ar = testNZ(ar & readFn());
+    and(readFn: ReadFn) {
+        this.ar = this.testNZ(this.ar & readFn());
     }
 
     /* Logical Or Accumulator */
-    function ora(readFn: ReadFn) {
-        ar = testNZ(ar | readFn());
+    ora(readFn: ReadFn) {
+        this.ar = this.testNZ(this.ar | readFn());
     }
 
     /* Logical Exclusive Or Accumulator */
-    function eor(readFn: ReadFn) {
-        ar = testNZ(ar ^ readFn());
+    eor(readFn: ReadFn) {
+        this.ar = this.testNZ(this.ar ^ readFn());
     }
 
     /* Reset Bit */
 
-    function rmb(b: byte) {
+    rmb(b: byte) {
         var bit = (0x1 << b) ^ 0xFF;
-        var addr = readBytePC();
-        var val = readByte(addr);
-        readByte(addr);
+        var addr = this.readBytePC();
+        var val = this.readByte(addr);
+        this.readByte(addr);
         val &= bit;
-        writeByte(addr, val);
+        this.writeByte(addr, val);
     }
 
     /* Set Bit */
 
-    function smb(b: byte) {
+    smb(b: byte) {
         var bit = 0x1 << b;
-        var addr = readBytePC();
-        var val = readByte(addr);
-        readByte(addr);
+        var addr = this.readBytePC();
+        var val = this.readByte(addr);
+        this.readByte(addr);
         val |= bit;
-        writeByte(addr, val);
+        this.writeByte(addr, val);
     }
 
     /* Test and Reset Bits */
-    function trb(readAddrFn: ReadAddrFn) {
+    trb(readAddrFn: ReadAddrFn) {
         var addr = readAddrFn();
-        var val = readByte(addr);
-        testZ(val & ar);
-        readByte(addr);
-        writeByte(addr, val & ~ar);
+        var val = this.readByte(addr);
+        this.testZ(val & this.ar);
+        this.readByte(addr);
+        this.writeByte(addr, val & ~this.ar);
     }
 
     /* Test and Set Bits */
-    function tsb(readAddrFn: ReadAddrFn) {
+    tsb(readAddrFn: ReadAddrFn) {
         var addr = readAddrFn();
-        var val = readByte(addr);
-        testZ(val & ar);
-        readByte(addr);
-        writeByte(addr, val | ar);
+        var val = this.readByte(addr);
+        this.testZ(val & this.ar);
+        this.readByte(addr);
+        this.writeByte(addr, val | this.ar);
     }
 
     /* Bit */
-    function bit(readFn: ReadFn) {
+    bit(readFn: ReadFn) {
         var val = readFn();
-        setFlag(flags.Z, (val & ar) === 0);
-        setFlag(flags.N, !!(val & 0x80));
-        setFlag(flags.V, !!(val & 0x40));
+        this.setFlag(flags.Z, (val & this.ar) === 0);
+        this.setFlag(flags.N, !!(val & 0x80));
+        this.setFlag(flags.V, !!(val & 0x40));
     }
 
     /* Bit Immediate*/
-    function bitI(readFn: ReadFn) {
+    bitI(readFn: ReadFn) {
         var val = readFn();
-        setFlag(flags.Z, (val & ar) === 0);
+        this.setFlag(flags.Z, (val & this.ar) === 0);
     }
 
-    function compare(a: byte, b: byte) {
+    private compare(a: byte, b: byte) {
         b = (b ^ 0xff);
         var c = a + b + 1;
-        setFlag(flags.C, c > 0xff);
-        testNZ(c & 0xff);
+        this.setFlag(flags.C, c > 0xff);
+        this.testNZ(c & 0xff);
     }
 
-    function cmp(readFn: ReadFn) {
-        compare(ar, readFn());
+    cmp(readFn: ReadFn) {
+        this.compare(this.ar, readFn());
     }
 
-    function cpx(readFn: ReadFn) {
-        compare(xr, readFn());
+    cpx(readFn: ReadFn) {
+        this.compare(this.xr, readFn());
     }
 
-    function cpy(readFn: ReadFn) {
-        compare(yr, readFn());
+    cpy(readFn: ReadFn) {
+        this.compare(this.yr, readFn());
     }
 
     /* Branches */
-    function brs(f: flag) {
-        var off = readBytePC(); // changes pc
-        if ((f & sr) !== 0) {
-            readByte(pc);
-            var oldPage = pc >> 8;
-            pc += off > 127 ? off - 256 : off;
-            var newPage = pc >> 8;
-            var newOff = pc & 0xff;
-            if (newPage != oldPage) readByte(oldPage << 8 | newOff);
+    brs(f: flag) {
+        let off = this.readBytePC(); // changes pc
+        if ((f & this.sr) !== 0) {
+            this.readByte(this.pc);
+            let oldPage = this.pc >> 8;
+            this.pc += off > 127 ? off - 256 : off;
+            let newPage = this.pc >> 8;
+            let newOff = this.pc & 0xff;
+            if (newPage != oldPage) this.readByte(oldPage << 8 | newOff);
         }
     }
 
-    function brc(f: flag) {
-        var off = readBytePC(); // changes pc
-        if ((f & sr) === 0) {
-            readByte(pc);
-            var oldPage = pc >> 8;
-            pc += off > 127 ? off - 256 : off;
-            var newPage = pc >> 8;
-            var newOff = pc & 0xff;
-            if (newPage != oldPage) readByte(oldPage << 8 | newOff);
+    brc(f: flag) {
+        let off = this.readBytePC(); // changes pc
+        if ((f & this.sr) === 0) {
+            this.readByte(this.pc);
+            let oldPage = this.pc >> 8;
+            this.pc += off > 127 ? off - 256 : off;
+            let newPage = this.pc >> 8;
+            let newOff = this.pc & 0xff;
+            if (newPage != oldPage) this.readByte(oldPage << 8 | newOff);
         }
     }
 
     /* WDC 65C02 branches */
 
-    function bbr(b: flag) {
-        var zpAddr = readBytePC();
-        var val = readByte(zpAddr);
-        readByte(zpAddr);
-        var off = readBytePC(); // changes pc
+    bbr(b: flag) {
+        let zpAddr = this.readBytePC();
+        let val = this.readByte(zpAddr);
+        this.readByte(zpAddr);
+        let off = this.readBytePC(); // changes pc
 
         if (((1 << b) & val) === 0) {
-            var oldPc = pc;
-            var oldPage = oldPc >> 8;
-            readByte(oldPc);
-            pc += off > 127 ? off - 256 : off;
-            var newPage = pc >> 8;
+            let oldPc = this.pc;
+            let oldPage = oldPc >> 8;
+            this.readByte(oldPc);
+            this.pc += off > 127 ? off - 256 : off;
+            let newPage = this.pc >> 8;
             if (oldPage != newPage) {
-                readByte(oldPc);
+                this.readByte(oldPc);
             }
         }
     }
 
-    function bbs(b: flag) {
-        var zpAddr = readBytePC();
-        var val = readByte(zpAddr);
-        readByte(zpAddr);
-        var off = readBytePC(); // changes pc
+    bbs(b: flag) {
+        let zpAddr = this.readBytePC();
+        let val = this.readByte(zpAddr);
+        this.readByte(zpAddr);
+        let off = this.readBytePC(); // changes pc
 
         if (((1 << b) & val) !== 0) {
-            var oldPc = pc;
-            var oldPage = oldPc >> 8;
-            readByte(oldPc);
-            pc += off > 127 ? off - 256 : off;
-            var newPage = pc >> 8;
+            let oldPc = this.pc;
+            let oldPage = oldPc >> 8;
+            this.readByte(oldPc);
+            this.pc += off > 127 ? off - 256 : off;
+            let newPage = this.pc >> 8;
             if (oldPage != newPage) {
-                readByte(oldPc);
+                this.readByte(oldPc);
             }
         }
     }
 
     /* Transfers and stack */
-    function tax() { readByte(pc); testNZ(xr = ar); }
+    tax() { this.readByte(this.pc); this.testNZ(this.xr = this.ar); }
 
-    function txa() { readByte(pc); testNZ(ar = xr); }
+    txa() { this.readByte(this.pc); this.testNZ(this.ar = this.xr); }
 
-    function tay() { readByte(pc); testNZ(yr = ar); }
+    tay() { this.readByte(this.pc); this.testNZ(this.yr = this.ar); }
+    
+    tya() { this.readByte(this.pc); this.testNZ(this.ar = this.yr); }
 
-    function tya() { readByte(pc); testNZ(ar = yr); }
+    tsx() { this.readByte(this.pc); this.testNZ(this.xr = this.sp); }
 
-    function tsx() { readByte(pc); testNZ(xr = sp); }
+    txs() { this.readByte(this.pc); this.sp = this.xr; }
 
-    function txs() { readByte(pc); sp = xr; }
+    pha() { this.readByte(this.pc); this.pushByte(this.ar); }
 
-    function pha() { readByte(pc); pushByte(ar); }
+    pla() { this.readByte(this.pc); this.readByte(0x0100 | this.sp); this.testNZ(this.ar = this.pullByte()); }
 
-    function pla() { readByte(pc); readByte(0x0100 | sp); testNZ(ar = pullByte()); }
+    phx() { this.readByte(this.pc); this.pushByte(this.xr); }
 
-    function phx() { readByte(pc); pushByte(xr); }
+    plx() { this.readByte(this.pc); this.readByte(0x0100 | this.sp);this.testNZ(this.xr = this.pullByte()); }
 
-    function plx() { readByte(pc); readByte(0x0100 | sp);testNZ(xr = pullByte()); }
+    phy() { this.readByte(this.pc); this.pushByte(this.yr); }
 
-    function phy() { readByte(pc); pushByte(yr); }
+    ply() { this.readByte(this.pc); this.readByte(0x0100 | this.sp); this.testNZ(this.yr = this.pullByte()); }
 
-    function ply() { readByte(pc); readByte(0x0100 | sp); testNZ(yr = pullByte()); }
+    php() { this.readByte(this.pc); this.pushByte(this.sr | flags.B); }
 
-    function php() { readByte(pc); pushByte(sr | flags.B); }
-
-    function plp() { readByte(pc); readByte(0x0100 | sp); sr = (pullByte() & ~flags.B) | 0x20; }
+    plp() { this.readByte(this.pc); this.readByte(0x0100 | this.sp); this.sr = (this.pullByte() & ~flags.B) | 0x20; }
 
     /* Jump */
-    function jmp(readAddrFn: ReadAddrFn) {
-        pc = readAddrFn();
+    jmp(readAddrFn: ReadAddrFn) {
+        this.pc = readAddrFn();
     }
 
     /* Jump Subroutine */
-    function jsr() {
-        var lsb = readBytePC();
-        readByte(0x0100 | sp);
-        pushWord(pc);
-        var msb = readBytePC();
-        pc = (msb << 8 | lsb) & 0xffff;
+    jsr() {
+        let lsb = this.readBytePC();
+        this.readByte(0x0100 | this.sp);
+        this.pushWord(this.pc);
+        let msb = this.readBytePC();
+        this.pc = (msb << 8 | lsb) & 0xffff;
     }
 
     /* Return from Subroutine */
-    function rts() {
-        readByte(pc);
-        readByte(0x0100 | sp);
-        var addr = pullWordRaw();
-        readByte(addr);
-        pc = (addr + 1) & 0xffff;
+    rts() {
+        this.readByte(this.pc);
+        this.readByte(0x0100 | this.sp);
+        let addr = this.pullWordRaw();
+        this.readByte(addr);
+        this.pc = (addr + 1) & 0xffff;
     }
 
-    /* Return from Subroutine */
-    function rti() {
-        readByte(pc);
-        readByte(0x0100 | sp);
-        sr = pullByte() & ~flags.B;
-        pc = pullWordRaw();
+    /* Return from Interrupt */
+    rti() {
+        this.readByte(this.pc);
+        this.readByte(0x0100 | this.sp);
+        this.sr = this.pullByte() & ~flags.B;
+        this.pc = this.pullWordRaw();
     }
 
     /* Set and Clear */
-    function set(flag: flag) {
-        readByte(pc);
-        sr |= flag;
+    set(flag: flag) {
+        this.readByte(this.pc);
+        this.sr |= flag;
     }
 
-    function clr(flag: flag) {
-        readByte(pc);
-        sr &= ~flag;
+    clr(flag: flag) {
+        this.readByte(this.pc);
+        this.sr &= ~flag;
     }
 
     /* No-Op */
-    function nop(readAddrFn: ReadAddrFn) {
-        readByte(pc);
+    nop(readAddrFn: ReadAddrFn) {
+        this.readByte(this.pc);
         readAddrFn();
     }
 
-    type readInstruction = [
-        desc: string,
-        op: (readFn: ReadFn) => void,
-        modeFn: ReadFn,
-        mode: mode, // really 0-15
-        cycles: number,
-    ];
-
-    type writeInstruction = [
-        desc: string,
-        op: (writeFn: WriteFn) => void,
-        modeFn: WriteFn,
-        mode: mode, // really 0-15
-        cycles: number,
-    ];
-
-    type impliedInstruction = [
-        desc: string,
-        op: () => void,
-        modeFn: null,
-        mode: mode, // really 0-15
-        cycles: number,
-    ];
-
-    type relativeInstruction = [
-        desc: string,
-        op: (f: byte) => void,
-        modeFn: byte,
-        mode: mode, // really 0-15
-        cycles: number,
-    ];
-
-    type noopInstruction = [
-        desc: string,
-        op: (readAddrFn: ReadAddrFn) => void,
-        modeFn: () => void,
-        mode: mode, // really 0-15
-        cycles: number,
-    ];
-
-    type instruction =
-        readInstruction | writeInstruction |
-        impliedInstruction | relativeInstruction | noopInstruction;
-
-    interface Instructions {
-        [key: number]: instruction;
-    }
-
-    let ops: Instructions = {
-        // LDA
-        0xa9: ['LDA', lda, readImmediate, modes.immediate, 2],
-        0xa5: ['LDA', lda, readZeroPage, modes.zeroPage, 3],
-        0xb5: ['LDA', lda, readZeroPageX, modes.zeroPageX, 4],
-        0xad: ['LDA', lda, readAbsolute, modes.absolute, 4],
-        0xbd: ['LDA', lda, readAbsoluteX, modes.absoluteX, 4],
-        0xb9: ['LDA', lda, readAbsoluteY, modes.absoluteY, 4],
-        0xa1: ['LDA', lda, readZeroPageXIndirect, modes.zeroPageXIndirect, 6],
-        0xb1: ['LDA', lda, readZeroPageIndirectY, modes.zeroPageIndirectY, 5],
-
-        // LDX
-        0xa2: ['LDX', ldx, readImmediate, modes.immediate, 2],
-        0xa6: ['LDX', ldx, readZeroPage, modes.zeroPage, 3],
-        0xb6: ['LDX', ldx, readZeroPageY, modes.zeroPageY, 4],
-        0xae: ['LDX', ldx, readAbsolute, modes.absolute, 4],
-        0xbe: ['LDX', ldx, readAbsoluteY, modes.absoluteY, 4],
-
-        // LDY
-        0xa0: ['LDY', ldy, readImmediate, modes.immediate, 2],
-        0xa4: ['LDY', ldy, readZeroPage, modes.zeroPage, 3],
-        0xb4: ['LDY', ldy, readZeroPageX, modes.zeroPageX, 4],
-        0xac: ['LDY', ldy, readAbsolute, modes.absolute, 4],
-        0xbc: ['LDY', ldy, readAbsoluteX, modes.absoluteX, 4],
-
-        // STA
-        0x85: ['STA', sta, writeZeroPage, modes.zeroPage, 3],
-        0x95: ['STA', sta, writeZeroPageX, modes.zeroPageX, 4],
-        0x8d: ['STA', sta, writeAbsolute, modes.absolute, 4],
-        0x9d: ['STA', sta, writeAbsoluteX, modes.absoluteX, 5],
-        0x99: ['STA', sta, writeAbsoluteY, modes.absoluteY, 5],
-        0x81: ['STA', sta, writeZeroPageXIndirect, modes.zeroPageXIndirect, 6],
-        0x91: ['STA', sta, writeZeroPageIndirectY, modes.zeroPageIndirectY, 6],
-
-        // STX
-        0x86: ['STX', stx, writeZeroPage, modes.zeroPage, 3],
-        0x96: ['STX', stx, writeZeroPageY, modes.zeroPageY, 4],
-        0x8e: ['STX', stx, writeAbsolute, modes.absolute, 4],
-
-        // STY
-        0x84: ['STY', sty, writeZeroPage, modes.zeroPage, 3],
-        0x94: ['STY', sty, writeZeroPageX, modes.zeroPageX, 4],
-        0x8c: ['STY', sty, writeAbsolute, modes.absolute, 4],
-
-        // ADC
-        0x69: ['ADC', adc, readImmediate, modes.immediate, 2],
-        0x65: ['ADC', adc, readZeroPage, modes.zeroPage, 3],
-        0x75: ['ADC', adc, readZeroPageX, modes.zeroPageX, 4],
-        0x6D: ['ADC', adc, readAbsolute, modes.absolute, 4],
-        0x7D: ['ADC', adc, readAbsoluteX, modes.absoluteX, 4],
-        0x79: ['ADC', adc, readAbsoluteY, modes.absoluteY, 4],
-        0x61: ['ADC', adc, readZeroPageXIndirect, modes.zeroPageXIndirect, 6],
-        0x71: ['ADC', adc, readZeroPageIndirectY, modes.zeroPageIndirectY, 5],
-
-        // SBC
-        0xe9: ['SBC', sbc, readImmediate, modes.immediate, 2],
-        0xe5: ['SBC', sbc, readZeroPage, modes.zeroPage, 3],
-        0xf5: ['SBC', sbc, readZeroPageX, modes.zeroPageX, 4],
-        0xeD: ['SBC', sbc, readAbsolute, modes.absolute, 4],
-        0xfD: ['SBC', sbc, readAbsoluteX, modes.absoluteX, 4],
-        0xf9: ['SBC', sbc, readAbsoluteY, modes.absoluteY, 4],
-        0xe1: ['SBC', sbc, readZeroPageXIndirect, modes.zeroPageXIndirect, 6],
-        0xf1: ['SBC', sbc, readZeroPageIndirectY, modes.zeroPageIndirectY, 5],
-
-        // INC
-        0xe6: ['INC', inc, readAddrZeroPage, modes.zeroPage, 5],
-        0xf6: ['INC', inc, readAddrZeroPageX, modes.zeroPageX, 6],
-        0xee: ['INC', inc, readAddrAbsolute, modes.absolute, 6],
-        0xfe: ['INC', inc, readAddrAbsoluteX, modes.absoluteX, 7],
-
-        // INX
-        0xe8: ['INX', inx, null, modes.implied, 2],
-
-        // INY
-        0xc8: ['INY', iny, null, modes.implied, 2],
-
-        // DEC
-        0xc6: ['DEC', dec, readAddrZeroPage, modes.zeroPage, 5],
-        0xd6: ['DEC', dec, readAddrZeroPageX, modes.zeroPageX, 6],
-        0xce: ['DEC', dec, readAddrAbsolute, modes.absolute, 6],
-        0xde: ['DEC', dec, readAddrAbsoluteX, modes.absoluteX, 7],
-
-        // DEX
-        0xca: ['DEX', dex, null, modes.implied, 2],
-
-        // DEY
-        0x88: ['DEY', dey, null, modes.implied, 2],
-
-        // ASL
-        0x0A: ['ASL', aslA, null, modes.accumulator, 2],
-        0x06: ['ASL', asl, readAddrZeroPage, modes.zeroPage, 5],
-        0x16: ['ASL', asl, readAddrZeroPageX, modes.zeroPageX, 6],
-        0x0E: ['ASL', asl, readAddrAbsolute, modes.absolute, 6],
-        0x1E: ['ASL', asl, readAddrAbsoluteX, modes.absoluteX, 7],
-
-        // LSR
-        0x4A: ['LSR', lsrA, null, modes.accumulator, 2],
-        0x46: ['LSR', lsr, readAddrZeroPage, modes.zeroPage, 5],
-        0x56: ['LSR', lsr, readAddrZeroPageX, modes.zeroPageX, 6],
-        0x4E: ['LSR', lsr, readAddrAbsolute, modes.absolute, 6],
-        0x5E: ['LSR', lsr, readAddrAbsoluteX, modes.absoluteX, 7],
-
-        // ROL
-        0x2A: ['ROL', rolA, null, modes.accumulator, 2],
-        0x26: ['ROL', rol, readAddrZeroPage, modes.zeroPage, 5],
-        0x36: ['ROL', rol, readAddrZeroPageX, modes.zeroPageX, 6],
-        0x2E: ['ROL', rol, readAddrAbsolute, modes.absolute, 6],
-        0x3E: ['ROL', rol, readAddrAbsoluteX, modes.absoluteX, 7],
-
-        // ROR
-        0x6A: ['ROR', rorA, null, modes.accumulator, 2],
-        0x66: ['ROR', ror, readAddrZeroPage, modes.zeroPage, 5],
-        0x76: ['ROR', ror, readAddrZeroPageX, modes.zeroPageX, 6],
-        0x6E: ['ROR', ror, readAddrAbsolute, modes.absolute, 6],
-        0x7E: ['ROR', ror, readAddrAbsoluteX, modes.absoluteX, 7],
-
-        // AND
-        0x29: ['AND', and, readImmediate, modes.immediate, 2],
-        0x25: ['AND', and, readZeroPage, modes.zeroPage, 3],
-        0x35: ['AND', and, readZeroPageX, modes.zeroPageX, 4],
-        0x2D: ['AND', and, readAbsolute, modes.absolute, 4],
-        0x3D: ['AND', and, readAbsoluteX, modes.absoluteX, 4],
-        0x39: ['AND', and, readAbsoluteY, modes.absoluteY, 4],
-        0x21: ['AND', and, readZeroPageXIndirect, modes.zeroPageXIndirect, 6],
-        0x31: ['AND', and, readZeroPageIndirectY, modes.zeroPageIndirectY, 5],
-
-        // ORA
-        0x09: ['ORA', ora, readImmediate, modes.immediate, 2],
-        0x05: ['ORA', ora, readZeroPage, modes.zeroPage, 3],
-        0x15: ['ORA', ora, readZeroPageX, modes.zeroPageX, 4],
-        0x0D: ['ORA', ora, readAbsolute, modes.absolute, 4],
-        0x1D: ['ORA', ora, readAbsoluteX, modes.absoluteX, 4],
-        0x19: ['ORA', ora, readAbsoluteY, modes.absoluteY, 4],
-        0x01: ['ORA', ora, readZeroPageXIndirect, modes.zeroPageXIndirect, 6],
-        0x11: ['ORA', ora, readZeroPageIndirectY, modes.zeroPageIndirectY, 5],
-
-        // EOR
-        0x49: ['EOR', eor, readImmediate, modes.immediate, 2],
-        0x45: ['EOR', eor, readZeroPage, modes.zeroPage, 3],
-        0x55: ['EOR', eor, readZeroPageX, modes.zeroPageX, 4],
-        0x4D: ['EOR', eor, readAbsolute, modes.absolute, 4],
-        0x5D: ['EOR', eor, readAbsoluteX, modes.absoluteX, 4],
-        0x59: ['EOR', eor, readAbsoluteY, modes.absoluteY, 4],
-        0x41: ['EOR', eor, readZeroPageXIndirect, modes.zeroPageXIndirect, 6],
-        0x51: ['EOR', eor, readZeroPageIndirectY, modes.zeroPageIndirectY, 5],
-
-        // CMP
-        0xc9: ['CMP', cmp, readImmediate, modes.immediate, 2],
-        0xc5: ['CMP', cmp, readZeroPage, modes.zeroPage, 3],
-        0xd5: ['CMP', cmp, readZeroPageX, modes.zeroPageX, 4],
-        0xcD: ['CMP', cmp, readAbsolute, modes.absolute, 4],
-        0xdD: ['CMP', cmp, readAbsoluteX, modes.absoluteX, 4],
-        0xd9: ['CMP', cmp, readAbsoluteY, modes.absoluteY, 4],
-        0xc1: ['CMP', cmp, readZeroPageXIndirect, modes.zeroPageXIndirect, 6],
-        0xd1: ['CMP', cmp, readZeroPageIndirectY, modes.zeroPageIndirectY, 5],
-
-        // CPX
-        0xE0: ['CPX', cpx, readImmediate, modes.immediate, 2],
-        0xE4: ['CPX', cpx, readZeroPage, modes.zeroPage, 3],
-        0xEC: ['CPX', cpx, readAbsolute, modes.absolute, 4],
-
-        // CPY
-        0xC0: ['CPY', cpy, readImmediate, modes.immediate, 2],
-        0xC4: ['CPY', cpy, readZeroPage, modes.zeroPage, 3],
-        0xCC: ['CPY', cpy, readAbsolute, modes.absolute, 4],
-
-        // BIT
-        0x24: ['BIT', bit, readZeroPage, modes.zeroPage, 3],
-        0x2C: ['BIT', bit, readAbsolute, modes.absolute, 4],
-
-        // BCC
-        0x90: ['BCC', brc, flags.C, modes.relative, 2],
-
-        // BCS
-        0xB0: ['BCS', brs, flags.C, modes.relative, 2],
-
-        // BEQ
-        0xF0: ['BEQ', brs, flags.Z, modes.relative, 2],
-
-        // BMI
-        0x30: ['BMI', brs, flags.N, modes.relative, 2],
-
-        // BNE
-        0xD0: ['BNE', brc, flags.Z, modes.relative, 2],
-
-        // BPL
-        0x10: ['BPL', brc, flags.N, modes.relative, 2],
-
-        // BVC
-        0x50: ['BVC', brc, flags.V, modes.relative, 2],
-
-        // BVS
-        0x70: ['BVS', brs, flags.V, modes.relative, 2],
-
-        // TAX
-        0xAA: ['TAX', tax, null, modes.implied, 2],
-
-        // TXA
-        0x8A: ['TXA', txa, null, modes.implied, 2],
-
-        // TAY
-        0xA8: ['TAY', tay, null, modes.implied, 2],
-
-        // TYA
-        0x98: ['TYA', tya, null, modes.implied, 2],
-
-        // TSX
-        0xBA: ['TSX', tsx, null, modes.implied, 2],
-
-        // TXS
-        0x9A: ['TXS', txs, null, modes.implied, 2],
-
-        // PHA
-        0x48: ['PHA', pha, null, modes.implied, 3],
-
-        // PLA
-        0x68: ['PLA', pla, null, modes.implied, 4],
-
-        // PHP
-        0x08: ['PHP', php, null, modes.implied, 3],
-
-        // PLP
-        0x28: ['PLP', plp, null, modes.implied, 4],
-
-        // JMP
-        0x4C: [
-            'JMP', jmp, readAddrAbsolute, modes.absolute, 3
-        ],
-        0x6C: [
-            'JMP', jmp, readAddrAbsoluteIndirectBug, modes.absoluteIndirect, 5
-        ],
-        // JSR
-        0x20: ['JSR', jsr, readAddrAbsolute, modes.absolute, 6],
-
-        // RTS
-        0x60: ['RTS', rts, null, modes.implied, 6],
-
-        // RTI
-        0x40: ['RTI', rti, null, modes.implied, 6],
-
-        // SEC
-        0x38: ['SEC', set, flags.C, modes.implied, 2],
-
-        // SED
-        0xF8: ['SED', set, flags.D, modes.implied, 2],
-
-        // SEI
-        0x78: ['SEI', set, flags.I, modes.implied, 2],
-
-        // CLC
-        0x18: ['CLC', clr, flags.C, modes.implied, 2],
-
-        // CLD
-        0xD8: ['CLD', clr, flags.D, modes.implied, 2],
-
-        // CLI
-        0x58: ['CLI', clr, flags.I, modes.implied, 2],
-
-        // CLV
-        0xB8: ['CLV', clr, flags.V, modes.implied, 2],
-
-        // NOP
-        0xea: ['NOP', nop, readImplied, modes.implied, 2],
-
-        // BRK
-        0x00: ['BRK', brk, readImmediate, modes.immediate, 7]
-    };
-
-    /* 65C02 Instructions */
-
-    let cops: Instructions = {
-        // INC / DEC A
-        0x1A: ['INC', incA, null, modes.accumulator, 2],
-        0x3A: ['DEC', decA, null, modes.accumulator, 2],
-
-        // Indirect Zero Page for the masses
-        0x12: ['ORA', ora, readZeroPageIndirect, modes.zeroPageIndirect, 5],
-        0x32: ['AND', and, readZeroPageIndirect, modes.zeroPageIndirect, 5],
-        0x52: ['EOR', eor, readZeroPageIndirect, modes.zeroPageIndirect, 5],
-        0x72: ['ADC', adc, readZeroPageIndirect, modes.zeroPageIndirect, 5],
-        0x92: ['STA', sta, writeZeroPageIndirect, modes.zeroPageIndirect, 5],
-        0xB2: ['LDA', lda, readZeroPageIndirect, modes.zeroPageIndirect, 5],
-        0xD2: ['CMP', cmp, readZeroPageIndirect, modes.zeroPageIndirect, 5],
-        0xF2: ['SBC', sbc, readZeroPageIndirect, modes.zeroPageIndirect, 5],
-
-        // Better BIT
-        0x34: ['BIT', bit, readZeroPageX, modes.zeroPageX, 4],
-        0x3C: ['BIT', bit, readAbsoluteX, modes.absoluteX, 4],
-        0x89: ['BIT', bitI, readImmediate, modes.immediate, 2],
-
-        // JMP absolute indirect indexed
-        0x6C: [
-            'JMP', jmp, readAddrAbsoluteIndirect, modes.absoluteIndirect, 6
-        ],
-        0x7C: [
-            'JMP', jmp, readAddrAbsoluteXIndirect, modes.absoluteXIndirect, 6
-        ],
-
-        // BBR/BBS
-        0x0F: ['BBR0', bbr, 0, modes.zeroPage_relative, 5],
-        0x1F: ['BBR1', bbr, 1, modes.zeroPage_relative, 5],
-        0x2F: ['BBR2', bbr, 2, modes.zeroPage_relative, 5],
-        0x3F: ['BBR3', bbr, 3, modes.zeroPage_relative, 5],
-        0x4F: ['BBR4', bbr, 4, modes.zeroPage_relative, 5],
-        0x5F: ['BBR5', bbr, 5, modes.zeroPage_relative, 5],
-        0x6F: ['BBR6', bbr, 6, modes.zeroPage_relative, 5],
-        0x7F: ['BBR7', bbr, 7, modes.zeroPage_relative, 5],
-
-        0x8F: ['BBS0', bbs, 0, modes.zeroPage_relative, 5],
-        0x9F: ['BBS1', bbs, 1, modes.zeroPage_relative, 5],
-        0xAF: ['BBS2', bbs, 2, modes.zeroPage_relative, 5],
-        0xBF: ['BBS3', bbs, 3, modes.zeroPage_relative, 5],
-        0xCF: ['BBS4', bbs, 4, modes.zeroPage_relative, 5],
-        0xDF: ['BBS5', bbs, 5, modes.zeroPage_relative, 5],
-        0xEF: ['BBS6', bbs, 6, modes.zeroPage_relative, 5],
-        0xFF: ['BBS7', bbs, 7, modes.zeroPage_relative, 5],
-
-        // BRA
-        0x80: ['BRA', brc, 0, modes.relative, 2],
-
-        // NOP
-        0x02: ['NOP', nop, readImmediate, modes.immediate, 2],
-        0x22: ['NOP', nop, readImmediate, modes.immediate, 2],
-        0x42: ['NOP', nop, readImmediate, modes.immediate, 2],
-        0x44: ['NOP', nop, readImmediate, modes.immediate, 3],
-        0x54: ['NOP', nop, readImmediate, modes.immediate, 4],
-        0x62: ['NOP', nop, readImmediate, modes.immediate, 2],
-        0x82: ['NOP', nop, readImmediate, modes.immediate, 2],
-        0xC2: ['NOP', nop, readImmediate, modes.immediate, 2],
-        0xD4: ['NOP', nop, readImmediate, modes.immediate, 4],
-        0xE2: ['NOP', nop, readImmediate, modes.immediate, 2],
-        0xF4: ['NOP', nop, readImmediate, modes.immediate, 4],
-        0x5C: ['NOP', nop, readAbsolute, modes.absolute, 8],
-        0xDC: ['NOP', nop, readAbsolute, modes.absolute, 4],
-        0xFC: ['NOP', nop, readAbsolute, modes.absolute, 4],
-
-        // PHX
-        0xDA: ['PHX', phx, null, modes.implied, 3],
-
-        // PHY
-        0x5A: ['PHY', phy, null, modes.implied, 3],
-
-        // PLX
-        0xFA: ['PLX', plx, null, modes.implied, 4],
-
-        // PLY
-        0x7A: ['PLY', ply, null, modes.implied, 4],
-
-        // RMB/SMB
-
-        0x07: ['RMB0', rmb, 0, modes.zeroPage, 5],
-        0x17: ['RMB1', rmb, 1, modes.zeroPage, 5],
-        0x27: ['RMB2', rmb, 2, modes.zeroPage, 5],
-        0x37: ['RMB3', rmb, 3, modes.zeroPage, 5],
-        0x47: ['RMB4', rmb, 4, modes.zeroPage, 5],
-        0x57: ['RMB5', rmb, 5, modes.zeroPage, 5],
-        0x67: ['RMB6', rmb, 6, modes.zeroPage, 5],
-        0x77: ['RMB7', rmb, 7, modes.zeroPage, 5],
-
-        0x87: ['SMB0', smb, 0, modes.zeroPage, 5],
-        0x97: ['SMB1', smb, 1, modes.zeroPage, 5],
-        0xA7: ['SMB2', smb, 2, modes.zeroPage, 5],
-        0xB7: ['SMB3', smb, 3, modes.zeroPage, 5],
-        0xC7: ['SMB4', smb, 4, modes.zeroPage, 5],
-        0xD7: ['SMB5', smb, 5, modes.zeroPage, 5],
-        0xE7: ['SMB6', smb, 6, modes.zeroPage, 5],
-        0xF7: ['SMB7', smb, 7, modes.zeroPage, 5],
-
-        // STZ
-        0x64: ['STZ', stz, writeZeroPage, modes.zeroPage, 3],
-        0x74: ['STZ', stz, writeZeroPageX, modes.zeroPageX, 4],
-        0x9C: ['STZ', stz, writeAbsolute, modes.absolute, 4],
-        0x9E: ['STZ', stz, writeAbsoluteX, modes.absoluteX, 5],
-
-        // TRB
-        0x14: ['TRB', trb, readAddrZeroPage, modes.zeroPage, 5],
-        0x1C: ['TRB', trb, readAddrAbsolute, modes.absolute, 6],
-
-        // TSB
-        0x04: ['TSB', tsb, readAddrZeroPage, modes.zeroPage, 5],
-        0x0C: ['TSB', tsb, readAddrAbsolute, modes.absolute, 6]
-    };
-
-    if (is65C02) {
-        Object.assign(ops, cops);
-    }
-
-    function unknown(b: byte) {
+    private unknown(b: byte) {
         let unk: noopInstruction;
 
-        if (is65C02) {
+        if (this.is65C02) {
             unk = [
                 'NOP',
-                nop,
-                readImplied,
+                this.nop,
+                this.readImplied,
                 modes.implied,
                 2
             ];
@@ -1394,29 +1040,18 @@ export default function CPU6502(options: CpuOptions = {}) {
                 '???',
                 function() {
                     debug('Unknown OpCode: ' + toHex(b) +
-                          ' at ' + toHex(pc - 1, 4));
+                          ' at ' + toHex(this.pc - 1, 4));
                 },
-                readImplied,
+                this.readImplied,
                 modes.implied,
                 1
             ];
         }
-        ops[b] = unk;
+        this.ops[b] = unk;
         return unk;
     }
 
-    /* Certain browsers benefit from using arrays over maps */
-    let opary: instruction[] = [];
-
-    for (let idx = 0; idx < 0x100; idx++) {
-        opary[idx] = ops[idx] || unknown(idx);
-    }
-
-    type symbols = { [key: number]: string };
-
-    function dumpArgs(addr: word, m: mode, symbols: symbols) {
-        var val;
-        var off;
+    private dumpArgs(addr: word, m: mode, symbols: symbols) {
         function toHexOrSymbol(v: word, n?: number) {
             if (symbols && symbols[v]) {
                 return symbols[v];
@@ -1424,22 +1059,23 @@ export default function CPU6502(options: CpuOptions = {}) {
                 return '$' + toHex(v, n);
             }
         }
-        var result = '';
+
+        let result = '';
         switch (m) {
         case modes.implied:
             break;
         case modes.immediate:
-            result = '#' + toHexOrSymbol(readByteDebug(addr));
+            result = '#' + toHexOrSymbol(this.readByteDebug(addr));
             break;
         case modes.absolute:
-            result = '' + toHexOrSymbol(readWordDebug(addr), 4);
+            result = '' + toHexOrSymbol(this.readWordDebug(addr), 4);
             break;
         case modes.zeroPage:
-            result = '' + toHexOrSymbol(readByteDebug(addr));
+            result = '' + toHexOrSymbol(this.readByteDebug(addr));
             break;
         case modes.relative:
             {
-                off = readByteDebug(addr);
+                let off = this.readByteDebug(addr);
                 if (off > 127) {
                     off -= 256;
                 }
@@ -1448,38 +1084,38 @@ export default function CPU6502(options: CpuOptions = {}) {
             }
             break;
         case modes.absoluteX:
-            result = '' + toHexOrSymbol(readWordDebug(addr), 4) + ',X';
+            result = '' + toHexOrSymbol(this.readWordDebug(addr), 4) + ',X';
             break;
         case modes.absoluteY:
-            result = '' + toHexOrSymbol(readWordDebug(addr), 4) + ',Y';
+            result = '' + toHexOrSymbol(this.readWordDebug(addr), 4) + ',Y';
             break;
         case modes.zeroPageX:
-            result = '' + toHexOrSymbol(readByteDebug(addr)) + ',X';
+            result = '' + toHexOrSymbol(this.readByteDebug(addr)) + ',X';
             break;
         case modes.zeroPageY:
-            result = '' + toHexOrSymbol(readByteDebug(addr)) + ',Y';
+            result = '' + toHexOrSymbol(this.readByteDebug(addr)) + ',Y';
             break;
         case modes.absoluteIndirect:
-            result = '(' + toHexOrSymbol(readWordDebug(addr), 4) + ')';
+            result = '(' + toHexOrSymbol(this.readWordDebug(addr), 4) + ')';
             break;
         case modes.zeroPageXIndirect:
-            result = '(' + toHexOrSymbol(readByteDebug(addr)) + ',X)';
+            result = '(' + toHexOrSymbol(this.readByteDebug(addr)) + ',X)';
             break;
         case modes.zeroPageIndirectY:
-            result = '(' + toHexOrSymbol(readByteDebug(addr)) + '),Y';
+            result = '(' + toHexOrSymbol(this.readByteDebug(addr)) + '),Y';
             break;
         case modes.accumulator:
             result = 'A';
             break;
         case modes.zeroPageIndirect:
-            result = '(' + toHexOrSymbol(readByteDebug(addr)) + ')';
+            result = '(' + toHexOrSymbol(this.readByteDebug(addr)) + ')';
             break;
         case modes.absoluteXIndirect:
-            result = '(' + toHexOrSymbol(readWordDebug(addr), 4) + ',X)';
+            result = '(' + toHexOrSymbol(this.readWordDebug(addr), 4) + ',X)';
             break;
         case modes.zeroPage_relative:
-            val = readByteDebug(addr);
-            off = readByteDebug(addr + 1);
+            let val = this.readByteDebug(addr);
+            let off = this.readByteDebug(addr + 1);
             if (off > 127) {
                 off -= 256;
             }
@@ -1492,253 +1128,632 @@ export default function CPU6502(options: CpuOptions = {}) {
         return result;
     }
 
-    type callback = (cpu: any) => void; // TODO(flan): Hack until there is better typing.
+    public step(cb: callback) {
+        this.sync = true;
+        let op = this.opary[this.readBytePC()];
+        this.sync = false;
+        op[1](op[2] as any); // TODO(flan): Hack until there is better typing.
 
-    return {
-        step: function cpu_step(cb: callback) {
-            sync = true;
-            let op = opary[readBytePC()];
-            sync = false;
+        if (cb) {
+            cb(this);
+        }
+    }
+
+    public stepDebug(n: number, cb: callback) {
+        for (let idx = 0; idx < n; idx++) {
+            this.sync = true;
+            let op = this.opary[this.readBytePC()];
+            this.sync = false;
             op[1](op[2] as any); // TODO(flan): Hack until there is better typing.
 
             if (cb) {
                 cb(this);
             }
-        },
-
-        stepDebug: function(n: number, cb: callback) {
-            for (let idx = 0; idx < n; idx++) {
-                sync = true;
-                let op = opary[readBytePC()];
-                sync = false;
-                op[1](op[2] as any); // TODO(flan): Hack until there is better typing.
-
-                if (cb) {
-                    cb(this);
-                }
-            }
-        },
-
-        stepCycles: function(c: number) {
-            var op, end = cycles + c;
-
-            while (cycles < end) {
-                sync = true;
-                op = opary[readBytePC()];
-                sync = false;
-                op[1](op[2] as any); // TODO(flan): Hack until there is better typing.
-            }
-        },
-
-        stepCyclesDebug: function(c: number, cb: callback)
-        {
-            var op, end = cycles + c;
-
-            while (cycles < end) {
-                sync = true;
-                op = opary[readBytePC()];
-                sync = false;
-                op[1](op[2] as any); // TODO(flan): Hack until there is better typing.
-
-                if (cb) {
-                    cb(this);
-                }
-            }
-        },
-
-        addPageHandler: function(pho: (PageHandler | ResettablePageHandler) & (ReadablePage | WriteablePage)) {
-            for (let idx = pho.start(); idx <= pho.end(); idx++) {
-                if (isReadablePage(pho))
-                    readPages[idx] = pho;
-                if (isWriteablePage(pho))
-                    writePages[idx] = pho;
-            }
-            if (isResettablePageHandler(pho))
-                resetHandlers.push(pho);
-        },
-
-        reset: function cpu_reset() {
-            // cycles = 0;
-            sr = 0x20;
-            sp = 0xff;
-            ar = 0;
-            yr = 0;
-            xr = 0;
-            pc = readWord(loc.RESET);
-
-            for (let idx = 0; idx < resetHandlers.length; idx++) {
-                resetHandlers[idx].reset();
-            }
-        },
-
-        /* IRQ - Interrupt Request */
-        irq: function cpu_irq() {
-            if ((sr & flags.I) === 0) {
-                pushWord(pc);
-                pushByte(sr & ~flags.B);
-                if (is65C02) {
-                    setFlag(flags.D, false);
-                }
-                setFlag(flags.I, true);
-                pc = readWord(loc.BRK);
-            }
-        },
-
-        /* NMI Non-maskable Interrupt */
-        nmi: function cpu_nmi() {
-            pushWord(pc);
-            pushByte(sr & ~flags.B);
-            if (is65C02) {
-                setFlag(flags.D, false);
-            }
-            setFlag(flags.I, true);
-            pc = readWord(loc.NMI);
-        },
-
-        getPC: function () {
-            return pc;
-        },
-
-        setPC: function(_pc: word) {
-            pc = _pc;
-        },
-
-        dumpPC: function(_pc: word, symbols: symbols) {
-            if (_pc === undefined) {
-                _pc = pc;
-            }
-            let b = readByte(_pc),
-                op = ops[b],
-                size = sizes[op[3]],
-                result = toHex(_pc, 4) + '- ';
-
-            if (symbols) {
-                if (symbols[_pc]) {
-                    result += symbols[_pc] +
-                        '          '.substring(symbols[_pc].length);
-                } else {
-                    result += '          ';
-                }
-            }
-
-            for (var idx = 0; idx < 4; idx++) {
-                if (idx < size) {
-                    result += toHex(readByte(_pc + idx)) + ' ';
-                } else {
-                    result += '   ';
-                }
-            }
-
-            if (op === undefined)
-                result += '??? (' + toHex(b) + ')';
-            else
-                result += op[0] + ' ' + dumpArgs(_pc + 1, op[3], symbols);
-
-            return result;
-        },
-
-        dumpPage: function(start?: word, end?: word) {
-            var result = '';
-            if (start === undefined) {
-                start = pc >> 8;
-            }
-            if (end === undefined) {
-                end = start;
-            }
-            for (var page = start; page <= end; page++) {
-                var b, idx, jdx;
-                for (idx = 0; idx < 16; idx++) {
-                    result += toHex(page) + toHex(idx << 4) + ': ';
-                    for (jdx = 0; jdx < 16; jdx++) {
-                        b = readByteDebug(page * 256 + idx * 16 + jdx);
-                        result += toHex(b) + ' ';
-                    }
-                    result += '        ';
-                    for (jdx = 0; jdx < 16; jdx++) {
-                        b = readByte(page * 256 + idx * 16 + jdx) & 0x7f;
-                        if (b >= 0x20 && b < 0x7f) {
-                            result += String.fromCharCode(b);
-                        } else {
-                            result += '.';
-                        }
-                    }
-                    result += '\n';
-                }
-            }
-            return result;
-        },
-
-        list: function(_pc: word, symbols: symbols) {
-            if (_pc === undefined) {
-                _pc = pc;
-            }
-            var results = [];
-            for (var jdx = 0; jdx < 20; jdx++) {
-                var b = readByte(_pc), op = ops[b];
-                results.push(this.dumpPC(_pc, symbols));
-                _pc += sizes[op[3]];
-            }
-            return results;
-        },
-
-        sync: function() {
-            return sync;
-        },
-
-        cycles: function() {
-            return cycles;
-        },
-
-        registers: function() {
-            return [pc,ar,xr,yr,sr,sp];
-        },
-
-        getState: function(): CpuState {
-            return {
-                a: ar,
-                x: xr,
-                y: yr,
-                s: sr,
-                pc: pc,
-                sp: sp,
-                cycles: cycles
-            };
-        },
-
-        setState: function(state: CpuState) {
-            ar = state.a;
-            xr = state.x;
-            yr = state.y;
-            sr = state.s;
-            pc = state.pc;
-            sp = state.sp;
-            cycles = state.cycles;
-        },
-
-        dumpRegisters: function() {
-            return toHex(pc, 4) +
-                '-   A=' + toHex(ar) +
-                ' X=' + toHex(xr) +
-                ' Y=' + toHex(yr) +
-                ' P=' + toHex(sr) +
-                ' S=' + toHex(sp) +
-                ' ' +
-                ((sr & flags.N) ? 'N' : '-') +
-                ((sr & flags.V) ? 'V' : '-') +
-                '-' +
-                ((sr & flags.B) ? 'B' : '-') +
-                ((sr & flags.D) ? 'D' : '-') +
-                ((sr & flags.I) ? 'I' : '-') +
-                ((sr & flags.Z) ? 'Z' : '-') +
-                ((sr & flags.C) ? 'C' : '-');
-        },
-
-        read: function(page: byte, off: byte) {
-            return readPages[page].read(page, off);
-        },
-
-        write: function(page: byte, off: byte, val: byte) {
-            writePages[page].write(page, off, val);
         }
-    };
+    }
+
+    public stepCycles(c: number) {
+        let end = this.cycles + c;
+
+        while (this.cycles < end) {
+            this.sync = true;
+            let op = this.opary[this.readBytePC()];
+            this.sync = false;
+            op[1](op[2] as any); // TODO(flan): Hack until there is better typing.
+        }
+    }
+
+    public stepCyclesDebug(c: number, cb: callback): void {
+        var op, end = this.cycles + c;
+
+        while (this.cycles < end) {
+            this.sync = true;
+            op = this.opary[this.readBytePC()];
+            this.sync = false;
+            op[1](op[2] as any); // TODO(flan): Hack until there is better typing.
+
+            if (cb) {
+                cb(this);
+            }
+        }
+    }
+
+    public addPageHandler(pho: (PageHandler | ResettablePageHandler) & (ReadablePage | WriteablePage)) {
+        for (let idx = pho.start(); idx <= pho.end(); idx++) {
+            if (isReadablePage(pho))
+                this.readPages[idx] = pho;
+            if (isWriteablePage(pho))
+                this.writePages[idx] = pho;
+        }
+        if (isResettablePageHandler(pho))
+            this.resetHandlers.push(pho);
+    }
+
+    public reset() {
+        // cycles = 0;
+        this.sr = 0x20;
+        this.sp = 0xff;
+        this.ar = 0;
+        this.yr = 0;
+        this.xr = 0;
+        this.pc = this.readWord(loc.RESET);
+
+        for (let idx = 0; idx < this.resetHandlers.length; idx++) {
+            this.resetHandlers[idx].reset();
+        }
+    }
+
+    /* IRQ - Interrupt Request */
+    public irq() {
+        if ((this.sr & flags.I) === 0) {
+            this.pushWord(this.pc);
+            this.pushByte(this.sr & ~flags.B);
+            if (this.is65C02) {
+                this.setFlag(flags.D, false);
+            }
+            this.setFlag(flags.I, true);
+            this.pc = this.readWord(loc.BRK);
+        }
+    }
+
+    /* NMI Non-maskable Interrupt */
+    public nmi() {
+        this.pushWord(this.pc);
+        this.pushByte(this.sr & ~flags.B);
+        if (this.is65C02) {
+            this.setFlag(flags.D, false);
+        }
+        this.setFlag(flags.I, true);
+        this.pc = this.readWord(loc.NMI);
+    }
+
+    public getPC() {
+        return this.pc;
+    }
+
+    public setPC(pc: word) {
+        this.pc = pc;
+    }
+
+    public dumpPC(pc: word, symbols: symbols) {
+        if (pc === undefined) {
+            pc = this.pc;
+        }
+        let b = this.readByte(pc),
+            op = this.ops[b],
+            size = sizes[op[3]],
+            result = toHex(pc, 4) + '- ';
+
+        if (symbols) {
+            if (symbols[pc]) {
+                result += symbols[pc] +
+                    '          '.substring(symbols[pc].length);
+            } else {
+                result += '          ';
+            }
+        }
+
+        for (var idx = 0; idx < 4; idx++) {
+            if (idx < size) {
+                result += toHex(this.readByte(pc + idx)) + ' ';
+            } else {
+                result += '   ';
+            }
+        }
+
+        if (op === undefined)
+            result += '??? (' + toHex(b) + ')';
+        else
+            result += op[0] + ' ' + this.dumpArgs(pc + 1, op[3], symbols);
+
+        return result;
+    }
+
+    public dumpPage(start?: word, end?: word) {
+        var result = '';
+        if (start === undefined) {
+            start = this.pc >> 8;
+        }
+        if (end === undefined) {
+            end = start;
+        }
+        for (var page = start; page <= end; page++) {
+            var b, idx, jdx;
+            for (idx = 0; idx < 16; idx++) {
+                result += toHex(page) + toHex(idx << 4) + ': ';
+                for (jdx = 0; jdx < 16; jdx++) {
+                    b = this.readByteDebug(page * 256 + idx * 16 + jdx);
+                    result += toHex(b) + ' ';
+                }
+                result += '        ';
+                for (jdx = 0; jdx < 16; jdx++) {
+                    b = this.readByte(page * 256 + idx * 16 + jdx) & 0x7f;
+                    if (b >= 0x20 && b < 0x7f) {
+                        result += String.fromCharCode(b);
+                    } else {
+                        result += '.';
+                    }
+                }
+                result += '\n';
+            }
+        }
+        return result;
+    }
+
+    public list(_pc: word, symbols: symbols) {
+        if (_pc === undefined) {
+            _pc = this.pc;
+        }
+        var results = [];
+        for (var jdx = 0; jdx < 20; jdx++) {
+            var b = this.readByte(_pc), op = this.ops[b];
+            results.push(this.dumpPC(_pc, symbols));
+            _pc += sizes[op[3]];
+        }
+        return results;
+    }
+
+    public sync_() {
+        return this.sync;
+    }
+
+    public cycles_() {
+        return this.cycles;
+    }
+
+    public registers() {
+            return [this.pc,this.ar,this.xr,this.yr,this.sr,this.sp];
+    }
+
+    public getState(): CpuState {
+        return {
+            a: this.ar,
+            x: this.xr,
+            y: this.yr,
+            s: this.sr,
+            pc: this.pc,
+            sp: this.sp,
+            cycles: this.cycles
+        };
+    }
+
+    public setState(state: CpuState) {
+        this.ar = state.a;
+        this.xr = state.x;
+        this.yr = state.y;
+        this.sr = state.s;
+        this.pc = state.pc;
+        this.sp = state.sp;
+        this.cycles = state.cycles;
+    }
+
+    public dumpRegisters() {
+        return toHex(this.pc, 4) +
+            '-   A=' + toHex(this.ar) +
+            ' X=' + toHex(this.xr) +
+            ' Y=' + toHex(this.yr) +
+            ' P=' + toHex(this.sr) +
+            ' S=' + toHex(this.sp) +
+            ' ' +
+            ((this.sr & flags.N) ? 'N' : '-') +
+            ((this.sr & flags.V) ? 'V' : '-') +
+            '-' +
+            ((this.sr & flags.B) ? 'B' : '-') +
+            ((this.sr & flags.D) ? 'D' : '-') +
+            ((this.sr & flags.I) ? 'I' : '-') +
+            ((this.sr & flags.Z) ? 'Z' : '-') +
+            ((this.sr & flags.C) ? 'C' : '-');
+    }
+
+    public read(page: byte, off: byte): byte {
+        return this.readPages[page].read(page, off);
+    }
+
+    public write(page: byte, off: byte, val: byte) {
+        this.writePages[page].write(page, off, val);
+    }
 }
+
+const c = CPU6502.prototype;
+const OPS_6502: Instructions = {
+    // LDA
+    0xa9: ['LDA', c.lda, c.readImmediate, modes.immediate, 2],
+    0xa5: ['LDA', c.lda, c.readZeroPage, modes.zeroPage, 3],
+    0xb5: ['LDA', c.lda, c.readZeroPageX, modes.zeroPageX, 4],
+    0xad: ['LDA', c.lda, c.readAbsolute, modes.absolute, 4],
+    0xbd: ['LDA', c.lda, c.readAbsoluteX, modes.absoluteX, 4],
+    0xb9: ['LDA', c.lda, c.readAbsoluteY, modes.absoluteY, 4],
+    0xa1: ['LDA', c.lda, c.readZeroPageXIndirect, modes.zeroPageXIndirect, 6],
+    0xb1: ['LDA', c.lda, c.readZeroPageIndirectY, modes.zeroPageIndirectY, 5],
+
+    // LDX
+    0xa2: ['LDX', c.ldx, c.readImmediate, modes.immediate, 2],
+    0xa6: ['LDX', c.ldx, c.readZeroPage, modes.zeroPage, 3],
+    0xb6: ['LDX', c.ldx, c.readZeroPageY, modes.zeroPageY, 4],
+    0xae: ['LDX', c.ldx, c.readAbsolute, modes.absolute, 4],
+    0xbe: ['LDX', c.ldx, c.readAbsoluteY, modes.absoluteY, 4],
+
+    // LDY
+    0xa0: ['LDY', c.ldy, c.readImmediate, modes.immediate, 2],
+    0xa4: ['LDY', c.ldy, c.readZeroPage, modes.zeroPage, 3],
+    0xb4: ['LDY', c.ldy, c.readZeroPageX, modes.zeroPageX, 4],
+    0xac: ['LDY', c.ldy, c.readAbsolute, modes.absolute, 4],
+    0xbc: ['LDY', c.ldy, c.readAbsoluteX, modes.absoluteX, 4],
+
+    // STA
+    0x85: ['STA', c.sta, c.writeZeroPage, modes.zeroPage, 3],
+    0x95: ['STA', c.sta, c.writeZeroPageX, modes.zeroPageX, 4],
+    0x8d: ['STA', c.sta, c.writeAbsolute, modes.absolute, 4],
+    0x9d: ['STA', c.sta, c.writeAbsoluteX, modes.absoluteX, 5],
+    0x99: ['STA', c.sta, c.writeAbsoluteY, modes.absoluteY, 5],
+    0x81: ['STA', c.sta, c.writeZeroPageXIndirect, modes.zeroPageXIndirect, 6],
+    0x91: ['STA', c.sta, c.writeZeroPageIndirectY, modes.zeroPageIndirectY, 6],
+
+    // STX
+    0x86: ['STX', c.stx, c.writeZeroPage, modes.zeroPage, 3],
+    0x96: ['STX', c.stx, c.writeZeroPageY, modes.zeroPageY, 4],
+    0x8e: ['STX', c.stx, c.writeAbsolute, modes.absolute, 4],
+
+    // STY
+    0x84: ['STY', c.sty, c.writeZeroPage, modes.zeroPage, 3],
+    0x94: ['STY', c.sty, c.writeZeroPageX, modes.zeroPageX, 4],
+    0x8c: ['STY', c.sty, c.writeAbsolute, modes.absolute, 4],
+
+    // ADC
+    0x69: ['ADC', c.adc, c.readImmediate, modes.immediate, 2],
+    0x65: ['ADC', c.adc, c.readZeroPage, modes.zeroPage, 3],
+    0x75: ['ADC', c.adc, c.readZeroPageX, modes.zeroPageX, 4],
+    0x6D: ['ADC', c.adc, c.readAbsolute, modes.absolute, 4],
+    0x7D: ['ADC', c.adc, c.readAbsoluteX, modes.absoluteX, 4],
+    0x79: ['ADC', c.adc, c.readAbsoluteY, modes.absoluteY, 4],
+    0x61: ['ADC', c.adc, c.readZeroPageXIndirect, modes.zeroPageXIndirect, 6],
+    0x71: ['ADC', c.adc, c.readZeroPageIndirectY, modes.zeroPageIndirectY, 5],
+
+    // SBC
+    0xe9: ['SBC', c.sbc, c.readImmediate, modes.immediate, 2],
+    0xe5: ['SBC', c.sbc, c.readZeroPage, modes.zeroPage, 3],
+    0xf5: ['SBC', c.sbc, c.readZeroPageX, modes.zeroPageX, 4],
+    0xeD: ['SBC', c.sbc, c.readAbsolute, modes.absolute, 4],
+    0xfD: ['SBC', c.sbc, c.readAbsoluteX, modes.absoluteX, 4],
+    0xf9: ['SBC', c.sbc, c.readAbsoluteY, modes.absoluteY, 4],
+    0xe1: ['SBC', c.sbc, c.readZeroPageXIndirect, modes.zeroPageXIndirect, 6],
+    0xf1: ['SBC', c.sbc, c.readZeroPageIndirectY, modes.zeroPageIndirectY, 5],
+
+    // INC
+    0xe6: ['INC', c.inc, c.readAddrZeroPage, modes.zeroPage, 5],
+    0xf6: ['INC', c.inc, c.readAddrZeroPageX, modes.zeroPageX, 6],
+    0xee: ['INC', c.inc, c.readAddrAbsolute, modes.absolute, 6],
+    0xfe: ['INC', c.inc, c.readAddrAbsoluteX, modes.absoluteX, 7],
+
+    // INX
+    0xe8: ['INX', c.inx, null, modes.implied, 2],
+
+    // INY
+    0xc8: ['INY', c.iny, null, modes.implied, 2],
+
+    // DEC
+    0xc6: ['DEC', c.dec, c.readAddrZeroPage, modes.zeroPage, 5],
+    0xd6: ['DEC', c.dec, c.readAddrZeroPageX, modes.zeroPageX, 6],
+    0xce: ['DEC', c.dec, c.readAddrAbsolute, modes.absolute, 6],
+    0xde: ['DEC', c.dec, c.readAddrAbsoluteX, modes.absoluteX, 7],
+
+    // DEX
+    0xca: ['DEX', c.dex, null, modes.implied, 2],
+
+    // DEY
+    0x88: ['DEY', c.dey, null, modes.implied, 2],
+
+    // ASL
+    0x0A: ['ASL', c.aslA, null, modes.accumulator, 2],
+    0x06: ['ASL', c.asl, c.readAddrZeroPage, modes.zeroPage, 5],
+    0x16: ['ASL', c.asl, c.readAddrZeroPageX, modes.zeroPageX, 6],
+    0x0E: ['ASL', c.asl, c.readAddrAbsolute, modes.absolute, 6],
+    0x1E: ['ASL', c.asl, c.readAddrAbsoluteX, modes.absoluteX, 7],
+
+    // LSR
+    0x4A: ['LSR', c.lsrA, null, modes.accumulator, 2],
+    0x46: ['LSR', c.lsr, c.readAddrZeroPage, modes.zeroPage, 5],
+    0x56: ['LSR', c.lsr, c.readAddrZeroPageX, modes.zeroPageX, 6],
+    0x4E: ['LSR', c.lsr, c.readAddrAbsolute, modes.absolute, 6],
+    0x5E: ['LSR', c.lsr, c.readAddrAbsoluteX, modes.absoluteX, 7],
+
+    // ROL
+    0x2A: ['ROL', c.rolA, null, modes.accumulator, 2],
+    0x26: ['ROL', c.rol, c.readAddrZeroPage, modes.zeroPage, 5],
+    0x36: ['ROL', c.rol, c.readAddrZeroPageX, modes.zeroPageX, 6],
+    0x2E: ['ROL', c.rol, c.readAddrAbsolute, modes.absolute, 6],
+    0x3E: ['ROL', c.rol, c.readAddrAbsoluteX, modes.absoluteX, 7],
+
+    // ROR
+    0x6A: ['ROR', c.rorA, null, modes.accumulator, 2],
+    0x66: ['ROR', c.ror, c.readAddrZeroPage, modes.zeroPage, 5],
+    0x76: ['ROR', c.ror, c.readAddrZeroPageX, modes.zeroPageX, 6],
+    0x6E: ['ROR', c.ror, c.readAddrAbsolute, modes.absolute, 6],
+    0x7E: ['ROR', c.ror, c.readAddrAbsoluteX, modes.absoluteX, 7],
+
+    // AND
+    0x29: ['AND', c.and, c.readImmediate, modes.immediate, 2],
+    0x25: ['AND', c.and, c.readZeroPage, modes.zeroPage, 3],
+    0x35: ['AND', c.and, c.readZeroPageX, modes.zeroPageX, 4],
+    0x2D: ['AND', c.and, c.readAbsolute, modes.absolute, 4],
+    0x3D: ['AND', c.and, c.readAbsoluteX, modes.absoluteX, 4],
+    0x39: ['AND', c.and, c.readAbsoluteY, modes.absoluteY, 4],
+    0x21: ['AND', c.and, c.readZeroPageXIndirect, modes.zeroPageXIndirect, 6],
+    0x31: ['AND', c.and, c.readZeroPageIndirectY, modes.zeroPageIndirectY, 5],
+
+    // ORA
+    0x09: ['ORA', c.ora, c.readImmediate, modes.immediate, 2],
+    0x05: ['ORA', c.ora, c.readZeroPage, modes.zeroPage, 3],
+    0x15: ['ORA', c.ora, c.readZeroPageX, modes.zeroPageX, 4],
+    0x0D: ['ORA', c.ora, c.readAbsolute, modes.absolute, 4],
+    0x1D: ['ORA', c.ora, c.readAbsoluteX, modes.absoluteX, 4],
+    0x19: ['ORA', c.ora, c.readAbsoluteY, modes.absoluteY, 4],
+    0x01: ['ORA', c.ora, c.readZeroPageXIndirect, modes.zeroPageXIndirect, 6],
+    0x11: ['ORA', c.ora, c.readZeroPageIndirectY, modes.zeroPageIndirectY, 5],
+
+    // EOR
+    0x49: ['EOR', c.eor, c.readImmediate, modes.immediate, 2],
+    0x45: ['EOR', c.eor, c.readZeroPage, modes.zeroPage, 3],
+    0x55: ['EOR', c.eor, c.readZeroPageX, modes.zeroPageX, 4],
+    0x4D: ['EOR', c.eor, c.readAbsolute, modes.absolute, 4],
+    0x5D: ['EOR', c.eor, c.readAbsoluteX, modes.absoluteX, 4],
+    0x59: ['EOR', c.eor, c.readAbsoluteY, modes.absoluteY, 4],
+    0x41: ['EOR', c.eor, c.readZeroPageXIndirect, modes.zeroPageXIndirect, 6],
+    0x51: ['EOR', c.eor, c.readZeroPageIndirectY, modes.zeroPageIndirectY, 5],
+
+    // CMP
+    0xc9: ['CMP', c.cmp, c.readImmediate, modes.immediate, 2],
+    0xc5: ['CMP', c.cmp, c.readZeroPage, modes.zeroPage, 3],
+    0xd5: ['CMP', c.cmp, c.readZeroPageX, modes.zeroPageX, 4],
+    0xcD: ['CMP', c.cmp, c.readAbsolute, modes.absolute, 4],
+    0xdD: ['CMP', c.cmp, c.readAbsoluteX, modes.absoluteX, 4],
+    0xd9: ['CMP', c.cmp, c.readAbsoluteY, modes.absoluteY, 4],
+    0xc1: ['CMP', c.cmp, c.readZeroPageXIndirect, modes.zeroPageXIndirect, 6],
+    0xd1: ['CMP', c.cmp, c.readZeroPageIndirectY, modes.zeroPageIndirectY, 5],
+
+    // CPX
+    0xE0: ['CPX', c.cpx, c.readImmediate, modes.immediate, 2],
+    0xE4: ['CPX', c.cpx, c.readZeroPage, modes.zeroPage, 3],
+    0xEC: ['CPX', c.cpx, c.readAbsolute, modes.absolute, 4],
+
+    // CPY
+    0xC0: ['CPY', c.cpy, c.readImmediate, modes.immediate, 2],
+    0xC4: ['CPY', c.cpy, c.readZeroPage, modes.zeroPage, 3],
+    0xCC: ['CPY', c.cpy, c.readAbsolute, modes.absolute, 4],
+
+    // BIT
+    0x24: ['BIT', c.bit, c.readZeroPage, modes.zeroPage, 3],
+    0x2C: ['BIT', c.bit, c.readAbsolute, modes.absolute, 4],
+
+    // BCC
+    0x90: ['BCC', c.brc, flags.C, modes.relative, 2],
+
+    // BCS
+    0xB0: ['BCS', c.brs, flags.C, modes.relative, 2],
+
+    // BEQ
+    0xF0: ['BEQ', c.brs, flags.Z, modes.relative, 2],
+
+    // BMI
+    0x30: ['BMI', c.brs, flags.N, modes.relative, 2],
+
+    // BNE
+    0xD0: ['BNE', c.brc, flags.Z, modes.relative, 2],
+
+    // BPL
+    0x10: ['BPL', c.brc, flags.N, modes.relative, 2],
+
+    // BVC
+    0x50: ['BVC', c.brc, flags.V, modes.relative, 2],
+
+    // BVS
+    0x70: ['BVS', c.brs, flags.V, modes.relative, 2],
+
+    // TAX
+    0xAA: ['TAX', c.tax, null, modes.implied, 2],
+
+    // TXA
+    0x8A: ['TXA', c.txa, null, modes.implied, 2],
+
+    // TAY
+    0xA8: ['TAY', c.tay, null, modes.implied, 2],
+
+    // TYA
+    0x98: ['TYA', c.tya, null, modes.implied, 2],
+
+    // TSX
+    0xBA: ['TSX', c.tsx, null, modes.implied, 2],
+
+    // TXS
+    0x9A: ['TXS', c.txs, null, modes.implied, 2],
+
+    // PHA
+    0x48: ['PHA', c.pha, null, modes.implied, 3],
+
+    // PLA
+    0x68: ['PLA', c.pla, null, modes.implied, 4],
+
+    // PHP
+    0x08: ['PHP', c.php, null, modes.implied, 3],
+
+    // PLP
+    0x28: ['PLP', c.plp, null, modes.implied, 4],
+
+    // JMP
+    0x4C: [
+        'JMP', c.jmp, c.readAddrAbsolute, modes.absolute, 3
+    ],
+    0x6C: [
+        'JMP', c.jmp, c.readAddrAbsoluteIndirectBug, modes.absoluteIndirect, 5
+    ],
+    // JSR
+    0x20: ['JSR', c.jsr, c.readAddrAbsolute, modes.absolute, 6],
+
+    // RTS
+    0x60: ['RTS', c.rts, null, modes.implied, 6],
+
+    // RTI
+    0x40: ['RTI', c.rti, null, modes.implied, 6],
+
+    // SEC
+    0x38: ['SEC', c.set, flags.C, modes.implied, 2],
+
+    // SED
+    0xF8: ['SED', c.set, flags.D, modes.implied, 2],
+
+    // SEI
+    0x78: ['SEI', c.set, flags.I, modes.implied, 2],
+
+    // CLC
+    0x18: ['CLC', c.clr, flags.C, modes.implied, 2],
+
+    // CLD
+    0xD8: ['CLD', c.clr, flags.D, modes.implied, 2],
+
+    // CLI
+    0x58: ['CLI', c.clr, flags.I, modes.implied, 2],
+
+    // CLV
+    0xB8: ['CLV', c.clr, flags.V, modes.implied, 2],
+
+    // NOP
+    0xea: ['NOP', c.nop, c.readImplied, modes.implied, 2],
+
+    // BRK
+    0x00: ['BRK', c.brk, c.readImmediate, modes.immediate, 7]
+};
+
+/* 65C02 Instructions */
+
+const OPS_65C02: Instructions = {
+    // INC / DEC A
+    0x1A: ['INC', c.incA, null, modes.accumulator, 2],
+    0x3A: ['DEC', c.decA, null, modes.accumulator, 2],
+
+    // Indirect Zero Page for the masses
+    0x12: ['ORA', c.ora, c.readZeroPageIndirect, modes.zeroPageIndirect, 5],
+    0x32: ['AND', c.and, c.readZeroPageIndirect, modes.zeroPageIndirect, 5],
+    0x52: ['EOR', c.eor, c.readZeroPageIndirect, modes.zeroPageIndirect, 5],
+    0x72: ['ADC', c.adc, c.readZeroPageIndirect, modes.zeroPageIndirect, 5],
+    0x92: ['STA', c.sta, c.writeZeroPageIndirect, modes.zeroPageIndirect, 5],
+    0xB2: ['LDA', c.lda, c.readZeroPageIndirect, modes.zeroPageIndirect, 5],
+    0xD2: ['CMP', c.cmp, c.readZeroPageIndirect, modes.zeroPageIndirect, 5],
+    0xF2: ['SBC', c.sbc, c.readZeroPageIndirect, modes.zeroPageIndirect, 5],
+
+    // Better BIT
+    0x34: ['BIT', c.bit, c.readZeroPageX, modes.zeroPageX, 4],
+    0x3C: ['BIT', c.bit, c.readAbsoluteX, modes.absoluteX, 4],
+    0x89: ['BIT', c.bitI, c.readImmediate, modes.immediate, 2],
+
+    // JMP absolute indirect indexed
+    0x6C: [
+        'JMP', c.jmp, c.readAddrAbsoluteIndirect, modes.absoluteIndirect, 6
+    ],
+    0x7C: [
+        'JMP', c.jmp, c.readAddrAbsoluteXIndirect, modes.absoluteXIndirect, 6
+    ],
+
+    // BBR/BBS
+    0x0F: ['BBR0', c.bbr, 0, modes.zeroPage_relative, 5],
+    0x1F: ['BBR1', c.bbr, 1, modes.zeroPage_relative, 5],
+    0x2F: ['BBR2', c.bbr, 2, modes.zeroPage_relative, 5],
+    0x3F: ['BBR3', c.bbr, 3, modes.zeroPage_relative, 5],
+    0x4F: ['BBR4', c.bbr, 4, modes.zeroPage_relative, 5],
+    0x5F: ['BBR5', c.bbr, 5, modes.zeroPage_relative, 5],
+    0x6F: ['BBR6', c.bbr, 6, modes.zeroPage_relative, 5],
+    0x7F: ['BBR7', c.bbr, 7, modes.zeroPage_relative, 5],
+
+    0x8F: ['BBS0', c.bbs, 0, modes.zeroPage_relative, 5],
+    0x9F: ['BBS1', c.bbs, 1, modes.zeroPage_relative, 5],
+    0xAF: ['BBS2', c.bbs, 2, modes.zeroPage_relative, 5],
+    0xBF: ['BBS3', c.bbs, 3, modes.zeroPage_relative, 5],
+    0xCF: ['BBS4', c.bbs, 4, modes.zeroPage_relative, 5],
+    0xDF: ['BBS5', c.bbs, 5, modes.zeroPage_relative, 5],
+    0xEF: ['BBS6', c.bbs, 6, modes.zeroPage_relative, 5],
+    0xFF: ['BBS7', c.bbs, 7, modes.zeroPage_relative, 5],
+
+    // BRA
+    0x80: ['BRA', c.brc, 0, modes.relative, 2],
+
+    // NOP
+    0x02: ['NOP', c.nop, c.readImmediate, modes.immediate, 2],
+    0x22: ['NOP', c.nop, c.readImmediate, modes.immediate, 2],
+    0x42: ['NOP', c.nop, c.readImmediate, modes.immediate, 2],
+    0x44: ['NOP', c.nop, c.readImmediate, modes.immediate, 3],
+    0x54: ['NOP', c.nop, c.readImmediate, modes.immediate, 4],
+    0x62: ['NOP', c.nop, c.readImmediate, modes.immediate, 2],
+    0x82: ['NOP', c.nop, c.readImmediate, modes.immediate, 2],
+    0xC2: ['NOP', c.nop, c.readImmediate, modes.immediate, 2],
+    0xD4: ['NOP', c.nop, c.readImmediate, modes.immediate, 4],
+    0xE2: ['NOP', c.nop, c.readImmediate, modes.immediate, 2],
+    0xF4: ['NOP', c.nop, c.readImmediate, modes.immediate, 4],
+    0x5C: ['NOP', c.nop, c.readAbsolute, modes.absolute, 8],
+    0xDC: ['NOP', c.nop, c.readAbsolute, modes.absolute, 4],
+    0xFC: ['NOP', c.nop, c.readAbsolute, modes.absolute, 4],
+
+    // PHX
+    0xDA: ['PHX', c.phx, null, modes.implied, 3],
+
+    // PHY
+    0x5A: ['PHY', c.phy, null, modes.implied, 3],
+
+    // PLX
+    0xFA: ['PLX', c.plx, null, modes.implied, 4],
+
+    // PLY
+    0x7A: ['PLY', c.ply, null, modes.implied, 4],
+
+    // RMB/SMB
+
+    0x07: ['RMB0', c.rmb, 0, modes.zeroPage, 5],
+    0x17: ['RMB1', c.rmb, 1, modes.zeroPage, 5],
+    0x27: ['RMB2', c.rmb, 2, modes.zeroPage, 5],
+    0x37: ['RMB3', c.rmb, 3, modes.zeroPage, 5],
+    0x47: ['RMB4', c.rmb, 4, modes.zeroPage, 5],
+    0x57: ['RMB5', c.rmb, 5, modes.zeroPage, 5],
+    0x67: ['RMB6', c.rmb, 6, modes.zeroPage, 5],
+    0x77: ['RMB7', c.rmb, 7, modes.zeroPage, 5],
+
+    0x87: ['SMB0', c.smb, 0, modes.zeroPage, 5],
+    0x97: ['SMB1', c.smb, 1, modes.zeroPage, 5],
+    0xA7: ['SMB2', c.smb, 2, modes.zeroPage, 5],
+    0xB7: ['SMB3', c.smb, 3, modes.zeroPage, 5],
+    0xC7: ['SMB4', c.smb, 4, modes.zeroPage, 5],
+    0xD7: ['SMB5', c.smb, 5, modes.zeroPage, 5],
+    0xE7: ['SMB6', c.smb, 6, modes.zeroPage, 5],
+    0xF7: ['SMB7', c.smb, 7, modes.zeroPage, 5],
+
+    // STZ
+    0x64: ['STZ', c.stz, c.writeZeroPage, modes.zeroPage, 3],
+    0x74: ['STZ', c.stz, c.writeZeroPageX, modes.zeroPageX, 4],
+    0x9C: ['STZ', c.stz, c.writeAbsolute, modes.absolute, 4],
+    0x9E: ['STZ', c.stz, c.writeAbsoluteX, modes.absoluteX, 5],
+
+    // TRB
+    0x14: ['TRB', c.trb, c.readAddrZeroPage, modes.zeroPage, 5],
+    0x1C: ['TRB', c.trb, c.readAddrAbsolute, modes.absolute, 6],
+
+    // TSB
+    0x04: ['TSB', c.tsb, c.readAddrZeroPage, modes.zeroPage, 5],
+    0x0C: ['TSB', c.tsb, c.readAddrAbsolute, modes.absolute, 6]
+};
