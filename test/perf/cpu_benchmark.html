@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Benchmark for 6502</title>
+  <script async="false" type="module" src="/dist/cpu_benchmark.js"></script>
+  <script>
+    window.addEventListener('load', async (e) => {
+      await window.benchmark();
+      console.log('done');
+    });
+  </script>
+  <style>
+    table {
+      border-collapse: collapse;
+      empty-cells: hide;
+    }
+
+    tr.bottom-header {
+      border-bottom: 2px solid black;
+    }
+
+    th.right-header {
+      border-right: 2px solid black;
+      border-top: 1px solid gray;
+    }
+
+    td {
+      text-align: right;
+      border-top: 1px solid gray;
+      padding: 4px 10px;
+    }
+
+  </style>
+</head>
+
+<body>
+  <h1>Benchmark for 6502</h1>
+
+  <table id="benchmarks">
+    <thead>
+      <tr id="impl">
+        <th></th>
+        <th colspan="2">cpu6502.js</th>
+      </tr>
+      <tr class="bottom-header" id="emul">
+        <th></th>
+        <th>6502</th>
+        <th>65C02</th>
+      </tr>
+    </thead>
+    <tr id="min">
+      <th class="right-header">min</th>
+      <td id="min_js_6502"></td>
+      <td id="min_js_65C02"></td>
+    </tr>
+    <tr id="max">
+      <th class="right-header">max</th>
+      <td id="max_js_6502"></td>
+      <td id="max_js_65C02"></td>
+    </tr>
+    <tr id="mean">
+      <th class="right-header">mean</th>
+      <td id="mean_js_6502"></td>
+      <td id="mean_js_65C02"></td>
+    </tr>
+    <tr id="median">
+      <th class="right-header">median</th>
+      <td id="median_js_6502"></td>
+      <td id="median_js_65C02"></td>
+    </tr>
+    <tr id="runs">
+      <th class="right-header">runs</th>
+      <td id="runs_js_6502"></td>
+      <td id="runs_js_65C02"></td>
+    </tr>
+  </table>
+</body>
+
+</html>
