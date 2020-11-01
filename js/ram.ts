@@ -10,30 +10,43 @@
  */
 
 import { base64_decode, base64_encode } from './base64';
+import { byte, memory } from './types';
 import { allocMemPages } from './util';
 
-export default function RAM(sp, ep) {
-    var mem;
-    var start_page = sp;
-    var end_page = ep;
+export interface State {
+    /** Start of memory region. */
+    start: byte;
+    /** End of memory region. */
+    end: byte;
+    /** Base64-encoded contents. */
+    mem: string;
+};
 
-    mem = allocMemPages(ep - sp + 1);
+/**
+ * Represents RAM from the start page `sp` to end page `ep`. The memory
+ * is addressed by `page` and `offset`.
+ */
+export default function RAM(sp: byte, ep: byte) {
+    let start_page = sp;
+    let end_page = ep;
+
+    let mem = allocMemPages(ep - sp + 1);
 
     return {
-        start: function() {
+        start: function () {
             return start_page;
         },
-        end: function() {
+        end: function () {
             return end_page;
         },
-        read: function(page, off) {
-            return mem[(page - start_page) << 8 | off];
+        read: function (page: byte, offset: byte) {
+            return mem[(page - start_page) << 8 | offset];
         },
-        write: function(page, off, val) {
-            mem[(page - start_page) << 8 | off] = val;
+        write: function (page: byte, offset: byte, val: byte) {
+            mem[(page - start_page) << 8 | offset] = val;
         },
 
-        getState: function() {
+        getState: function (): State {
             return {
                 start: start_page,
                 end: end_page,
@@ -41,7 +54,7 @@ export default function RAM(sp, ep) {
             };
         },
 
-        setState: function(state) {
+        setState: function (state: State) {
             start_page = state.start;
             end_page = state.end;
             mem = base64_decode(state.mem);
