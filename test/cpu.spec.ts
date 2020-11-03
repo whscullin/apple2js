@@ -6,9 +6,9 @@ import Test65C02 from './roms/65C02test';
 import { toHex } from '../js/util';
 
 describe('CPU', function () {
-    var cpu;
-    var lastPC = 0;
-    var done = false;
+    let cpu: CPU6502;
+    let lastPC = 0;
+    let done = false;
 
     function traceCB() {
         var pc = cpu.getPC();
