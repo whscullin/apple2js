@@ -20,68 +20,47 @@ export interface CpuOptions {
 }
 
 export interface CpuState {
-        a: byte,
-        x: byte,
-        y: byte,
-        s: byte,
-        pc: word,
-        sp: byte,
-        cycles: number
+    a: byte,
+    x: byte,
+    y: byte,
+    s: byte,
+    pc: word,
+    sp: byte,
+    cycles: number
 }
 
-/** Range of mode numbers. */
-type mode = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
+type Modes = { [key: string]: number }
+type Mode = keyof Modes
 
 /** Addressing mode name to number mapping. */
-const modes: { [key: string]: mode } = {
-    accumulator: 0,           // A (Accumulator)
+const modes: Modes = {
+    accumulator: 1,           // A (Accumulator)
     implied:     1,           // Implied
     immediate:   2,           // # Immediate
     absolute:    3,           // a Absolute
-    zeroPage:    4,           // zp Zero Page
-    relative:    5,           // r Relative
+    zeroPage:    2,           // zp Zero Page
+    relative:    2,           // r Relative
 
-    absoluteX:   6,           // a,X Absolute, X
-    absoluteY:   7,           // a,Y Absolute, Y
-    zeroPageX:   8,           // zp,X Zero Page, X
-    zeroPageY:   9,           // zp,Y Zero Page, Y
+    absoluteX:   3,           // a,X Absolute, X
+    absoluteY:   3,           // a,Y Absolute, Y
+    zeroPageX:   2,           // zp,X Zero Page, X
+    zeroPageY:   2,           // zp,Y Zero Page, Y
 
-    absoluteIndirect:   10,  // (a) Indirect
-    zeroPageXIndirect:  11, // (zp,X) Zero Page Indexed Indirect
-    zeroPageIndirectY:  12, // (zp),Y Zero Page Indexed with Y
+    absoluteIndirect:   3,  // (a) Indirect
+    zeroPageXIndirect:  2, // (zp,X) Zero Page Indexed Indirect
+    zeroPageIndirectY:  2, // (zp),Y Zero Page Indexed with Y
 
     /* 65c02 */
-    zeroPageIndirect:   13,  // (zp),
-    absoluteXIndirect:  14,  // (a, X),
-    zeroPage_relative:  15   // zp, Relative
-};
-
-/** Instruction size by addressing mode. */
-const sizes = {
-    0 /* modes.accumulator */: 1,
-    1 /* modes.implied */: 1,
-    2 /* modes.immediate */: 2,
-    3 /* modes.absolute */: 3,
-    4 /* modes.zeroPage */: 2,
-    5 /* modes.relative */: 2,
-    6 /* modes.absoluteX */: 3,
-    7 /* modes.absoluteY */: 3,
-    8 /* modes.zeroPageX */: 2,
-    9 /* modes.zeroPageY */: 2,
-    10 /* modes.indirect */: 3,
-    11 /* modes.zeroPageXIndirect */: 2,
-    12 /* modes.zeroPageYIndirect */: 2,
-
-    13 /* mode.zeroPageIndirect */: 2,
-    14 /* mode.absoluteXIndirect */: 3,
-    15 /* mode.zeroPage_relative */: 3
+    zeroPageIndirect:   2,  // (zp),
+    absoluteXIndirect:  3,  // (a, X),
+    zeroPage_relative:  3   // zp, Relative
 };
 
 /** Status register flag numbers. */
-type flag = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+type flag = 0x80 | 0x40 | 0x20 | 0x10 | 0x08 | 0x04 | 0x02 | 0x01;
 
 /** Flags to status byte mask. */
-const flags = {
+const flags: {[key: string]: flag} = {
     N: 0x80, // Negative
     V: 0x40, // oVerflow
     B: 0x10, // Break
@@ -99,7 +78,7 @@ const loc = {
     BRK: 0xFFFE
 };
 
-interface ReadablePage {
+export interface ReadablePage {
     read(page: byte, offset: byte): byte;
 }
 
@@ -107,7 +86,7 @@ function isReadablePage(page: ReadablePage | any): page is ReadablePage {
     return (page as ReadablePage).read !== undefined;
 }
 
-interface WriteablePage {
+export interface WriteablePage {
     write(page: byte, offset: byte, value: byte): void;
 }
 
@@ -140,53 +119,19 @@ interface Opts {
 type ReadFn = () => byte;
 type WriteFn = (val: byte) => void;
 type ReadAddrFn = (opts?: Opts) => word;
+type ImpliedFn = () => void
 
-type readInstruction = [
-    desc: string,
-    op: (readFn: ReadFn) => void,
-    modeFn: ReadFn,
-    mode: mode, // really 0-15
-    cycles: number,
-];
+interface Op<T> {
+    name: string
+    mode: keyof Modes
+    op: (fn: T) => void
+    modeFn: T
+}
 
-type writeInstruction = [
-    desc: string,
-    op: (writeFn: WriteFn) => void,
-    modeFn: WriteFn,
-    mode: mode, // really 0-15
-    cycles: number,
-];
-
-type impliedInstruction = [
-    desc: string,
-    op: () => void,
-    modeFn: null,
-    mode: mode, // really 0-15
-    cycles: number,
-];
-
-type relativeInstruction = [
-    desc: string,
-    op: (f: byte) => void,
-    modeFn: byte,
-    mode: mode, // really 0-15
-    cycles: number,
-];
-
-type noopInstruction = [
-    desc: string,
-    op: (readAddrFn: ReadAddrFn) => void,
-    modeFn: () => void,
-    mode: mode, // really 0-15
-    cycles: number,
-];
-
-type instruction =
-    readInstruction | writeInstruction |
-    impliedInstruction | relativeInstruction | noopInstruction;
+type Instruction = Op<ReadFn | WriteFn | ReadAddrFn | ImpliedFn | number>
 
 interface Instructions {
-    [key: number]: instruction;
+    [key: number]: Instruction;
 }
 
 type callback = (cpu: any) => void; // TODO(flan): Hack until there is better typing.
@@ -209,7 +154,7 @@ export default class CPU6502 {
     private sync = false;
 
     private readonly ops: Instructions;
-    private readonly opary: instruction[];
+    private readonly opary: Instruction[];
 
     constructor(options: CpuOptions = {}) {
         this.is65C02 = options['65C02'] ? true : false;
@@ -228,7 +173,7 @@ export default class CPU6502 {
         this.ops = ops;
 
         // Certain browsers benefit from using arrays over maps
-        const opary: instruction[] = [];
+        const opary: Instruction[] = [];
 
         for (let idx = 0; idx < 0x100; idx++) {
             opary[idx] = ops[idx] || this.unknown(idx)
@@ -396,11 +341,15 @@ export default class CPU6502 {
     }
 
     /*
-     * Read functions
+     * Implied function
      */
 
-    readImplied() {
+    implied() {
     }
+
+    /*
+     * Read functions
+     */
 
     // #$00
     readImmediate = (): byte => {
@@ -1020,33 +969,31 @@ export default class CPU6502 {
     }
 
     private unknown(b: byte) {
-        let unk: noopInstruction;
+        let unk: Instruction;
 
         if (this.is65C02) {
-            unk = [
-                'NOP',
-                this.nop,
-                this.readImplied,
-                modes.implied,
-                2
-            ];
+            unk = {
+                name: 'NOP',
+                op: this.nop,
+                modeFn: this.implied,
+                mode: modes.implied,
+            }
         } else {
-            unk = [
-                '???',
-                function() {
-                    debug('Unknown OpCode: ' + toHex(b) +
-                          ' at ' + toHex(this.pc - 1, 4));
+            unk = {
+                name: '???',
+                op: function() {
+                debug('Unknown OpCode: ' + toHex(b) +
+                        ' at ' + toHex(this.pc - 1, 4));
                 },
-                this.readImplied,
-                modes.implied,
-                1
-            ];
+                modeFn: this.implied,
+                mode: modes.implied
+            }
         }
         this.ops[b] = unk;
         return unk;
     }
 
-    private dumpArgs(addr: word, m: mode, symbols: symbols) {
+    private dumpArgs(addr: word, m: Mode, symbols: symbols) {
         function toHexOrSymbol(v: word, n?: number) {
             if (symbols && symbols[v]) {
                 return symbols[v];
@@ -1127,7 +1074,7 @@ export default class CPU6502 {
         this.sync = true;
         let op = this.opary[this.readBytePC()];
         this.sync = false;
-        op[1](op[2] as any); // TODO(flan): Hack until there is better typing.
+        op.op(op.modeFn);
 
         if (cb) {
             cb(this);
@@ -1139,7 +1086,7 @@ export default class CPU6502 {
             this.sync = true;
             let op = this.opary[this.readBytePC()];
             this.sync = false;
-            op[1](op[2] as any); // TODO(flan): Hack until there is better typing.
+            op.op(op.modeFn);
 
             if (cb) {
                 cb(this);
@@ -1154,7 +1101,7 @@ export default class CPU6502 {
             this.sync = true;
             let op = this.opary[this.readBytePC()];
             this.sync = false;
-            op[1](op[2] as any); // TODO(flan): Hack until there is better typing.
+            op.op(op.modeFn);
         }
     }
 
@@ -1165,7 +1112,7 @@ export default class CPU6502 {
             this.sync = true;
             op = this.opary[this.readBytePC()];
             this.sync = false;
-            op[1](op[2] as any); // TODO(flan): Hack until there is better typing.
+            op.op(op.modeFn);
 
             if (cb) {
                 cb(this);
@@ -1236,7 +1183,7 @@ export default class CPU6502 {
         }
         let b = this.readByte(pc),
             op = this.ops[b],
-            size = sizes[op[3]],
+            size = modes[op.mode],
             result = toHex(pc, 4) + '- ';
 
         if (symbols) {
@@ -1259,7 +1206,7 @@ export default class CPU6502 {
         if (op === undefined)
             result += '??? (' + toHex(b) + ')';
         else
-            result += op[0] + ' ' + this.dumpArgs(pc + 1, op[3], symbols);
+            result += op.name + ' ' + this.dumpArgs(pc + 1, op.mode, symbols);
 
         return result;
     }
@@ -1303,7 +1250,7 @@ export default class CPU6502 {
         for (var jdx = 0; jdx < 20; jdx++) {
             var b = this.readByte(_pc), op = this.ops[b];
             results.push(this.dumpPC(_pc, symbols));
-            _pc += sizes[op[3]];
+            _pc += modes[op.mode];
         }
         return results;
     }
@@ -1370,384 +1317,384 @@ export default class CPU6502 {
 
     OPS_6502: Instructions = {
         // LDA
-        0xa9: ['LDA', this.lda, this.readImmediate, modes.immediate, 2],
-        0xa5: ['LDA', this.lda, this.readZeroPage, modes.zeroPage, 3],
-        0xb5: ['LDA', this.lda, this.readZeroPageX, modes.zeroPageX, 4],
-        0xad: ['LDA', this.lda, this.readAbsolute, modes.absolute, 4],
-        0xbd: ['LDA', this.lda, this.readAbsoluteX, modes.absoluteX, 4],
-        0xb9: ['LDA', this.lda, this.readAbsoluteY, modes.absoluteY, 4],
-        0xa1: ['LDA', this.lda, this.readZeroPageXIndirect, modes.zeroPageXIndirect, 6],
-        0xb1: ['LDA', this.lda, this.readZeroPageIndirectY, modes.zeroPageIndirectY, 5],
+        0xa9: { name: 'LDA', op: this.lda, modeFn: this.readImmediate, mode: modes.immediate },
+        0xa5: { name: 'LDA', op: this.lda, modeFn: this.readZeroPage, mode: modes.zeroPage },
+        0xb5: { name: 'LDA', op: this.lda, modeFn: this.readZeroPageX, mode: modes.zeroPageX },
+        0xad: { name: 'LDA', op: this.lda, modeFn: this.readAbsolute, mode: modes.absolute },
+        0xbd: { name: 'LDA', op: this.lda, modeFn: this.readAbsoluteX, mode: modes.absoluteX },
+        0xb9: { name: 'LDA', op: this.lda, modeFn: this.readAbsoluteY, mode: modes.absoluteY },
+        0xa1: { name: 'LDA', op: this.lda, modeFn: this.readZeroPageXIndirect, mode: modes.zeroPageXIndirect },
+        0xb1: { name: 'LDA', op: this.lda, modeFn: this.readZeroPageIndirectY, mode: modes.zeroPageIndirectY },
 
         // LDX
-        0xa2: ['LDX', this.ldx, this.readImmediate, modes.immediate, 2],
-        0xa6: ['LDX', this.ldx, this.readZeroPage, modes.zeroPage, 3],
-        0xb6: ['LDX', this.ldx, this.readZeroPageY, modes.zeroPageY, 4],
-        0xae: ['LDX', this.ldx, this.readAbsolute, modes.absolute, 4],
-        0xbe: ['LDX', this.ldx, this.readAbsoluteY, modes.absoluteY, 4],
+        0xa2: { name: 'LDX', op: this.ldx, modeFn: this.readImmediate, mode: modes.immediate },
+        0xa6: { name: 'LDX', op: this.ldx, modeFn: this.readZeroPage, mode: modes.zeroPage },
+        0xb6: { name: 'LDX', op: this.ldx, modeFn: this.readZeroPageY, mode: modes.zeroPageY },
+        0xae: { name: 'LDX', op: this.ldx, modeFn: this.readAbsolute, mode: modes.absolute },
+        0xbe: { name: 'LDX', op: this.ldx, modeFn: this.readAbsoluteY, mode: modes.absoluteY },
 
         // LDY
-        0xa0: ['LDY', this.ldy, this.readImmediate, modes.immediate, 2],
-        0xa4: ['LDY', this.ldy, this.readZeroPage, modes.zeroPage, 3],
-        0xb4: ['LDY', this.ldy, this.readZeroPageX, modes.zeroPageX, 4],
-        0xac: ['LDY', this.ldy, this.readAbsolute, modes.absolute, 4],
-        0xbc: ['LDY', this.ldy, this.readAbsoluteX, modes.absoluteX, 4],
+        0xa0: { name: 'LDY', op: this.ldy, modeFn: this.readImmediate, mode: modes.immediate },
+        0xa4: { name: 'LDY', op: this.ldy, modeFn: this.readZeroPage, mode: modes.zeroPage },
+        0xb4: { name: 'LDY', op: this.ldy, modeFn: this.readZeroPageX, mode: modes.zeroPageX },
+        0xac: { name: 'LDY', op: this.ldy, modeFn: this.readAbsolute, mode: modes.absolute },
+        0xbc: { name: 'LDY', op: this.ldy, modeFn: this.readAbsoluteX, mode: modes.absoluteX },
 
         // STA
-        0x85: ['STA', this.sta, this.writeZeroPage, modes.zeroPage, 3],
-        0x95: ['STA', this.sta, this.writeZeroPageX, modes.zeroPageX, 4],
-        0x8d: ['STA', this.sta, this.writeAbsolute, modes.absolute, 4],
-        0x9d: ['STA', this.sta, this.writeAbsoluteX, modes.absoluteX, 5],
-        0x99: ['STA', this.sta, this.writeAbsoluteY, modes.absoluteY, 5],
-        0x81: ['STA', this.sta, this.writeZeroPageXIndirect, modes.zeroPageXIndirect, 6],
-        0x91: ['STA', this.sta, this.writeZeroPageIndirectY, modes.zeroPageIndirectY, 6],
+        0x85: { name: 'STA', op: this.sta, modeFn: this.writeZeroPage, mode: modes.zeroPage },
+        0x95: { name: 'STA', op: this.sta, modeFn: this.writeZeroPageX, mode: modes.zeroPageX },
+        0x8d: { name: 'STA', op: this.sta, modeFn: this.writeAbsolute, mode: modes.absolute },
+        0x9d: { name: 'STA', op: this.sta, modeFn: this.writeAbsoluteX, mode: modes.absoluteX },
+        0x99: { name: 'STA', op: this.sta, modeFn: this.writeAbsoluteY, mode: modes.absoluteY },
+        0x81: { name: 'STA', op: this.sta, modeFn: this.writeZeroPageXIndirect, mode: modes.zeroPageXIndirect },
+        0x91: { name: 'STA', op: this.sta, modeFn: this.writeZeroPageIndirectY, mode: modes.zeroPageIndirectY },
 
         // STX
-        0x86: ['STX', this.stx, this.writeZeroPage, modes.zeroPage, 3],
-        0x96: ['STX', this.stx, this.writeZeroPageY, modes.zeroPageY, 4],
-        0x8e: ['STX', this.stx, this.writeAbsolute, modes.absolute, 4],
+        0x86: { name: 'STX', op: this.stx, modeFn: this.writeZeroPage, mode: modes.zeroPage },
+        0x96: { name: 'STX', op: this.stx, modeFn: this.writeZeroPageY, mode: modes.zeroPageY },
+        0x8e: { name: 'STX', op: this.stx, modeFn: this.writeAbsolute, mode: modes.absolute },
 
         // STY
-        0x84: ['STY', this.sty, this.writeZeroPage, modes.zeroPage, 3],
-        0x94: ['STY', this.sty, this.writeZeroPageX, modes.zeroPageX, 4],
-        0x8c: ['STY', this.sty, this.writeAbsolute, modes.absolute, 4],
+        0x84: { name: 'STY', op: this.sty, modeFn: this.writeZeroPage, mode: modes.zeroPage },
+        0x94: { name: 'STY', op: this.sty, modeFn: this.writeZeroPageX, mode: modes.zeroPageX },
+        0x8c: { name: 'STY', op: this.sty, modeFn: this.writeAbsolute, mode: modes.absolute },
 
         // ADC
-        0x69: ['ADC', this.adc, this.readImmediate, modes.immediate, 2],
-        0x65: ['ADC', this.adc, this.readZeroPage, modes.zeroPage, 3],
-        0x75: ['ADC', this.adc, this.readZeroPageX, modes.zeroPageX, 4],
-        0x6D: ['ADC', this.adc, this.readAbsolute, modes.absolute, 4],
-        0x7D: ['ADC', this.adc, this.readAbsoluteX, modes.absoluteX, 4],
-        0x79: ['ADC', this.adc, this.readAbsoluteY, modes.absoluteY, 4],
-        0x61: ['ADC', this.adc, this.readZeroPageXIndirect, modes.zeroPageXIndirect, 6],
-        0x71: ['ADC', this.adc, this.readZeroPageIndirectY, modes.zeroPageIndirectY, 5],
+        0x69: { name: 'ADC', op: this.adc, modeFn: this.readImmediate, mode: modes.immediate },
+        0x65: { name: 'ADC', op: this.adc, modeFn: this.readZeroPage, mode: modes.zeroPage },
+        0x75: { name: 'ADC', op: this.adc, modeFn: this.readZeroPageX, mode: modes.zeroPageX },
+        0x6D: { name: 'ADC', op: this.adc, modeFn: this.readAbsolute, mode: modes.absolute },
+        0x7D: { name: 'ADC', op: this.adc, modeFn: this.readAbsoluteX, mode: modes.absoluteX },
+        0x79: { name: 'ADC', op: this.adc, modeFn: this.readAbsoluteY, mode: modes.absoluteY },
+        0x61: { name: 'ADC', op: this.adc, modeFn: this.readZeroPageXIndirect, mode: modes.zeroPageXIndirect },
+        0x71: { name: 'ADC', op: this.adc, modeFn: this.readZeroPageIndirectY, mode: modes.zeroPageIndirectY },
 
         // SBC
-        0xe9: ['SBC', this.sbc, this.readImmediate, modes.immediate, 2],
-        0xe5: ['SBC', this.sbc, this.readZeroPage, modes.zeroPage, 3],
-        0xf5: ['SBC', this.sbc, this.readZeroPageX, modes.zeroPageX, 4],
-        0xeD: ['SBC', this.sbc, this.readAbsolute, modes.absolute, 4],
-        0xfD: ['SBC', this.sbc, this.readAbsoluteX, modes.absoluteX, 4],
-        0xf9: ['SBC', this.sbc, this.readAbsoluteY, modes.absoluteY, 4],
-        0xe1: ['SBC', this.sbc, this.readZeroPageXIndirect, modes.zeroPageXIndirect, 6],
-        0xf1: ['SBC', this.sbc, this.readZeroPageIndirectY, modes.zeroPageIndirectY, 5],
+        0xe9: { name: 'SBC', op: this.sbc, modeFn: this.readImmediate, mode: modes.immediate },
+        0xe5: { name: 'SBC', op: this.sbc, modeFn: this.readZeroPage, mode: modes.zeroPage },
+        0xf5: { name: 'SBC', op: this.sbc, modeFn: this.readZeroPageX, mode: modes.zeroPageX },
+        0xeD: { name: 'SBC', op: this.sbc, modeFn: this.readAbsolute, mode: modes.absolute },
+        0xfD: { name: 'SBC', op: this.sbc, modeFn: this.readAbsoluteX, mode: modes.absoluteX },
+        0xf9: { name: 'SBC', op: this.sbc, modeFn: this.readAbsoluteY, mode: modes.absoluteY },
+        0xe1: { name: 'SBC', op: this.sbc, modeFn: this.readZeroPageXIndirect, mode: modes.zeroPageXIndirect },
+        0xf1: { name: 'SBC', op: this.sbc, modeFn: this.readZeroPageIndirectY, mode: modes.zeroPageIndirectY },
 
         // INC
-        0xe6: ['INC', this.inc, this.readAddrZeroPage, modes.zeroPage, 5],
-        0xf6: ['INC', this.inc, this.readAddrZeroPageX, modes.zeroPageX, 6],
-        0xee: ['INC', this.inc, this.readAddrAbsolute, modes.absolute, 6],
-        0xfe: ['INC', this.inc, this.readAddrAbsoluteX, modes.absoluteX, 7],
+        0xe6: { name: 'INC', op: this.inc, modeFn: this.readAddrZeroPage, mode: modes.zeroPage },
+        0xf6: { name: 'INC', op: this.inc, modeFn: this.readAddrZeroPageX, mode: modes.zeroPageX },
+        0xee: { name: 'INC', op: this.inc, modeFn: this.readAddrAbsolute, mode: modes.absolute },
+        0xfe: { name: 'INC', op: this.inc, modeFn: this.readAddrAbsoluteX, mode: modes.absoluteX },
 
         // INX
-        0xe8: ['INX', this.inx, null, modes.implied, 2],
+        0xe8: { name: 'INX', op: this.inx, modeFn: this.implied, mode: modes.implied },
 
         // INY
-        0xc8: ['INY', this.iny, null, modes.implied, 2],
+        0xc8: { name: 'INY', op: this.iny, modeFn: this.implied, mode: modes.implied },
 
         // DEC
-        0xc6: ['DEC', this.dec, this.readAddrZeroPage, modes.zeroPage, 5],
-        0xd6: ['DEC', this.dec, this.readAddrZeroPageX, modes.zeroPageX, 6],
-        0xce: ['DEC', this.dec, this.readAddrAbsolute, modes.absolute, 6],
-        0xde: ['DEC', this.dec, this.readAddrAbsoluteX, modes.absoluteX, 7],
+        0xc6: { name: 'DEC', op: this.dec, modeFn: this.readAddrZeroPage, mode: modes.zeroPage },
+        0xd6: { name: 'DEC', op: this.dec, modeFn: this.readAddrZeroPageX, mode: modes.zeroPageX },
+        0xce: { name: 'DEC', op: this.dec, modeFn: this.readAddrAbsolute, mode: modes.absolute },
+        0xde: { name: 'DEC', op: this.dec, modeFn: this.readAddrAbsoluteX, mode: modes.absoluteX },
 
         // DEX
-        0xca: ['DEX', this.dex, null, modes.implied, 2],
+        0xca: { name: 'DEX', op: this.dex, modeFn: this.implied, mode: modes.implied },
 
         // DEY
-        0x88: ['DEY', this.dey, null, modes.implied, 2],
+        0x88: { name: 'DEY', op: this.dey, modeFn: this.implied, mode: modes.implied },
 
         // ASL
-        0x0A: ['ASL', this.aslA, null, modes.accumulator, 2],
-        0x06: ['ASL', this.asl, this.readAddrZeroPage, modes.zeroPage, 5],
-        0x16: ['ASL', this.asl, this.readAddrZeroPageX, modes.zeroPageX, 6],
-        0x0E: ['ASL', this.asl, this.readAddrAbsolute, modes.absolute, 6],
-        0x1E: ['ASL', this.asl, this.readAddrAbsoluteX, modes.absoluteX, 7],
+        0x0A: { name: 'ASL', op: this.aslA, modeFn: this.implied, mode: modes.accumulator },
+        0x06: { name: 'ASL', op: this.asl, modeFn: this.readAddrZeroPage, mode: modes.zeroPage },
+        0x16: { name: 'ASL', op: this.asl, modeFn: this.readAddrZeroPageX, mode: modes.zeroPageX },
+        0x0E: { name: 'ASL', op: this.asl, modeFn: this.readAddrAbsolute, mode: modes.absolute },
+        0x1E: { name: 'ASL', op: this.asl, modeFn: this.readAddrAbsoluteX, mode: modes.absoluteX },
 
         // LSR
-        0x4A: ['LSR', this.lsrA, null, modes.accumulator, 2],
-        0x46: ['LSR', this.lsr, this.readAddrZeroPage, modes.zeroPage, 5],
-        0x56: ['LSR', this.lsr, this.readAddrZeroPageX, modes.zeroPageX, 6],
-        0x4E: ['LSR', this.lsr, this.readAddrAbsolute, modes.absolute, 6],
-        0x5E: ['LSR', this.lsr, this.readAddrAbsoluteX, modes.absoluteX, 7],
+        0x4A: { name: 'LSR', op: this.lsrA, modeFn: this.implied, mode: modes.accumulator },
+        0x46: { name: 'LSR', op: this.lsr, modeFn: this.readAddrZeroPage, mode: modes.zeroPage },
+        0x56: { name: 'LSR', op: this.lsr, modeFn: this.readAddrZeroPageX, mode: modes.zeroPageX },
+        0x4E: { name: 'LSR', op: this.lsr, modeFn: this.readAddrAbsolute, mode: modes.absolute },
+        0x5E: { name: 'LSR', op: this.lsr, modeFn: this.readAddrAbsoluteX, mode: modes.absoluteX },
 
         // ROL
-        0x2A: ['ROL', this.rolA, null, modes.accumulator, 2],
-        0x26: ['ROL', this.rol, this.readAddrZeroPage, modes.zeroPage, 5],
-        0x36: ['ROL', this.rol, this.readAddrZeroPageX, modes.zeroPageX, 6],
-        0x2E: ['ROL', this.rol, this.readAddrAbsolute, modes.absolute, 6],
-        0x3E: ['ROL', this.rol, this.readAddrAbsoluteX, modes.absoluteX, 7],
+        0x2A: { name: 'ROL', op: this.rolA, modeFn: this.implied, mode: modes.accumulator },
+        0x26: { name: 'ROL', op: this.rol, modeFn: this.readAddrZeroPage, mode: modes.zeroPage },
+        0x36: { name: 'ROL', op: this.rol, modeFn: this.readAddrZeroPageX, mode: modes.zeroPageX },
+        0x2E: { name: 'ROL', op: this.rol, modeFn: this.readAddrAbsolute, mode: modes.absolute },
+        0x3E: { name: 'ROL', op: this.rol, modeFn: this.readAddrAbsoluteX, mode: modes.absoluteX },
 
         // ROR
-        0x6A: ['ROR', this.rorA, null, modes.accumulator, 2],
-        0x66: ['ROR', this.ror, this.readAddrZeroPage, modes.zeroPage, 5],
-        0x76: ['ROR', this.ror, this.readAddrZeroPageX, modes.zeroPageX, 6],
-        0x6E: ['ROR', this.ror, this.readAddrAbsolute, modes.absolute, 6],
-        0x7E: ['ROR', this.ror, this.readAddrAbsoluteX, modes.absoluteX, 7],
+        0x6A: { name: 'ROR', op: this.rorA, modeFn: this.implied, mode: modes.accumulator },
+        0x66: { name: 'ROR', op: this.ror, modeFn: this.readAddrZeroPage, mode: modes.zeroPage },
+        0x76: { name: 'ROR', op: this.ror, modeFn: this.readAddrZeroPageX, mode: modes.zeroPageX },
+        0x6E: { name: 'ROR', op: this.ror, modeFn: this.readAddrAbsolute, mode: modes.absolute },
+        0x7E: { name: 'ROR', op: this.ror, modeFn: this.readAddrAbsoluteX, mode: modes.absoluteX },
 
         // AND
-        0x29: ['AND', this.and, this.readImmediate, modes.immediate, 2],
-        0x25: ['AND', this.and, this.readZeroPage, modes.zeroPage, 3],
-        0x35: ['AND', this.and, this.readZeroPageX, modes.zeroPageX, 4],
-        0x2D: ['AND', this.and, this.readAbsolute, modes.absolute, 4],
-        0x3D: ['AND', this.and, this.readAbsoluteX, modes.absoluteX, 4],
-        0x39: ['AND', this.and, this.readAbsoluteY, modes.absoluteY, 4],
-        0x21: ['AND', this.and, this.readZeroPageXIndirect, modes.zeroPageXIndirect, 6],
-        0x31: ['AND', this.and, this.readZeroPageIndirectY, modes.zeroPageIndirectY, 5],
+        0x29: { name: 'AND', op: this.and, modeFn: this.readImmediate, mode: modes.immediate },
+        0x25: { name: 'AND', op: this.and, modeFn: this.readZeroPage, mode: modes.zeroPage },
+        0x35: { name: 'AND', op: this.and, modeFn: this.readZeroPageX, mode: modes.zeroPageX },
+        0x2D: { name: 'AND', op: this.and, modeFn: this.readAbsolute, mode: modes.absolute },
+        0x3D: { name: 'AND', op: this.and, modeFn: this.readAbsoluteX, mode: modes.absoluteX },
+        0x39: { name: 'AND', op: this.and, modeFn: this.readAbsoluteY, mode: modes.absoluteY },
+        0x21: { name: 'AND', op: this.and, modeFn: this.readZeroPageXIndirect, mode: modes.zeroPageXIndirect },
+        0x31: { name: 'AND', op: this.and, modeFn: this.readZeroPageIndirectY, mode: modes.zeroPageIndirectY },
 
         // ORA
-        0x09: ['ORA', this.ora, this.readImmediate, modes.immediate, 2],
-        0x05: ['ORA', this.ora, this.readZeroPage, modes.zeroPage, 3],
-        0x15: ['ORA', this.ora, this.readZeroPageX, modes.zeroPageX, 4],
-        0x0D: ['ORA', this.ora, this.readAbsolute, modes.absolute, 4],
-        0x1D: ['ORA', this.ora, this.readAbsoluteX, modes.absoluteX, 4],
-        0x19: ['ORA', this.ora, this.readAbsoluteY, modes.absoluteY, 4],
-        0x01: ['ORA', this.ora, this.readZeroPageXIndirect, modes.zeroPageXIndirect, 6],
-        0x11: ['ORA', this.ora, this.readZeroPageIndirectY, modes.zeroPageIndirectY, 5],
+        0x09: { name: 'ORA', op: this.ora, modeFn: this.readImmediate, mode: modes.immediate },
+        0x05: { name: 'ORA', op: this.ora, modeFn: this.readZeroPage, mode: modes.zeroPage },
+        0x15: { name: 'ORA', op: this.ora, modeFn: this.readZeroPageX, mode: modes.zeroPageX },
+        0x0D: { name: 'ORA', op: this.ora, modeFn: this.readAbsolute, mode: modes.absolute },
+        0x1D: { name: 'ORA', op: this.ora, modeFn: this.readAbsoluteX, mode: modes.absoluteX },
+        0x19: { name: 'ORA', op: this.ora, modeFn: this.readAbsoluteY, mode: modes.absoluteY },
+        0x01: { name: 'ORA', op: this.ora, modeFn: this.readZeroPageXIndirect, mode: modes.zeroPageXIndirect },
+        0x11: { name: 'ORA', op: this.ora, modeFn: this.readZeroPageIndirectY, mode: modes.zeroPageIndirectY },
 
         // EOR
-        0x49: ['EOR', this.eor, this.readImmediate, modes.immediate, 2],
-        0x45: ['EOR', this.eor, this.readZeroPage, modes.zeroPage, 3],
-        0x55: ['EOR', this.eor, this.readZeroPageX, modes.zeroPageX, 4],
-        0x4D: ['EOR', this.eor, this.readAbsolute, modes.absolute, 4],
-        0x5D: ['EOR', this.eor, this.readAbsoluteX, modes.absoluteX, 4],
-        0x59: ['EOR', this.eor, this.readAbsoluteY, modes.absoluteY, 4],
-        0x41: ['EOR', this.eor, this.readZeroPageXIndirect, modes.zeroPageXIndirect, 6],
-        0x51: ['EOR', this.eor, this.readZeroPageIndirectY, modes.zeroPageIndirectY, 5],
+        0x49: { name: 'EOR', op: this.eor, modeFn: this.readImmediate, mode: modes.immediate },
+        0x45: { name: 'EOR', op: this.eor, modeFn: this.readZeroPage, mode: modes.zeroPage },
+        0x55: { name: 'EOR', op: this.eor, modeFn: this.readZeroPageX, mode: modes.zeroPageX },
+        0x4D: { name: 'EOR', op: this.eor, modeFn: this.readAbsolute, mode: modes.absolute },
+        0x5D: { name: 'EOR', op: this.eor, modeFn: this.readAbsoluteX, mode: modes.absoluteX },
+        0x59: { name: 'EOR', op: this.eor, modeFn: this.readAbsoluteY, mode: modes.absoluteY },
+        0x41: { name: 'EOR', op: this.eor, modeFn: this.readZeroPageXIndirect, mode: modes.zeroPageXIndirect },
+        0x51: { name: 'EOR', op: this.eor, modeFn: this.readZeroPageIndirectY, mode: modes.zeroPageIndirectY },
 
         // CMP
-        0xc9: ['CMP', this.cmp, this.readImmediate, modes.immediate, 2],
-        0xc5: ['CMP', this.cmp, this.readZeroPage, modes.zeroPage, 3],
-        0xd5: ['CMP', this.cmp, this.readZeroPageX, modes.zeroPageX, 4],
-        0xcD: ['CMP', this.cmp, this.readAbsolute, modes.absolute, 4],
-        0xdD: ['CMP', this.cmp, this.readAbsoluteX, modes.absoluteX, 4],
-        0xd9: ['CMP', this.cmp, this.readAbsoluteY, modes.absoluteY, 4],
-        0xc1: ['CMP', this.cmp, this.readZeroPageXIndirect, modes.zeroPageXIndirect, 6],
-        0xd1: ['CMP', this.cmp, this.readZeroPageIndirectY, modes.zeroPageIndirectY, 5],
+        0xc9: { name: 'CMP', op: this.cmp, modeFn: this.readImmediate, mode: modes.immediate },
+        0xc5: { name: 'CMP', op: this.cmp, modeFn: this.readZeroPage, mode: modes.zeroPage },
+        0xd5: { name: 'CMP', op: this.cmp, modeFn: this.readZeroPageX, mode: modes.zeroPageX },
+        0xcD: { name: 'CMP', op: this.cmp, modeFn: this.readAbsolute, mode: modes.absolute },
+        0xdD: { name: 'CMP', op: this.cmp, modeFn: this.readAbsoluteX, mode: modes.absoluteX },
+        0xd9: { name: 'CMP', op: this.cmp, modeFn: this.readAbsoluteY, mode: modes.absoluteY },
+        0xc1: { name: 'CMP', op: this.cmp, modeFn: this.readZeroPageXIndirect, mode: modes.zeroPageXIndirect },
+        0xd1: { name: 'CMP', op: this.cmp, modeFn: this.readZeroPageIndirectY, mode: modes.zeroPageIndirectY },
 
         // CPX
-        0xE0: ['CPX', this.cpx, this.readImmediate, modes.immediate, 2],
-        0xE4: ['CPX', this.cpx, this.readZeroPage, modes.zeroPage, 3],
-        0xEC: ['CPX', this.cpx, this.readAbsolute, modes.absolute, 4],
+        0xE0: { name: 'CPX', op: this.cpx, modeFn: this.readImmediate, mode: modes.immediate },
+        0xE4: { name: 'CPX', op: this.cpx, modeFn: this.readZeroPage, mode: modes.zeroPage },
+        0xEC: { name: 'CPX', op: this.cpx, modeFn: this.readAbsolute, mode: modes.absolute },
 
         // CPY
-        0xC0: ['CPY', this.cpy, this.readImmediate, modes.immediate, 2],
-        0xC4: ['CPY', this.cpy, this.readZeroPage, modes.zeroPage, 3],
-        0xCC: ['CPY', this.cpy, this.readAbsolute, modes.absolute, 4],
+        0xC0: { name: 'CPY', op: this.cpy, modeFn: this.readImmediate, mode: modes.immediate },
+        0xC4: { name: 'CPY', op: this.cpy, modeFn: this.readZeroPage, mode: modes.zeroPage },
+        0xCC: { name: 'CPY', op: this.cpy, modeFn: this.readAbsolute, mode: modes.absolute },
 
         // BIT
-        0x24: ['BIT', this.bit, this.readZeroPage, modes.zeroPage, 3],
-        0x2C: ['BIT', this.bit, this.readAbsolute, modes.absolute, 4],
+        0x24: { name: 'BIT', op: this.bit, modeFn: this.readZeroPage, mode: modes.zeroPage },
+        0x2C: { name: 'BIT', op: this.bit, modeFn: this.readAbsolute, mode: modes.absolute },
 
         // BCC
-        0x90: ['BCC', this.brc, flags.C, modes.relative, 2],
+        0x90: { name: 'BCC', op: this.brc, modeFn: flags.C, mode: modes.relative },
 
         // BCS
-        0xB0: ['BCS', this.brs, flags.C, modes.relative, 2],
+        0xB0: { name: 'BCS', op: this.brs, modeFn: flags.C, mode: modes.relative },
 
         // BEQ
-        0xF0: ['BEQ', this.brs, flags.Z, modes.relative, 2],
+        0xF0: { name: 'BEQ', op: this.brs, modeFn: flags.Z, mode: modes.relative },
 
         // BMI
-        0x30: ['BMI', this.brs, flags.N, modes.relative, 2],
+        0x30: { name: 'BMI', op: this.brs, modeFn: flags.N, mode: modes.relative },
 
         // BNE
-        0xD0: ['BNE', this.brc, flags.Z, modes.relative, 2],
+        0xD0: { name: 'BNE', op: this.brc, modeFn: flags.Z, mode: modes.relative },
 
         // BPL
-        0x10: ['BPL', this.brc, flags.N, modes.relative, 2],
+        0x10: { name: 'BPL', op: this.brc, modeFn: flags.N, mode: modes.relative },
 
         // BVC
-        0x50: ['BVC', this.brc, flags.V, modes.relative, 2],
+        0x50: { name: 'BVC', op: this.brc, modeFn: flags.V, mode: modes.relative },
 
         // BVS
-        0x70: ['BVS', this.brs, flags.V, modes.relative, 2],
+        0x70: { name: 'BVS', op: this.brs, modeFn: flags.V, mode: modes.relative },
 
         // TAX
-        0xAA: ['TAX', this.tax, null, modes.implied, 2],
+        0xAA: { name: 'TAX', op: this.tax, modeFn: this.implied, mode: modes.implied },
 
         // TXA
-        0x8A: ['TXA', this.txa, null, modes.implied, 2],
+        0x8A: { name: 'TXA', op: this.txa, modeFn: this.implied, mode: modes.implied },
 
         // TAY
-        0xA8: ['TAY', this.tay, null, modes.implied, 2],
+        0xA8: { name: 'TAY', op: this.tay, modeFn: this.implied, mode: modes.implied },
 
         // TYA
-        0x98: ['TYA', this.tya, null, modes.implied, 2],
+        0x98: { name: 'TYA', op: this.tya, modeFn: this.implied, mode: modes.implied },
 
         // TSX
-        0xBA: ['TSX', this.tsx, null, modes.implied, 2],
+        0xBA: { name: 'TSX', op: this.tsx, modeFn: this.implied, mode: modes.implied },
 
         // TXS
-        0x9A: ['TXS', this.txs, null, modes.implied, 2],
+        0x9A: { name: 'TXS', op: this.txs, modeFn: this.implied, mode: modes.implied },
 
         // PHA
-        0x48: ['PHA', this.pha, null, modes.implied, 3],
+        0x48: { name: 'PHA', op: this.pha, modeFn: this.implied, mode: modes.implied },
 
         // PLA
-        0x68: ['PLA', this.pla, null, modes.implied, 4],
+        0x68: { name: 'PLA', op: this.pla, modeFn: this.implied, mode: modes.implied },
 
         // PHP
-        0x08: ['PHP', this.php, null, modes.implied, 3],
+        0x08: { name: 'PHP', op: this.php, modeFn: this.implied, mode: modes.implied },
 
         // PLP
-        0x28: ['PLP', this.plp, null, modes.implied, 4],
+        0x28: { name: 'PLP', op: this.plp, modeFn: this.implied, mode: modes.implied },
 
         // JMP
-        0x4C: [
-            'JMP', this.jmp, this.readAddrAbsolute, modes.absolute, 3
-        ],
-        0x6C: [
-            'JMP', this.jmp, this.readAddrAbsoluteIndirectBug, modes.absoluteIndirect, 5
-        ],
+        0x4C: {
+            name: 'JMP', op: this.jmp, modeFn: this.readAddrAbsolute, mode: modes.absolute
+        },
+        0x6C: {
+            name: 'JMP', op: this.jmp, modeFn: this.readAddrAbsoluteIndirectBug, mode: modes.absoluteIndirect
+        },
         // JSR
-        0x20: ['JSR', this.jsr, this.readAddrAbsolute, modes.absolute, 6],
+        0x20: { name: 'JSR', op: this.jsr, modeFn: this.readAddrAbsolute, mode: modes.absolute },
 
         // RTS
-        0x60: ['RTS', this.rts, null, modes.implied, 6],
+        0x60: { name: 'RTS', op: this.rts, modeFn: this.implied, mode: modes.implied },
 
         // RTI
-        0x40: ['RTI', this.rti, null, modes.implied, 6],
+        0x40: { name: 'RTI', op: this.rti, modeFn: this.implied, mode: modes.implied },
 
         // SEC
-        0x38: ['SEC', this.set, flags.C, modes.implied, 2],
+        0x38: { name: 'SEC', op: this.set, modeFn: flags.C, mode: modes.implied },
 
         // SED
-        0xF8: ['SED', this.set, flags.D, modes.implied, 2],
+        0xF8: { name: 'SED', op: this.set, modeFn: flags.D, mode: modes.implied },
 
         // SEI
-        0x78: ['SEI', this.set, flags.I, modes.implied, 2],
+        0x78: { name: 'SEI', op: this.set, modeFn: flags.I, mode: modes.implied },
 
         // CLC
-        0x18: ['CLC', this.clr, flags.C, modes.implied, 2],
+        0x18: { name: 'CLC', op: this.clr, modeFn: flags.C, mode: modes.implied },
 
         // CLD
-        0xD8: ['CLD', this.clr, flags.D, modes.implied, 2],
+        0xD8: { name: 'CLD', op: this.clr, modeFn: flags.D, mode: modes.implied },
 
         // CLI
-        0x58: ['CLI', this.clr, flags.I, modes.implied, 2],
+        0x58: { name: 'CLI', op: this.clr, modeFn: flags.I, mode: modes.implied },
 
         // CLV
-        0xB8: ['CLV', this.clr, flags.V, modes.implied, 2],
+        0xB8: { name: 'CLV', op: this.clr, modeFn: flags.V, mode: modes.implied },
 
         // NOP
-        0xea: ['NOP', this.nop, this.readImplied, modes.implied, 2],
+        0xea: { name: 'NOP', op: this.nop, modeFn: this.implied, mode: modes.implied },
 
         // BRK
-        0x00: ['BRK', this.brk, this.readImmediate, modes.immediate, 7]
+        0x00: { name: 'BRK', op: this.brk, modeFn: this.readImmediate, mode: modes.immediate }
     };
 
 /* 65C02 Instructions */
 
     OPS_65C02: Instructions = {
         // INC / DEC A
-        0x1A: ['INC', this.incA, null, modes.accumulator, 2],
-        0x3A: ['DEC', this.decA, null, modes.accumulator, 2],
+        0x1A: { name: 'INC', op: this.incA, modeFn: this.implied, mode: modes.accumulator },
+        0x3A: { name: 'DEC', op: this.decA, modeFn: this.implied, mode: modes.accumulator },
 
         // Indirect Zero Page for the masses
-        0x12: ['ORA', this.ora, this.readZeroPageIndirect, modes.zeroPageIndirect, 5],
-        0x32: ['AND', this.and, this.readZeroPageIndirect, modes.zeroPageIndirect, 5],
-        0x52: ['EOR', this.eor, this.readZeroPageIndirect, modes.zeroPageIndirect, 5],
-        0x72: ['ADC', this.adc, this.readZeroPageIndirect, modes.zeroPageIndirect, 5],
-        0x92: ['STA', this.sta, this.writeZeroPageIndirect, modes.zeroPageIndirect, 5],
-        0xB2: ['LDA', this.lda, this.readZeroPageIndirect, modes.zeroPageIndirect, 5],
-        0xD2: ['CMP', this.cmp, this.readZeroPageIndirect, modes.zeroPageIndirect, 5],
-        0xF2: ['SBC', this.sbc, this.readZeroPageIndirect, modes.zeroPageIndirect, 5],
+        0x12: { name: 'ORA', op: this.ora, modeFn: this.readZeroPageIndirect, mode: modes.zeroPageIndirect },
+        0x32: { name: 'AND', op: this.and, modeFn: this.readZeroPageIndirect, mode: modes.zeroPageIndirect },
+        0x52: { name: 'EOR', op: this.eor, modeFn: this.readZeroPageIndirect, mode: modes.zeroPageIndirect },
+        0x72: { name: 'ADC', op: this.adc, modeFn: this.readZeroPageIndirect, mode: modes.zeroPageIndirect },
+        0x92: { name: 'STA', op: this.sta, modeFn: this.writeZeroPageIndirect, mode: modes.zeroPageIndirect },
+        0xB2: { name: 'LDA', op: this.lda, modeFn: this.readZeroPageIndirect, mode: modes.zeroPageIndirect },
+        0xD2: { name: 'CMP', op: this.cmp, modeFn: this.readZeroPageIndirect, mode: modes.zeroPageIndirect },
+        0xF2: { name: 'SBC', op: this.sbc, modeFn: this.readZeroPageIndirect, mode: modes.zeroPageIndirect },
 
         // Better BIT
-        0x34: ['BIT', this.bit, this.readZeroPageX, modes.zeroPageX, 4],
-        0x3C: ['BIT', this.bit, this.readAbsoluteX, modes.absoluteX, 4],
-        0x89: ['BIT', this.bitI, this.readImmediate, modes.immediate, 2],
+        0x34: { name: 'BIT', op: this.bit, modeFn: this.readZeroPageX, mode: modes.zeroPageX },
+        0x3C: { name: 'BIT', op: this.bit, modeFn: this.readAbsoluteX, mode: modes.absoluteX },
+        0x89: { name: 'BIT', op: this.bitI, modeFn: this.readImmediate, mode: modes.immediate },
 
         // JMP absolute indirect indexed
-        0x6C: [
-            'JMP', this.jmp, this.readAddrAbsoluteIndirect, modes.absoluteIndirect, 6
-        ],
-        0x7C: [
-            'JMP', this.jmp, this.readAddrAbsoluteXIndirect, modes.absoluteXIndirect, 6
-        ],
+        0x6C: {
+            name: 'JMP', op: this.jmp, modeFn: this.readAddrAbsoluteIndirect, mode: modes.absoluteIndirect
+        },
+        0x7C: {
+            name: 'JMP', op: this.jmp, modeFn: this.readAddrAbsoluteXIndirect, mode: modes.absoluteXIndirect
+        },
 
         // BBR/BBS
-        0x0F: ['BBR0', this.bbr, 0, modes.zeroPage_relative, 5],
-        0x1F: ['BBR1', this.bbr, 1, modes.zeroPage_relative, 5],
-        0x2F: ['BBR2', this.bbr, 2, modes.zeroPage_relative, 5],
-        0x3F: ['BBR3', this.bbr, 3, modes.zeroPage_relative, 5],
-        0x4F: ['BBR4', this.bbr, 4, modes.zeroPage_relative, 5],
-        0x5F: ['BBR5', this.bbr, 5, modes.zeroPage_relative, 5],
-        0x6F: ['BBR6', this.bbr, 6, modes.zeroPage_relative, 5],
-        0x7F: ['BBR7', this.bbr, 7, modes.zeroPage_relative, 5],
+        0x0F: { name: 'BBR0', op: this.bbr, modeFn: 0, mode: modes.zeroPage_relative },
+        0x1F: { name: 'BBR1', op: this.bbr, modeFn: 1, mode: modes.zeroPage_relative },
+        0x2F: { name: 'BBR2', op: this.bbr, modeFn: 2, mode: modes.zeroPage_relative },
+        0x3F: { name: 'BBR3', op: this.bbr, modeFn: 3, mode: modes.zeroPage_relative },
+        0x4F: { name: 'BBR4', op: this.bbr, modeFn: 4, mode: modes.zeroPage_relative },
+        0x5F: { name: 'BBR5', op: this.bbr, modeFn: 5, mode: modes.zeroPage_relative },
+        0x6F: { name: 'BBR6', op: this.bbr, modeFn: 6, mode: modes.zeroPage_relative },
+        0x7F: { name: 'BBR7', op: this.bbr, modeFn: 7, mode: modes.zeroPage_relative },
 
-        0x8F: ['BBS0', this.bbs, 0, modes.zeroPage_relative, 5],
-        0x9F: ['BBS1', this.bbs, 1, modes.zeroPage_relative, 5],
-        0xAF: ['BBS2', this.bbs, 2, modes.zeroPage_relative, 5],
-        0xBF: ['BBS3', this.bbs, 3, modes.zeroPage_relative, 5],
-        0xCF: ['BBS4', this.bbs, 4, modes.zeroPage_relative, 5],
-        0xDF: ['BBS5', this.bbs, 5, modes.zeroPage_relative, 5],
-        0xEF: ['BBS6', this.bbs, 6, modes.zeroPage_relative, 5],
-        0xFF: ['BBS7', this.bbs, 7, modes.zeroPage_relative, 5],
+        0x8F: { name: 'BBS0', op: this.bbs, modeFn: 0, mode: modes.zeroPage_relative },
+        0x9F: { name: 'BBS1', op: this.bbs, modeFn: 1, mode: modes.zeroPage_relative },
+        0xAF: { name: 'BBS2', op: this.bbs, modeFn: 2, mode: modes.zeroPage_relative },
+        0xBF: { name: 'BBS3', op: this.bbs, modeFn: 3, mode: modes.zeroPage_relative },
+        0xCF: { name: 'BBS4', op: this.bbs, modeFn: 4, mode: modes.zeroPage_relative },
+        0xDF: { name: 'BBS5', op: this.bbs, modeFn: 5, mode: modes.zeroPage_relative },
+        0xEF: { name: 'BBS6', op: this.bbs, modeFn: 6, mode: modes.zeroPage_relative },
+        0xFF: { name: 'BBS7', op: this.bbs, modeFn: 7, mode: modes.zeroPage_relative },
 
         // BRA
-        0x80: ['BRA', this.brc, 0, modes.relative, 2],
+        0x80: { name: 'BRA', op: this.brc, modeFn: 0, mode: modes.relative },
 
         // NOP
-        0x02: ['NOP', this.nop, this.readImmediate, modes.immediate, 2],
-        0x22: ['NOP', this.nop, this.readImmediate, modes.immediate, 2],
-        0x42: ['NOP', this.nop, this.readImmediate, modes.immediate, 2],
-        0x44: ['NOP', this.nop, this.readImmediate, modes.immediate, 3],
-        0x54: ['NOP', this.nop, this.readImmediate, modes.immediate, 4],
-        0x62: ['NOP', this.nop, this.readImmediate, modes.immediate, 2],
-        0x82: ['NOP', this.nop, this.readImmediate, modes.immediate, 2],
-        0xC2: ['NOP', this.nop, this.readImmediate, modes.immediate, 2],
-        0xD4: ['NOP', this.nop, this.readImmediate, modes.immediate, 4],
-        0xE2: ['NOP', this.nop, this.readImmediate, modes.immediate, 2],
-        0xF4: ['NOP', this.nop, this.readImmediate, modes.immediate, 4],
-        0x5C: ['NOP', this.nop, this.readAbsolute, modes.absolute, 8],
-        0xDC: ['NOP', this.nop, this.readAbsolute, modes.absolute, 4],
-        0xFC: ['NOP', this.nop, this.readAbsolute, modes.absolute, 4],
+        0x02: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: modes.immediate },
+        0x22: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: modes.immediate },
+        0x42: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: modes.immediate },
+        0x44: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: modes.immediate },
+        0x54: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: modes.immediate },
+        0x62: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: modes.immediate },
+        0x82: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: modes.immediate },
+        0xC2: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: modes.immediate },
+        0xD4: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: modes.immediate },
+        0xE2: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: modes.immediate },
+        0xF4: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: modes.immediate },
+        0x5C: { name: 'NOP', op: this.nop, modeFn: this.readAbsolute, mode: modes.absolute },
+        0xDC: { name: 'NOP', op: this.nop, modeFn: this.readAbsolute, mode: modes.absolute },
+        0xFC: { name: 'NOP', op: this.nop, modeFn: this.readAbsolute, mode: modes.absolute },
 
         // PHX
-        0xDA: ['PHX', this.phx, null, modes.implied, 3],
+        0xDA: { name: 'PHX', op: this.phx, modeFn: this.implied, mode: modes.implied },
 
         // PHY
-        0x5A: ['PHY', this.phy, null, modes.implied, 3],
+        0x5A: { name: 'PHY', op: this.phy, modeFn: this.implied, mode: modes.implied },
 
         // PLX
-        0xFA: ['PLX', this.plx, null, modes.implied, 4],
+        0xFA: { name: 'PLX', op: this.plx, modeFn: this.implied, mode: modes.implied },
 
         // PLY
-        0x7A: ['PLY', this.ply, null, modes.implied, 4],
+        0x7A: { name: 'PLY', op: this.ply, modeFn: this.implied, mode: modes.implied },
 
         // RMB/SMB
 
-        0x07: ['RMB0', this.rmb, 0, modes.zeroPage, 5],
-        0x17: ['RMB1', this.rmb, 1, modes.zeroPage, 5],
-        0x27: ['RMB2', this.rmb, 2, modes.zeroPage, 5],
-        0x37: ['RMB3', this.rmb, 3, modes.zeroPage, 5],
-        0x47: ['RMB4', this.rmb, 4, modes.zeroPage, 5],
-        0x57: ['RMB5', this.rmb, 5, modes.zeroPage, 5],
-        0x67: ['RMB6', this.rmb, 6, modes.zeroPage, 5],
-        0x77: ['RMB7', this.rmb, 7, modes.zeroPage, 5],
+        0x07: { name: 'RMB0', op: this.rmb, modeFn: 0, mode: modes.zeroPage },
+        0x17: { name: 'RMB1', op: this.rmb, modeFn: 1, mode: modes.zeroPage },
+        0x27: { name: 'RMB2', op: this.rmb, modeFn: 2, mode: modes.zeroPage },
+        0x37: { name: 'RMB3', op: this.rmb, modeFn: 3, mode: modes.zeroPage },
+        0x47: { name: 'RMB4', op: this.rmb, modeFn: 4, mode: modes.zeroPage },
+        0x57: { name: 'RMB5', op: this.rmb, modeFn: 5, mode: modes.zeroPage },
+        0x67: { name: 'RMB6', op: this.rmb, modeFn: 6, mode: modes.zeroPage },
+        0x77: { name: 'RMB7', op: this.rmb, modeFn: 7, mode: modes.zeroPage },
 
-        0x87: ['SMB0', this.smb, 0, modes.zeroPage, 5],
-        0x97: ['SMB1', this.smb, 1, modes.zeroPage, 5],
-        0xA7: ['SMB2', this.smb, 2, modes.zeroPage, 5],
-        0xB7: ['SMB3', this.smb, 3, modes.zeroPage, 5],
-        0xC7: ['SMB4', this.smb, 4, modes.zeroPage, 5],
-        0xD7: ['SMB5', this.smb, 5, modes.zeroPage, 5],
-        0xE7: ['SMB6', this.smb, 6, modes.zeroPage, 5],
-        0xF7: ['SMB7', this.smb, 7, modes.zeroPage, 5],
+        0x87: { name: 'SMB0', op: this.smb, modeFn: 0, mode: modes.zeroPage },
+        0x97: { name: 'SMB1', op: this.smb, modeFn: 1, mode: modes.zeroPage },
+        0xA7: { name: 'SMB2', op: this.smb, modeFn: 2, mode: modes.zeroPage },
+        0xB7: { name: 'SMB3', op: this.smb, modeFn: 3, mode: modes.zeroPage },
+        0xC7: { name: 'SMB4', op: this.smb, modeFn: 4, mode: modes.zeroPage },
+        0xD7: { name: 'SMB5', op: this.smb, modeFn: 5, mode: modes.zeroPage },
+        0xE7: { name: 'SMB6', op: this.smb, modeFn: 6, mode: modes.zeroPage },
+        0xF7: { name: 'SMB7', op: this.smb, modeFn: 7, mode: modes.zeroPage },
 
         // STZ
-        0x64: ['STZ', this.stz, this.writeZeroPage, modes.zeroPage, 3],
-        0x74: ['STZ', this.stz, this.writeZeroPageX, modes.zeroPageX, 4],
-        0x9C: ['STZ', this.stz, this.writeAbsolute, modes.absolute, 4],
-        0x9E: ['STZ', this.stz, this.writeAbsoluteX, modes.absoluteX, 5],
+        0x64: { name: 'STZ', op: this.stz, modeFn: this.writeZeroPage, mode: modes.zeroPage },
+        0x74: { name: 'STZ', op: this.stz, modeFn: this.writeZeroPageX, mode: modes.zeroPageX },
+        0x9C: { name: 'STZ', op: this.stz, modeFn: this.writeAbsolute, mode: modes.absolute },
+        0x9E: { name: 'STZ', op: this.stz, modeFn: this.writeAbsoluteX, mode: modes.absoluteX },
 
         // TRB
-        0x14: ['TRB', this.trb, this.readAddrZeroPage, modes.zeroPage, 5],
-        0x1C: ['TRB', this.trb, this.readAddrAbsolute, modes.absolute, 6],
+        0x14: { name: 'TRB', op: this.trb, modeFn: this.readAddrZeroPage, mode: modes.zeroPage },
+        0x1C: { name: 'TRB', op: this.trb, modeFn: this.readAddrAbsolute, mode: modes.absolute },
 
         // TSB
-        0x04: ['TSB', this.tsb, this.readAddrZeroPage, modes.zeroPage, 5],
-        0x0C: ['TSB', this.tsb, this.readAddrAbsolute, modes.absolute, 6]
+        0x04: { name: 'TSB', op: this.tsb, modeFn: this.readAddrZeroPage, mode: modes.zeroPage },
+        0x0C: { name: 'TSB', op: this.tsb, modeFn: this.readAddrAbsolute, mode: modes.absolute }
     }
 };
