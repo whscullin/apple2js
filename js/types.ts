@@ -15,7 +15,7 @@ export interface Drive {
   volume: number,
   tracks: Array<byte[] | Uint8Array>,
   trackMap: unknown,
-};
+}
 
 export interface DiskIIDrive extends Drive {
   rawTracks: unknown,
@@ -24,4 +24,4 @@ export interface DiskIIDrive extends Drive {
   phase: number,
   readOnly: boolean,
   dirty: boolean,
-};
+}

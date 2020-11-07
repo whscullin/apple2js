@@ -766,11 +766,11 @@ export function openOptions() {
 }
 
 export function openPrinterModal() {
-    let mimeType = 'application/octet-stream';
-    let data = _printer.getRawOutput();
-    let a = document.querySelector('#raw_printer_output');
+    const mimeType = 'application/octet-stream';
+    const data = _printer.getRawOutput();
+    const a = document.querySelector('#raw_printer_output');
 
-    let blob = new Blob([data], { 'type': mimeType});
+    const blob = new Blob([data], { 'type': mimeType});
     a.href = window.URL.createObjectURL(blob);
     a.download = 'raw_printer_output.bin';
     MicroModal.show('printer-modal');

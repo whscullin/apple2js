@@ -1,10 +1,10 @@
-import { byte, memory } from "./types";
+import { memory } from './types';
 
 const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
 
 /** Encode an array of bytes in base64. */
 export function base64_encode(data: memory) {
-    // Twacked by Will Scullin to handle arrays of "bytes"
+    // Twacked by Will Scullin to handle arrays of 'bytes'
 
     // http://kevin.vanzonneveld.net
     // +   original by: Tyler Akins (http://rumkin.com)
@@ -23,8 +23,9 @@ export function base64_encode(data: memory) {
     //    return atob(data);
     //}
 
-    
-    var o1, o2, o3, h1, h2, h3, h4, bits, i = 0, ac = 0, enc='', tmp_arr = [];
+
+    let o1, o2, o3, h1, h2, h3, h4, bits, i = 0, ac = 0, enc='';
+    const tmp_arr = [];
 
     if (!data) {
         return data;
@@ -66,7 +67,7 @@ export function base64_decode(data: null | undefined): undefined;
 export function base64_decode(data: string): memory;
 /** Returns an array of bytes from the given base64-encoded string. */
 export function base64_decode(data: string | null | undefined): memory | undefined {
-    // Twacked by Will Scullin to handle arrays of "bytes"
+    // Twacked by Will Scullin to handle arrays of 'bytes'
 
     // http://kevin.vanzonneveld.net
     // +   original by: Tyler Akins (http://rumkin.com)
@@ -88,7 +89,8 @@ export function base64_decode(data: string | null | undefined): memory | undefin
     //    return btoa(data);
     //}
 
-    var o1, o2, o3, h1, h2, h3, h4, bits, i = 0, ac = 0, tmp_arr = [];
+    let o1, o2, o3, h1, h2, h3, h4, bits, i = 0, ac = 0;
+    const tmp_arr = [];
 
     if (!data) {
         return undefined;

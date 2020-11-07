@@ -61,7 +61,7 @@ export default function Printer(el) {
             _raw[_rawLen] = val;
             _rawLen++;
             if (_rawLen > _raw.length) {
-                let newRaw = new Uint8Array(_raw.length * 2);
+                const newRaw = new Uint8Array(_raw.length * 2);
                 newRaw.set(_raw);
                 _raw = newRaw;
             }

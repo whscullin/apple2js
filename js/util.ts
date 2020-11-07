@@ -5,11 +5,11 @@
  * the above copyright notice appear in all copies and that both that
  * copyright notice and this permission notice appear in supporting
  * documentation.  No representations are made about the suitability of this
- * software for any purpose.  It is provided "as is" without express or
+ * software for any purpose.  It is provided ' as is'  without express or
  * implied warranty.
  */
 
-import { byte, memory, word } from "./types";
+import { byte, memory, word } from './types';
 
 /*eslint no-console: 0*/
 
@@ -36,7 +36,7 @@ export function allocMem(size: number) {
     } else {
         result = new Array(size);
     }
-    
+
     for (let idx = 0; idx < size; idx++) {
         result[idx] = (idx & 0x02) ? 0x00 : 0xff;
     }
@@ -65,9 +65,8 @@ export function bytify(ary: number[]): memory {
 }
 
 /** Writes to the console. */
-export function debug(...args: any[]): void;
-export function debug() {
-    console.log.apply(console, arguments);
+export function debug(...args: any[]): void {
+    console.log.apply(console, ...args);
 }
 
 /**
@@ -80,8 +79,8 @@ export function toHex(v: byte | word | number, n?: number) {
     if (!n) {
         n = v < 256 ? 2 : 4;
     }
-    var result = '';
-    for (var idx = 0; idx < n; idx++) {
+    let result = '';
+    for (let idx = 0; idx < n; idx++) {
         result = hex_digits[v & 0x0f] + result;
         v >>= 4;
     }
@@ -93,8 +92,8 @@ export function toHex(v: byte | word | number, n?: number) {
  * @param v the value to encode
  */
 export function toBinary(v: byte) {
-    var result = '';
-    for (var idx = 0; idx < 8; idx++) {
+    let result = '';
+    for (let idx = 0; idx < 8; idx++) {
         result = bin_digits[v & 0x01] + result;
         v >>= 1;
     }
@@ -110,9 +109,9 @@ export function toBinary(v: byte) {
 // From http://www.netlobo.com/url_query_string_javascript.html
 export function gup(name: string) {
     name = name.replace(/[[]/, '\\[').replace(/[\]]/, '\\]');
-    var regexS = '[\\?&]' + name + '=([^&#]*)';
-    var regex = new RegExp(regexS);
-    var results = regex.exec(window.location.href);
+    const regexS = '[\\?&]' + name + '=([^&#]*)';
+    const regex = new RegExp(regexS);
+    const results = regex.exec(window.location.href);
     if (!results)
         return '';
     else
@@ -121,8 +120,8 @@ export function gup(name: string) {
 
 /** Returns the URL fragment. */
 export function hup() {
-    var regex = new RegExp('#(.*)');
-    var results = regex.exec(window.location.hash);
+    const regex = new RegExp('#(.*)');
+    const results = regex.exec(window.location.hash);
     if (!results)
         return '';
     else

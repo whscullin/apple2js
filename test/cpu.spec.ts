@@ -11,7 +11,7 @@ describe('CPU', function () {
     let done = false;
 
     function traceCB() {
-        var pc = cpu.getPC();
+        const pc = cpu.getPC();
         done = lastPC == pc;
         lastPC = pc;
     }
@@ -19,7 +19,7 @@ describe('CPU', function () {
     describe('6502', function () {
         it('completes the test ROM', function () {
             cpu = new CPU6502();
-            var test = new Test6502();
+            const test = new Test6502();
             cpu.addPageHandler(test);
             cpu.setPC(0x400);
 
@@ -34,7 +34,7 @@ describe('CPU', function () {
     describe('65C02', function () {
         it('completes the test ROM', function () {
             cpu = new CPU6502({'65C02': true});
-            var test = new Test65C02();
+            const test = new Test65C02();
             cpu.addPageHandler(test);
             cpu.setPC(0x400);
 

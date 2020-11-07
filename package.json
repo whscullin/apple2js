@@ -6,7 +6,7 @@
     "build": "webpack --mode=production",
     "dev": "webpack-dev-server",
     "index": "bin/index > json/disks/index.js",
-    "lint": "eslint .",
+    "lint": "eslint '**/*.js' '**/*.ts'",
     "start": "webpack-dev-server",
     "test": "jest"
   },
@@ -27,6 +27,8 @@
     "@babel/core": "^7.9.0",
     "@babel/preset-env": "^7.9.0",
     "@types/jest": "^26.0.14",
+    "@typescript-eslint/eslint-plugin": "^4.6.1",
+    "@typescript-eslint/parser": "^4.6.1",
     "ajv": "^6.12.0",
     "babel-jest": "^25.1.0",
     "eslint": "^6.8.0",

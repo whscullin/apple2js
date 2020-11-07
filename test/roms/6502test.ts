@@ -2,12 +2,15 @@
 
 import fs from 'fs';
 import path from 'path';
-import { PageHandler } from '../../js/cpu6502'
-import { byte } from '../../js/types'
+import { PageHandler } from '../../js/cpu6502';
+import { byte } from '../../js/types';
 
-const data = fs.readFileSync(path.join(__dirname, '6502_functional_test.bin'));
 export default class Test6502 implements PageHandler {
     private data: Buffer
+
+    constructor() {
+        this.data = fs.readFileSync(path.join(__dirname, '6502_functional_test.bin'));
+    }
 
     start = () => {
         return 0x00;
@@ -18,10 +21,10 @@ export default class Test6502 implements PageHandler {
     }
 
     read = (page: byte, off: byte) => {
-        return data[page << 8 | off];
+        return this.data[page << 8 | off];
     }
 
     write = (page: byte, off: byte, val: byte) => {
-        data[page << 8 | off] = val;
+        this.data[page << 8 | off] = val;
     }
 }

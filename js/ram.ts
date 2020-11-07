@@ -10,7 +10,7 @@
  */
 
 import { base64_decode, base64_encode } from './base64';
-import { byte, memory } from './types';
+import { byte } from './types';
 import { allocMemPages } from './util';
 
 export interface State {
@@ -20,7 +20,7 @@ export interface State {
     end: byte;
     /** Base64-encoded contents. */
     mem: string;
-};
+}
 
 /**
  * Represents RAM from the start page `sp` to end page `ep`. The memory
