@@ -1203,8 +1203,6 @@ export default class CPU6502 {
             size = sizes[op.mode],
             result = toHex(pc, 4) + '- ';
 
-        console.log({ op, size });
-
         if (symbols) {
             if (symbols[pc]) {
                 result += symbols[pc] +
