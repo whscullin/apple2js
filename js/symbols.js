@@ -1,4 +1,4 @@
-SYMBOLS = {
+const SYMBOLS = {
 /*
     0x00: 'GOWARM',
     0x03: 'GOSTROUT',

@@ -29,31 +29,48 @@ export interface CpuState {
     cycles: number
 }
 
-type Modes = { [key: string]: number }
-type Mode = keyof Modes
+type Mode =
+    'accumulator' |        // A (Accumulator)
+    'implied' |            // Implied
+    'immediate' |          // # Immediate
+    'absolute' |           // a Absolute
+    'zeroPage' |           // zp Zero Page
+    'relative' |           // r Relative
+    'absoluteX' |          // a,X Absolute, X
+    'absoluteY' |          // a,Y Absolute, Y
+    'zeroPageX' |          // zp,X Zero Page, X
+    'zeroPageY' |          // zp,Y Zero Page, Y
+    'absoluteIndirect' |   // (a) Indirect
+    'zeroPageXIndirect' |  // (zp,X) Zero Page Indexed Indirect
+    'zeroPageIndirectY' |  // (zp),Y Zero Page Indexed with Y
+    'zeroPageIndirect' |   // (zp),
+    'absoluteXIndirect' |  // (a, X),
+    'zeroPage_relative';   // zp, Relative
 
-/** Addressing mode name to number mapping. */
-const modes: Modes = {
-    accumulator: 1,           // A (Accumulator)
-    implied:     1,           // Implied
-    immediate:   2,           // # Immediate
-    absolute:    3,           // a Absolute
-    zeroPage:    2,           // zp Zero Page
-    relative:    2,           // r Relative
+type Modes = Record<Mode, number>;
 
-    absoluteX:   3,           // a,X Absolute, X
-    absoluteY:   3,           // a,Y Absolute, Y
-    zeroPageX:   2,           // zp,X Zero Page, X
-    zeroPageY:   2,           // zp,Y Zero Page, Y
+/** Addressing mode name to instruction size mapping. */
+const sizes: Modes = {
+    accumulator: 1,
+    implied:     1,
+    immediate:   2,
+    absolute:    3,
+    zeroPage:    2,
+    relative:    2,
 
-    absoluteIndirect:   3,  // (a) Indirect
-    zeroPageXIndirect:  2, // (zp,X) Zero Page Indexed Indirect
-    zeroPageIndirectY:  2, // (zp),Y Zero Page Indexed with Y
+    absoluteX:   3,
+    absoluteY:   3,
+    zeroPageX:   2,
+    zeroPageY:   2,
+
+    absoluteIndirect:   3,
+    zeroPageXIndirect:  2,
+    zeroPageIndirectY:  2,
 
     /* 65c02 */
-    zeroPageIndirect:   2,  // (zp),
-    absoluteXIndirect:  3,  // (a, X),
-    zeroPage_relative:  3   // zp, Relative
+    zeroPageIndirect:   2,
+    absoluteXIndirect:  3,
+    zeroPage_relative:  3
 };
 
 /** Status register flag numbers. */
@@ -94,7 +111,7 @@ function isWriteablePage(page: WriteablePage | any): page is WriteablePage {
     return (page as WriteablePage).write !== undefined;
 }
 
-interface PageHandler {
+export interface PageHandler {
     start(): byte;
     end(): byte;
 }
@@ -976,7 +993,7 @@ export default class CPU6502 {
                 name: 'NOP',
                 op: this.nop,
                 modeFn: this.implied,
-                mode: modes.implied,
+                mode: 'implied',
             }
         } else {
             unk = {
@@ -986,7 +1003,7 @@ export default class CPU6502 {
                         ' at ' + toHex(this.pc - 1, 4));
                 },
                 modeFn: this.implied,
-                mode: modes.implied
+                mode: 'implied'
             }
         }
         this.ops[b] = unk;
@@ -1004,18 +1021,18 @@ export default class CPU6502 {
 
         let result = '';
         switch (m) {
-        case modes.implied:
+        case 'implied':
             break;
-        case modes.immediate:
+        case 'immediate':
             result = '#' + toHexOrSymbol(this.readByteDebug(addr));
             break;
-        case modes.absolute:
+        case 'absolute':
             result = '' + toHexOrSymbol(this.readWordDebug(addr), 4);
             break;
-        case modes.zeroPage:
+        case 'zeroPage':
             result = '' + toHexOrSymbol(this.readByteDebug(addr));
             break;
-        case modes.relative:
+        case 'relative':
             {
                 let off = this.readByteDebug(addr);
                 if (off > 127) {
@@ -1025,37 +1042,37 @@ export default class CPU6502 {
                 result = '' + toHexOrSymbol(addr, 4) + ' (' + off + ')';
             }
             break;
-        case modes.absoluteX:
+        case 'absoluteX':
             result = '' + toHexOrSymbol(this.readWordDebug(addr), 4) + ',X';
             break;
-        case modes.absoluteY:
+        case 'absoluteY':
             result = '' + toHexOrSymbol(this.readWordDebug(addr), 4) + ',Y';
             break;
-        case modes.zeroPageX:
+        case 'zeroPageX':
             result = '' + toHexOrSymbol(this.readByteDebug(addr)) + ',X';
             break;
-        case modes.zeroPageY:
+        case 'zeroPageY':
             result = '' + toHexOrSymbol(this.readByteDebug(addr)) + ',Y';
             break;
-        case modes.absoluteIndirect:
+        case 'absoluteIndirect':
             result = '(' + toHexOrSymbol(this.readWordDebug(addr), 4) + ')';
             break;
-        case modes.zeroPageXIndirect:
+        case 'zeroPageXIndirect':
             result = '(' + toHexOrSymbol(this.readByteDebug(addr)) + ',X)';
             break;
-        case modes.zeroPageIndirectY:
+        case 'zeroPageIndirectY':
             result = '(' + toHexOrSymbol(this.readByteDebug(addr)) + '),Y';
             break;
-        case modes.accumulator:
+        case 'accumulator':
             result = 'A';
             break;
-        case modes.zeroPageIndirect:
+        case 'zeroPageIndirect':
             result = '(' + toHexOrSymbol(this.readByteDebug(addr)) + ')';
             break;
-        case modes.absoluteXIndirect:
+        case 'absoluteXIndirect':
             result = '(' + toHexOrSymbol(this.readWordDebug(addr), 4) + ',X)';
             break;
-        case modes.zeroPage_relative:
+        case 'zeroPage_relative':
             let val = this.readByteDebug(addr);
             let off = this.readByteDebug(addr + 1);
             if (off > 127) {
@@ -1183,8 +1200,10 @@ export default class CPU6502 {
         }
         let b = this.readByte(pc),
             op = this.ops[b],
-            size = modes[op.mode],
+            size = sizes[op.mode],
             result = toHex(pc, 4) + '- ';
+
+        console.log({ op, size });
 
         if (symbols) {
             if (symbols[pc]) {
@@ -1250,7 +1269,7 @@ export default class CPU6502 {
         for (var jdx = 0; jdx < 20; jdx++) {
             var b = this.readByte(_pc), op = this.ops[b];
             results.push(this.dumpPC(_pc, symbols));
-            _pc += modes[op.mode];
+            _pc += sizes[op.mode];
         }
         return results;
     }
@@ -1317,384 +1336,384 @@ export default class CPU6502 {
 
     OPS_6502: Instructions = {
         // LDA
-        0xa9: { name: 'LDA', op: this.lda, modeFn: this.readImmediate, mode: modes.immediate },
-        0xa5: { name: 'LDA', op: this.lda, modeFn: this.readZeroPage, mode: modes.zeroPage },
-        0xb5: { name: 'LDA', op: this.lda, modeFn: this.readZeroPageX, mode: modes.zeroPageX },
-        0xad: { name: 'LDA', op: this.lda, modeFn: this.readAbsolute, mode: modes.absolute },
-        0xbd: { name: 'LDA', op: this.lda, modeFn: this.readAbsoluteX, mode: modes.absoluteX },
-        0xb9: { name: 'LDA', op: this.lda, modeFn: this.readAbsoluteY, mode: modes.absoluteY },
-        0xa1: { name: 'LDA', op: this.lda, modeFn: this.readZeroPageXIndirect, mode: modes.zeroPageXIndirect },
-        0xb1: { name: 'LDA', op: this.lda, modeFn: this.readZeroPageIndirectY, mode: modes.zeroPageIndirectY },
+        0xa9: { name: 'LDA', op: this.lda, modeFn: this.readImmediate, mode: 'immediate' },
+        0xa5: { name: 'LDA', op: this.lda, modeFn: this.readZeroPage, mode: 'zeroPage' },
+        0xb5: { name: 'LDA', op: this.lda, modeFn: this.readZeroPageX, mode: 'zeroPageX' },
+        0xad: { name: 'LDA', op: this.lda, modeFn: this.readAbsolute, mode: 'absolute' },
+        0xbd: { name: 'LDA', op: this.lda, modeFn: this.readAbsoluteX, mode: 'absoluteX' },
+        0xb9: { name: 'LDA', op: this.lda, modeFn: this.readAbsoluteY, mode: 'absoluteY' },
+        0xa1: { name: 'LDA', op: this.lda, modeFn: this.readZeroPageXIndirect, mode: 'zeroPageXIndirect' },
+        0xb1: { name: 'LDA', op: this.lda, modeFn: this.readZeroPageIndirectY, mode: 'zeroPageIndirectY' },
 
         // LDX
-        0xa2: { name: 'LDX', op: this.ldx, modeFn: this.readImmediate, mode: modes.immediate },
-        0xa6: { name: 'LDX', op: this.ldx, modeFn: this.readZeroPage, mode: modes.zeroPage },
-        0xb6: { name: 'LDX', op: this.ldx, modeFn: this.readZeroPageY, mode: modes.zeroPageY },
-        0xae: { name: 'LDX', op: this.ldx, modeFn: this.readAbsolute, mode: modes.absolute },
-        0xbe: { name: 'LDX', op: this.ldx, modeFn: this.readAbsoluteY, mode: modes.absoluteY },
+        0xa2: { name: 'LDX', op: this.ldx, modeFn: this.readImmediate, mode: 'immediate' },
+        0xa6: { name: 'LDX', op: this.ldx, modeFn: this.readZeroPage, mode: 'zeroPage' },
+        0xb6: { name: 'LDX', op: this.ldx, modeFn: this.readZeroPageY, mode: 'zeroPageY' },
+        0xae: { name: 'LDX', op: this.ldx, modeFn: this.readAbsolute, mode: 'absolute' },
+        0xbe: { name: 'LDX', op: this.ldx, modeFn: this.readAbsoluteY, mode: 'absoluteY' },
 
         // LDY
-        0xa0: { name: 'LDY', op: this.ldy, modeFn: this.readImmediate, mode: modes.immediate },
-        0xa4: { name: 'LDY', op: this.ldy, modeFn: this.readZeroPage, mode: modes.zeroPage },
-        0xb4: { name: 'LDY', op: this.ldy, modeFn: this.readZeroPageX, mode: modes.zeroPageX },
-        0xac: { name: 'LDY', op: this.ldy, modeFn: this.readAbsolute, mode: modes.absolute },
-        0xbc: { name: 'LDY', op: this.ldy, modeFn: this.readAbsoluteX, mode: modes.absoluteX },
+        0xa0: { name: 'LDY', op: this.ldy, modeFn: this.readImmediate, mode: 'immediate' },
+        0xa4: { name: 'LDY', op: this.ldy, modeFn: this.readZeroPage, mode: 'zeroPage' },
+        0xb4: { name: 'LDY', op: this.ldy, modeFn: this.readZeroPageX, mode: 'zeroPageX' },
+        0xac: { name: 'LDY', op: this.ldy, modeFn: this.readAbsolute, mode: 'absolute' },
+        0xbc: { name: 'LDY', op: this.ldy, modeFn: this.readAbsoluteX, mode: 'absoluteX' },
 
         // STA
-        0x85: { name: 'STA', op: this.sta, modeFn: this.writeZeroPage, mode: modes.zeroPage },
-        0x95: { name: 'STA', op: this.sta, modeFn: this.writeZeroPageX, mode: modes.zeroPageX },
-        0x8d: { name: 'STA', op: this.sta, modeFn: this.writeAbsolute, mode: modes.absolute },
-        0x9d: { name: 'STA', op: this.sta, modeFn: this.writeAbsoluteX, mode: modes.absoluteX },
-        0x99: { name: 'STA', op: this.sta, modeFn: this.writeAbsoluteY, mode: modes.absoluteY },
-        0x81: { name: 'STA', op: this.sta, modeFn: this.writeZeroPageXIndirect, mode: modes.zeroPageXIndirect },
-        0x91: { name: 'STA', op: this.sta, modeFn: this.writeZeroPageIndirectY, mode: modes.zeroPageIndirectY },
+        0x85: { name: 'STA', op: this.sta, modeFn: this.writeZeroPage, mode: 'zeroPage' },
+        0x95: { name: 'STA', op: this.sta, modeFn: this.writeZeroPageX, mode: 'zeroPageX' },
+        0x8d: { name: 'STA', op: this.sta, modeFn: this.writeAbsolute, mode: 'absolute' },
+        0x9d: { name: 'STA', op: this.sta, modeFn: this.writeAbsoluteX, mode: 'absoluteX' },
+        0x99: { name: 'STA', op: this.sta, modeFn: this.writeAbsoluteY, mode: 'absoluteY' },
+        0x81: { name: 'STA', op: this.sta, modeFn: this.writeZeroPageXIndirect, mode: 'zeroPageXIndirect' },
+        0x91: { name: 'STA', op: this.sta, modeFn: this.writeZeroPageIndirectY, mode: 'zeroPageIndirectY' },
 
         // STX
-        0x86: { name: 'STX', op: this.stx, modeFn: this.writeZeroPage, mode: modes.zeroPage },
-        0x96: { name: 'STX', op: this.stx, modeFn: this.writeZeroPageY, mode: modes.zeroPageY },
-        0x8e: { name: 'STX', op: this.stx, modeFn: this.writeAbsolute, mode: modes.absolute },
+        0x86: { name: 'STX', op: this.stx, modeFn: this.writeZeroPage, mode: 'zeroPage' },
+        0x96: { name: 'STX', op: this.stx, modeFn: this.writeZeroPageY, mode: 'zeroPageY' },
+        0x8e: { name: 'STX', op: this.stx, modeFn: this.writeAbsolute, mode: 'absolute' },
 
         // STY
-        0x84: { name: 'STY', op: this.sty, modeFn: this.writeZeroPage, mode: modes.zeroPage },
-        0x94: { name: 'STY', op: this.sty, modeFn: this.writeZeroPageX, mode: modes.zeroPageX },
-        0x8c: { name: 'STY', op: this.sty, modeFn: this.writeAbsolute, mode: modes.absolute },
+        0x84: { name: 'STY', op: this.sty, modeFn: this.writeZeroPage, mode: 'zeroPage' },
+        0x94: { name: 'STY', op: this.sty, modeFn: this.writeZeroPageX, mode: 'zeroPageX' },
+        0x8c: { name: 'STY', op: this.sty, modeFn: this.writeAbsolute, mode: 'absolute' },
 
         // ADC
-        0x69: { name: 'ADC', op: this.adc, modeFn: this.readImmediate, mode: modes.immediate },
-        0x65: { name: 'ADC', op: this.adc, modeFn: this.readZeroPage, mode: modes.zeroPage },
-        0x75: { name: 'ADC', op: this.adc, modeFn: this.readZeroPageX, mode: modes.zeroPageX },
-        0x6D: { name: 'ADC', op: this.adc, modeFn: this.readAbsolute, mode: modes.absolute },
-        0x7D: { name: 'ADC', op: this.adc, modeFn: this.readAbsoluteX, mode: modes.absoluteX },
-        0x79: { name: 'ADC', op: this.adc, modeFn: this.readAbsoluteY, mode: modes.absoluteY },
-        0x61: { name: 'ADC', op: this.adc, modeFn: this.readZeroPageXIndirect, mode: modes.zeroPageXIndirect },
-        0x71: { name: 'ADC', op: this.adc, modeFn: this.readZeroPageIndirectY, mode: modes.zeroPageIndirectY },
+        0x69: { name: 'ADC', op: this.adc, modeFn: this.readImmediate, mode: 'immediate' },
+        0x65: { name: 'ADC', op: this.adc, modeFn: this.readZeroPage, mode: 'zeroPage' },
+        0x75: { name: 'ADC', op: this.adc, modeFn: this.readZeroPageX, mode: 'zeroPageX' },
+        0x6D: { name: 'ADC', op: this.adc, modeFn: this.readAbsolute, mode: 'absolute' },
+        0x7D: { name: 'ADC', op: this.adc, modeFn: this.readAbsoluteX, mode: 'absoluteX' },
+        0x79: { name: 'ADC', op: this.adc, modeFn: this.readAbsoluteY, mode: 'absoluteY' },
+        0x61: { name: 'ADC', op: this.adc, modeFn: this.readZeroPageXIndirect, mode: 'zeroPageXIndirect' },
+        0x71: { name: 'ADC', op: this.adc, modeFn: this.readZeroPageIndirectY, mode: 'zeroPageIndirectY' },
 
         // SBC
-        0xe9: { name: 'SBC', op: this.sbc, modeFn: this.readImmediate, mode: modes.immediate },
-        0xe5: { name: 'SBC', op: this.sbc, modeFn: this.readZeroPage, mode: modes.zeroPage },
-        0xf5: { name: 'SBC', op: this.sbc, modeFn: this.readZeroPageX, mode: modes.zeroPageX },
-        0xeD: { name: 'SBC', op: this.sbc, modeFn: this.readAbsolute, mode: modes.absolute },
-        0xfD: { name: 'SBC', op: this.sbc, modeFn: this.readAbsoluteX, mode: modes.absoluteX },
-        0xf9: { name: 'SBC', op: this.sbc, modeFn: this.readAbsoluteY, mode: modes.absoluteY },
-        0xe1: { name: 'SBC', op: this.sbc, modeFn: this.readZeroPageXIndirect, mode: modes.zeroPageXIndirect },
-        0xf1: { name: 'SBC', op: this.sbc, modeFn: this.readZeroPageIndirectY, mode: modes.zeroPageIndirectY },
+        0xe9: { name: 'SBC', op: this.sbc, modeFn: this.readImmediate, mode: 'immediate' },
+        0xe5: { name: 'SBC', op: this.sbc, modeFn: this.readZeroPage, mode: 'zeroPage' },
+        0xf5: { name: 'SBC', op: this.sbc, modeFn: this.readZeroPageX, mode: 'zeroPageX' },
+        0xeD: { name: 'SBC', op: this.sbc, modeFn: this.readAbsolute, mode: 'absolute' },
+        0xfD: { name: 'SBC', op: this.sbc, modeFn: this.readAbsoluteX, mode: 'absoluteX' },
+        0xf9: { name: 'SBC', op: this.sbc, modeFn: this.readAbsoluteY, mode: 'absoluteY' },
+        0xe1: { name: 'SBC', op: this.sbc, modeFn: this.readZeroPageXIndirect, mode: 'zeroPageXIndirect' },
+        0xf1: { name: 'SBC', op: this.sbc, modeFn: this.readZeroPageIndirectY, mode: 'zeroPageIndirectY' },
 
         // INC
-        0xe6: { name: 'INC', op: this.inc, modeFn: this.readAddrZeroPage, mode: modes.zeroPage },
-        0xf6: { name: 'INC', op: this.inc, modeFn: this.readAddrZeroPageX, mode: modes.zeroPageX },
-        0xee: { name: 'INC', op: this.inc, modeFn: this.readAddrAbsolute, mode: modes.absolute },
-        0xfe: { name: 'INC', op: this.inc, modeFn: this.readAddrAbsoluteX, mode: modes.absoluteX },
+        0xe6: { name: 'INC', op: this.inc, modeFn: this.readAddrZeroPage, mode: 'zeroPage' },
+        0xf6: { name: 'INC', op: this.inc, modeFn: this.readAddrZeroPageX, mode: 'zeroPageX' },
+        0xee: { name: 'INC', op: this.inc, modeFn: this.readAddrAbsolute, mode: 'absolute' },
+        0xfe: { name: 'INC', op: this.inc, modeFn: this.readAddrAbsoluteX, mode: 'absoluteX' },
 
         // INX
-        0xe8: { name: 'INX', op: this.inx, modeFn: this.implied, mode: modes.implied },
+        0xe8: { name: 'INX', op: this.inx, modeFn: this.implied, mode: 'implied' },
 
         // INY
-        0xc8: { name: 'INY', op: this.iny, modeFn: this.implied, mode: modes.implied },
+        0xc8: { name: 'INY', op: this.iny, modeFn: this.implied, mode: 'implied' },
 
         // DEC
-        0xc6: { name: 'DEC', op: this.dec, modeFn: this.readAddrZeroPage, mode: modes.zeroPage },
-        0xd6: { name: 'DEC', op: this.dec, modeFn: this.readAddrZeroPageX, mode: modes.zeroPageX },
-        0xce: { name: 'DEC', op: this.dec, modeFn: this.readAddrAbsolute, mode: modes.absolute },
-        0xde: { name: 'DEC', op: this.dec, modeFn: this.readAddrAbsoluteX, mode: modes.absoluteX },
+        0xc6: { name: 'DEC', op: this.dec, modeFn: this.readAddrZeroPage, mode: 'zeroPage' },
+        0xd6: { name: 'DEC', op: this.dec, modeFn: this.readAddrZeroPageX, mode: 'zeroPageX' },
+        0xce: { name: 'DEC', op: this.dec, modeFn: this.readAddrAbsolute, mode: 'absolute' },
+        0xde: { name: 'DEC', op: this.dec, modeFn: this.readAddrAbsoluteX, mode: 'absoluteX' },
 
         // DEX
-        0xca: { name: 'DEX', op: this.dex, modeFn: this.implied, mode: modes.implied },
+        0xca: { name: 'DEX', op: this.dex, modeFn: this.implied, mode: 'implied' },
 
         // DEY
-        0x88: { name: 'DEY', op: this.dey, modeFn: this.implied, mode: modes.implied },
+        0x88: { name: 'DEY', op: this.dey, modeFn: this.implied, mode: 'implied' },
 
         // ASL
-        0x0A: { name: 'ASL', op: this.aslA, modeFn: this.implied, mode: modes.accumulator },
-        0x06: { name: 'ASL', op: this.asl, modeFn: this.readAddrZeroPage, mode: modes.zeroPage },
-        0x16: { name: 'ASL', op: this.asl, modeFn: this.readAddrZeroPageX, mode: modes.zeroPageX },
-        0x0E: { name: 'ASL', op: this.asl, modeFn: this.readAddrAbsolute, mode: modes.absolute },
-        0x1E: { name: 'ASL', op: this.asl, modeFn: this.readAddrAbsoluteX, mode: modes.absoluteX },
+        0x0A: { name: 'ASL', op: this.aslA, modeFn: this.implied, mode: 'accumulator' },
+        0x06: { name: 'ASL', op: this.asl, modeFn: this.readAddrZeroPage, mode: 'zeroPage' },
+        0x16: { name: 'ASL', op: this.asl, modeFn: this.readAddrZeroPageX, mode: 'zeroPageX' },
+        0x0E: { name: 'ASL', op: this.asl, modeFn: this.readAddrAbsolute, mode: 'absolute' },
+        0x1E: { name: 'ASL', op: this.asl, modeFn: this.readAddrAbsoluteX, mode: 'absoluteX' },
 
         // LSR
-        0x4A: { name: 'LSR', op: this.lsrA, modeFn: this.implied, mode: modes.accumulator },
-        0x46: { name: 'LSR', op: this.lsr, modeFn: this.readAddrZeroPage, mode: modes.zeroPage },
-        0x56: { name: 'LSR', op: this.lsr, modeFn: this.readAddrZeroPageX, mode: modes.zeroPageX },
-        0x4E: { name: 'LSR', op: this.lsr, modeFn: this.readAddrAbsolute, mode: modes.absolute },
-        0x5E: { name: 'LSR', op: this.lsr, modeFn: this.readAddrAbsoluteX, mode: modes.absoluteX },
+        0x4A: { name: 'LSR', op: this.lsrA, modeFn: this.implied, mode: 'accumulator' },
+        0x46: { name: 'LSR', op: this.lsr, modeFn: this.readAddrZeroPage, mode: 'zeroPage' },
+        0x56: { name: 'LSR', op: this.lsr, modeFn: this.readAddrZeroPageX, mode: 'zeroPageX' },
+        0x4E: { name: 'LSR', op: this.lsr, modeFn: this.readAddrAbsolute, mode: 'absolute' },
+        0x5E: { name: 'LSR', op: this.lsr, modeFn: this.readAddrAbsoluteX, mode: 'absoluteX' },
 
         // ROL
-        0x2A: { name: 'ROL', op: this.rolA, modeFn: this.implied, mode: modes.accumulator },
-        0x26: { name: 'ROL', op: this.rol, modeFn: this.readAddrZeroPage, mode: modes.zeroPage },
-        0x36: { name: 'ROL', op: this.rol, modeFn: this.readAddrZeroPageX, mode: modes.zeroPageX },
-        0x2E: { name: 'ROL', op: this.rol, modeFn: this.readAddrAbsolute, mode: modes.absolute },
-        0x3E: { name: 'ROL', op: this.rol, modeFn: this.readAddrAbsoluteX, mode: modes.absoluteX },
+        0x2A: { name: 'ROL', op: this.rolA, modeFn: this.implied, mode: 'accumulator' },
+        0x26: { name: 'ROL', op: this.rol, modeFn: this.readAddrZeroPage, mode: 'zeroPage' },
+        0x36: { name: 'ROL', op: this.rol, modeFn: this.readAddrZeroPageX, mode: 'zeroPageX' },
+        0x2E: { name: 'ROL', op: this.rol, modeFn: this.readAddrAbsolute, mode: 'absolute' },
+        0x3E: { name: 'ROL', op: this.rol, modeFn: this.readAddrAbsoluteX, mode: 'absoluteX' },
 
         // ROR
-        0x6A: { name: 'ROR', op: this.rorA, modeFn: this.implied, mode: modes.accumulator },
-        0x66: { name: 'ROR', op: this.ror, modeFn: this.readAddrZeroPage, mode: modes.zeroPage },
-        0x76: { name: 'ROR', op: this.ror, modeFn: this.readAddrZeroPageX, mode: modes.zeroPageX },
-        0x6E: { name: 'ROR', op: this.ror, modeFn: this.readAddrAbsolute, mode: modes.absolute },
-        0x7E: { name: 'ROR', op: this.ror, modeFn: this.readAddrAbsoluteX, mode: modes.absoluteX },
+        0x6A: { name: 'ROR', op: this.rorA, modeFn: this.implied, mode: 'accumulator' },
+        0x66: { name: 'ROR', op: this.ror, modeFn: this.readAddrZeroPage, mode: 'zeroPage' },
+        0x76: { name: 'ROR', op: this.ror, modeFn: this.readAddrZeroPageX, mode: 'zeroPageX' },
+        0x6E: { name: 'ROR', op: this.ror, modeFn: this.readAddrAbsolute, mode: 'absolute' },
+        0x7E: { name: 'ROR', op: this.ror, modeFn: this.readAddrAbsoluteX, mode: 'absoluteX' },
 
         // AND
-        0x29: { name: 'AND', op: this.and, modeFn: this.readImmediate, mode: modes.immediate },
-        0x25: { name: 'AND', op: this.and, modeFn: this.readZeroPage, mode: modes.zeroPage },
-        0x35: { name: 'AND', op: this.and, modeFn: this.readZeroPageX, mode: modes.zeroPageX },
-        0x2D: { name: 'AND', op: this.and, modeFn: this.readAbsolute, mode: modes.absolute },
-        0x3D: { name: 'AND', op: this.and, modeFn: this.readAbsoluteX, mode: modes.absoluteX },
-        0x39: { name: 'AND', op: this.and, modeFn: this.readAbsoluteY, mode: modes.absoluteY },
-        0x21: { name: 'AND', op: this.and, modeFn: this.readZeroPageXIndirect, mode: modes.zeroPageXIndirect },
-        0x31: { name: 'AND', op: this.and, modeFn: this.readZeroPageIndirectY, mode: modes.zeroPageIndirectY },
+        0x29: { name: 'AND', op: this.and, modeFn: this.readImmediate, mode: 'immediate' },
+        0x25: { name: 'AND', op: this.and, modeFn: this.readZeroPage, mode: 'zeroPage' },
+        0x35: { name: 'AND', op: this.and, modeFn: this.readZeroPageX, mode: 'zeroPageX' },
+        0x2D: { name: 'AND', op: this.and, modeFn: this.readAbsolute, mode: 'absolute' },
+        0x3D: { name: 'AND', op: this.and, modeFn: this.readAbsoluteX, mode: 'absoluteX' },
+        0x39: { name: 'AND', op: this.and, modeFn: this.readAbsoluteY, mode: 'absoluteY' },
+        0x21: { name: 'AND', op: this.and, modeFn: this.readZeroPageXIndirect, mode: 'zeroPageXIndirect' },
+        0x31: { name: 'AND', op: this.and, modeFn: this.readZeroPageIndirectY, mode: 'zeroPageIndirectY' },
 
         // ORA
-        0x09: { name: 'ORA', op: this.ora, modeFn: this.readImmediate, mode: modes.immediate },
-        0x05: { name: 'ORA', op: this.ora, modeFn: this.readZeroPage, mode: modes.zeroPage },
-        0x15: { name: 'ORA', op: this.ora, modeFn: this.readZeroPageX, mode: modes.zeroPageX },
-        0x0D: { name: 'ORA', op: this.ora, modeFn: this.readAbsolute, mode: modes.absolute },
-        0x1D: { name: 'ORA', op: this.ora, modeFn: this.readAbsoluteX, mode: modes.absoluteX },
-        0x19: { name: 'ORA', op: this.ora, modeFn: this.readAbsoluteY, mode: modes.absoluteY },
-        0x01: { name: 'ORA', op: this.ora, modeFn: this.readZeroPageXIndirect, mode: modes.zeroPageXIndirect },
-        0x11: { name: 'ORA', op: this.ora, modeFn: this.readZeroPageIndirectY, mode: modes.zeroPageIndirectY },
+        0x09: { name: 'ORA', op: this.ora, modeFn: this.readImmediate, mode: 'immediate' },
+        0x05: { name: 'ORA', op: this.ora, modeFn: this.readZeroPage, mode: 'zeroPage' },
+        0x15: { name: 'ORA', op: this.ora, modeFn: this.readZeroPageX, mode: 'zeroPageX' },
+        0x0D: { name: 'ORA', op: this.ora, modeFn: this.readAbsolute, mode: 'absolute' },
+        0x1D: { name: 'ORA', op: this.ora, modeFn: this.readAbsoluteX, mode: 'absoluteX' },
+        0x19: { name: 'ORA', op: this.ora, modeFn: this.readAbsoluteY, mode: 'absoluteY' },
+        0x01: { name: 'ORA', op: this.ora, modeFn: this.readZeroPageXIndirect, mode: 'zeroPageXIndirect' },
+        0x11: { name: 'ORA', op: this.ora, modeFn: this.readZeroPageIndirectY, mode: 'zeroPageIndirectY' },
 
         // EOR
-        0x49: { name: 'EOR', op: this.eor, modeFn: this.readImmediate, mode: modes.immediate },
-        0x45: { name: 'EOR', op: this.eor, modeFn: this.readZeroPage, mode: modes.zeroPage },
-        0x55: { name: 'EOR', op: this.eor, modeFn: this.readZeroPageX, mode: modes.zeroPageX },
-        0x4D: { name: 'EOR', op: this.eor, modeFn: this.readAbsolute, mode: modes.absolute },
-        0x5D: { name: 'EOR', op: this.eor, modeFn: this.readAbsoluteX, mode: modes.absoluteX },
-        0x59: { name: 'EOR', op: this.eor, modeFn: this.readAbsoluteY, mode: modes.absoluteY },
-        0x41: { name: 'EOR', op: this.eor, modeFn: this.readZeroPageXIndirect, mode: modes.zeroPageXIndirect },
-        0x51: { name: 'EOR', op: this.eor, modeFn: this.readZeroPageIndirectY, mode: modes.zeroPageIndirectY },
+        0x49: { name: 'EOR', op: this.eor, modeFn: this.readImmediate, mode: 'immediate' },
+        0x45: { name: 'EOR', op: this.eor, modeFn: this.readZeroPage, mode: 'zeroPage' },
+        0x55: { name: 'EOR', op: this.eor, modeFn: this.readZeroPageX, mode: 'zeroPageX' },
+        0x4D: { name: 'EOR', op: this.eor, modeFn: this.readAbsolute, mode: 'absolute' },
+        0x5D: { name: 'EOR', op: this.eor, modeFn: this.readAbsoluteX, mode: 'absoluteX' },
+        0x59: { name: 'EOR', op: this.eor, modeFn: this.readAbsoluteY, mode: 'absoluteY' },
+        0x41: { name: 'EOR', op: this.eor, modeFn: this.readZeroPageXIndirect, mode: 'zeroPageXIndirect' },
+        0x51: { name: 'EOR', op: this.eor, modeFn: this.readZeroPageIndirectY, mode: 'zeroPageIndirectY' },
 
         // CMP
-        0xc9: { name: 'CMP', op: this.cmp, modeFn: this.readImmediate, mode: modes.immediate },
-        0xc5: { name: 'CMP', op: this.cmp, modeFn: this.readZeroPage, mode: modes.zeroPage },
-        0xd5: { name: 'CMP', op: this.cmp, modeFn: this.readZeroPageX, mode: modes.zeroPageX },
-        0xcD: { name: 'CMP', op: this.cmp, modeFn: this.readAbsolute, mode: modes.absolute },
-        0xdD: { name: 'CMP', op: this.cmp, modeFn: this.readAbsoluteX, mode: modes.absoluteX },
-        0xd9: { name: 'CMP', op: this.cmp, modeFn: this.readAbsoluteY, mode: modes.absoluteY },
-        0xc1: { name: 'CMP', op: this.cmp, modeFn: this.readZeroPageXIndirect, mode: modes.zeroPageXIndirect },
-        0xd1: { name: 'CMP', op: this.cmp, modeFn: this.readZeroPageIndirectY, mode: modes.zeroPageIndirectY },
+        0xc9: { name: 'CMP', op: this.cmp, modeFn: this.readImmediate, mode: 'immediate' },
+        0xc5: { name: 'CMP', op: this.cmp, modeFn: this.readZeroPage, mode: 'zeroPage' },
+        0xd5: { name: 'CMP', op: this.cmp, modeFn: this.readZeroPageX, mode: 'zeroPageX' },
+        0xcD: { name: 'CMP', op: this.cmp, modeFn: this.readAbsolute, mode: 'absolute' },
+        0xdD: { name: 'CMP', op: this.cmp, modeFn: this.readAbsoluteX, mode: 'absoluteX' },
+        0xd9: { name: 'CMP', op: this.cmp, modeFn: this.readAbsoluteY, mode: 'absoluteY' },
+        0xc1: { name: 'CMP', op: this.cmp, modeFn: this.readZeroPageXIndirect, mode: 'zeroPageXIndirect' },
+        0xd1: { name: 'CMP', op: this.cmp, modeFn: this.readZeroPageIndirectY, mode: 'zeroPageIndirectY' },
 
         // CPX
-        0xE0: { name: 'CPX', op: this.cpx, modeFn: this.readImmediate, mode: modes.immediate },
-        0xE4: { name: 'CPX', op: this.cpx, modeFn: this.readZeroPage, mode: modes.zeroPage },
-        0xEC: { name: 'CPX', op: this.cpx, modeFn: this.readAbsolute, mode: modes.absolute },
+        0xE0: { name: 'CPX', op: this.cpx, modeFn: this.readImmediate, mode: 'immediate' },
+        0xE4: { name: 'CPX', op: this.cpx, modeFn: this.readZeroPage, mode: 'zeroPage' },
+        0xEC: { name: 'CPX', op: this.cpx, modeFn: this.readAbsolute, mode: 'absolute' },
 
         // CPY
-        0xC0: { name: 'CPY', op: this.cpy, modeFn: this.readImmediate, mode: modes.immediate },
-        0xC4: { name: 'CPY', op: this.cpy, modeFn: this.readZeroPage, mode: modes.zeroPage },
-        0xCC: { name: 'CPY', op: this.cpy, modeFn: this.readAbsolute, mode: modes.absolute },
+        0xC0: { name: 'CPY', op: this.cpy, modeFn: this.readImmediate, mode: 'immediate' },
+        0xC4: { name: 'CPY', op: this.cpy, modeFn: this.readZeroPage, mode: 'zeroPage' },
+        0xCC: { name: 'CPY', op: this.cpy, modeFn: this.readAbsolute, mode: 'absolute' },
 
         // BIT
-        0x24: { name: 'BIT', op: this.bit, modeFn: this.readZeroPage, mode: modes.zeroPage },
-        0x2C: { name: 'BIT', op: this.bit, modeFn: this.readAbsolute, mode: modes.absolute },
+        0x24: { name: 'BIT', op: this.bit, modeFn: this.readZeroPage, mode: 'zeroPage' },
+        0x2C: { name: 'BIT', op: this.bit, modeFn: this.readAbsolute, mode: 'absolute' },
 
         // BCC
-        0x90: { name: 'BCC', op: this.brc, modeFn: flags.C, mode: modes.relative },
+        0x90: { name: 'BCC', op: this.brc, modeFn: flags.C, mode: 'relative' },
 
         // BCS
-        0xB0: { name: 'BCS', op: this.brs, modeFn: flags.C, mode: modes.relative },
+        0xB0: { name: 'BCS', op: this.brs, modeFn: flags.C, mode: 'relative' },
 
         // BEQ
-        0xF0: { name: 'BEQ', op: this.brs, modeFn: flags.Z, mode: modes.relative },
+        0xF0: { name: 'BEQ', op: this.brs, modeFn: flags.Z, mode: 'relative' },
 
         // BMI
-        0x30: { name: 'BMI', op: this.brs, modeFn: flags.N, mode: modes.relative },
+        0x30: { name: 'BMI', op: this.brs, modeFn: flags.N, mode: 'relative' },
 
         // BNE
-        0xD0: { name: 'BNE', op: this.brc, modeFn: flags.Z, mode: modes.relative },
+        0xD0: { name: 'BNE', op: this.brc, modeFn: flags.Z, mode: 'relative' },
 
         // BPL
-        0x10: { name: 'BPL', op: this.brc, modeFn: flags.N, mode: modes.relative },
+        0x10: { name: 'BPL', op: this.brc, modeFn: flags.N, mode: 'relative' },
 
         // BVC
-        0x50: { name: 'BVC', op: this.brc, modeFn: flags.V, mode: modes.relative },
+        0x50: { name: 'BVC', op: this.brc, modeFn: flags.V, mode: 'relative' },
 
         // BVS
-        0x70: { name: 'BVS', op: this.brs, modeFn: flags.V, mode: modes.relative },
+        0x70: { name: 'BVS', op: this.brs, modeFn: flags.V, mode: 'relative' },
 
         // TAX
-        0xAA: { name: 'TAX', op: this.tax, modeFn: this.implied, mode: modes.implied },
+        0xAA: { name: 'TAX', op: this.tax, modeFn: this.implied, mode: 'implied' },
 
         // TXA
-        0x8A: { name: 'TXA', op: this.txa, modeFn: this.implied, mode: modes.implied },
+        0x8A: { name: 'TXA', op: this.txa, modeFn: this.implied, mode: 'implied' },
 
         // TAY
-        0xA8: { name: 'TAY', op: this.tay, modeFn: this.implied, mode: modes.implied },
+        0xA8: { name: 'TAY', op: this.tay, modeFn: this.implied, mode: 'implied' },
 
         // TYA
-        0x98: { name: 'TYA', op: this.tya, modeFn: this.implied, mode: modes.implied },
+        0x98: { name: 'TYA', op: this.tya, modeFn: this.implied, mode: 'implied' },
 
         // TSX
-        0xBA: { name: 'TSX', op: this.tsx, modeFn: this.implied, mode: modes.implied },
+        0xBA: { name: 'TSX', op: this.tsx, modeFn: this.implied, mode: 'implied' },
 
         // TXS
-        0x9A: { name: 'TXS', op: this.txs, modeFn: this.implied, mode: modes.implied },
+        0x9A: { name: 'TXS', op: this.txs, modeFn: this.implied, mode: 'implied' },
 
         // PHA
-        0x48: { name: 'PHA', op: this.pha, modeFn: this.implied, mode: modes.implied },
+        0x48: { name: 'PHA', op: this.pha, modeFn: this.implied, mode: 'implied' },
 
         // PLA
-        0x68: { name: 'PLA', op: this.pla, modeFn: this.implied, mode: modes.implied },
+        0x68: { name: 'PLA', op: this.pla, modeFn: this.implied, mode: 'implied' },
 
         // PHP
-        0x08: { name: 'PHP', op: this.php, modeFn: this.implied, mode: modes.implied },
+        0x08: { name: 'PHP', op: this.php, modeFn: this.implied, mode: 'implied' },
 
         // PLP
-        0x28: { name: 'PLP', op: this.plp, modeFn: this.implied, mode: modes.implied },
+        0x28: { name: 'PLP', op: this.plp, modeFn: this.implied, mode: 'implied' },
 
         // JMP
         0x4C: {
-            name: 'JMP', op: this.jmp, modeFn: this.readAddrAbsolute, mode: modes.absolute
+            name: 'JMP', op: this.jmp, modeFn: this.readAddrAbsolute, mode: 'absolute'
         },
         0x6C: {
-            name: 'JMP', op: this.jmp, modeFn: this.readAddrAbsoluteIndirectBug, mode: modes.absoluteIndirect
+            name: 'JMP', op: this.jmp, modeFn: this.readAddrAbsoluteIndirectBug, mode: 'absoluteIndirect'
         },
         // JSR
-        0x20: { name: 'JSR', op: this.jsr, modeFn: this.readAddrAbsolute, mode: modes.absolute },
+        0x20: { name: 'JSR', op: this.jsr, modeFn: this.readAddrAbsolute, mode: 'absolute' },
 
         // RTS
-        0x60: { name: 'RTS', op: this.rts, modeFn: this.implied, mode: modes.implied },
+        0x60: { name: 'RTS', op: this.rts, modeFn: this.implied, mode: 'implied' },
 
         // RTI
-        0x40: { name: 'RTI', op: this.rti, modeFn: this.implied, mode: modes.implied },
+        0x40: { name: 'RTI', op: this.rti, modeFn: this.implied, mode: 'implied' },
 
         // SEC
-        0x38: { name: 'SEC', op: this.set, modeFn: flags.C, mode: modes.implied },
+        0x38: { name: 'SEC', op: this.set, modeFn: flags.C, mode: 'implied' },
 
         // SED
-        0xF8: { name: 'SED', op: this.set, modeFn: flags.D, mode: modes.implied },
+        0xF8: { name: 'SED', op: this.set, modeFn: flags.D, mode: 'implied' },
 
         // SEI
-        0x78: { name: 'SEI', op: this.set, modeFn: flags.I, mode: modes.implied },
+        0x78: { name: 'SEI', op: this.set, modeFn: flags.I, mode: 'implied' },
 
         // CLC
-        0x18: { name: 'CLC', op: this.clr, modeFn: flags.C, mode: modes.implied },
+        0x18: { name: 'CLC', op: this.clr, modeFn: flags.C, mode: 'implied' },
 
         // CLD
-        0xD8: { name: 'CLD', op: this.clr, modeFn: flags.D, mode: modes.implied },
+        0xD8: { name: 'CLD', op: this.clr, modeFn: flags.D, mode: 'implied' },
 
         // CLI
-        0x58: { name: 'CLI', op: this.clr, modeFn: flags.I, mode: modes.implied },
+        0x58: { name: 'CLI', op: this.clr, modeFn: flags.I, mode: 'implied' },
 
         // CLV
-        0xB8: { name: 'CLV', op: this.clr, modeFn: flags.V, mode: modes.implied },
+        0xB8: { name: 'CLV', op: this.clr, modeFn: flags.V, mode: 'implied' },
 
         // NOP
-        0xea: { name: 'NOP', op: this.nop, modeFn: this.implied, mode: modes.implied },
+        0xea: { name: 'NOP', op: this.nop, modeFn: this.implied, mode: 'implied' },
 
         // BRK
-        0x00: { name: 'BRK', op: this.brk, modeFn: this.readImmediate, mode: modes.immediate }
+        0x00: { name: 'BRK', op: this.brk, modeFn: this.readImmediate, mode: 'immediate' }
     };
 
 /* 65C02 Instructions */
 
     OPS_65C02: Instructions = {
         // INC / DEC A
-        0x1A: { name: 'INC', op: this.incA, modeFn: this.implied, mode: modes.accumulator },
-        0x3A: { name: 'DEC', op: this.decA, modeFn: this.implied, mode: modes.accumulator },
+        0x1A: { name: 'INC', op: this.incA, modeFn: this.implied, mode: 'accumulator' },
+        0x3A: { name: 'DEC', op: this.decA, modeFn: this.implied, mode: 'accumulator' },
 
         // Indirect Zero Page for the masses
-        0x12: { name: 'ORA', op: this.ora, modeFn: this.readZeroPageIndirect, mode: modes.zeroPageIndirect },
-        0x32: { name: 'AND', op: this.and, modeFn: this.readZeroPageIndirect, mode: modes.zeroPageIndirect },
-        0x52: { name: 'EOR', op: this.eor, modeFn: this.readZeroPageIndirect, mode: modes.zeroPageIndirect },
-        0x72: { name: 'ADC', op: this.adc, modeFn: this.readZeroPageIndirect, mode: modes.zeroPageIndirect },
-        0x92: { name: 'STA', op: this.sta, modeFn: this.writeZeroPageIndirect, mode: modes.zeroPageIndirect },
-        0xB2: { name: 'LDA', op: this.lda, modeFn: this.readZeroPageIndirect, mode: modes.zeroPageIndirect },
-        0xD2: { name: 'CMP', op: this.cmp, modeFn: this.readZeroPageIndirect, mode: modes.zeroPageIndirect },
-        0xF2: { name: 'SBC', op: this.sbc, modeFn: this.readZeroPageIndirect, mode: modes.zeroPageIndirect },
+        0x12: { name: 'ORA', op: this.ora, modeFn: this.readZeroPageIndirect, mode: 'zeroPageIndirect' },
+        0x32: { name: 'AND', op: this.and, modeFn: this.readZeroPageIndirect, mode: 'zeroPageIndirect' },
+        0x52: { name: 'EOR', op: this.eor, modeFn: this.readZeroPageIndirect, mode: 'zeroPageIndirect' },
+        0x72: { name: 'ADC', op: this.adc, modeFn: this.readZeroPageIndirect, mode: 'zeroPageIndirect' },
+        0x92: { name: 'STA', op: this.sta, modeFn: this.writeZeroPageIndirect, mode: 'zeroPageIndirect' },
+        0xB2: { name: 'LDA', op: this.lda, modeFn: this.readZeroPageIndirect, mode: 'zeroPageIndirect' },
+        0xD2: { name: 'CMP', op: this.cmp, modeFn: this.readZeroPageIndirect, mode: 'zeroPageIndirect' },
+        0xF2: { name: 'SBC', op: this.sbc, modeFn: this.readZeroPageIndirect, mode: 'zeroPageIndirect' },
 
         // Better BIT
-        0x34: { name: 'BIT', op: this.bit, modeFn: this.readZeroPageX, mode: modes.zeroPageX },
-        0x3C: { name: 'BIT', op: this.bit, modeFn: this.readAbsoluteX, mode: modes.absoluteX },
-        0x89: { name: 'BIT', op: this.bitI, modeFn: this.readImmediate, mode: modes.immediate },
+        0x34: { name: 'BIT', op: this.bit, modeFn: this.readZeroPageX, mode: 'zeroPageX' },
+        0x3C: { name: 'BIT', op: this.bit, modeFn: this.readAbsoluteX, mode: 'absoluteX' },
+        0x89: { name: 'BIT', op: this.bitI, modeFn: this.readImmediate, mode: 'immediate' },
 
         // JMP absolute indirect indexed
         0x6C: {
-            name: 'JMP', op: this.jmp, modeFn: this.readAddrAbsoluteIndirect, mode: modes.absoluteIndirect
+            name: 'JMP', op: this.jmp, modeFn: this.readAddrAbsoluteIndirect, mode: 'absoluteIndirect'
         },
         0x7C: {
-            name: 'JMP', op: this.jmp, modeFn: this.readAddrAbsoluteXIndirect, mode: modes.absoluteXIndirect
+            name: 'JMP', op: this.jmp, modeFn: this.readAddrAbsoluteXIndirect, mode: 'absoluteXIndirect'
         },
 
         // BBR/BBS
-        0x0F: { name: 'BBR0', op: this.bbr, modeFn: 0, mode: modes.zeroPage_relative },
-        0x1F: { name: 'BBR1', op: this.bbr, modeFn: 1, mode: modes.zeroPage_relative },
-        0x2F: { name: 'BBR2', op: this.bbr, modeFn: 2, mode: modes.zeroPage_relative },
-        0x3F: { name: 'BBR3', op: this.bbr, modeFn: 3, mode: modes.zeroPage_relative },
-        0x4F: { name: 'BBR4', op: this.bbr, modeFn: 4, mode: modes.zeroPage_relative },
-        0x5F: { name: 'BBR5', op: this.bbr, modeFn: 5, mode: modes.zeroPage_relative },
-        0x6F: { name: 'BBR6', op: this.bbr, modeFn: 6, mode: modes.zeroPage_relative },
-        0x7F: { name: 'BBR7', op: this.bbr, modeFn: 7, mode: modes.zeroPage_relative },
+        0x0F: { name: 'BBR0', op: this.bbr, modeFn: 0, mode: 'zeroPage_relative' },
+        0x1F: { name: 'BBR1', op: this.bbr, modeFn: 1, mode: 'zeroPage_relative' },
+        0x2F: { name: 'BBR2', op: this.bbr, modeFn: 2, mode: 'zeroPage_relative' },
+        0x3F: { name: 'BBR3', op: this.bbr, modeFn: 3, mode: 'zeroPage_relative' },
+        0x4F: { name: 'BBR4', op: this.bbr, modeFn: 4, mode: 'zeroPage_relative' },
+        0x5F: { name: 'BBR5', op: this.bbr, modeFn: 5, mode: 'zeroPage_relative' },
+        0x6F: { name: 'BBR6', op: this.bbr, modeFn: 6, mode: 'zeroPage_relative' },
+        0x7F: { name: 'BBR7', op: this.bbr, modeFn: 7, mode: 'zeroPage_relative' },
 
-        0x8F: { name: 'BBS0', op: this.bbs, modeFn: 0, mode: modes.zeroPage_relative },
-        0x9F: { name: 'BBS1', op: this.bbs, modeFn: 1, mode: modes.zeroPage_relative },
-        0xAF: { name: 'BBS2', op: this.bbs, modeFn: 2, mode: modes.zeroPage_relative },
-        0xBF: { name: 'BBS3', op: this.bbs, modeFn: 3, mode: modes.zeroPage_relative },
-        0xCF: { name: 'BBS4', op: this.bbs, modeFn: 4, mode: modes.zeroPage_relative },
-        0xDF: { name: 'BBS5', op: this.bbs, modeFn: 5, mode: modes.zeroPage_relative },
-        0xEF: { name: 'BBS6', op: this.bbs, modeFn: 6, mode: modes.zeroPage_relative },
-        0xFF: { name: 'BBS7', op: this.bbs, modeFn: 7, mode: modes.zeroPage_relative },
+        0x8F: { name: 'BBS0', op: this.bbs, modeFn: 0, mode: 'zeroPage_relative' },
+        0x9F: { name: 'BBS1', op: this.bbs, modeFn: 1, mode: 'zeroPage_relative' },
+        0xAF: { name: 'BBS2', op: this.bbs, modeFn: 2, mode: 'zeroPage_relative' },
+        0xBF: { name: 'BBS3', op: this.bbs, modeFn: 3, mode: 'zeroPage_relative' },
+        0xCF: { name: 'BBS4', op: this.bbs, modeFn: 4, mode: 'zeroPage_relative' },
+        0xDF: { name: 'BBS5', op: this.bbs, modeFn: 5, mode: 'zeroPage_relative' },
+        0xEF: { name: 'BBS6', op: this.bbs, modeFn: 6, mode: 'zeroPage_relative' },
+        0xFF: { name: 'BBS7', op: this.bbs, modeFn: 7, mode: 'zeroPage_relative' },
 
         // BRA
-        0x80: { name: 'BRA', op: this.brc, modeFn: 0, mode: modes.relative },
+        0x80: { name: 'BRA', op: this.brc, modeFn: 0, mode: 'relative' },
 
         // NOP
-        0x02: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: modes.immediate },
-        0x22: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: modes.immediate },
-        0x42: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: modes.immediate },
-        0x44: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: modes.immediate },
-        0x54: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: modes.immediate },
-        0x62: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: modes.immediate },
-        0x82: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: modes.immediate },
-        0xC2: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: modes.immediate },
-        0xD4: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: modes.immediate },
-        0xE2: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: modes.immediate },
-        0xF4: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: modes.immediate },
-        0x5C: { name: 'NOP', op: this.nop, modeFn: this.readAbsolute, mode: modes.absolute },
-        0xDC: { name: 'NOP', op: this.nop, modeFn: this.readAbsolute, mode: modes.absolute },
-        0xFC: { name: 'NOP', op: this.nop, modeFn: this.readAbsolute, mode: modes.absolute },
+        0x02: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: 'immediate' },
+        0x22: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: 'immediate' },
+        0x42: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: 'immediate' },
+        0x44: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: 'immediate' },
+        0x54: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: 'immediate' },
+        0x62: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: 'immediate' },
+        0x82: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: 'immediate' },
+        0xC2: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: 'immediate' },
+        0xD4: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: 'immediate' },
+        0xE2: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: 'immediate' },
+        0xF4: { name: 'NOP', op: this.nop, modeFn: this.readImmediate, mode: 'immediate' },
+        0x5C: { name: 'NOP', op: this.nop, modeFn: this.readAbsolute, mode: 'absolute' },
+        0xDC: { name: 'NOP', op: this.nop, modeFn: this.readAbsolute, mode: 'absolute' },
+        0xFC: { name: 'NOP', op: this.nop, modeFn: this.readAbsolute, mode: 'absolute' },
 
         // PHX
-        0xDA: { name: 'PHX', op: this.phx, modeFn: this.implied, mode: modes.implied },
+        0xDA: { name: 'PHX', op: this.phx, modeFn: this.implied, mode: 'implied' },
 
         // PHY
-        0x5A: { name: 'PHY', op: this.phy, modeFn: this.implied, mode: modes.implied },
+        0x5A: { name: 'PHY', op: this.phy, modeFn: this.implied, mode: 'implied' },
 
         // PLX
-        0xFA: { name: 'PLX', op: this.plx, modeFn: this.implied, mode: modes.implied },
+        0xFA: { name: 'PLX', op: this.plx, modeFn: this.implied, mode: 'implied' },
 
         // PLY
-        0x7A: { name: 'PLY', op: this.ply, modeFn: this.implied, mode: modes.implied },
+        0x7A: { name: 'PLY', op: this.ply, modeFn: this.implied, mode: 'implied' },
 
         // RMB/SMB
 
-        0x07: { name: 'RMB0', op: this.rmb, modeFn: 0, mode: modes.zeroPage },
-        0x17: { name: 'RMB1', op: this.rmb, modeFn: 1, mode: modes.zeroPage },
-        0x27: { name: 'RMB2', op: this.rmb, modeFn: 2, mode: modes.zeroPage },
-        0x37: { name: 'RMB3', op: this.rmb, modeFn: 3, mode: modes.zeroPage },
-        0x47: { name: 'RMB4', op: this.rmb, modeFn: 4, mode: modes.zeroPage },
-        0x57: { name: 'RMB5', op: this.rmb, modeFn: 5, mode: modes.zeroPage },
-        0x67: { name: 'RMB6', op: this.rmb, modeFn: 6, mode: modes.zeroPage },
-        0x77: { name: 'RMB7', op: this.rmb, modeFn: 7, mode: modes.zeroPage },
+        0x07: { name: 'RMB0', op: this.rmb, modeFn: 0, mode: 'zeroPage' },
+        0x17: { name: 'RMB1', op: this.rmb, modeFn: 1, mode: 'zeroPage' },
+        0x27: { name: 'RMB2', op: this.rmb, modeFn: 2, mode: 'zeroPage' },
+        0x37: { name: 'RMB3', op: this.rmb, modeFn: 3, mode: 'zeroPage' },
+        0x47: { name: 'RMB4', op: this.rmb, modeFn: 4, mode: 'zeroPage' },
+        0x57: { name: 'RMB5', op: this.rmb, modeFn: 5, mode: 'zeroPage' },
+        0x67: { name: 'RMB6', op: this.rmb, modeFn: 6, mode: 'zeroPage' },
+        0x77: { name: 'RMB7', op: this.rmb, modeFn: 7, mode: 'zeroPage' },
 
-        0x87: { name: 'SMB0', op: this.smb, modeFn: 0, mode: modes.zeroPage },
-        0x97: { name: 'SMB1', op: this.smb, modeFn: 1, mode: modes.zeroPage },
-        0xA7: { name: 'SMB2', op: this.smb, modeFn: 2, mode: modes.zeroPage },
-        0xB7: { name: 'SMB3', op: this.smb, modeFn: 3, mode: modes.zeroPage },
-        0xC7: { name: 'SMB4', op: this.smb, modeFn: 4, mode: modes.zeroPage },
-        0xD7: { name: 'SMB5', op: this.smb, modeFn: 5, mode: modes.zeroPage },
-        0xE7: { name: 'SMB6', op: this.smb, modeFn: 6, mode: modes.zeroPage },
-        0xF7: { name: 'SMB7', op: this.smb, modeFn: 7, mode: modes.zeroPage },
+        0x87: { name: 'SMB0', op: this.smb, modeFn: 0, mode: 'zeroPage' },
+        0x97: { name: 'SMB1', op: this.smb, modeFn: 1, mode: 'zeroPage' },
+        0xA7: { name: 'SMB2', op: this.smb, modeFn: 2, mode: 'zeroPage' },
+        0xB7: { name: 'SMB3', op: this.smb, modeFn: 3, mode: 'zeroPage' },
+        0xC7: { name: 'SMB4', op: this.smb, modeFn: 4, mode: 'zeroPage' },
+        0xD7: { name: 'SMB5', op: this.smb, modeFn: 5, mode: 'zeroPage' },
+        0xE7: { name: 'SMB6', op: this.smb, modeFn: 6, mode: 'zeroPage' },
+        0xF7: { name: 'SMB7', op: this.smb, modeFn: 7, mode: 'zeroPage' },
 
         // STZ
-        0x64: { name: 'STZ', op: this.stz, modeFn: this.writeZeroPage, mode: modes.zeroPage },
-        0x74: { name: 'STZ', op: this.stz, modeFn: this.writeZeroPageX, mode: modes.zeroPageX },
-        0x9C: { name: 'STZ', op: this.stz, modeFn: this.writeAbsolute, mode: modes.absolute },
-        0x9E: { name: 'STZ', op: this.stz, modeFn: this.writeAbsoluteX, mode: modes.absoluteX },
+        0x64: { name: 'STZ', op: this.stz, modeFn: this.writeZeroPage, mode: 'zeroPage' },
+        0x74: { name: 'STZ', op: this.stz, modeFn: this.writeZeroPageX, mode: 'zeroPageX' },
+        0x9C: { name: 'STZ', op: this.stz, modeFn: this.writeAbsolute, mode: 'absolute' },
+        0x9E: { name: 'STZ', op: this.stz, modeFn: this.writeAbsoluteX, mode: 'absoluteX' },
 
         // TRB
-        0x14: { name: 'TRB', op: this.trb, modeFn: this.readAddrZeroPage, mode: modes.zeroPage },
-        0x1C: { name: 'TRB', op: this.trb, modeFn: this.readAddrAbsolute, mode: modes.absolute },
+        0x14: { name: 'TRB', op: this.trb, modeFn: this.readAddrZeroPage, mode: 'zeroPage' },
+        0x1C: { name: 'TRB', op: this.trb, modeFn: this.readAddrAbsolute, mode: 'absolute' },
 
         // TSB
-        0x04: { name: 'TSB', op: this.tsb, modeFn: this.readAddrZeroPage, mode: modes.zeroPage },
-        0x0C: { name: 'TSB', op: this.tsb, modeFn: this.readAddrAbsolute, mode: modes.absolute }
+        0x04: { name: 'TSB', op: this.tsb, modeFn: this.readAddrZeroPage, mode: 'zeroPage' },
+        0x0C: { name: 'TSB', op: this.tsb, modeFn: this.readAddrAbsolute, mode: 'absolute' }
     }
 };

@@ -56,7 +56,7 @@
             }
 
         }, {
-            "files": [ "js/entry2.js", "js/entry2e.js"],
+            "files": [ "js/entry2.js", "js/entry2e.js", "jest.config.js"],
             "env": {
                 "commonjs": true
             }

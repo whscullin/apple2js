@@ -9,7 +9,7 @@
  * implied warranty.
  */
 
- /**
+/**
   * Printer UI. The "paper" is bound to the element selected by the input.
   *
   * Every line that is output to the printer is added as a <div> to the paper.
@@ -69,7 +69,7 @@ export default function Printer(el) {
 
         clear: function() {
             _lineBuffer = '';
-            paper.innerHTML = "";
+            paper.innerHTML = '';
             newLine();
             _raw = new Uint8Array(1024);
             _rawLen = 0;
