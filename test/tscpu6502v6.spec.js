@@ -1,4 +1,4 @@
-import CPU6502 from './perf/impl/tscpu6502v5';
+import CPU6502 from './perf/impl/tscpu6502v6';
 
 function assertByte(b) {
     expect(b <= 0xFF).toEqual(true);

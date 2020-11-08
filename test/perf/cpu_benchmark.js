@@ -2,6 +2,7 @@ import JSCPU6502 from './impl/jscpu6502';
 import TSCPU6502 from './impl/tscpu6502';
 import TSCPU6502v2 from './impl/tscpu6502v2';
 import TSCPU6502v5 from './impl/tscpu6502v5';
+import TSCPU6502v6 from './impl/tscpu6502v6';
 import Test6502 from './test6502rom';
 import Test65C02 from './test65c02rom';
 
@@ -96,10 +97,23 @@ const tests = [
     test: () => runCPU(0x3469, 30648245),
   },
   // {
-  //   id: 'tsv5_65C02',
+  //   impl: 'cpu6502v5.ts',
+  //   emul: '6502',
   //   setup: () => setup65C02(TSCPU6502v5),
   //   test: () => runCPU(0x24f1, 21987280),
   // },
+  {
+    impl: 'cpu6502v6.ts',
+    emul: '6502',
+    setup: () => setup6502(TSCPU6502v6),
+    test: () => runCPU(0x3469, 30648245),
+  },
+  {
+    impl: 'cpu6502v6.ts',
+    emul: '65C02',
+    setup: () => setup65C02(TSCPU6502v6),
+    test: () => runCPU(0x24f1, 21987280),
+  },
 ];
 
 const IMPLS = [...new Set(tests.map((e) => e.impl))];
