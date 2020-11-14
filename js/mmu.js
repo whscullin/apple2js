@@ -698,8 +698,8 @@ export default function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
             result = _80store ? 0x80 : 0x00;
             break;
         case LOC.VERTBLANK: // 0xC019
-            // result = cpu.cycles() % 20 < 5 ? 0x80 : 0x00;
-            result = (cpu.cycles() < _vbEnd) ? 0x80 : 0x00;
+            // result = cpu.getCycles() % 20 < 5 ? 0x80 : 0x00;
+            result = (cpu.getCycles() < _vbEnd) ? 0x80 : 0x00;
             break;
         case LOC.RDTEXT:
             result = vm.isText() ? 0x80 : 0x0;
@@ -758,7 +758,7 @@ export default function MMU(cpu, vm, lores1, lores2, hires1, hires2, io, rom)
             _writePages[page].write(page, off, val);
         },
         resetVB: function mmu_resetVB() {
-            _vbEnd = cpu.cycles() + 1000;
+            _vbEnd = cpu.getCycles() + 1000;
         },
         getState: function() {
             return {

@@ -89,7 +89,7 @@ export default function Apple2IO(cpu, vm)
     }
 
     function _tick() {
-        var now = cpu.cycles();
+        var now = cpu.getCycles();
         var phase = _didAudio ? (_phase > 0 ? _high : _low) : 0.0;
         for (; _sampleTime < now; _sampleTime += _cycles_per_sample) {
             _sample[_sampleIdx++] = phase;
@@ -117,7 +117,7 @@ export default function Apple2IO(cpu, vm)
 
     function _access(off, val) {
         var result = 0;
-        var now = cpu.cycles();
+        var now = cpu.getCycles();
         var delta = now - _trigger;
         switch (off) {
         case LOC.CLRTEXT:
@@ -259,7 +259,7 @@ export default function Apple2IO(cpu, vm)
                 // I/O Strobe
                 break;
             case LOC.PDLTRIG: // C07x
-                _trigger = cpu.cycles();
+                _trigger = cpu.getCycles();
                 break;
             }
         }
@@ -463,7 +463,7 @@ export default function Apple2IO(cpu, vm)
         },
 
         cycles: function apple2io_cycles() {
-            return cpu.cycles();
+            return cpu.getCycles();
         }
     };
 }
