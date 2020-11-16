@@ -997,7 +997,7 @@ export default class CPU6502 {
                 mode: 'implied',
             };
         } else {
-            let cpu = this;
+            const cpu = this;
             unk = {
                 name: '???',
                 op: function() {
