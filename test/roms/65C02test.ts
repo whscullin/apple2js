@@ -12,19 +12,19 @@ export default class Test65C02 implements PageHandler {
         this.data = fs.readFileSync(path.join(__dirname, '65C02_extended_opcodes_test.bin'));
     }
 
-    start = function() {
+    start = () => {
         return 0x00;
     }
 
-    end = function() {
+    end = () => {
         return 0xff;
     }
 
-    read = function(page: byte, off: byte) {
+    read = (page: byte, off: byte) => {
         return this.data[page << 8 | off];
     }
 
-    write = function(page: byte, off: byte, val: byte) {
+    write = (page: byte, off: byte, val: byte) => {
         this.data[page << 8 | off] = val;
     }
 }
