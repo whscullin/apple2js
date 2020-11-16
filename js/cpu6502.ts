@@ -138,20 +138,24 @@ type WriteFn = (val: byte) => void;
 type ReadAddrFn = (opts?: Opts) => word;
 type ImpliedFn = () => void
 
-interface Op<T> {
+interface Instruction<T = any> {
     name: string
-    mode: keyof Modes
+    mode: Mode
     op: (fn: T) => void
     modeFn: T
 }
 
-type Instruction = Op<ReadFn | WriteFn | ReadAddrFn | ImpliedFn | number>
+type StrictInstruction =
+    Instruction<ReadFn> |
+    Instruction<WriteFn> |
+    Instruction<ReadAddrFn> |
+    Instruction<ImpliedFn> |
+    Instruction<flag> |
+    Instruction<byte>
 
-interface Instructions {
-    [key: number]: Instruction;
-}
+type Instructions = Record<byte, StrictInstruction>
 
-type callback = (cpu: any) => void; // TODO(flan): Hack until there is better typing.
+type callback = (cpu: CPU6502) => void;
 
 export default class CPU6502 {
     private readonly is65C02;
@@ -164,33 +168,29 @@ export default class CPU6502 {
     private yr = 0; // Y Register
     private sp = 0xff; // Stack Pointer
 
-    private readPages: ReadablePage[] = [];
-    private writePages: WriteablePage[] = [];
+    private readPages: ReadablePage[] = new Array(0x100);
+    private writePages: WriteablePage[] = new Array(0x100);
     private resetHandlers: ResettablePageHandler[] = [];
     private cycles = 0;
     private sync = false;
 
-    private readonly ops: Instructions;
     private readonly opary: Instruction[];
 
     constructor(options: CpuOptions = {}) {
         this.is65C02 = options['65C02'] ? true : false;
 
-        for (let idx = 0; idx < 0x100; idx++) {
-            this.readPages[idx] = BLANK_PAGE;
-            this.writePages[idx] = BLANK_PAGE;
-        }
+        this.readPages.fill(BLANK_PAGE);
+        this.writePages.fill(BLANK_PAGE);
 
         // Create this CPU's instruction table
 
-        let ops: Instructions = { ...this.OPS_6502 };
+        let ops = { ...this.OPS_6502 };
         if (this.is65C02) {
             ops = { ...ops, ...this.OPS_65C02 };
         }
-        this.ops = ops;
 
         // Certain browsers benefit from using arrays over maps
-        const opary: Instruction[] = [];
+        const opary: Instruction[] = new Array(0x100);
 
         for (let idx = 0; idx < 0x100; idx++) {
             opary[idx] = ops[idx] || this.unknown(idx);
@@ -226,9 +226,6 @@ export default class CPU6502 {
      * `a - b`. The status register is updated according to the result.
      */
     private add(a: byte, b: byte, sub: boolean) {
-        if (sub)
-            b ^= 0xff;
-
         // KEGS
         let c, v;
         if ((this.sr & flags.D) !== 0) {
@@ -377,12 +374,12 @@ export default class CPU6502 {
     }
 
     // $00
-    readZeroPage= (): byte => {
+    readZeroPage = (): byte => {
         return this.readByte(this.readBytePC());
     }
 
     // $0000,X
-    readAbsoluteX= (): byte => {
+    readAbsoluteX = (): byte => {
         let addr = this.readWordPC();
         const oldPage = addr >> 8;
         addr = (addr + this.xr) & 0xffff;
@@ -519,7 +516,7 @@ export default class CPU6502 {
     }
 
     // $00
-    readAddrZeroPage = (): byte => {
+    readAddrZeroPage = () => {
         return this.readBytePC();
     }
 
@@ -625,7 +622,7 @@ export default class CPU6502 {
 
     /* Subtract with Carry */
     sbc = (readFn: ReadFn) => {
-        this.ar = this.add(this.ar, readFn(), /* sub= */ true);
+        this.ar = this.add(this.ar, readFn() ^ 0xff, /* sub= */ true);
     }
 
     /* Increment Memory */
@@ -981,13 +978,13 @@ export default class CPU6502 {
     }
 
     /* No-Op */
-    nop = (readAddrFn: ReadAddrFn) => {
+    nop = (impliedFn: ImpliedFn) => {
         this.readByte(this.pc);
-        readAddrFn();
+        impliedFn();
     }
 
     private unknown(b: byte) {
-        let unk: Instruction;
+        let unk: StrictInstruction;
 
         if (this.is65C02) {
             unk = {
@@ -1000,7 +997,7 @@ export default class CPU6502 {
             const cpu = this;
             unk = {
                 name: '???',
-                op: function() {
+                op: function(_impliedFn: ImpliedFn) {
                     debug('Unknown OpCode: ' + toHex(b) +
                         ' at ' + toHex(cpu.pc - 1, 4));
                 },
@@ -1008,7 +1005,6 @@ export default class CPU6502 {
                 mode: 'implied'
             };
         }
-        this.ops[b] = unk;
         return unk;
     }
 
@@ -1202,7 +1198,7 @@ export default class CPU6502 {
             pc = this.pc;
         }
         const b = this.readByte(pc),
-            op = this.ops[b],
+            op = this.opary[b],
             size = sizes[op.mode];
         let result = toHex(pc, 4) + '- ';
 
@@ -1267,7 +1263,7 @@ export default class CPU6502 {
         }
         const results = [];
         for (let jdx = 0; jdx < 20; jdx++) {
-            const b = this.readByte(_pc), op = this.ops[b];
+            const b = this.readByte(_pc), op = this.opary[b];
             results.push(this.dumpPC(_pc, symbols));
             _pc += sizes[op.mode];
         }
