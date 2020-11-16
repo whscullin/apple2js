@@ -997,11 +997,12 @@ export default class CPU6502 {
                 mode: 'implied',
             };
         } else {
+            let cpu = this;
             unk = {
                 name: '???',
                 op: function() {
                     debug('Unknown OpCode: ' + toHex(b) +
-                        ' at ' + toHex(this.pc - 1, 4));
+                        ' at ' + toHex(cpu.pc - 1, 4));
                 },
                 modeFn: this.implied,
                 mode: 'implied'
