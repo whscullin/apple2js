@@ -356,7 +356,7 @@ var showStats = 0;
 export function updateKHz() {
     var now = Date.now();
     var ms = now - startTime;
-    var cycles = cpu.cycles();
+    var cycles = cpu.getCycles();
     var delta;
     var fps;
     var khz;

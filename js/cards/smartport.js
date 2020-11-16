@@ -266,7 +266,7 @@ export default function SmartPort(io, cpu, options ) {
             var blockOff = rom[0xff];
             var smartOff = blockOff + 3;
 
-            if (off === blockOff && cpu.sync()) { // Regular block device entry POINT
+            if (off === blockOff && cpu.getSync()) { // Regular block device entry POINT
                 _debug('block device entry');
                 cmd = cpu.read(0x00, COMMAND);
                 unit = cpu.read(0x00, UNIT);
@@ -301,7 +301,7 @@ export default function SmartPort(io, cpu, options ) {
                     formatDevice(state, unit);
                     break;
                 }
-            } else if (off == smartOff && cpu.sync()) {
+            } else if (off == smartOff && cpu.getSync()) {
                 _debug('smartport entry');
                 var retVal = {};
                 var stackAddr = new Address(state.sp + 1, 0x01);

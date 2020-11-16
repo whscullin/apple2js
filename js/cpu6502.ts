@@ -1273,11 +1273,11 @@ export default class CPU6502 {
         return results;
     }
 
-    public sync_() {
+    public getSync() {
         return this.sync;
     }
 
-    public cycles_() {
+    public getCycles() {
         return this.cycles;
     }
 
