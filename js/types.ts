@@ -37,3 +37,8 @@ export interface DiskIIDrive extends Drive {
   readOnly: boolean,
   dirty: boolean,
 }
+
+export interface Restorable<T> {
+  getState(): T;
+  setState(state: T): void;
+}
