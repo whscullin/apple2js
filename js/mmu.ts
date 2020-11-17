@@ -13,6 +13,8 @@ import CPU6502 from './cpu6502';
 import RAM from './ram';
 import { debug, toHex } from './util';
 import { byte, Memory } from './types';
+import Apple2IO from './apple2io';
+import { HiresPage, LoresPage, VideoModes } from './canvas';
 
 /*
  * I/O Switch locations
@@ -241,14 +243,14 @@ export default class MMU implements Memory {
     private memE0_FF = [this.rom, new RAM(0xE0, 0xFF), new RAM(0xE0, 0xFF)];
 
     constructor(
-        // TODO(flan): Better typing.
         private readonly cpu: CPU6502,
-        private readonly vm: any,
-        private readonly lores1: any,
-        private readonly lores2: any,
-        private readonly hires1: any,
-        private readonly hires2: any,
-        private readonly io: any,
+        private readonly vm: VideoModes,
+        private readonly lores1: LoresPage,
+        private readonly lores2: LoresPage,
+        private readonly hires1: HiresPage,
+        private readonly hires2: HiresPage,
+        private readonly io: Apple2IO,
+        // TODO(flan): Better typing.
         private readonly rom: any) {
         /*
          * Initialize read/write banks
