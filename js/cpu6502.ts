@@ -1178,7 +1178,7 @@ export default class CPU6502 {
         this.pc = pc;
     }
 
-    public dumpPC(pc: word, symbols: symbols) {
+    public dumpPC(pc: word | undefined, symbols: symbols) {
         if (pc === undefined) {
             pc = this.pc;
         }

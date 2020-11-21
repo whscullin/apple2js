@@ -628,9 +628,9 @@ function _keydown(evt) {
     } else if (evt.keyCode === 114) { // F3
         io.keyDown(0x1b);
     } else if (evt.keyCode === 117) { // F6 Quick Save
-        _apple2.saveState();
+        _apple2.getState();
     } else if (evt.keyCode === 120) { // F9 Quick Restore
-        _apple2.restoreState();
+        _apple2.setState();
     } else if (evt.keyCode == 16) { // Shift
         keyboard.shiftKey(true);
     } else if (evt.keyCode == 20) { // Caps lock
