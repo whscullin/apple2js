@@ -9,7 +9,7 @@
  * implied warranty.
  */
 
-import CPU6502 from './cpu6502';
+import CPU6502, { PageHandler } from './cpu6502';
 import { byte } from './types';
 import { debug } from './util';
 
@@ -65,7 +65,7 @@ const LOC = {
     ACCEL: 0x74, // CPU Speed control
 };
 
-export default class Apple2IO {
+export default class Apple2IO implements PageHandler {
     private _slot: any[] = []; // TODO(flan): Needs typing.
     private _auxRom: any = null; // TODO(flan): Needs typing.
 
@@ -296,7 +296,7 @@ export default class Apple2IO {
         return 0xc0;
     }
 
-    endend() {
+    end() {
         return 0xcf;
     }
 
