@@ -17,7 +17,7 @@ import apple2lc_charset from './roms/apple2lc_char';
 import pigfont_charset from './roms/pigfont_char';
 
 import Apple2ROM from './roms/fpbasic';
-import Apple2jROM from './roms/apple2j_char';
+import Apple2jROM from './roms/apple2j';
 import IntBASIC from './roms/intbasic';
 import OriginalROM from './roms/original';
 
