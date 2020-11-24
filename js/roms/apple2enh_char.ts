@@ -1,4 +1,4 @@
-import { bytify } from "../util";
+import { bytify } from '../util';
 
 const apple2enh_charset = bytify([
     0x1c,0x22,0x2a,0x3a,0x1a,0x02,0x3c,0x00,

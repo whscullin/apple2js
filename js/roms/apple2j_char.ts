@@ -1,4 +1,4 @@
-import { bytify } from "../util";
+import { bytify } from '../util';
 
 const apple2j_charset = bytify([
     0xff,0xef,0xe1,0xed,0xd5,0xfb,0xf7,0xef,

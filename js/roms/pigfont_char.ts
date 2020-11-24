@@ -1,4 +1,4 @@
-import { bytify } from "../util";
+import { bytify } from '../util';
 
 const pigfont_charset = bytify([
     0x00,0x1c,0x22,0x2a,0x2e,0x20,0x1e,0x00,

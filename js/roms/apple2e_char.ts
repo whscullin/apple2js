@@ -1,4 +1,4 @@
-import { bytify } from "../util";
+import { bytify } from '../util';
 
 /* exported apple2e_charset */
 

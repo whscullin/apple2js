@@ -1,4 +1,4 @@
-import { bytify } from "../../util";
+import { bytify } from '../../util';
 
 export const rom = bytify([
     0x08,0x78,0x28,0x2c,0x58,0xff,0x70,0x05, // 00

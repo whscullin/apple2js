@@ -52,7 +52,7 @@ export class Apple2 implements Restorable<State> {
     };
 
     constructor(options: Options) {
-        this.cpu = new CPU6502({ '65C02': options.enhanced })
+        this.cpu = new CPU6502({ '65C02': options.enhanced });
         this.gr = new LoresPage(1, options.characterRom, options.e, options.screen[0]);
         this.gr2 = new LoresPage(2, options.characterRom, options.e, options.screen[1]);
         this.hgr = new HiresPage(1, options.screen[2]);
@@ -68,9 +68,9 @@ export class Apple2 implements Restorable<State> {
             this.mmu = new MMU(this.cpu, this.vm, this.gr, this.gr2, this.hgr, this.hgr2, this.io, options.rom);
             this.cpu.addPageHandler(this.mmu);
         } else {
-            let ram1 = new RAM(0x00, 0x03);
-            let ram2 = new RAM(0x0C, 0x1F);
-            let ram3 = new RAM(0x60, 0xBF);
+            const ram1 = new RAM(0x00, 0x03);
+            const ram2 = new RAM(0x0C, 0x1F);
+            const ram3 = new RAM(0x60, 0xBF);
 
             this.cpu.addPageHandler(ram1);
             this.cpu.addPageHandler(this.gr);
@@ -94,14 +94,15 @@ export class Apple2 implements Restorable<State> {
             return; // already running
         }
 
-        let interval = 30;
+        const interval = 30;
 
         let now, last = Date.now();
-        let runFn = () => {
-            let kHz = this.io.getKHz();
+        const runFn = () => {
+            const kHz = this.io.getKHz();
             now = Date.now();
 
-            let step = (now - last) * kHz, stepMax = kHz * interval;
+            const stepMax = kHz * interval;
+            let step = (now - last) * kHz;
             last = now;
             if (step > stepMax) {
                 step = stepMax;
@@ -109,7 +110,7 @@ export class Apple2 implements Restorable<State> {
 
             if (this.DEBUG) {
                 this.cpu.stepCyclesDebug(this.TRACE ? 1 : step, () => {
-                    let line = this.cpu.dumpRegisters() + ' ' +
+                    const line = this.cpu.dumpRegisters() + ' ' +
                         this.cpu.dumpPC(undefined, SYMBOLS);
                     if (this.TRACE) {
                         debug(line);
@@ -165,7 +166,7 @@ export class Apple2 implements Restorable<State> {
     }
 
     getState(): State {
-        let state: State = {
+        const state: State = {
             cpu: this.cpu.getState(),
         };
 

@@ -1,4 +1,4 @@
-import { bytify } from "../util";
+import { bytify } from '../util';
 
 const rmfont_charset = bytify([
     0x3c,0x42,0x59,0x55,0x55,0x39,0x02,0x3c,

@@ -92,8 +92,8 @@ export const detrans62 = [
  * From Beneath Apple DOS
  */
 export function fourXfour(val: byte): [xx: byte, yy: byte] {
-    var xx = val & 0xaa;
-    var yy = val & 0x55;
+    let xx = val & 0xaa;
+    let yy = val & 0x55;
 
     xx >>= 1;
     xx |= 0xaa;
@@ -128,7 +128,7 @@ export function explodeSector16(volume: byte, track: byte, sector: byte, data: m
      * Address Field
      */
 
-    let checksum = volume ^ track ^ sector;
+    const checksum = volume ^ track ^ sector;
     buf = buf.concat([0xd5, 0xaa, 0x96]); // Address Prolog D5 AA 96
     buf = buf.concat(fourXfour(volume));
     buf = buf.concat(fourXfour(track));
@@ -150,7 +150,7 @@ export function explodeSector16(volume: byte, track: byte, sector: byte, data: m
 
     buf = buf.concat([0xd5, 0xaa, 0xad]); // Data Prolog D5 AA AD
 
-    let nibbles: byte[] = [];
+    const nibbles: byte[] = [];
     const ptr2 = 0;
     const ptr6 = 0x56;
 
@@ -216,7 +216,7 @@ export function explodeSector13(volume: byte, track: byte, sector: byte, data: b
      * Address Field
      */
 
-    let checksum = volume ^ track ^ sector;
+    const checksum = volume ^ track ^ sector;
     buf = buf.concat([0xd5, 0xaa, 0xb5]); // Address Prolog D5 AA B5
     buf = buf.concat(fourXfour(volume));
     buf = buf.concat(fourXfour(track));
@@ -238,24 +238,24 @@ export function explodeSector13(volume: byte, track: byte, sector: byte, data: b
 
     buf = buf.concat([0xd5, 0xaa, 0xad]); // Data Prolog D5 AA AD
 
-    let nibbles = [];
+    const nibbles = [];
 
     let jdx = 0;
     for (let idx = 0x32; idx >= 0; idx--) {
-        var a5 = data[jdx] >> 3;
-        var a3 = data[jdx] & 0x07;
+        const a5 = data[jdx] >> 3;
+        const a3 = data[jdx] & 0x07;
         jdx++;
-        var b5 = data[jdx] >> 3;
-        var b3 = data[jdx] & 0x07;
+        const b5 = data[jdx] >> 3;
+        const b3 = data[jdx] & 0x07;
         jdx++;
-        var c5 = data[jdx] >> 3;
-        var c3 = data[jdx] & 0x07;
+        const c5 = data[jdx] >> 3;
+        const c3 = data[jdx] & 0x07;
         jdx++;
-        var d5 = data[jdx] >> 3;
-        var d3 = data[jdx] & 0x07;
+        const d5 = data[jdx] >> 3;
+        const d3 = data[jdx] & 0x07;
         jdx++;
-        var e5 = data[jdx] >> 3;
-        var e3 = data[jdx] & 0x07;
+        const e5 = data[jdx] >> 3;
+        const e3 = data[jdx] & 0x07;
         jdx++;
         nibbles[idx + 0x00] = a5;
         nibbles[idx + 0x33] = b5;
@@ -294,14 +294,14 @@ export function explodeSector13(volume: byte, track: byte, sector: byte, data: b
 }
 
 export function readSector(drive: Drive, track: byte, sector: byte) {
-    let _sector = drive.format == 'po' ? _PO[sector] : _DO[sector];
+    const _sector = drive.format == 'po' ? _PO[sector] : _DO[sector];
     let val, state = 0;
     let idx = 0;
     let retry = 0;
-    let cur = drive.tracks[track];
+    const cur = drive.tracks[track];
 
     function _readNext() {
-        var result = cur[idx++];
+        const result = cur[idx++];
         if (idx >= cur.length) {
             idx = 0;
             retry++;
@@ -316,73 +316,73 @@ export function readSector(drive: Drive, track: byte, sector: byte) {
         }
     }
     let t = 0, s = 0, v = 0, checkSum;
-    let data = [];
+    const data = [];
     while (retry < 4) {
         switch (state) {
-            case 0:
-                val = _readNext();
-                state = (val === 0xd5) ? 1 : 0;
-                break;
-            case 1:
-                val = _readNext();
-                state = (val === 0xaa) ? 2 : 0;
-                break;
-            case 2:
-                val = _readNext();
-                state = (val === 0x96) ? 3 : (val === 0xad ? 4 : 0);
-                break;
-            case 3: // Address
-                v = defourXfour(_readNext(), _readNext()); // Volume
-                t = defourXfour(_readNext(), _readNext());
-                s = defourXfour(_readNext(), _readNext());
-                checkSum = defourXfour(_readNext(), _readNext());
-                if (checkSum != (v ^ t ^ s)) {
-                    debug('Invalid header checksum:', toHex(v), toHex(t), toHex(s), toHex(checkSum));
+        case 0:
+            val = _readNext();
+            state = (val === 0xd5) ? 1 : 0;
+            break;
+        case 1:
+            val = _readNext();
+            state = (val === 0xaa) ? 2 : 0;
+            break;
+        case 2:
+            val = _readNext();
+            state = (val === 0x96) ? 3 : (val === 0xad ? 4 : 0);
+            break;
+        case 3: // Address
+            v = defourXfour(_readNext(), _readNext()); // Volume
+            t = defourXfour(_readNext(), _readNext());
+            s = defourXfour(_readNext(), _readNext());
+            checkSum = defourXfour(_readNext(), _readNext());
+            if (checkSum != (v ^ t ^ s)) {
+                debug('Invalid header checksum:', toHex(v), toHex(t), toHex(s), toHex(checkSum));
+            }
+            _skipBytes(3); // Skip footer
+            state = 0;
+            break;
+        case 4: // Data
+            if (s === _sector && t === track) {
+                const data2 = [];
+                let last = 0;
+                for (let jdx = 0x55; jdx >= 0; jdx--) {
+                    val = detrans62[_readNext() - 0x80] ^ last;
+                    data2[jdx] = val;
+                    last = val;
                 }
-                _skipBytes(3); // Skip footer
-                state = 0;
-                break;
-            case 4: // Data
-                if (s === _sector && t === track) {
-                    var data2 = [];
-                    var last = 0;
-                    for (let jdx = 0x55; jdx >= 0; jdx--) {
-                        val = detrans62[_readNext() - 0x80] ^ last;
-                        data2[jdx] = val;
-                        last = val;
-                    }
-                    for (let jdx = 0; jdx < 0x100; jdx++) {
-                        val = detrans62[_readNext() - 0x80] ^ last;
-                        data[jdx] = val;
-                        last = val;
-                    }
-                    checkSum = detrans62[_readNext() - 0x80] ^ last;
-                    if (checkSum) {
-                        debug('Invalid data checksum:', toHex(v), toHex(t), toHex(s), toHex(checkSum));
-                    }
-                    for (let kdx = 0, jdx = 0x55; kdx < 0x100; kdx++) {
-                        data[kdx] <<= 1;
-                        if ((data2[jdx] & 0x01) !== 0) {
-                            data[kdx] |= 0x01;
-                        }
-                        data2[jdx] >>= 1;
-
-                        data[kdx] <<= 1;
-                        if ((data2[jdx] & 0x01) !== 0) {
-                            data[kdx] |= 0x01;
-                        }
-                        data2[jdx] >>= 1;
-
-                        if (--jdx < 0) jdx = 0x55;
-                    }
-                    return data;
+                for (let jdx = 0; jdx < 0x100; jdx++) {
+                    val = detrans62[_readNext() - 0x80] ^ last;
+                    data[jdx] = val;
+                    last = val;
                 }
-                else
-                    _skipBytes(0x159); // Skip data, checksum and footer
-                state = 0;
-                break;
-            default:
-                break;
+                checkSum = detrans62[_readNext() - 0x80] ^ last;
+                if (checkSum) {
+                    debug('Invalid data checksum:', toHex(v), toHex(t), toHex(s), toHex(checkSum));
+                }
+                for (let kdx = 0, jdx = 0x55; kdx < 0x100; kdx++) {
+                    data[kdx] <<= 1;
+                    if ((data2[jdx] & 0x01) !== 0) {
+                        data[kdx] |= 0x01;
+                    }
+                    data2[jdx] >>= 1;
+
+                    data[kdx] <<= 1;
+                    if ((data2[jdx] & 0x01) !== 0) {
+                        data[kdx] |= 0x01;
+                    }
+                    data2[jdx] >>= 1;
+
+                    if (--jdx < 0) jdx = 0x55;
+                }
+                return data;
+            }
+            else
+                _skipBytes(0x159); // Skip data, checksum and footer
+            state = 0;
+            break;
+        default:
+            break;
         }
     }
     return [];
@@ -391,7 +391,7 @@ export function readSector(drive: Drive, track: byte, sector: byte) {
 export function jsonEncode(cur: Drive, pretty: boolean) {
     // For 'nib', tracks are encoded as strings. For all other formats,
     // tracks are arrays of sectors which are encoded as strings.
-    let data: string[] | string[][] = [];
+    const data: string[] | string[][] = [];
     let format = 'dsk';
     for (let t = 0; t < cur.tracks.length; t++) {
         data[t] = [];
@@ -399,7 +399,7 @@ export function jsonEncode(cur: Drive, pretty: boolean) {
             format = 'nib';
             data[t] = base64_encode(cur.tracks[t]);
         } else {
-            for (var s = 0; s < 0x10; s++) {
+            for (let s = 0; s < 0x10; s++) {
                 (data[t] as string[])[s] = base64_encode(readSector(cur, t, s));
             }
         }
@@ -414,21 +414,21 @@ export function jsonEncode(cur: Drive, pretty: boolean) {
 }
 
 export function jsonDecode(data: string) {
-    let tracks: memory[] = [];
-    let json = JSON.parse(data);
-    let v = json.volume;
-    let readOnly = json.readOnly;
+    const tracks: memory[] = [];
+    const json = JSON.parse(data);
+    const v = json.volume;
+    const readOnly = json.readOnly;
     for (let t = 0; t < json.data.length; t++) {
         let track: byte[] = [];
         for (let s = 0; s < json.data[t].length; s++) {
-            let _s = 15 - s;
-            let sector: string = json.data[t][_s];
+            const _s = 15 - s;
+            const sector: string = json.data[t][_s];
             const d = base64_decode(sector);
             track = track.concat(explodeSector16(v, t, s, d));
         }
         tracks[t] = bytify(track);
     }
-    let cur: Drive = {
+    const cur: Drive = {
         volume: v,
         format: json.type,
         tracks,

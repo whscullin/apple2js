@@ -1,4 +1,4 @@
-import { bytify } from "../../util";
+import { bytify } from '../../util';
 
 /*
     $Cn01=$20

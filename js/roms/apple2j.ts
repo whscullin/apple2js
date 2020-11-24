@@ -1,5 +1,5 @@
-import { bytify } from "../util";
-import ROM from "./rom";
+import { bytify } from '../util';
+import ROM from './rom';
 
 const rom = bytify([
     0x6f,0xd8,0x65,0xd7,0xf8,0xdc,0x94,0xd9,

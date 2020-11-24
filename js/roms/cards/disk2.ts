@@ -1,4 +1,4 @@
-import { bytify } from "../../util";
+import { bytify } from '../../util';
 
 export const P5_16 = bytify([
     0xa2,0x20,0xa0,0x00,0xa2,0x03,0x86,0x3c,

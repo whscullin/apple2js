@@ -1,4 +1,4 @@
-import { bytify } from "../../util";
+import { bytify } from '../../util';
 
 /*
  * http://dreher.net/?s=projects/CFforAppleII&c=projects/CFforAppleII/downloads1.php

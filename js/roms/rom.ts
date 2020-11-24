@@ -1,27 +1,27 @@
-import { PageHandler } from "../cpu6502";
-import { byte, memory } from "../types";
+import { PageHandler } from '../cpu6502';
+import { byte, memory } from '../types';
 
 export default class ROM implements PageHandler {
 
-  constructor(
+    constructor(
     private readonly startPage: byte,
     private readonly endPage: byte,
     private readonly rom: memory) {
-      const expectedLength = (endPage-startPage+1) * 256;
-      if (rom.length != expectedLength) {
-        throw Error(`rom does not have the correct length: expected ${expectedLength} was ${rom.length}`);
-      }
+        const expectedLength = (endPage-startPage+1) * 256;
+        if (rom.length != expectedLength) {
+            throw Error(`rom does not have the correct length: expected ${expectedLength} was ${rom.length}`);
+        }
     }
 
-  start() {
-      return this.startPage;
-  }
-  end() {
-      return this.endPage;
-  }
-  read(page: byte, off: byte) {
-      return this.rom[(page - this.startPage) << 8 | off];
-  }
-  write() { 
-  }
+    start() {
+        return this.startPage;
+    }
+    end() {
+        return this.endPage;
+    }
+    read(page: byte, off: byte) {
+        return this.rom[(page - this.startPage) << 8 | off];
+    }
+    write() { 
+    }
 }

@@ -24,7 +24,7 @@ let altCharMode = false;
 let an3 = false;
 let doubleHiresMode = false;
 let monoDHRMode = false;
-let colorDHRMode = false;
+const colorDHRMode = false;
 let mixedDHRMode = false;
 let highColorHGRMode = false;
 let highColorTextMode = false;
@@ -74,9 +74,9 @@ function dim(c: Color): Color {
 }
 
 function rowToBase(row: number) {
-    let ab = (row >> 3) & 3;
-    let cd = (row >> 1) & 0x3;
-    let e = row & 1;
+    const ab = (row >> 3) & 3;
+    const cd = (row >> 1) & 0x3;
+    const e = row & 1;
     return (cd << 8) | (e << 7) | (ab << 5) | (ab << 3);
 }
 
@@ -192,22 +192,22 @@ export class LoresPage implements Memory, Restorable<GraphicsState> {
     }
 
     _drawPixel(data: number[], off: number, color: Color) {
-        let c0 = color[0], c1 = color[1], c2 = color[2];
+        const c0 = color[0], c1 = color[1], c2 = color[2];
         data[off + 0] = data[off + 4] = c0;
         data[off + 1] = data[off + 5] = c1;
         data[off + 2] = data[off + 6] = c2;
-        let nextOff = off + 560 * 4;
+        const nextOff = off + 560 * 4;
         data[nextOff] = data[nextOff + 4] = c0;
         data[nextOff + 1] = data[nextOff + 5] = c1;
         data[nextOff + 2] = data[nextOff + 6] = c2;
     }
 
     _drawHalfPixel(data: number[], off: number, color: Color) {
-        let c0 = color[0], c1 = color[1], c2 = color[2];
+        const c0 = color[0], c1 = color[1], c2 = color[2];
         data[off + 0] = c0;
         data[off + 1] = c1;
         data[off + 2] = c2;
-        let nextOff = off + 560 * 4;
+        const nextOff = off + 560 * 4;
         data[nextOff] = c0;
         data[nextOff + 1] = c1;
         data[nextOff + 2] = c2;
@@ -240,13 +240,13 @@ export class LoresPage implements Memory, Restorable<GraphicsState> {
     _end() { return (0x04 * this.page) + 0x03; }
 
     _read(page: byte, off: byte, bank: bank) {
-        var addr = (page << 8) | off, base = addr & 0x3FF;
+        const addr = (page << 8) | off, base = addr & 0x3FF;
         return this._buffer[bank][base];
     }
 
     _write(page: byte, off: byte, val: byte, bank: bank) {
-        let addr = (page << 8) | off;
-        let base = addr & 0x3FF;
+        const addr = (page << 8) | off;
+        const base = addr & 0x3FF;
         let fore, back;
 
         if (this._buffer[bank][base] == val && !this._refreshing) {
@@ -254,16 +254,16 @@ export class LoresPage implements Memory, Restorable<GraphicsState> {
         }
         this._buffer[bank][base] = val;
 
-        let col = (base % 0x80) % 0x28;
-        let adj = off - col;
+        const col = (base % 0x80) % 0x28;
+        const adj = off - col;
 
         // 000001cd eabab000 -> 000abcde
-        let ab = (adj & 0x18);
-        let cd = (page & 0x03) << 1;
-        let ee = adj >> 7;
-        let row = ab | cd | ee;
+        const ab = (adj & 0x18);
+        const cd = (page & 0x03) << 1;
+        const ee = adj >> 7;
+        const row = ab | cd | ee;
 
-        let data = this._imageData.data;
+        const data = this._imageData.data;
         if ((row < 24) && (col < 40)) {
             let y = row << 4;
             if (y < this._dirty.top) { this._dirty.top = y; }
@@ -335,7 +335,7 @@ export class LoresPage implements Memory, Restorable<GraphicsState> {
                             off += 546 * 4 + 560 * 4;
                         }
                     } else {
-                        var colorMode = mixedMode && !textMode && !this._monoMode;
+                        const colorMode = mixedMode && !textMode && !this._monoMode;
                         // var val0 = col > 0 ? _buffer[0][base - 1] : 0;
                         // var val2 = col < 39 ? _buffer[0][base + 1] : 0;
 
@@ -461,7 +461,7 @@ export class LoresPage implements Memory, Restorable<GraphicsState> {
         this._refreshing = true;
         this._blink = !this._blink;
         for (let idx = 0; idx < 0x400; idx++, addr++) {
-            let b = this._buffer[0][idx];
+            const b = this._buffer[0][idx];
             if ((b & 0xC0) == 0x40) {
                 this._write(addr >> 8, addr & 0xff, this._buffer[0][idx], 0);
             }
@@ -477,9 +477,9 @@ export class LoresPage implements Memory, Restorable<GraphicsState> {
     blit(mixed: boolean = false): boolean {
         if (this._dirty.top === 385) { return false; }
         let top = this._dirty.top;
-        let bottom = this._dirty.bottom;
-        let left = this._dirty.left;
-        let right = this._dirty.right;
+        const bottom = this._dirty.bottom;
+        const left = this._dirty.left;
+        const right = this._dirty.right;
 
         if (mixed) {
             if (bottom < 320) { return false; }
@@ -545,8 +545,8 @@ export class LoresPage implements Memory, Restorable<GraphicsState> {
     }
 
     getText() {
-        var buffer = '', line, charCode;
-        var row, col, base;
+        let buffer = '', line, charCode;
+        let row, col, base;
         for (row = 0; row < 24; row++) {
             base = rowToBase(row);
             line = '';
@@ -604,23 +604,23 @@ export class HiresPage implements Memory, Restorable<GraphicsState> {
     }
 
     _drawPixel(data: number[], off: number, color: Color) {
-        var c0 = color[0], c1 = color[1], c2 = color[2];
+        const c0 = color[0], c1 = color[1], c2 = color[2];
 
         data[off + 0] = data[off + 4] = c0;
         data[off + 1] = data[off + 5] = c1;
         data[off + 2] = data[off + 6] = c2;
-        var nextOff = off + 560 * 4;
+        const nextOff = off + 560 * 4;
         data[nextOff] = data[nextOff + 4] = c0;
         data[nextOff + 1] = data[nextOff + 5] = c1;
         data[nextOff + 2] = data[nextOff + 6] = c2;
     }
 
     _drawHalfPixel(data: number[], off: number, color: Color) {
-        var c0 = color[0], c1 = color[1], c2 = color[2];
+        const c0 = color[0], c1 = color[1], c2 = color[2];
         data[off + 0] = c0;
         data[off + 1] = c1;
         data[off + 2] = c2;
-        var nextOff = off + 560 * 4;
+        const nextOff = off + 560 * 4;
         data[nextOff] = c0;
         data[nextOff + 1] = c1;
         data[nextOff + 2] = c2;
@@ -631,24 +631,24 @@ export class HiresPage implements Memory, Restorable<GraphicsState> {
     //
 
     _draw3Pixel(data: number[], off: number, color: Color) {
-        var c0 = color[0], c1 = color[1], c2 = color[2];
+        const c0 = color[0], c1 = color[1], c2 = color[2];
 
         data[off + 0] = data[off + 4] = data[off + 8] = c0;
         data[off + 1] = data[off + 5] = data[off + 9] = c1;
         data[off + 2] = data[off + 6] = data[off + 10] = c2;
-        var nextOff = off + 560 * 4;
+        const nextOff = off + 560 * 4;
         data[nextOff] = data[nextOff + 4] = data[nextOff + 8] = c0;
         data[nextOff + 1] = data[nextOff + 5] = data[nextOff + 9] = c1;
         data[nextOff + 2] = data[nextOff + 6] = data[nextOff + 10] = c2;
     }
 
     _draw4Pixel(data: number[], off: number, color: Color) {
-        var c0 = color[0], c1 = color[1], c2 = color[2];
+        const c0 = color[0], c1 = color[1], c2 = color[2];
 
         data[off + 0] = data[off + 4] = data[off + 8] = data[off + 12] = c0;
         data[off + 1] = data[off + 5] = data[off + 9] = data[off + 13] = c1;
         data[off + 2] = data[off + 6] = data[off + 10] = data[off + 14] = c2;
-        var nextOff = off + 560 * 4;
+        const nextOff = off + 560 * 4;
         data[nextOff] = data[nextOff + 4] = data[nextOff + 8] = data[nextOff + 12] = c0;
         data[nextOff + 1] = data[nextOff + 5] = data[nextOff + 9] = data[nextOff + 13] = c1;
         data[nextOff + 2] = data[nextOff + 6] = data[nextOff + 10] = data[nextOff + 14] = c2;
@@ -677,13 +677,13 @@ export class HiresPage implements Memory, Restorable<GraphicsState> {
     _end() { return (0x020 * this.page) + 0x1f; }
 
     _read(page: byte, off: byte, bank: bank) {
-        let addr = (page << 8) | off, base = addr & 0x1FFF;
+        const addr = (page << 8) | off, base = addr & 0x1FFF;
         return this._buffer[bank][base];
     }
 
     _write(page: byte, off: byte, val: byte, bank: bank) {
-        let addr = (page << 8) | off;
-        let base = addr & 0x1FFF;
+        const addr = (page << 8) | off;
+        const base = addr & 0x1FFF;
 
         if (this._buffer[bank][base] == val && !this._refreshing) {
             return;
@@ -692,18 +692,19 @@ export class HiresPage implements Memory, Restorable<GraphicsState> {
 
         let hbs = val & 0x80;
 
-        let col = (base % 0x80) % 0x28;
-        let adj = off - col;
+        const col = (base % 0x80) % 0x28;
+        const adj = off - col;
 
         // 000001cd eabab000 -> 000abcde
-        let ab = (adj & 0x18);
-        let cd = (page & 0x03) << 1;
-        let e = adj >> 7;
+        const ab = (adj & 0x18);
+        const cd = (page & 0x03) << 1;
+        const e = adj >> 7;
 
-        let rowa = ab | cd | e,
+        const rowa = ab | cd | e,
             rowb = base >> 10;
 
-        let dx, dy, data = this._imageData.data;
+        const data = this._imageData.data;
+        let dx, dy;
         if ((rowa < 24) && (col < 40)) {
             if (!multiScreen && !hiresMode) {
                 return;
@@ -722,8 +723,8 @@ export class HiresPage implements Memory, Restorable<GraphicsState> {
             let bz, b0, b1, b2, b3, b4, c, hb;
             if (oneSixtyMode && !this._monoMode) {
                 // 1 byte = two pixels, but 3:4 ratio
-                let c3 = val & 0xf;
-                let c4 = val >> 4;
+                const c3 = val & 0xf;
+                const c4 = val >> 4;
 
                 dx = col * 2 + (bank ^ 1);
                 off = dx * 28 + dy * 280 * 4 * 2;
@@ -741,7 +742,7 @@ export class HiresPage implements Memory, Restorable<GraphicsState> {
                 // 76543210 76543210 76543210 76543210
                 //  1111222  2333344  4455556  6667777
 
-                let mod = col % 2, mcol = col - mod, baseOff = base - mod;
+                const mod = col % 2, mcol = col - mod, baseOff = base - mod;
                 bz = this._buffer[0][baseOff - 1];
                 b0 = this._buffer[1][baseOff];
                 b1 = this._buffer[0][baseOff];
@@ -759,17 +760,17 @@ export class HiresPage implements Memory, Restorable<GraphicsState> {
                     ((b3 & 0x78) >> 3), // 6
                     0
                 ], // 7
-                    hb = [
-                        0,
-                        b0 & 0x80, // 0
-                        b0 & 0x80, // 1
-                        b1 & 0x80, // 2
-                        b2 & 0x80, // 3
-                        b2 & 0x80, // 4
-                        b3 & 0x80, // 5
-                        b3 & 0x80, // 6
-                        0
-                    ]; // 7
+                hb = [
+                    0,
+                    b0 & 0x80, // 0
+                    b0 & 0x80, // 1
+                    b1 & 0x80, // 2
+                    b2 & 0x80, // 3
+                    b2 & 0x80, // 4
+                    b3 & 0x80, // 5
+                    b3 & 0x80, // 6
+                    0
+                ]; // 7
                 if (col > 0) {
                     c[0] = (bz & 0x78) >> 3;
                     hb[0] = bz & 0x80;
@@ -788,7 +789,7 @@ export class HiresPage implements Memory, Restorable<GraphicsState> {
 
                 for (let idx = 1; idx < 8; idx++) {
                     hbs = hb[idx];
-                    let dcolor = dcolors[r4[c[idx]]];
+                    const dcolor = dcolors[r4[c[idx]]];
                     let bits = c[idx - 1] | (c[idx] << 4) | (c[idx + 1] << 8);
                     for (let jdx = 0; jdx < 4; jdx++, off += 4) {
                         if (monoColor) {
@@ -833,9 +834,9 @@ export class HiresPage implements Memory, Restorable<GraphicsState> {
 
                 if (!this._refreshing) {
                     this._refreshing = true;
-                    let bb: bank = bank ? 0 : 1;
+                    const bb: bank = bank ? 0 : 1;
                     for (let rr = addr - 1; rr <= addr + 1; rr++) {
-                        let vv = this._buffer[bb][rr - 0x2000 * this.page];
+                        const vv = this._buffer[bb][rr - 0x2000 * this.page];
                         this._write(rr >> 8, rr & 0xff, vv, bb);
                     }
                     this._refreshing = false;
@@ -848,11 +849,11 @@ export class HiresPage implements Memory, Restorable<GraphicsState> {
                 b0 = col > 0 ? this._buffer[0][base - 1] : 0;
                 b2 = col < 39 ? this._buffer[0][base + 1] : 0;
                 val |= (b2 & 0x3) << 7;
-                var v0 = b0 & 0x20, v1 = b0 & 0x40, v2 = val & 0x1,
+                let v0 = b0 & 0x20, v1 = b0 & 0x40, v2 = val & 0x1,
                     odd = !(col & 0x1),
-                    color,
-                    oddCol = (hbs ? orangeCol : greenCol),
-                    evenCol = (hbs ? blueCol : violetCol);
+                    color;
+                const oddCol = (hbs ? orangeCol : greenCol);
+                const evenCol = (hbs ? blueCol : violetCol);
 
                 off = dx * 4 + dy * 280 * 4 * 2;
 
@@ -1027,7 +1028,7 @@ export class VideoModes implements Restorable<VideoModesState> {
     }
 
     text(on: boolean) {
-        var old = textMode;
+        const old = textMode;
         textMode = on;
 
         if (old != on) {
@@ -1038,7 +1039,7 @@ export class VideoModes implements Restorable<VideoModesState> {
     _80col(on: boolean) {
         if (!this.e) { return; }
 
-        var old = _80colMode;
+        const old = _80colMode;
         _80colMode = on;
 
         if (old != on) {
@@ -1049,7 +1050,7 @@ export class VideoModes implements Restorable<VideoModesState> {
     altchar(on: boolean) {
         if (!this.e) { return; }
 
-        var old = altCharMode;
+        const old = altCharMode;
         altCharMode = on;
         if (old != on) {
             this._refresh();
@@ -1057,7 +1058,7 @@ export class VideoModes implements Restorable<VideoModesState> {
     }
 
     hires(on: boolean) {
-        var old = hiresMode;
+        const old = hiresMode;
         hiresMode = on;
         if (!on) {
             this._flag = 0;
@@ -1071,7 +1072,7 @@ export class VideoModes implements Restorable<VideoModesState> {
     an3(on: boolean) {
         if (!this.e) { return; }
 
-        var old = an3;
+        const old = an3;
         an3 = on;
 
         if (on) {
@@ -1088,7 +1089,7 @@ export class VideoModes implements Restorable<VideoModesState> {
     }
 
     mixed(on: boolean) {
-        var old = mixedMode;
+        const old = mixedMode;
         mixedMode = on;
         if (old != on) {
             this._refresh();
@@ -1096,7 +1097,7 @@ export class VideoModes implements Restorable<VideoModesState> {
     }
 
     page(pageNo: pageNo) {
-        var old = pageMode;
+        const old = pageMode;
         pageMode = pageNo;
         if (old != pageNo) {
             this._refresh();
@@ -1140,7 +1141,7 @@ export class VideoModes implements Restorable<VideoModesState> {
     }
 
     blit() {
-        var blitted = false;
+        let blitted = false;
         if (multiScreen) {
             blitted = this._grs[0].blit() || blitted;
             blitted = this._grs[1].blit() || blitted;
