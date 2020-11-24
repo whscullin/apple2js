@@ -10,7 +10,7 @@
  */
 
 import { base64_decode, base64_encode } from './base64';
-import { byte } from './types';
+import { byte, memory, Memory } from './types';
 import { allocMemPages } from './util';
 
 export interface State {
@@ -26,38 +26,45 @@ export interface State {
  * Represents RAM from the start page `sp` to end page `ep`. The memory
  * is addressed by `page` and `offset`.
  */
-export default function RAM(sp: byte, ep: byte) {
-    let start_page = sp;
-    let end_page = ep;
+export default class RAM implements Memory {
+    private start_page: byte;
+    private end_page: byte;
+    private mem: memory;
 
-    let mem = allocMemPages(ep - sp + 1);
+    constructor(sp: byte, ep: byte) {
+        this.start_page = sp;
+        this.end_page = ep;
 
-    return {
-        start: function () {
-            return start_page;
-        },
-        end: function () {
-            return end_page;
-        },
-        read: function (page: byte, offset: byte) {
-            return mem[(page - start_page) << 8 | offset];
-        },
-        write: function (page: byte, offset: byte, val: byte) {
-            mem[(page - start_page) << 8 | offset] = val;
-        },
+        this.mem = allocMemPages(ep - sp + 1);
+    }
 
-        getState: function (): State {
-            return {
-                start: start_page,
-                end: end_page,
-                mem: base64_encode(mem)
-            };
-        },
+    public start(): byte {
+        return this.start_page;
+    }
 
-        setState: function (state: State) {
-            start_page = state.start;
-            end_page = state.end;
-            mem = base64_decode(state.mem);
-        }
-    };
+    public end(): byte {
+        return this.end_page;
+    }
+
+    public read(page: byte, offset: byte) {
+        return this.mem[(page - this.start_page) << 8 | offset];
+    }
+
+    public write(page: byte, offset: byte, val: byte) {
+        this.mem[(page - this.start_page) << 8 | offset] = val;
+    }
+
+    public getState(): State {
+        return {
+            start: this.start_page,
+            end: this.end_page,
+            mem: base64_encode(this.mem)
+        };
+    }
+
+    public setState(state: State) {
+        this.start_page = state.start;
+        this.end_page = state.end;
+        this.mem = base64_decode(state.mem);
+    }
 }

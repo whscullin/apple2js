@@ -9,22 +9,20 @@
  * implied warranty.
  */
 
-export default function Prefs()
-{
-    var havePrefs = typeof window.localStorage !== 'undefined';
+const havePrefs = typeof window.localStorage !== 'undefined';
 
-    return {
-        havePrefs: function() {
-            return havePrefs;
-        },
-        readPref: function(name) {
-            if (havePrefs)
-                return window.localStorage.getItem(name);
-            return null;
-        },
-        writePref: function(name, value) {
-            if (havePrefs)
-                window.localStorage.setItem(name, value);
-        }
-    };
+export default class Prefs {
+
+    havePrefs() {
+        return havePrefs;
+    }
+    readPref(name: string): string | null {
+        if (havePrefs)
+            return window.localStorage.getItem(name);
+        return null;
+    }
+    writePref(name: string, value: string) {
+        if (havePrefs)
+            window.localStorage.setItem(name, value);
+    }
 }

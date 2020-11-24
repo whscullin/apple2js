@@ -52,32 +52,32 @@ type Modes = Record<Mode, number>;
 /** Addressing mode name to instruction size mapping. */
 const sizes: Modes = {
     accumulator: 1,
-    implied:     1,
-    immediate:   2,
-    absolute:    3,
-    zeroPage:    2,
-    relative:    2,
+    implied: 1,
+    immediate: 2,
+    absolute: 3,
+    zeroPage: 2,
+    relative: 2,
 
-    absoluteX:   3,
-    absoluteY:   3,
-    zeroPageX:   2,
-    zeroPageY:   2,
+    absoluteX: 3,
+    absoluteY: 3,
+    zeroPageX: 2,
+    zeroPageY: 2,
 
-    absoluteIndirect:   3,
-    zeroPageXIndirect:  2,
-    zeroPageIndirectY:  2,
+    absoluteIndirect: 3,
+    zeroPageXIndirect: 2,
+    zeroPageIndirectY: 2,
 
     /* 65c02 */
-    zeroPageIndirect:   2,
-    absoluteXIndirect:  3,
-    zeroPage_relative:  3
+    zeroPageIndirect: 2,
+    absoluteXIndirect: 3,
+    zeroPage_relative: 3
 };
 
 /** Status register flag numbers. */
 type flag = 0x80 | 0x40 | 0x20 | 0x10 | 0x08 | 0x04 | 0x02 | 0x01;
 
 /** Flags to status byte mask. */
-const flags: {[key: string]: flag} = {
+const flags: { [key: string]: flag } = {
     N: 0x80, // Negative
     V: 0x40, // oVerflow
     B: 0x10, // Break
@@ -95,38 +95,27 @@ const loc = {
     BRK: 0xFFFE
 };
 
-export interface ReadablePage {
+export interface Page {
     read(page: byte, offset: byte): byte;
-}
-
-function isReadablePage(page: ReadablePage | any): page is ReadablePage {
-    return (page as ReadablePage).read !== undefined;
-}
-
-export interface WriteablePage {
     write(page: byte, offset: byte, value: byte): void;
 }
 
-function isWriteablePage(page: WriteablePage | any): page is WriteablePage {
-    return (page as WriteablePage).write !== undefined;
-}
-
-export interface PageHandler {
+export interface PageHandler extends Page {
     start(): byte;
     end(): byte;
-}
-
-function isResettablePageHandler(pageHandler: PageHandler | ResettablePageHandler): pageHandler is ResettablePageHandler {
-    return (pageHandler as ResettablePageHandler).reset !== undefined;
 }
 
 interface ResettablePageHandler extends PageHandler {
     reset(): void;
 }
 
-const BLANK_PAGE: ReadablePage & WriteablePage = {
-    read: function() { return 0; },
-    write: function() {}
+function isResettablePageHandler(pageHandler: PageHandler | ResettablePageHandler): pageHandler is ResettablePageHandler {
+    return (pageHandler as ResettablePageHandler).reset !== undefined;
+}
+
+const BLANK_PAGE: Page = {
+    read: function () { return 0; },
+    write: function () { }
 };
 
 interface Opts {
@@ -168,8 +157,7 @@ export default class CPU6502 {
     private yr = 0; // Y Register
     private sp = 0xff; // Stack Pointer
 
-    private readPages: ReadablePage[] = new Array(0x100);
-    private writePages: WriteablePage[] = new Array(0x100);
+    private memPages: Page[] = new Array(0x100);
     private resetHandlers: ResettablePageHandler[] = [];
     private cycles = 0;
     private sync = false;
@@ -179,8 +167,8 @@ export default class CPU6502 {
     constructor(options: CpuOptions = {}) {
         this.is65C02 = options['65C02'] ? true : false;
 
-        this.readPages.fill(BLANK_PAGE);
-        this.writePages.fill(BLANK_PAGE);
+        this.memPages.fill(BLANK_PAGE);
+        this.memPages.fill(BLANK_PAGE);
 
         // Create this CPU's instruction table
 
@@ -275,7 +263,7 @@ export default class CPU6502 {
             page = addr >> 8,
             off = addr & 0xff;
 
-        const result = this.readPages[page].read(page, off);
+        const result = this.memPages[page].read(page, off);
 
         this.pc = (this.pc + 1) & 0xffff;
 
@@ -288,7 +276,7 @@ export default class CPU6502 {
         const page = addr >> 8,
             off = addr & 0xff;
 
-        const result = this.readPages[page].read(page, off);
+        const result = this.memPages[page].read(page, off);
 
         this.cycles++;
 
@@ -299,14 +287,14 @@ export default class CPU6502 {
         const page = addr >> 8,
             off = addr & 0xff;
 
-        return this.readPages[page].read(page, off);
+        return this.memPages[page].read(page, off);
     }
 
     private writeByte(addr: word, val: byte) {
         const page = addr >> 8,
             off = addr & 0xff;
 
-        this.writePages[page].write(page, off, val);
+        this.memPages[page].write(page, off, val);
 
         this.cycles++;
     }
@@ -632,7 +620,7 @@ export default class CPU6502 {
     }
 
     inc = (readAddrFn: ReadAddrFn) => {
-        const addr = readAddrFn({rwm: true});
+        const addr = readAddrFn({ rwm: true });
         const oldVal = this.readByte(addr);
         this.writeByte(addr, oldVal);
         const val = this.increment(oldVal);
@@ -658,7 +646,7 @@ export default class CPU6502 {
     }
 
     dec = (readAddrFn: ReadAddrFn) => {
-        const addr = readAddrFn({rwm: true});
+        const addr = readAddrFn({ rwm: true });
         const oldVal = this.readByte(addr);
         this.writeByte(addr, oldVal);
         const val = this.decrement(oldVal);
@@ -689,7 +677,7 @@ export default class CPU6502 {
     }
 
     asl = (readAddrFn: ReadAddrFn) => {
-        const addr = readAddrFn({rwm: true});
+        const addr = readAddrFn({ rwm: true });
         const oldVal = this.readByte(addr);
         this.writeByte(addr, oldVal);
         const val = this.shiftLeft(oldVal);
@@ -708,7 +696,7 @@ export default class CPU6502 {
     }
 
     lsr = (readAddrFn: ReadAddrFn) => {
-        const addr = readAddrFn({rwm: true});
+        const addr = readAddrFn({ rwm: true });
         const oldVal = this.readByte(addr);
         this.writeByte(addr, oldVal);
         const val = this.shiftRight(oldVal);
@@ -728,7 +716,7 @@ export default class CPU6502 {
     }
 
     rol = (readAddrFn: ReadAddrFn) => {
-        const addr = readAddrFn({rwm: true});
+        const addr = readAddrFn({ rwm: true });
         const oldVal = this.readByte(addr);
         this.writeByte(addr, oldVal);
         const val = this.rotateLeft(oldVal);
@@ -748,7 +736,7 @@ export default class CPU6502 {
     }
 
     ror = (readAddrFn: ReadAddrFn) => {
-        const addr = readAddrFn({rwm: true});
+        const addr = readAddrFn({ rwm: true });
         const oldVal = this.readByte(addr);
         this.writeByte(addr, oldVal);
         const val = this.rotateRight(oldVal);
@@ -925,7 +913,7 @@ export default class CPU6502 {
 
     phx = () => { this.readByte(this.pc); this.pushByte(this.xr); }
 
-    plx = () => { this.readByte(this.pc); this.readByte(0x0100 | this.sp);this.testNZ(this.xr = this.pullByte()); }
+    plx = () => { this.readByte(this.pc); this.readByte(0x0100 | this.sp); this.testNZ(this.xr = this.pullByte()); }
 
     phy = () => { this.readByte(this.pc); this.pushByte(this.yr); }
 
@@ -997,7 +985,7 @@ export default class CPU6502 {
             const cpu = this;
             unk = {
                 name: '???',
-                op: function(_impliedFn: ImpliedFn) {
+                op: function (_impliedFn: ImpliedFn) {
                     debug('Unknown OpCode: ' + toHex(b) +
                         ' at ' + toHex(cpu.pc - 1, 4));
                 },
@@ -1020,68 +1008,68 @@ export default class CPU6502 {
         let off, val;
         let result = '';
         switch (m) {
-        case 'implied':
-            break;
-        case 'immediate':
-            result = '#' + toHexOrSymbol(this.readByteDebug(addr));
-            break;
-        case 'absolute':
-            result = '' + toHexOrSymbol(this.readWordDebug(addr), 4);
-            break;
-        case 'zeroPage':
-            result = '' + toHexOrSymbol(this.readByteDebug(addr));
-            break;
-        case 'relative':
-            {
-                let off = this.readByteDebug(addr);
+            case 'implied':
+                break;
+            case 'immediate':
+                result = '#' + toHexOrSymbol(this.readByteDebug(addr));
+                break;
+            case 'absolute':
+                result = '' + toHexOrSymbol(this.readWordDebug(addr), 4);
+                break;
+            case 'zeroPage':
+                result = '' + toHexOrSymbol(this.readByteDebug(addr));
+                break;
+            case 'relative':
+                {
+                    let off = this.readByteDebug(addr);
+                    if (off > 127) {
+                        off -= 256;
+                    }
+                    addr += off + 1;
+                    result = '' + toHexOrSymbol(addr, 4) + ' (' + off + ')';
+                }
+                break;
+            case 'absoluteX':
+                result = '' + toHexOrSymbol(this.readWordDebug(addr), 4) + ',X';
+                break;
+            case 'absoluteY':
+                result = '' + toHexOrSymbol(this.readWordDebug(addr), 4) + ',Y';
+                break;
+            case 'zeroPageX':
+                result = '' + toHexOrSymbol(this.readByteDebug(addr)) + ',X';
+                break;
+            case 'zeroPageY':
+                result = '' + toHexOrSymbol(this.readByteDebug(addr)) + ',Y';
+                break;
+            case 'absoluteIndirect':
+                result = '(' + toHexOrSymbol(this.readWordDebug(addr), 4) + ')';
+                break;
+            case 'zeroPageXIndirect':
+                result = '(' + toHexOrSymbol(this.readByteDebug(addr)) + ',X)';
+                break;
+            case 'zeroPageIndirectY':
+                result = '(' + toHexOrSymbol(this.readByteDebug(addr)) + '),Y';
+                break;
+            case 'accumulator':
+                result = 'A';
+                break;
+            case 'zeroPageIndirect':
+                result = '(' + toHexOrSymbol(this.readByteDebug(addr)) + ')';
+                break;
+            case 'absoluteXIndirect':
+                result = '(' + toHexOrSymbol(this.readWordDebug(addr), 4) + ',X)';
+                break;
+            case 'zeroPage_relative':
+                val = this.readByteDebug(addr);
+                off = this.readByteDebug(addr + 1);
                 if (off > 127) {
                     off -= 256;
                 }
-                addr += off + 1;
-                result = '' + toHexOrSymbol(addr, 4) + ' (' + off + ')';
-            }
-            break;
-        case 'absoluteX':
-            result = '' + toHexOrSymbol(this.readWordDebug(addr), 4) + ',X';
-            break;
-        case 'absoluteY':
-            result = '' + toHexOrSymbol(this.readWordDebug(addr), 4) + ',Y';
-            break;
-        case 'zeroPageX':
-            result = '' + toHexOrSymbol(this.readByteDebug(addr)) + ',X';
-            break;
-        case 'zeroPageY':
-            result = '' + toHexOrSymbol(this.readByteDebug(addr)) + ',Y';
-            break;
-        case 'absoluteIndirect':
-            result = '(' + toHexOrSymbol(this.readWordDebug(addr), 4) + ')';
-            break;
-        case 'zeroPageXIndirect':
-            result = '(' + toHexOrSymbol(this.readByteDebug(addr)) + ',X)';
-            break;
-        case 'zeroPageIndirectY':
-            result = '(' + toHexOrSymbol(this.readByteDebug(addr)) + '),Y';
-            break;
-        case 'accumulator':
-            result = 'A';
-            break;
-        case 'zeroPageIndirect':
-            result = '(' + toHexOrSymbol(this.readByteDebug(addr)) + ')';
-            break;
-        case 'absoluteXIndirect':
-            result = '(' + toHexOrSymbol(this.readWordDebug(addr), 4) + ',X)';
-            break;
-        case 'zeroPage_relative':
-            val = this.readByteDebug(addr);
-            off = this.readByteDebug(addr + 1);
-            if (off > 127) {
-                off -= 256;
-            }
-            addr += off + 2;
-            result = '' + toHexOrSymbol(val) + ',' + toHexOrSymbol(addr, 4) + ' (' + off + ')';
-            break;
-        default:
-            break;
+                addr += off + 2;
+                result = '' + toHexOrSymbol(val) + ',' + toHexOrSymbol(addr, 4) + ' (' + off + ')';
+                break;
+            default:
+                break;
         }
         return result;
     }
@@ -1136,12 +1124,9 @@ export default class CPU6502 {
         }
     }
 
-    public addPageHandler(pho: (PageHandler | ResettablePageHandler) & (ReadablePage | WriteablePage)) {
+    public addPageHandler(pho: (PageHandler | ResettablePageHandler) & Page) {
         for (let idx = pho.start(); idx <= pho.end(); idx++) {
-            if (isReadablePage(pho))
-                this.readPages[idx] = pho;
-            if (isWriteablePage(pho))
-                this.writePages[idx] = pho;
+            this.memPages[idx] = pho;
         }
         if (isResettablePageHandler(pho))
             this.resetHandlers.push(pho);
@@ -1193,7 +1178,7 @@ export default class CPU6502 {
         this.pc = pc;
     }
 
-    public dumpPC(pc: word, symbols: symbols) {
+    public dumpPC(pc: word | undefined, symbols: symbols) {
         if (pc === undefined) {
             pc = this.pc;
         }
@@ -1279,7 +1264,7 @@ export default class CPU6502 {
     }
 
     public registers() {
-        return [this.pc,this.ar,this.xr,this.yr,this.sr,this.sp];
+        return [this.pc, this.ar, this.xr, this.yr, this.sr, this.sp];
     }
 
     public getState(): CpuState {
@@ -1323,11 +1308,11 @@ export default class CPU6502 {
     }
 
     public read(page: byte, off: byte): byte {
-        return this.readPages[page].read(page, off);
+        return this.memPages[page].read(page, off);
     }
 
     public write(page: byte, off: byte, val: byte) {
-        this.writePages[page].write(page, off, val);
+        this.memPages[page].write(page, off, val);
     }
 
     OPS_6502: Instructions = {
