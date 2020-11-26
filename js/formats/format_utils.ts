@@ -319,70 +319,70 @@ export function readSector(drive: Drive, track: byte, sector: byte) {
     const data = [];
     while (retry < 4) {
         switch (state) {
-        case 0:
-            val = _readNext();
-            state = (val === 0xd5) ? 1 : 0;
-            break;
-        case 1:
-            val = _readNext();
-            state = (val === 0xaa) ? 2 : 0;
-            break;
-        case 2:
-            val = _readNext();
-            state = (val === 0x96) ? 3 : (val === 0xad ? 4 : 0);
-            break;
-        case 3: // Address
-            v = defourXfour(_readNext(), _readNext()); // Volume
-            t = defourXfour(_readNext(), _readNext());
-            s = defourXfour(_readNext(), _readNext());
-            checkSum = defourXfour(_readNext(), _readNext());
-            if (checkSum != (v ^ t ^ s)) {
-                debug('Invalid header checksum:', toHex(v), toHex(t), toHex(s), toHex(checkSum));
-            }
-            _skipBytes(3); // Skip footer
-            state = 0;
-            break;
-        case 4: // Data
-            if (s === _sector && t === track) {
-                const data2 = [];
-                let last = 0;
-                for (let jdx = 0x55; jdx >= 0; jdx--) {
-                    val = detrans62[_readNext() - 0x80] ^ last;
-                    data2[jdx] = val;
-                    last = val;
+            case 0:
+                val = _readNext();
+                state = (val === 0xd5) ? 1 : 0;
+                break;
+            case 1:
+                val = _readNext();
+                state = (val === 0xaa) ? 2 : 0;
+                break;
+            case 2:
+                val = _readNext();
+                state = (val === 0x96) ? 3 : (val === 0xad ? 4 : 0);
+                break;
+            case 3: // Address
+                v = defourXfour(_readNext(), _readNext()); // Volume
+                t = defourXfour(_readNext(), _readNext());
+                s = defourXfour(_readNext(), _readNext());
+                checkSum = defourXfour(_readNext(), _readNext());
+                if (checkSum != (v ^ t ^ s)) {
+                    debug('Invalid header checksum:', toHex(v), toHex(t), toHex(s), toHex(checkSum));
                 }
-                for (let jdx = 0; jdx < 0x100; jdx++) {
-                    val = detrans62[_readNext() - 0x80] ^ last;
-                    data[jdx] = val;
-                    last = val;
-                }
-                checkSum = detrans62[_readNext() - 0x80] ^ last;
-                if (checkSum) {
-                    debug('Invalid data checksum:', toHex(v), toHex(t), toHex(s), toHex(checkSum));
-                }
-                for (let kdx = 0, jdx = 0x55; kdx < 0x100; kdx++) {
-                    data[kdx] <<= 1;
-                    if ((data2[jdx] & 0x01) !== 0) {
-                        data[kdx] |= 0x01;
+                _skipBytes(3); // Skip footer
+                state = 0;
+                break;
+            case 4: // Data
+                if (s === _sector && t === track) {
+                    const data2 = [];
+                    let last = 0;
+                    for (let jdx = 0x55; jdx >= 0; jdx--) {
+                        val = detrans62[_readNext() - 0x80] ^ last;
+                        data2[jdx] = val;
+                        last = val;
                     }
-                    data2[jdx] >>= 1;
-
-                    data[kdx] <<= 1;
-                    if ((data2[jdx] & 0x01) !== 0) {
-                        data[kdx] |= 0x01;
+                    for (let jdx = 0; jdx < 0x100; jdx++) {
+                        val = detrans62[_readNext() - 0x80] ^ last;
+                        data[jdx] = val;
+                        last = val;
                     }
-                    data2[jdx] >>= 1;
+                    checkSum = detrans62[_readNext() - 0x80] ^ last;
+                    if (checkSum) {
+                        debug('Invalid data checksum:', toHex(v), toHex(t), toHex(s), toHex(checkSum));
+                    }
+                    for (let kdx = 0, jdx = 0x55; kdx < 0x100; kdx++) {
+                        data[kdx] <<= 1;
+                        if ((data2[jdx] & 0x01) !== 0) {
+                            data[kdx] |= 0x01;
+                        }
+                        data2[jdx] >>= 1;
 
-                    if (--jdx < 0) jdx = 0x55;
+                        data[kdx] <<= 1;
+                        if ((data2[jdx] & 0x01) !== 0) {
+                            data[kdx] |= 0x01;
+                        }
+                        data2[jdx] >>= 1;
+
+                        if (--jdx < 0) jdx = 0x55;
+                    }
+                    return data;
                 }
-                return data;
-            }
-            else
-                _skipBytes(0x159); // Skip data, checksum and footer
-            state = 0;
-            break;
-        default:
-            break;
+                else
+                    _skipBytes(0x159); // Skip data, checksum and footer
+                state = 0;
+                break;
+            default:
+                break;
         }
     }
     return [];

@@ -90,46 +90,46 @@ export default function Thunderclock()
 
     function _access(off, val) {
         switch (off & 0x8F) {
-        case LOC.CONTROL:
-            if (val !== undefined) {
-                var strobe = val & FLAGS.STROBE ? true : false;
-                if (strobe !== _strobe) {
-                    _debug('strobe', _strobe ? 'high' : 'low');
-                    if (strobe) {
-                        _command = val & COMMANDS.MASK;
-                        switch (_command) {
-                        case COMMANDS.TIMED:
-                            _debug('TIMED');
-                            _calcBits();
-                            break;
-                        case COMMANDS.REGSHIFT:
-                            _debug('REGSHIFT');
-                            _shiftMode = true;
+            case LOC.CONTROL:
+                if (val !== undefined) {
+                    var strobe = val & FLAGS.STROBE ? true : false;
+                    if (strobe !== _strobe) {
+                        _debug('strobe', _strobe ? 'high' : 'low');
+                        if (strobe) {
+                            _command = val & COMMANDS.MASK;
+                            switch (_command) {
+                                case COMMANDS.TIMED:
+                                    _debug('TIMED');
+                                    _calcBits();
+                                    break;
+                                case COMMANDS.REGSHIFT:
+                                    _debug('REGSHIFT');
+                                    _shiftMode = true;
+                                    _shift();
+                                    break;
+                                case COMMANDS.REGHOLD:
+                                    _debug('REGHOLD');
+                                    _shiftMode = false;
+                                    break;
+                                default:
+                                    _debug('Unknown command', toHex(_command));
+                            }
+                        }
+                    }
+
+                    var clock = val & FLAGS.CLOCK ? true : false;
+
+                    if (clock !== _clock) {
+                        _clock = clock;
+                        _debug('clock', _clock ? 'high' : 'low');
+                        if (clock) {
                             _shift();
-                            break;
-                        case COMMANDS.REGHOLD:
-                            _debug('REGHOLD');
-                            _shiftMode = false;
-                            break;
-                        default:
-                            _debug('Unknown command', toHex(_command));
                         }
                     }
                 }
-
-                var clock = val & FLAGS.CLOCK ? true : false;
-
-                if (clock !== _clock) {
-                    _clock = clock;
-                    _debug('clock', _clock ? 'high' : 'low');
-                    if (clock) {
-                        _shift();
-                    }
-                }
-            }
-            break;
-        case LOC.AUX:
-            break;
+                break;
+            case LOC.AUX:
+                break;
         }
         return _register;
     }

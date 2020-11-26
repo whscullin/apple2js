@@ -230,17 +230,17 @@ export default function SmartPort(io, cpu, options ) {
         var readMode = val === undefined;
 
         switch (off & 0x8f) {
-        case 0x80:
-            if (readMode) {
-                result = 0;
-                for (var idx = 0; idx < disks.length; idx++) {
-                    result <<= 1;
-                    if (disks[idx]) {
-                        result |= 0x01;
+            case 0x80:
+                if (readMode) {
+                    result = 0;
+                    for (var idx = 0; idx < disks.length; idx++) {
+                        result <<= 1;
+                        if (disks[idx]) {
+                            result |= 0x01;
+                        }
                     }
                 }
-            }
-            break;
+                break;
         }
 
         return result;
@@ -285,21 +285,21 @@ export default function SmartPort(io, cpu, options ) {
                 _debug('buffer=' + toHex(buffer) + ' block=' + toHex(block));
 
                 switch (cmd) {
-                case 0: // INFO
-                    getDeviceInfo(state, drive);
-                    break;
+                    case 0: // INFO
+                        getDeviceInfo(state, drive);
+                        break;
 
-                case 1: // READ
-                    readBlock(state, drive, block, buffer);
-                    break;
+                    case 1: // READ
+                        readBlock(state, drive, block, buffer);
+                        break;
 
-                case 2: // WRITE
-                    writeBlock(state, drive, block, buffer);
-                    break;
+                    case 2: // WRITE
+                        writeBlock(state, drive, block, buffer);
+                        break;
 
-                case 3: // FORMAT
-                    formatDevice(state, unit);
-                    break;
+                    case 3: // FORMAT
+                        formatDevice(state, unit);
+                        break;
                 }
             } else if (off == smartOff && cpu.getSync()) {
                 _debug('smartport entry');
@@ -326,81 +326,81 @@ export default function SmartPort(io, cpu, options ) {
 
                 _debug('parameterCount=' + parameterCount);
                 switch (cmd) {
-                case 0x00: // INFO
-                    status = cmdListAddr.inc(4).readByte();
-                    _debug('info unit=' + unit);
-                    _debug('info buffer=' + buffer);
-                    _debug('info status=' + status);
-                    switch (unit) {
-                    case 0:
-                        switch (status) {
-                        case 0:
-                            buffer.writeByte(1); // one device
-                            buffer.inc(1).writeByte(1 << 6); // no interrupts
-                            buffer.inc(2).writeByte(0); // reserved
-                            buffer.inc(3).writeByte(0); // reserved
-                            buffer.inc(4).writeByte(0); // reserved
-                            buffer.inc(5).writeByte(0); // reserved
-                            buffer.inc(6).writeByte(0); // reserved
-                            buffer.inc(7).writeByte(0); // reserved
-                            state.x = 8;
-                            state.y = 0;
-                            state.a = 0;
-                            state.s &= 0xfe;
-                            break;
+                    case 0x00: // INFO
+                        status = cmdListAddr.inc(4).readByte();
+                        _debug('info unit=' + unit);
+                        _debug('info buffer=' + buffer);
+                        _debug('info status=' + status);
+                        switch (unit) {
+                            case 0:
+                                switch (status) {
+                                    case 0:
+                                        buffer.writeByte(1); // one device
+                                        buffer.inc(1).writeByte(1 << 6); // no interrupts
+                                        buffer.inc(2).writeByte(0); // reserved
+                                        buffer.inc(3).writeByte(0); // reserved
+                                        buffer.inc(4).writeByte(0); // reserved
+                                        buffer.inc(5).writeByte(0); // reserved
+                                        buffer.inc(6).writeByte(0); // reserved
+                                        buffer.inc(7).writeByte(0); // reserved
+                                        state.x = 8;
+                                        state.y = 0;
+                                        state.a = 0;
+                                        state.s &= 0xfe;
+                                        break;
+                                }
+                                break;
+                            default: // Unit 1
+                                switch (status) {
+                                    case 0:
+                                        var blocks = disks[unit].length;
+                                        buffer.writeByte(0xf0); // W/R Block device in drive
+                                        buffer.inc(1).writeByte(blocks & 0xff); // 1600 blocks
+                                        buffer.inc(2).writeByte((blocks & 0xff00) >> 8);
+                                        buffer.inc(3).writeByte((blocks & 0xff0000) >> 16);
+                                        state.x = 4;
+                                        state.y = 0;
+                                        state.a = 0;
+                                        state.s &= 0xfe;
+                                        break;
+                                }
+                                break;
                         }
+                        state.a = 0;
+                        state.s &= 0xfe;
                         break;
-                    default: // Unit 1
-                        switch (status) {
-                        case 0:
-                            var blocks = disks[unit].length;
-                            buffer.writeByte(0xf0); // W/R Block device in drive
-                            buffer.inc(1).writeByte(blocks & 0xff); // 1600 blocks
-                            buffer.inc(2).writeByte((blocks & 0xff00) >> 8);
-                            buffer.inc(3).writeByte((blocks & 0xff0000) >> 16);
-                            state.x = 4;
-                            state.y = 0;
-                            state.a = 0;
-                            state.s &= 0xfe;
-                            break;
-                        }
+
+                    case 0x01: // READ BLOCK
+                        block = cmdListAddr.inc(4).readWord();
+                        readBlock(state, unit, block, buffer);
                         break;
-                    }
-                    state.a = 0;
-                    state.s &= 0xfe;
-                    break;
 
-                case 0x01: // READ BLOCK
-                    block = cmdListAddr.inc(4).readWord();
-                    readBlock(state, unit, block, buffer);
-                    break;
+                    case 0x02: // WRITE BLOCK
+                        block = cmdListAddr.inc(4).readWord();
+                        writeBlock(state, unit, block, buffer);
+                        break;
 
-                case 0x02: // WRITE BLOCK
-                    block = cmdListAddr.inc(4).readWord();
-                    writeBlock(state, unit, block, buffer);
-                    break;
+                    case 0x03: // FORMAT
+                        formatDevice(state, unit);
+                        break;
 
-                case 0x03: // FORMAT
-                    formatDevice(state, unit);
-                    break;
+                    case 0x04: // CONTROL
+                        break;
 
-                case 0x04: // CONTROL
-                    break;
+                    case 0x05: // INIT
+                        break;
 
-                case 0x05: // INIT
-                    break;
+                    case 0x06: // OPEN
+                        break;
 
-                case 0x06: // OPEN
-                    break;
+                    case 0x07: // CLOSE
+                        break;
 
-                case 0x07: // CLOSE
-                    break;
+                    case 0x08: // READ
+                        break;
 
-                case 0x08: // READ
-                    break;
-
-                case 0x09: // WRITE
-                    break;
+                    case 0x09: // WRITE
+                        break;
                 }
             }
 

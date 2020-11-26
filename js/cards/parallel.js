@@ -22,13 +22,13 @@ export default function Parallel(io, cbs) {
 
     function _access(off, val) {
         switch (off & 0x8f) {
-        case LOC.IOREG:
-            if (cbs.putChar && val) {
-                cbs.putChar(val);
-            }
-            break;
-        default:
-            debug('Parallel card unknown softswitch', off);
+            case LOC.IOREG:
+                if (cbs.putChar && val) {
+                    cbs.putChar(val);
+                }
+                break;
+            default:
+                debug('Parallel card unknown softswitch', off);
         }
     }
 

@@ -190,34 +190,34 @@ export default function Videoterm(io, context) {
         var writeMode = val !== undefined;
         var result = undefined;
         switch (off & 0x81) {
-        case LOC.IOREG:
-            if (writeMode) {
-                _curReg = val;
-            } else {
-                result = _curReg;
-            }
-            break;
-        case LOC.IOVAL:
-            if (writeMode) {
-                _regs[_curReg] = val;
-                switch (_curReg) {
-                case REGS.CURSOR_UPPER:
-                case REGS.CURSOR_LOWER:
-                    _refreshCursor(true);
-                    break;
-                case REGS.CURSOR_HI:
-                case REGS.CURSOR_LO:
-                    _refreshCursor(true);
-                    break;
-                case REGS.STARTPOS_HI:
-                case REGS.STARTPOS_LO:
-                    _updateStartPos();
-                    break;
+            case LOC.IOREG:
+                if (writeMode) {
+                    _curReg = val;
+                } else {
+                    result = _curReg;
                 }
-            } else {
-                result = _regs[_curReg];
-            }
-            break;
+                break;
+            case LOC.IOVAL:
+                if (writeMode) {
+                    _regs[_curReg] = val;
+                    switch (_curReg) {
+                        case REGS.CURSOR_UPPER:
+                        case REGS.CURSOR_LOWER:
+                            _refreshCursor(true);
+                            break;
+                        case REGS.CURSOR_HI:
+                        case REGS.CURSOR_LO:
+                            _refreshCursor(true);
+                            break;
+                        case REGS.STARTPOS_HI:
+                        case REGS.STARTPOS_LO:
+                            _updateStartPos();
+                            break;
+                    }
+                } else {
+                    result = _regs[_curReg];
+                }
+                break;
         }
         _bank = (off & 0x0C) >> 2;
         return result;

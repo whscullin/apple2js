@@ -141,148 +141,148 @@ export default class Apple2IO implements PageHandler {
         const now = this.cpu.getCycles();
         const delta = now - this._trigger;
         switch (off) {
-        case LOC.CLRTEXT:
-            this._debug('Graphics Mode');
-            this.vm.text(false);
-            break;
-        case LOC.SETTEXT:
-            this._debug('Text Mode');
-            this.vm.text(true);
-            break;
-        case LOC.CLRMIXED:
-            this._debug('Mixed Mode off');
-            this.vm.mixed(false);
-            break;
-        case LOC.SETMIXED:
-            this._debug('Mixed Mode on');
-            this.vm.mixed(true);
-            break;
-        case LOC.CLRHIRES:
-            this._debug('LoRes Mode');
-            this.vm.hires(false);
-            break;
-        case LOC.SETHIRES:
-            this._debug('HiRes Mode');
-            this.vm.hires(true);
-            break;
-        case LOC.PAGE1:
-            this.vm.page(1);
-            break;
-        case LOC.PAGE2:
-            this.vm.page(2);
-            break;
-        case LOC.SETAN0:
-            this._debug('Annunciator 0 on');
-            this._annunciators[0] = true;
-            break;
-        case LOC.SETAN1:
-            this._debug('Annunciator 1 on');
-            this._annunciators[1] = true;
-            break;
-        case LOC.SETAN2:
-            this._debug('Annunciator 2 on');
-            this._annunciators[2] = true;
-            break;
-        case LOC.SETAN3:
-            this._debug('Annunciator 3 on');
-            this._annunciators[3] = true;
-            break;
-        case LOC.CLRAN0:
-            this._debug('Annunciator 0 off');
-            this._annunciators[0] = false;
-            break;
-        case LOC.CLRAN1:
-            this._debug('Annunciator 1 off');
-            this._annunciators[1] = false;
-            break;
-        case LOC.CLRAN2:
-            this._debug('Annunciator 2 off');
-            this._annunciators[2] = false;
-            break;
-        case LOC.CLRAN3:
-            this._debug('Annunciator 3 off');
-            this._annunciators[3] = false;
-            break;
-        case LOC.PB0:
-            result = this._button[0] ? 0x80 : 0;
-            break;
-        case LOC.PB1:
-            result = this._button[1] ? 0x80 : 0;
-            break;
-        case LOC.PB2:
-            result = this._button[2] ? 0x80 : 0;
-            break;
-        case LOC.PADDLE0:
-            result = (delta < (this._paddle[0] * 2756) ? 0x80 : 0x00);
-            break;
-        case LOC.PADDLE1:
-            result = (delta < (this._paddle[1] * 2756) ? 0x80 : 0x00);
-            break;
-        case LOC.PADDLE2:
-            result = (delta < (this._paddle[2] * 2756) ? 0x80 : 0x00);
-            break;
-        case LOC.PADDLE3:
-            result = (delta < (this._paddle[3] * 2756) ? 0x80 : 0x00);
-            break;
-        case LOC.ACCEL:
-            if (val !== undefined) {
-                this._updateKHz(val & 0x01 ? 1023 : 4096);
-            }
-            break;
-        case LOC.TAPEIN:
-            if (this._tapeOffset == -1) {
-                this._tapeOffset = 0;
-                this._tapeNext = now;
-            }
+            case LOC.CLRTEXT:
+                this._debug('Graphics Mode');
+                this.vm.text(false);
+                break;
+            case LOC.SETTEXT:
+                this._debug('Text Mode');
+                this.vm.text(true);
+                break;
+            case LOC.CLRMIXED:
+                this._debug('Mixed Mode off');
+                this.vm.mixed(false);
+                break;
+            case LOC.SETMIXED:
+                this._debug('Mixed Mode on');
+                this.vm.mixed(true);
+                break;
+            case LOC.CLRHIRES:
+                this._debug('LoRes Mode');
+                this.vm.hires(false);
+                break;
+            case LOC.SETHIRES:
+                this._debug('HiRes Mode');
+                this.vm.hires(true);
+                break;
+            case LOC.PAGE1:
+                this.vm.page(1);
+                break;
+            case LOC.PAGE2:
+                this.vm.page(2);
+                break;
+            case LOC.SETAN0:
+                this._debug('Annunciator 0 on');
+                this._annunciators[0] = true;
+                break;
+            case LOC.SETAN1:
+                this._debug('Annunciator 1 on');
+                this._annunciators[1] = true;
+                break;
+            case LOC.SETAN2:
+                this._debug('Annunciator 2 on');
+                this._annunciators[2] = true;
+                break;
+            case LOC.SETAN3:
+                this._debug('Annunciator 3 on');
+                this._annunciators[3] = true;
+                break;
+            case LOC.CLRAN0:
+                this._debug('Annunciator 0 off');
+                this._annunciators[0] = false;
+                break;
+            case LOC.CLRAN1:
+                this._debug('Annunciator 1 off');
+                this._annunciators[1] = false;
+                break;
+            case LOC.CLRAN2:
+                this._debug('Annunciator 2 off');
+                this._annunciators[2] = false;
+                break;
+            case LOC.CLRAN3:
+                this._debug('Annunciator 3 off');
+                this._annunciators[3] = false;
+                break;
+            case LOC.PB0:
+                result = this._button[0] ? 0x80 : 0;
+                break;
+            case LOC.PB1:
+                result = this._button[1] ? 0x80 : 0;
+                break;
+            case LOC.PB2:
+                result = this._button[2] ? 0x80 : 0;
+                break;
+            case LOC.PADDLE0:
+                result = (delta < (this._paddle[0] * 2756) ? 0x80 : 0x00);
+                break;
+            case LOC.PADDLE1:
+                result = (delta < (this._paddle[1] * 2756) ? 0x80 : 0x00);
+                break;
+            case LOC.PADDLE2:
+                result = (delta < (this._paddle[2] * 2756) ? 0x80 : 0x00);
+                break;
+            case LOC.PADDLE3:
+                result = (delta < (this._paddle[3] * 2756) ? 0x80 : 0x00);
+                break;
+            case LOC.ACCEL:
+                if (val !== undefined) {
+                    this._updateKHz(val & 0x01 ? 1023 : 4096);
+                }
+                break;
+            case LOC.TAPEIN:
+                if (this._tapeOffset == -1) {
+                    this._tapeOffset = 0;
+                    this._tapeNext = now;
+                }
 
-            if (this._tapeOffset < this._tape.length) {
-                this._tapeCurrent = this._tape[this._tapeOffset][1];
-                while (now >= this._tapeNext) {
-                    if ((this._tapeOffset % 1000) === 0) {
-                        debug('Read ' + (this._tapeOffset / 1000));
-                    }
+                if (this._tapeOffset < this._tape.length) {
                     this._tapeCurrent = this._tape[this._tapeOffset][1];
-                    this._tapeNext += this._tape[this._tapeOffset++][0];
-                }
-
-            }
-
-            result = this._tapeCurrent ? 0x80 : 0x00;
-            break;
-
-        default:
-            switch (off & 0xf0) {
-            case LOC.KEYBOARD: // C00x
-                result = this._key;
-                break;
-            case LOC.STROBE: // C01x
-                this._key &= 0x7f;
-                if (this._buffer.length > 0) {
-                    let val = this._buffer.shift() as string;
-                    if (val == '\n') {
-                        val = '\r';
+                    while (now >= this._tapeNext) {
+                        if ((this._tapeOffset % 1000) === 0) {
+                            debug('Read ' + (this._tapeOffset / 1000));
+                        }
+                        this._tapeCurrent = this._tape[this._tapeOffset][1];
+                        this._tapeNext += this._tape[this._tapeOffset++][0];
                     }
-                    this._key = val.charCodeAt(0) | 0x80;
+
                 }
-                result = (this._keyDown ? 0x80 : 0x00) | this._key;
+
+                result = this._tapeCurrent ? 0x80 : 0x00;
                 break;
-            case LOC.TAPEOUT: // C02x
-                this._phase = -this._phase;
-                this._didAudio = true;
-                this._tick();
-                break;
-            case LOC.SPEAKER: // C03x
-                this._phase = -this._phase;
-                this._didAudio = true;
-                this._tick();
-                break;
-            case LOC.C040STB: // C04x
-                // I/O Strobe
-                break;
-            case LOC.PDLTRIG: // C07x
-                this._trigger = this.cpu.getCycles();
-                break;
-            }
+
+            default:
+                switch (off & 0xf0) {
+                    case LOC.KEYBOARD: // C00x
+                        result = this._key;
+                        break;
+                    case LOC.STROBE: // C01x
+                        this._key &= 0x7f;
+                        if (this._buffer.length > 0) {
+                            let val = this._buffer.shift() as string;
+                            if (val == '\n') {
+                                val = '\r';
+                            }
+                            this._key = val.charCodeAt(0) | 0x80;
+                        }
+                        result = (this._keyDown ? 0x80 : 0x00) | this._key;
+                        break;
+                    case LOC.TAPEOUT: // C02x
+                        this._phase = -this._phase;
+                        this._didAudio = true;
+                        this._tick();
+                        break;
+                    case LOC.SPEAKER: // C03x
+                        this._phase = -this._phase;
+                        this._didAudio = true;
+                        this._tick();
+                        break;
+                    case LOC.C040STB: // C04x
+                        // I/O Strobe
+                        break;
+                    case LOC.PDLTRIG: // C07x
+                        this._trigger = this.cpu.getCycles();
+                        break;
+                }
         }
 
         if (val !== undefined) {
@@ -339,31 +339,31 @@ export default class Apple2IO implements PageHandler {
         let card;
 
         switch (page) {
-        case 0xc0:
-            result = this.ioSwitch(off, undefined);
-            break;
-        case 0xc1:
-        case 0xc2:
-        case 0xc3:
-        case 0xc4:
-        case 0xc5:
-        case 0xc6:
-        case 0xc7:
-            slot = page & 0x0f;
-            card = this._slot[slot];
-            if (this._auxRom != card) {
+            case 0xc0:
+                result = this.ioSwitch(off, undefined);
+                break;
+            case 0xc1:
+            case 0xc2:
+            case 0xc3:
+            case 0xc4:
+            case 0xc5:
+            case 0xc6:
+            case 0xc7:
+                slot = page & 0x0f;
+                card = this._slot[slot];
+                if (this._auxRom != card) {
                 // _debug('Setting auxRom to slot', slot);
-                this._auxRom = card;
-            }
-            if (card) {
-                result = card.read(page, off);
-            }
-            break;
-        default:
-            if (this._auxRom) {
-                result = this._auxRom.read(page, off);
-            }
-            break;
+                    this._auxRom = card;
+                }
+                if (card) {
+                    result = card.read(page, off);
+                }
+                break;
+            default:
+                if (this._auxRom) {
+                    result = this._auxRom.read(page, off);
+                }
+                break;
         }
         return result;
     }
@@ -373,31 +373,31 @@ export default class Apple2IO implements PageHandler {
         let card;
 
         switch (page) {
-        case 0xc0:
-            this.ioSwitch(off, val);
-            break;
-        case 0xc1:
-        case 0xc2:
-        case 0xc3:
-        case 0xc4:
-        case 0xc5:
-        case 0xc6:
-        case 0xc7:
-            slot = page & 0x0f;
-            card = this._slot[slot];
-            if (this._auxRom != card) {
+            case 0xc0:
+                this.ioSwitch(off, val);
+                break;
+            case 0xc1:
+            case 0xc2:
+            case 0xc3:
+            case 0xc4:
+            case 0xc5:
+            case 0xc6:
+            case 0xc7:
+                slot = page & 0x0f;
+                card = this._slot[slot];
+                if (this._auxRom != card) {
                 // _debug('Setting auxRom to slot', slot);
-                this._auxRom = card;
-            }
-            if (card) {
-                card.write(page, off, val);
-            }
-            break;
-        default:
-            if (this._auxRom) {
-                this._auxRom.write(page, off, val);
-            }
-            break;
+                    this._auxRom = card;
+                }
+                if (card) {
+                    card.write(page, off, val);
+                }
+                break;
+            default:
+                if (this._auxRom) {
+                    this._auxRom.write(page, off, val);
+                }
+                break;
         }
     }
 

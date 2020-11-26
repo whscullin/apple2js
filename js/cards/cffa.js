@@ -209,55 +209,55 @@ export default function CFFA() {
 
         if (readMode) {
             switch (off & 0x8f) {
-            case LOC.ATADataHigh:   // 0x00
-                retVal = _dataHigh;
-                break;
-            case LOC.SetCSMask:     // 0x01
-                _disableSignalling = true;
-                break;
-            case LOC.ClearCSMask:   // 0x02
-                _disableSignalling = false;
-                break;
-            case LOC.WriteEEPROM:   // 0x03
-                _writeEEPROM = true;
-                break;
-            case LOC.NoWriteEEPROM: // 0x04
-                _writeEEPROM = false;
-                break;
-            case LOC.ATAAltStatus:  // 0x06
-                retVal = _altStatus;
-                break;
-            case LOC.ATADataLow:    // 0x08
-                _dataHigh = _curSector[_curWord] >> 8;
-                retVal = _curSector[_curWord] & 0xff;
-                if (!_disableSignalling) {
-                    _curWord++;
-                }
-                break;
-            case LOC.AError:        // 0x09
-                retVal = _error;
-                break;
-            case LOC.ASectorCnt:    // 0x0A
-                retVal = _sectorCnt;
-                break;
-            case LOC.ASector:       // 0x0B
-                retVal = _sector;
-                break;
-            case LOC.ATACylinder:   // 0x0C
-                retVal = _cylinder;
-                break;
-            case LOC.ATACylinderH:  // 0x0D
-                retVal = _cylinderH;
-                break;
-            case LOC.ATAHead:       // 0x0E
-                retVal = _head | (_lba ? 0x40 : 0) | (_drive ? 0x10 : 0) | 0xA0;
-                break;
-            case LOC.ATAStatus:     // 0x0F
-                retVal = _sectors[_drive].length > 0 ? STATUS.DRDY | STATUS.DSC : 0;
-                _debug('returning status', _statusString(retVal));
-                break;
-            default:
-                debug('read unknown soft switch', toHex(off));
+                case LOC.ATADataHigh:   // 0x00
+                    retVal = _dataHigh;
+                    break;
+                case LOC.SetCSMask:     // 0x01
+                    _disableSignalling = true;
+                    break;
+                case LOC.ClearCSMask:   // 0x02
+                    _disableSignalling = false;
+                    break;
+                case LOC.WriteEEPROM:   // 0x03
+                    _writeEEPROM = true;
+                    break;
+                case LOC.NoWriteEEPROM: // 0x04
+                    _writeEEPROM = false;
+                    break;
+                case LOC.ATAAltStatus:  // 0x06
+                    retVal = _altStatus;
+                    break;
+                case LOC.ATADataLow:    // 0x08
+                    _dataHigh = _curSector[_curWord] >> 8;
+                    retVal = _curSector[_curWord] & 0xff;
+                    if (!_disableSignalling) {
+                        _curWord++;
+                    }
+                    break;
+                case LOC.AError:        // 0x09
+                    retVal = _error;
+                    break;
+                case LOC.ASectorCnt:    // 0x0A
+                    retVal = _sectorCnt;
+                    break;
+                case LOC.ASector:       // 0x0B
+                    retVal = _sector;
+                    break;
+                case LOC.ATACylinder:   // 0x0C
+                    retVal = _cylinder;
+                    break;
+                case LOC.ATACylinderH:  // 0x0D
+                    retVal = _cylinderH;
+                    break;
+                case LOC.ATAHead:       // 0x0E
+                    retVal = _head | (_lba ? 0x40 : 0) | (_drive ? 0x10 : 0) | 0xA0;
+                    break;
+                case LOC.ATAStatus:     // 0x0F
+                    retVal = _sectors[_drive].length > 0 ? STATUS.DRDY | STATUS.DSC : 0;
+                    _debug('returning status', _statusString(retVal));
+                    break;
+                default:
+                    debug('read unknown soft switch', toHex(off));
             }
 
             if (off & 0x7) { // Anything but data high/low
@@ -269,85 +269,85 @@ export default function CFFA() {
             }
 
             switch (off & 0x8f) {
-            case LOC.ATADataHigh:   // 0x00
-                _dataHigh = val;
-                break;
-            case LOC.SetCSMask:     // 0x01
-                _disableSignalling = true;
-                break;
-            case LOC.ClearCSMask:   // 0x02
-                _disableSignalling = false;
-                break;
-            case LOC.WriteEEPROM:   // 0x03
-                _writeEEPROM = true;
-                break;
-            case LOC.NoWriteEEPROM: // 0x04
-                _writeEEPROM = false;
-                break;
-            case LOC.ATADevCtrl:    // 0x06
-                _debug('devCtrl:', toHex(val));
-                _interruptsEnabled = (val & 0x04) ? true : false;
-                _debug('Interrupts', _interruptsEnabled ? 'enabled' : 'disabled');
-                if (val & 0x02) {
-                    _reset();
-                }
-                break;
-            case LOC.ATADataLow:    // 0x08
-                _curSector[_curWord] = _dataHigh << 8 | val;
-                _curWord++;
-                break;
-            case LOC.ASectorCnt:    // 0x0a
-                _debug('setting sector count', val);
-                _sectorCnt = val;
-                break;
-            case LOC.ASector:       // 0x0b
-                _debug('setting sector', toHex(val));
-                _sector = val;
-                break;
-            case LOC.ATACylinder:   // 0x0c
-                _debug('setting cylinder', toHex(val));
-                _cylinder = val;
-                break;
-            case LOC.ATACylinderH:  // 0x0d
-                _debug('setting cylinder high', toHex(val));
-                _cylinderH = val;
-                break;
-            case LOC.ATAHead:
-                _head = val & 0xf;
-                _lba = val & 0x40 ? true : false;
-                _drive = val & 0x10 ? 1 : 0;
-                _debug('setting head', toHex(val & 0xf), 'drive', _drive);
-                if (!_lba) {
-                    console.error('CHS mode not supported');
-                }
-                break;
-            case LOC.ATACommand:    // 0x0f
-                _debug('command:', toHex(val));
-                sector = _head << 24 | _cylinderH << 16 | _cylinder << 8 | _sector;
-                _dumpSector(sector);
+                case LOC.ATADataHigh:   // 0x00
+                    _dataHigh = val;
+                    break;
+                case LOC.SetCSMask:     // 0x01
+                    _disableSignalling = true;
+                    break;
+                case LOC.ClearCSMask:   // 0x02
+                    _disableSignalling = false;
+                    break;
+                case LOC.WriteEEPROM:   // 0x03
+                    _writeEEPROM = true;
+                    break;
+                case LOC.NoWriteEEPROM: // 0x04
+                    _writeEEPROM = false;
+                    break;
+                case LOC.ATADevCtrl:    // 0x06
+                    _debug('devCtrl:', toHex(val));
+                    _interruptsEnabled = (val & 0x04) ? true : false;
+                    _debug('Interrupts', _interruptsEnabled ? 'enabled' : 'disabled');
+                    if (val & 0x02) {
+                        _reset();
+                    }
+                    break;
+                case LOC.ATADataLow:    // 0x08
+                    _curSector[_curWord] = _dataHigh << 8 | val;
+                    _curWord++;
+                    break;
+                case LOC.ASectorCnt:    // 0x0a
+                    _debug('setting sector count', val);
+                    _sectorCnt = val;
+                    break;
+                case LOC.ASector:       // 0x0b
+                    _debug('setting sector', toHex(val));
+                    _sector = val;
+                    break;
+                case LOC.ATACylinder:   // 0x0c
+                    _debug('setting cylinder', toHex(val));
+                    _cylinder = val;
+                    break;
+                case LOC.ATACylinderH:  // 0x0d
+                    _debug('setting cylinder high', toHex(val));
+                    _cylinderH = val;
+                    break;
+                case LOC.ATAHead:
+                    _head = val & 0xf;
+                    _lba = val & 0x40 ? true : false;
+                    _drive = val & 0x10 ? 1 : 0;
+                    _debug('setting head', toHex(val & 0xf), 'drive', _drive);
+                    if (!_lba) {
+                        console.error('CHS mode not supported');
+                    }
+                    break;
+                case LOC.ATACommand:    // 0x0f
+                    _debug('command:', toHex(val));
+                    sector = _head << 24 | _cylinderH << 16 | _cylinder << 8 | _sector;
+                    _dumpSector(sector);
 
-                switch (val) {
-                case COMMANDS.ATAIdentify:
-                    _debug('ATA identify');
-                    _curSector = _identity[_drive];
-                    _curWord = 0;
-                    break;
-                case COMMANDS.ATACRead:
-                    _debug('ATA read sector', toHex(_cylinderH), toHex(_cylinder), toHex(_sector), sector);
-                    _curSector = _sectors[_drive][sector];
-                    _curWord = 0;
-                    break;
-                case COMMANDS.ATACWrite:
-                    _debug('ATA write sector', toHex(_cylinderH), toHex(_cylinder), toHex(_sector), sector);
-                    _curSector = _sectors[_drive][sector];
-                    _curWord = 0;
+                    switch (val) {
+                        case COMMANDS.ATAIdentify:
+                            _debug('ATA identify');
+                            _curSector = _identity[_drive];
+                            _curWord = 0;
+                            break;
+                        case COMMANDS.ATACRead:
+                            _debug('ATA read sector', toHex(_cylinderH), toHex(_cylinder), toHex(_sector), sector);
+                            _curSector = _sectors[_drive][sector];
+                            _curWord = 0;
+                            break;
+                        case COMMANDS.ATACWrite:
+                            _debug('ATA write sector', toHex(_cylinderH), toHex(_cylinder), toHex(_sector), sector);
+                            _curSector = _sectors[_drive][sector];
+                            _curWord = 0;
+                            break;
+                        default:
+                            debug('unknown command', toHex(val));
+                    }
                     break;
                 default:
-                    debug('unknown command', toHex(val));
-                }
-                break;
-            default:
-                debug('write unknown soft switch', toHex(off), toHex(val));
+                    debug('write unknown soft switch', toHex(off), toHex(val));
             }
         }
 

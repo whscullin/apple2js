@@ -85,73 +85,73 @@ export default function LanguageCard(io, rom) {
         var readMode = val === undefined;
         var result = 0;
         switch (off & 0x8B) {
-        case LOC.READBSR2: // 0xC080
-            _readbsr = true;
-            _writebsr = false;
-            _bsr2 = true;
-            _prewrite = false;
-            _debug('Bank 2 Read');
-            break;
-        case LOC.WRITEBSR2: // 0xC081
-            _readbsr = false;
-            if (readMode) {
-                _writebsr = _prewrite;
-            }
-            _bsr2 = true;
-            _prewrite = readMode;
-            _debug('Bank 2 Write');
-            break;
-        case LOC.OFFBSR2: // 0xC082
-            _readbsr = false;
-            _writebsr = false;
-            _bsr2 = true;
-            _prewrite = false;
-            _debug('Bank 2 Off');
-            break;
-        case LOC.READWRBSR2: // 0xC083
-            _readbsr = true;
-            if (readMode) {
-                _writebsr = _prewrite;
-            }
-            _bsr2 = true;
-            _prewrite = readMode;
-            _debug('Bank 2 Read/Write');
-            break;
+            case LOC.READBSR2: // 0xC080
+                _readbsr = true;
+                _writebsr = false;
+                _bsr2 = true;
+                _prewrite = false;
+                _debug('Bank 2 Read');
+                break;
+            case LOC.WRITEBSR2: // 0xC081
+                _readbsr = false;
+                if (readMode) {
+                    _writebsr = _prewrite;
+                }
+                _bsr2 = true;
+                _prewrite = readMode;
+                _debug('Bank 2 Write');
+                break;
+            case LOC.OFFBSR2: // 0xC082
+                _readbsr = false;
+                _writebsr = false;
+                _bsr2 = true;
+                _prewrite = false;
+                _debug('Bank 2 Off');
+                break;
+            case LOC.READWRBSR2: // 0xC083
+                _readbsr = true;
+                if (readMode) {
+                    _writebsr = _prewrite;
+                }
+                _bsr2 = true;
+                _prewrite = readMode;
+                _debug('Bank 2 Read/Write');
+                break;
 
-        case LOC.READBSR1: // 0xC088
-            _readbsr = true;
-            _writebsr = false;
-            _bsr2 = false;
-            _prewrite = false;
-            _debug('Bank 1 Read');
-            break;
-        case LOC.WRITEBSR1: // 0xC089
-            _readbsr = false;
-            if (readMode) {
-                _writebsr = _prewrite;
-            }
-            _bsr2 = false;
-            _prewrite = readMode;
-            _debug('Bank 1 Write');
-            break;
-        case LOC.OFFBSR1: // 0xC08A
-            _readbsr = false;
-            _writebsr = false;
-            _bsr2 = false;
-            _prewrite = false;
-            _debug('Bank 1 Off');
-            break;
-        case LOC.READWRBSR1: // 0xC08B
-            _readbsr = true;
-            if (readMode) {
-                _writebsr = _prewrite;
-            }
-            _bsr2 = false;
-            _prewrite = readMode;
-            _debug('Bank 1 Read/Write');
-            break;
-        default:
-            break;
+            case LOC.READBSR1: // 0xC088
+                _readbsr = true;
+                _writebsr = false;
+                _bsr2 = false;
+                _prewrite = false;
+                _debug('Bank 1 Read');
+                break;
+            case LOC.WRITEBSR1: // 0xC089
+                _readbsr = false;
+                if (readMode) {
+                    _writebsr = _prewrite;
+                }
+                _bsr2 = false;
+                _prewrite = readMode;
+                _debug('Bank 1 Write');
+                break;
+            case LOC.OFFBSR1: // 0xC08A
+                _readbsr = false;
+                _writebsr = false;
+                _bsr2 = false;
+                _prewrite = false;
+                _debug('Bank 1 Off');
+                break;
+            case LOC.READWRBSR1: // 0xC08B
+                _readbsr = true;
+                if (readMode) {
+                    _writebsr = _prewrite;
+                }
+                _bsr2 = false;
+                _prewrite = readMode;
+                _debug('Bank 1 Read/Write');
+                break;
+            default:
+                break;
         }
 
         _updateBanks();

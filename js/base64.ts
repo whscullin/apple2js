@@ -50,12 +50,12 @@ export function base64_encode(data: memory) {
     enc = tmp_arr.join('');
 
     switch (data.length % 3) {
-    case 1:
-        enc = enc.slice(0, -2) + '==';
-        break;
-    case 2:
-        enc = enc.slice(0, -1) + '=';
-        break;
+        case 1:
+            enc = enc.slice(0, -2) + '==';
+            break;
+        case 2:
+            enc = enc.slice(0, -1) + '=';
+            break;
     }
 
     return enc;

@@ -1008,68 +1008,68 @@ export default class CPU6502 {
         let off, val;
         let result = '';
         switch (m) {
-        case 'implied':
-            break;
-        case 'immediate':
-            result = '#' + toHexOrSymbol(this.readByteDebug(addr));
-            break;
-        case 'absolute':
-            result = '' + toHexOrSymbol(this.readWordDebug(addr), 4);
-            break;
-        case 'zeroPage':
-            result = '' + toHexOrSymbol(this.readByteDebug(addr));
-            break;
-        case 'relative':
-            {
-                let off = this.readByteDebug(addr);
+            case 'implied':
+                break;
+            case 'immediate':
+                result = '#' + toHexOrSymbol(this.readByteDebug(addr));
+                break;
+            case 'absolute':
+                result = '' + toHexOrSymbol(this.readWordDebug(addr), 4);
+                break;
+            case 'zeroPage':
+                result = '' + toHexOrSymbol(this.readByteDebug(addr));
+                break;
+            case 'relative':
+                {
+                    let off = this.readByteDebug(addr);
+                    if (off > 127) {
+                        off -= 256;
+                    }
+                    addr += off + 1;
+                    result = '' + toHexOrSymbol(addr, 4) + ' (' + off + ')';
+                }
+                break;
+            case 'absoluteX':
+                result = '' + toHexOrSymbol(this.readWordDebug(addr), 4) + ',X';
+                break;
+            case 'absoluteY':
+                result = '' + toHexOrSymbol(this.readWordDebug(addr), 4) + ',Y';
+                break;
+            case 'zeroPageX':
+                result = '' + toHexOrSymbol(this.readByteDebug(addr)) + ',X';
+                break;
+            case 'zeroPageY':
+                result = '' + toHexOrSymbol(this.readByteDebug(addr)) + ',Y';
+                break;
+            case 'absoluteIndirect':
+                result = '(' + toHexOrSymbol(this.readWordDebug(addr), 4) + ')';
+                break;
+            case 'zeroPageXIndirect':
+                result = '(' + toHexOrSymbol(this.readByteDebug(addr)) + ',X)';
+                break;
+            case 'zeroPageIndirectY':
+                result = '(' + toHexOrSymbol(this.readByteDebug(addr)) + '),Y';
+                break;
+            case 'accumulator':
+                result = 'A';
+                break;
+            case 'zeroPageIndirect':
+                result = '(' + toHexOrSymbol(this.readByteDebug(addr)) + ')';
+                break;
+            case 'absoluteXIndirect':
+                result = '(' + toHexOrSymbol(this.readWordDebug(addr), 4) + ',X)';
+                break;
+            case 'zeroPage_relative':
+                val = this.readByteDebug(addr);
+                off = this.readByteDebug(addr + 1);
                 if (off > 127) {
                     off -= 256;
                 }
-                addr += off + 1;
-                result = '' + toHexOrSymbol(addr, 4) + ' (' + off + ')';
-            }
-            break;
-        case 'absoluteX':
-            result = '' + toHexOrSymbol(this.readWordDebug(addr), 4) + ',X';
-            break;
-        case 'absoluteY':
-            result = '' + toHexOrSymbol(this.readWordDebug(addr), 4) + ',Y';
-            break;
-        case 'zeroPageX':
-            result = '' + toHexOrSymbol(this.readByteDebug(addr)) + ',X';
-            break;
-        case 'zeroPageY':
-            result = '' + toHexOrSymbol(this.readByteDebug(addr)) + ',Y';
-            break;
-        case 'absoluteIndirect':
-            result = '(' + toHexOrSymbol(this.readWordDebug(addr), 4) + ')';
-            break;
-        case 'zeroPageXIndirect':
-            result = '(' + toHexOrSymbol(this.readByteDebug(addr)) + ',X)';
-            break;
-        case 'zeroPageIndirectY':
-            result = '(' + toHexOrSymbol(this.readByteDebug(addr)) + '),Y';
-            break;
-        case 'accumulator':
-            result = 'A';
-            break;
-        case 'zeroPageIndirect':
-            result = '(' + toHexOrSymbol(this.readByteDebug(addr)) + ')';
-            break;
-        case 'absoluteXIndirect':
-            result = '(' + toHexOrSymbol(this.readWordDebug(addr), 4) + ',X)';
-            break;
-        case 'zeroPage_relative':
-            val = this.readByteDebug(addr);
-            off = this.readByteDebug(addr + 1);
-            if (off > 127) {
-                off -= 256;
-            }
-            addr += off + 2;
-            result = '' + toHexOrSymbol(val) + ',' + toHexOrSymbol(addr, 4) + ' (' + off + ')';
-            break;
-        default:
-            break;
+                addr += off + 2;
+                result = '' + toHexOrSymbol(val) + ',' + toHexOrSymbol(addr, 4) + ' (' + off + ')';
+                break;
+            default:
+                break;
         }
         return result;
     }

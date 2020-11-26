@@ -66,49 +66,49 @@ export default function RAMFactor(io, size) {
     function _access(off, val) {
         var result = 0;
         switch (off & 0x8f) {
-        case LOC.RAMLO:
-        case LOC._RAMLO:
-            if (val !== undefined) {
-                _setlo(val);
-            } else {
-                result = _ramlo;
-            }
-            break;
-        case LOC.RAMMID:
-        case LOC._RAMMID:
-            if (val !== undefined) {
-                _setmid(val);
-            } else {
-                result = _rammid;
-            }
-            break;
-        case LOC.RAMHI:
-        case LOC._RAMHI:
-            if (val !== undefined) {
-                _sethi(val);
-            } else {
-                result = _ramhi;
-                result |= 0xf0;
-            }
-            break;
-        case LOC.RAMDATA:
-        case LOC._RAMDATA:
-            if (val !== undefined) {
-                mem[_loc % mem.length] = val;
-            } else {
-                result = mem[_loc % mem.length];
-            }
-            _setlo(_ramlo + 1);
-            break;
-        case LOC.BANK:
-            if (val !== undefined) {
-                _firmware = val & 0x01;
-            } else {
-                result = _firmware;
-            }
-            break;
-        default:
-            break;
+            case LOC.RAMLO:
+            case LOC._RAMLO:
+                if (val !== undefined) {
+                    _setlo(val);
+                } else {
+                    result = _ramlo;
+                }
+                break;
+            case LOC.RAMMID:
+            case LOC._RAMMID:
+                if (val !== undefined) {
+                    _setmid(val);
+                } else {
+                    result = _rammid;
+                }
+                break;
+            case LOC.RAMHI:
+            case LOC._RAMHI:
+                if (val !== undefined) {
+                    _sethi(val);
+                } else {
+                    result = _ramhi;
+                    result |= 0xf0;
+                }
+                break;
+            case LOC.RAMDATA:
+            case LOC._RAMDATA:
+                if (val !== undefined) {
+                    mem[_loc % mem.length] = val;
+                } else {
+                    result = mem[_loc % mem.length];
+                }
+                _setlo(_ramlo + 1);
+                break;
+            case LOC.BANK:
+                if (val !== undefined) {
+                    _firmware = val & 0x01;
+                } else {
+                    result = _firmware;
+                }
+                break;
+            default:
+                break;
         }
         _loc = (_ramhi << 16) | (_rammid << 8) | (_ramlo);
 

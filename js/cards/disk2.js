@@ -179,27 +179,27 @@ export default function DiskII(io, callbacks, sectors = 16)
             }
 
             switch (command & 0xf) {
-            case 0x0: // CLR
-                _latch = 0;
-                break;
-            case 0x8: // NOP
-                break;
-            case 0x9: // SL0
-                _latch = (_latch << 1) & 0xff;
-                break;
-            case 0xA: // SR
-                _latch >>= 1;
-                if (_cur.readOnly) {
-                    _latch |= 0x80;
-                }
-                break;
-            case 0xB: // LD
-                _latch = _bus;
-                debug('Loading', toHex(_latch), 'from bus');
-                break;
-            case 0xD: // SL1
-                _latch = ((_latch << 1) | 0x01) & 0xff;
-                break;
+                case 0x0: // CLR
+                    _latch = 0;
+                    break;
+                case 0x8: // NOP
+                    break;
+                case 0x9: // SL0
+                    _latch = (_latch << 1) & 0xff;
+                    break;
+                case 0xA: // SR
+                    _latch >>= 1;
+                    if (_cur.readOnly) {
+                        _latch |= 0x80;
+                    }
+                    break;
+                case 0xB: // LD
+                    _latch = _bus;
+                    debug('Loading', toHex(_latch), 'from bus');
+                    break;
+                case 0xD: // SL1
+                    _latch = ((_latch << 1) | 0x01) & 0xff;
+                    break;
             }
             _state = command >> 4;
 
@@ -295,115 +295,115 @@ export default function DiskII(io, callbacks, sectors = 16)
         var readMode = val === undefined;
 
         switch (off & 0x8f) {
-        case LOC.PHASE0OFF: // 0x00
-            setPhase(0, false);
-            break;
-        case LOC.PHASE0ON: // 0x01
-            setPhase(0, true);
-            break;
-        case LOC.PHASE1OFF: // 0x02
-            setPhase(1, false);
-            break;
-        case LOC.PHASE1ON: // 0x03
-            setPhase(1, true);
-            break;
-        case LOC.PHASE2OFF: // 0x04
-            setPhase(2, false);
-            break;
-        case LOC.PHASE2ON: // 0x05
-            setPhase(2, true);
-            break;
-        case LOC.PHASE3OFF: // 0x06
-            setPhase(3, false);
-            break;
-        case LOC.PHASE3ON:  // 0x07
-            setPhase(3, true);
-            break;
+            case LOC.PHASE0OFF: // 0x00
+                setPhase(0, false);
+                break;
+            case LOC.PHASE0ON: // 0x01
+                setPhase(0, true);
+                break;
+            case LOC.PHASE1OFF: // 0x02
+                setPhase(1, false);
+                break;
+            case LOC.PHASE1ON: // 0x03
+                setPhase(1, true);
+                break;
+            case LOC.PHASE2OFF: // 0x04
+                setPhase(2, false);
+                break;
+            case LOC.PHASE2ON: // 0x05
+                setPhase(2, true);
+                break;
+            case LOC.PHASE3OFF: // 0x06
+                setPhase(3, false);
+                break;
+            case LOC.PHASE3ON:  // 0x07
+                setPhase(3, true);
+                break;
 
-        case LOC.DRIVEOFF: // 0x08
-            if (!_offTimeout) {
-                if (_on) {
-                    _offTimeout = window.setTimeout(function() {
-                        _debug('Drive Off');
-                        _on = false;
-                        if (callbacks.driveLight) { callbacks.driveLight(_drive, false); }
-                    }, 1000);
-                }
-            }
-            break;
-        case LOC.DRIVEON: // 0x09
-            if (_offTimeout) {
-                window.clearTimeout(_offTimeout);
-                _offTimeout = null;
-            }
-            if (!_on) {
-                _debug('Drive On');
-                _on = true;
-                _lastCycles = io.cycles();
-                if (callbacks.driveLight) { callbacks.driveLight(_drive, true); }
-            }
-            break;
-
-        case LOC.DRIVE1:  // 0x0a
-            _debug('Disk 1');
-            _drive = 1;
-            _cur = _drives[_drive - 1];
-            if (_on && callbacks.driveLight) {
-                callbacks.driveLight(2, false);
-                callbacks.driveLight(1, true);
-            }
-            break;
-        case LOC.DRIVE2:  // 0x0b
-            _debug('Disk 2');
-            _drive = 2;
-            _cur = _drives[_drive - 1];
-            if (_on && callbacks.driveLight)  {
-                callbacks.driveLight(1, false);
-                callbacks.driveLight(2, true);
-            }
-            break;
-
-        case LOC.DRIVEREAD: // 0x0c (Q6L) Shift
-            _q6 = 0;
-            if (_writeMode) {
-                _debug('clearing _q6/SHIFT');
-            }
-            if (!_cur.rawTracks) {
-                _readWriteNext();
-            }
-            break;
-
-        case LOC.DRIVEWRITE: // 0x0d (Q6H) LOAD
-            _q6 = 1;
-            if (_writeMode) {
-                _debug('setting _q6/LOAD');
-            }
-            if (!_cur.rawTracks) {
-                if (readMode && !_writeMode) {
-                    if (_cur.readOnly) {
-                        _latch = 0xff;
-                        _debug('Setting readOnly');
-                    } else {
-                        _latch = _latch >> 1;
-                        _debug('Clearing readOnly');
+            case LOC.DRIVEOFF: // 0x08
+                if (!_offTimeout) {
+                    if (_on) {
+                        _offTimeout = window.setTimeout(function() {
+                            _debug('Drive Off');
+                            _on = false;
+                            if (callbacks.driveLight) { callbacks.driveLight(_drive, false); }
+                        }, 1000);
                     }
                 }
-            }
-            break;
+                break;
+            case LOC.DRIVEON: // 0x09
+                if (_offTimeout) {
+                    window.clearTimeout(_offTimeout);
+                    _offTimeout = null;
+                }
+                if (!_on) {
+                    _debug('Drive On');
+                    _on = true;
+                    _lastCycles = io.cycles();
+                    if (callbacks.driveLight) { callbacks.driveLight(_drive, true); }
+                }
+                break;
 
-        case LOC.DRIVEREADMODE:  // 0x0e (Q7L)
-            _debug('Read Mode');
-            _q7 = 0;
-            _writeMode = false;
-            break;
-        case LOC.DRIVEWRITEMODE: // 0x0f (Q7H)
-            _debug('Write Mode');
-            _q7 = 1;
-            _writeMode = true;
-            break;
+            case LOC.DRIVE1:  // 0x0a
+                _debug('Disk 1');
+                _drive = 1;
+                _cur = _drives[_drive - 1];
+                if (_on && callbacks.driveLight) {
+                    callbacks.driveLight(2, false);
+                    callbacks.driveLight(1, true);
+                }
+                break;
+            case LOC.DRIVE2:  // 0x0b
+                _debug('Disk 2');
+                _drive = 2;
+                _cur = _drives[_drive - 1];
+                if (_on && callbacks.driveLight)  {
+                    callbacks.driveLight(1, false);
+                    callbacks.driveLight(2, true);
+                }
+                break;
 
-        default:
-            break;
+            case LOC.DRIVEREAD: // 0x0c (Q6L) Shift
+                _q6 = 0;
+                if (_writeMode) {
+                    _debug('clearing _q6/SHIFT');
+                }
+                if (!_cur.rawTracks) {
+                    _readWriteNext();
+                }
+                break;
+
+            case LOC.DRIVEWRITE: // 0x0d (Q6H) LOAD
+                _q6 = 1;
+                if (_writeMode) {
+                    _debug('setting _q6/LOAD');
+                }
+                if (!_cur.rawTracks) {
+                    if (readMode && !_writeMode) {
+                        if (_cur.readOnly) {
+                            _latch = 0xff;
+                            _debug('Setting readOnly');
+                        } else {
+                            _latch = _latch >> 1;
+                            _debug('Clearing readOnly');
+                        }
+                    }
+                }
+                break;
+
+            case LOC.DRIVEREADMODE:  // 0x0e (Q7L)
+                _debug('Read Mode');
+                _q7 = 0;
+                _writeMode = false;
+                break;
+            case LOC.DRIVEWRITEMODE: // 0x0f (Q7H)
+                _debug('Write Mode');
+                _q7 = 1;
+                _writeMode = true;
+                break;
+
+            default:
+                break;
         }
 
         _moveHead();
@@ -576,21 +576,21 @@ export default function DiskII(io, callbacks, sectors = 16)
             };
 
             switch (fmt) {
-            case 'd13':
-                disk = new D13(options);
-                break;
-            case 'do':
-            case 'dsk':
-                disk = new DOS(options);
-                break;
-            case 'nib':
-                disk = new Nibble(options);
-                break;
-            case 'po':
-                disk = new ProDOS(options);
-                break;
-            default:
-                return false;
+                case 'd13':
+                    disk = new D13(options);
+                    break;
+                case 'do':
+                case 'dsk':
+                    disk = new DOS(options);
+                    break;
+                case 'nib':
+                    disk = new Nibble(options);
+                    break;
+                case 'po':
+                    disk = new ProDOS(options);
+                    break;
+                default:
+                    return false;
             }
 
             Object.assign(cur, disk);
@@ -621,27 +621,27 @@ export default function DiskII(io, callbacks, sectors = 16)
             };
 
             switch (fmt) {
-            case '2mg':
-                disk = new _2MG(options);
-                break;
-            case 'd13':
-                disk = new D13(options);
-                break;
-            case 'do':
-            case 'dsk':
-                disk = new DOS(options);
-                break;
-            case 'nib':
-                disk = new Nibble(options);
-                break;
-            case 'po':
-                disk = new ProDOS(options);
-                break;
-            case 'woz':
-                disk = new Woz(options);
-                break;
-            default:
-                return false;
+                case '2mg':
+                    disk = new _2MG(options);
+                    break;
+                case 'd13':
+                    disk = new D13(options);
+                    break;
+                case 'do':
+                case 'dsk':
+                    disk = new DOS(options);
+                    break;
+                case 'nib':
+                    disk = new Nibble(options);
+                    break;
+                case 'po':
+                    disk = new ProDOS(options);
+                    break;
+                case 'woz':
+                    disk = new Woz(options);
+                    break;
+                default:
+                    return false;
             }
 
             Object.assign(cur, disk);

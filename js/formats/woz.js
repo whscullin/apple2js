@@ -199,14 +199,14 @@ export default function Woz(options) {
         var wozSignature = dv.getUint32(WOZ_HEADER_START + 0, true);
 
         switch (wozSignature) {
-        case WOZ1_SIGNATURE:
-            wozVersion = 1;
-            break;
-        case WOZ2_SIGNATURE:
-            wozVersion = 2;
-            break;
-        default:
-            return false;
+            case WOZ1_SIGNATURE:
+                wozVersion = 1;
+                break;
+            case WOZ2_SIGNATURE:
+                wozVersion = 2;
+                break;
+            default:
+                return false;
         }
 
         if (dv.getUint32(WOZ_HEADER_START + 4, true) !== WOZ_INTEGRITY_CHECK) {
@@ -238,27 +238,27 @@ export default function Woz(options) {
         var chunk = readChunk();
         while (chunk) {
             switch (chunk.type) {
-            case 0x4F464E49: // INFO
-                chunks.info = new InfoChunk(chunk.data);
-                break;
-            case 0x50414D54: // TMAP
-                chunks.tmap = new TMapChunk(chunk.data);
-                break;
-            case 0x534B5254: // TRKS
-                if (wozVersion === 1) {
-                    chunks.trks = new TrksChunk(chunk.data);
-                } else {
-                    chunks.trks = new TrksChunk2(chunk.data);
-                }
-                break;
-            case 0x4154454D: // META
-                chunks.meta = new MetaChunk(chunk.data);
-                break;
-            case 0x54495257: // WRIT
+                case 0x4F464E49: // INFO
+                    chunks.info = new InfoChunk(chunk.data);
+                    break;
+                case 0x50414D54: // TMAP
+                    chunks.tmap = new TMapChunk(chunk.data);
+                    break;
+                case 0x534B5254: // TRKS
+                    if (wozVersion === 1) {
+                        chunks.trks = new TrksChunk(chunk.data);
+                    } else {
+                        chunks.trks = new TrksChunk2(chunk.data);
+                    }
+                    break;
+                case 0x4154454D: // META
+                    chunks.meta = new MetaChunk(chunk.data);
+                    break;
+                case 0x54495257: // WRIT
                 // Ignore
-                break;
-            default:
-                debug('Unsupported chunk', toHex(chunk.type, 8));
+                    break;
+                default:
+                    debug('Unsupported chunk', toHex(chunk.type, 8));
             }
             chunk = readChunk();
         }

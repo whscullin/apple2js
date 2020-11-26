@@ -27,18 +27,18 @@ var rom;
 var characterRom = apple2e_charset;
 
 switch (romVersion) {
-case 'apple2e':
-    rom = new Apple2eROM();
-    break;
-case 'apple2rm':
-    rom = new Apple2eEnhancedROM();
-    characterRom = rmfont_charset;
-    enhanced = true;
-    break;
-default:
-    rom = new Apple2eEnhancedROM();
-    characterRom = apple2enh_charset;
-    enhanced = true;
+    case 'apple2e':
+        rom = new Apple2eROM();
+        break;
+    case 'apple2rm':
+        rom = new Apple2eEnhancedROM();
+        characterRom = rmfont_charset;
+        enhanced = true;
+        break;
+    default:
+        rom = new Apple2eEnhancedROM();
+        characterRom = apple2enh_charset;
+        enhanced = true;
 }
 
 var options = {

@@ -338,68 +338,68 @@ export default function KeyBoard(cpu, io, e) {
                 this.classList.add('pressed');
                 var key = this.dataset[shifted ? 'key2' : 'key1'];
                 switch (key) {
-                case 'BELL':
-                    key = 'G';
-                    break;
-                case 'RETURN':
-                    key = '\r';
-                    break;
-                case 'TAB':
-                    key = '\t';
-                    break;
-                case 'DELETE':
-                    key = '\x7F';
-                    break;
-                case '&larr;':
-                    key = '\x08';
-                    break;
-                case '&rarr;':
-                    key = '\x15';
-                    break;
-                case '&darr;':
-                    key = '\x0A';
-                    break;
-                case '&uarr;':
-                    key = '\x0B';
-                    break;
-                case '&nbsp;':
-                    key = ' ';
-                    break;
-                case 'ESC':
-                    key = '\x1B';
-                    break;
-                default:
-                    break;
+                    case 'BELL':
+                        key = 'G';
+                        break;
+                    case 'RETURN':
+                        key = '\r';
+                        break;
+                    case 'TAB':
+                        key = '\t';
+                        break;
+                    case 'DELETE':
+                        key = '\x7F';
+                        break;
+                    case '&larr;':
+                        key = '\x08';
+                        break;
+                    case '&rarr;':
+                        key = '\x15';
+                        break;
+                    case '&darr;':
+                        key = '\x0A';
+                        break;
+                    case '&uarr;':
+                        key = '\x0B';
+                        break;
+                    case '&nbsp;':
+                        key = ' ';
+                        break;
+                    case 'ESC':
+                        key = '\x1B';
+                        break;
+                    default:
+                        break;
                 }
 
                 if (key.length > 1) {
                     switch (key) {
-                    case 'SHIFT':
-                        self.shiftKey(!shifted);
-                        break;
-                    case 'CTRL':
-                        self.controlKey(!controlled);
-                        break;
-                    case 'CAPS':
-                    case 'LOCK':
-                        self.capslockKey(undefined);
-                        break;
-                    case 'POW':
-                    case 'POWER':
-                        if (window.confirm('Power Cycle?'))
-                            window.location.reload();
-                        break;
-                    case 'RESET':
-                        cpu.reset();
-                        break;
-                    case 'OPEN_APPLE':
-                        self.commandKey(!commanded);
-                        break;
-                    case 'CLOSED_APPLE':
-                        self.optionKey(!optioned);
-                        break;
-                    default:
-                        break;
+                        case 'SHIFT':
+                            self.shiftKey(!shifted);
+                            break;
+                        case 'CTRL':
+                            self.controlKey(!controlled);
+                            break;
+                        case 'CAPS':
+                        case 'LOCK':
+                            self.capslockKey(undefined);
+                            break;
+                        case 'POW':
+                        case 'POWER':
+                            if (window.confirm('Power Cycle?'))
+                                window.location.reload();
+                            break;
+                        case 'RESET':
+                            cpu.reset();
+                            break;
+                        case 'OPEN_APPLE':
+                            self.commandKey(!commanded);
+                            break;
+                        case 'CLOSED_APPLE':
+                            self.optionKey(!optioned);
+                            break;
+                        default:
+                            break;
                     }
                 } else {
                     if (controlled && key >= '@' && key <= '_') {

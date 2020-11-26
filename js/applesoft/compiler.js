@@ -167,76 +167,76 @@ export default function ApplesoftCompiler(mem)
                 while (curChar < line.length) {
                     character = line.charAt(curChar).toUpperCase();
                     switch (state) {
-                    case STATES.NORMAL:
-                        if (character !== ' ') {
-                            if (character === '"') {
-                                result.push(character.charCodeAt(0));
-                                state = STATES.STRING;
-                                curChar++;
-                            } else {
-                                var foundToken = '';
-                                for (var possibleToken in TOKENS) {
-                                    if (possibleToken.charAt(0) == character) {
-                                        var tokenIdx = curChar + 1;
-                                        var idx = 1;
-                                        while (idx < possibleToken.length) {
-                                            if (line.charAt(tokenIdx) !== ' ') {
-                                                if (line.charAt(tokenIdx).toUpperCase() !== possibleToken.charAt(idx)) {
-                                                    break;
+                        case STATES.NORMAL:
+                            if (character !== ' ') {
+                                if (character === '"') {
+                                    result.push(character.charCodeAt(0));
+                                    state = STATES.STRING;
+                                    curChar++;
+                                } else {
+                                    var foundToken = '';
+                                    for (var possibleToken in TOKENS) {
+                                        if (possibleToken.charAt(0) == character) {
+                                            var tokenIdx = curChar + 1;
+                                            var idx = 1;
+                                            while (idx < possibleToken.length) {
+                                                if (line.charAt(tokenIdx) !== ' ') {
+                                                    if (line.charAt(tokenIdx).toUpperCase() !== possibleToken.charAt(idx)) {
+                                                        break;
+                                                    }
+                                                    idx++;
                                                 }
-                                                idx++;
+                                                tokenIdx++;
                                             }
-                                            tokenIdx++;
-                                        }
-                                        if (idx === possibleToken.length) {
+                                            if (idx === possibleToken.length) {
                                             // Found a token
-                                            if (possibleToken === 'AT') {
-                                                var lookAhead = line.charAt(tokenIdx + 1).toUpperCase();
-                                                // ATN takes precedence over AT
-                                                if (lookAhead === 'N') {
-                                                    foundToken = 'ATN';
-                                                    tokenIdx++;
+                                                if (possibleToken === 'AT') {
+                                                    var lookAhead = line.charAt(tokenIdx + 1).toUpperCase();
+                                                    // ATN takes precedence over AT
+                                                    if (lookAhead === 'N') {
+                                                        foundToken = 'ATN';
+                                                        tokenIdx++;
+                                                    }
+                                                    // TO takes precedence over AT
+                                                    if (lookAhead === 'O') {
+                                                        result.push(lookAhead.charCodeAt(0));
+                                                        foundToken = 'TO';
+                                                        tokenIdx++;
+                                                    }
                                                 }
-                                                // TO takes precedence over AT
-                                                if (lookAhead === 'O') {
-                                                    result.push(lookAhead.charCodeAt(0));
-                                                    foundToken = 'TO';
-                                                    tokenIdx++;
-                                                }
+                                                foundToken = possibleToken;
                                             }
-                                            foundToken = possibleToken;
+                                        }
+                                        if (foundToken) {
+                                            break;
                                         }
                                     }
                                     if (foundToken) {
-                                        break;
+                                        result.push(TOKENS[foundToken]);
+                                        curChar = tokenIdx;
+                                        if (foundToken === 'REM') {
+                                            state = STATES.COMMENT;
+                                        }
+                                    } else {
+                                        result.push(character.charCodeAt(0));
+                                        curChar++;
                                     }
                                 }
-                                if (foundToken) {
-                                    result.push(TOKENS[foundToken]);
-                                    curChar = tokenIdx;
-                                    if (foundToken === 'REM') {
-                                        state = STATES.COMMENT;
-                                    }
-                                } else {
-                                    result.push(character.charCodeAt(0));
-                                    curChar++;
-                                }
+                            } else {
+                                curChar++;
                             }
-                        } else {
+                            break;
+                        case STATES.COMMENT:
+                            result.push(character.charCodeAt(0));
                             curChar++;
-                        }
-                        break;
-                    case STATES.COMMENT:
-                        result.push(character.charCodeAt(0));
-                        curChar++;
-                        break;
-                    case STATES.STRING:
-                        result.push(character.charCodeAt(0));
-                        if (character == '"') {
-                            state = STATES.NORMAL;
-                        }
-                        curChar++;
-                        break;
+                            break;
+                        case STATES.STRING:
+                            result.push(character.charCodeAt(0));
+                            if (character == '"') {
+                                state = STATES.NORMAL;
+                            }
+                            curChar++;
+                            break;
                     }
                 }
 

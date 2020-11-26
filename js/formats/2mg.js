@@ -65,16 +65,16 @@ export default function _2MG(options) {
         // Check image format.
         // Sure, it's really 64 bits. But only 2 are actually used.
         switch (format) {
-        case 1: // PO
-            disk = new ProDOS(options);
-            break;
-        case 2: // NIB
-            disk = new Nibble(options);
-            break;
-        case 0: // dsk
-        default:  // Something hinky, assume 'dsk'
-            disk = new DOS(options);
-            break;
+            case 1: // PO
+                disk = new ProDOS(options);
+                break;
+            case 2: // NIB
+                disk = new Nibble(options);
+                break;
+            case 0: // dsk
+            default:  // Something hinky, assume 'dsk'
+                disk = new DOS(options);
+                break;
         }
     }
 

@@ -362,23 +362,23 @@ export function updateKHz() {
     var khz;
 
     switch (showStats) {
-    case 0: {
-        delta = cycles - lastCycles;
-        khz = parseInt(delta/ms);
-        document.querySelector('#khz').innerText = khz + ' kHz';
-        break;
-    }
-    case 1: {
-        delta = stats.renderedFrames - lastRenderedFrames;
-        fps = parseInt(delta/(ms/1000), 10);
-        document.querySelector('#khz').innerText = fps + ' rps';
-        break;
-    }
-    default: {
-        delta = stats.frames - lastFrames;
-        fps = parseInt(delta/(ms/1000), 10);
-        document.querySelector('#khz').innerText = fps + ' fps';
-    }
+        case 0: {
+            delta = cycles - lastCycles;
+            khz = parseInt(delta/ms);
+            document.querySelector('#khz').innerText = khz + ' kHz';
+            break;
+        }
+        case 1: {
+            delta = stats.renderedFrames - lastRenderedFrames;
+            fps = parseInt(delta/(ms/1000), 10);
+            document.querySelector('#khz').innerText = fps + ' rps';
+            break;
+        }
+        default: {
+            delta = stats.frames - lastFrames;
+            fps = parseInt(delta/(ms/1000), 10);
+            document.querySelector('#khz').innerText = fps + ' fps';
+        }
     }
 
     startTime = now;

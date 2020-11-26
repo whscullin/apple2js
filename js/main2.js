@@ -32,30 +32,30 @@ var characterRom = apple2_charset;
 var sectors = 16;
 
 switch (romVersion) {
-case 'apple2':
-    rom = new IntBASIC();
-    break;
-case 'apple213':
-    rom = new IntBASIC();
-    sectors = 13;
-    break;
-case 'original':
-    rom = new OriginalROM();
-    break;
-case 'apple2jplus':
-    rom = new Apple2jROM();
-    characterRom = apple2j_charset;
-    break;
-case 'apple2pig':
-    rom = new Apple2ROM();
-    characterRom = pigfont_charset;
-    break;
-case 'apple2lc':
-    rom = new Apple2ROM();
-    characterRom = apple2lc_charset;
-    break;
-default:
-    rom = new Apple2ROM();
+    case 'apple2':
+        rom = new IntBASIC();
+        break;
+    case 'apple213':
+        rom = new IntBASIC();
+        sectors = 13;
+        break;
+    case 'original':
+        rom = new OriginalROM();
+        break;
+    case 'apple2jplus':
+        rom = new Apple2jROM();
+        characterRom = apple2j_charset;
+        break;
+    case 'apple2pig':
+        rom = new Apple2ROM();
+        characterRom = pigfont_charset;
+        break;
+    case 'apple2lc':
+        rom = new Apple2ROM();
+        characterRom = apple2lc_charset;
+        break;
+    default:
+        rom = new Apple2ROM();
 }
 
 var options = {
