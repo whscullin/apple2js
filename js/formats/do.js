@@ -9,9 +9,14 @@
  * implied warranty.
  */
 
-import { explodeSector16, _DO } from './format_utils';
+import { explodeSector16, DO } from './format_utils';
 import { bytify } from '../util';
 
+/**
+ * Returns a `Disk` object from DOS-ordered image data.
+ * @param {*} options the disk image and options
+ * @returns {import('./format_utils').Disk}
+ */
 export default function DOS(options) {
     var { data, name, rawData, volume, readOnly } = options;
     var disk = {
@@ -26,21 +31,20 @@ export default function DOS(options) {
 
     for (var t = 0; t < 35; t++) {
         var track = [];
-        for (var s = 0; s < 16; s++) {
-            var _s = 15 - s;
+        for (var physical_sector = 0; physical_sector < 16; physical_sector++) {
+            const dos_sector = DO[physical_sector];
             var sector;
             if (rawData) {
-                var off = (16 * t + _s) * 256;
+                const off = (16 * t + dos_sector) * 256;
                 sector = new Uint8Array(rawData.slice(off, off + 256));
             } else {
-                sector = data[t][_s];
+                sector = data[t][dos_sector];
             }
             track = track.concat(
-                explodeSector16(volume, t, _DO[_s], sector)
+                explodeSector16(volume, t, physical_sector, sector)
             );
         }
         disk.tracks[t] = bytify(track);
     }
-
     return disk;
 }
