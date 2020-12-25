@@ -1,6 +1,6 @@
 import DOS from '../../../js/formats/do';
 import { memory } from '../../../js/types';
-import { BYTES_BY_TRACK } from './testdata/16sector';
+import { BYTES_BY_SECTOR, BYTES_BY_TRACK } from './testdata/16sector';
 
 function skipGap(track: memory, start: number = 0): number {
     const end = start + 0x100; // no gap is this big
@@ -195,6 +195,44 @@ describe('DOS format', () => {
         // checksum = 0b00000101
         expect(track[i++]).toBe(0b10101111);
         expect(track[i++]).toBe(0b10101011);
+        // epilogue
+        i = expectSequence(track, i, [0xDE, 0xAA, 0xEB]);
+        console.log(`second sector end ${i}`);
+    });
+
+    it('has correct Data Field for track 0, sector 1 (BYTES_BY_SECTOR)', () => {
+        // _Beneath Apple DOS_, DATA FIELD ENCODING, pp. 3-13 to 3-21
+        const disk = DOS({
+            name: 'test disk',
+            data: BYTES_BY_SECTOR,
+            volume: 10,
+            readOnly: true,
+        });
+        const track: memory = disk.tracks[0];
+        // First data field prologue
+        let i = findBytes(track, [0xD5, 0xAA, 0xAD]);
+        // Second data field prologue
+        i = findBytes(track, [0xD5, 0xAA, 0xAD], i);
+        console.log(`second sector data start ${i}`);
+        // Sector 1 is DOS sector 7.
+        // In 6 x 2 encoding, the lowest 2 bits of all the bytes come first.
+        // 0x07 is 0b00000111, so the lowest two bits are 0b11, reversed and
+        // repeated would be 0b111111 (3F -> 0xFF), but since each byte is
+        // XOR'd with the previous, this means there are 85 0b00000000 (00 ->
+        // 0x96) bytes.
+        expect(track[i++]).toBe(0xFF);
+        for (let j = 0; j < 85; j++) {
+            expect(track[i++]).toBe(0x96);
+        }
+        // Next we get 256 instances of the top bits, 0b000001. Again, with
+        // the XOR, this means one 0b000001 XOR 0b111111 = 0b111110
+        // (3E -> 0xFE) followed by 255 0b0000000 (00 -> 0x96).
+        expect(track[i++]).toBe(0xFE);
+        for (let j = 0; j < 255; j++) {
+            expect(track[i++]).toBe(0x96);
+        }
+        // checksum
+        expect(track[i++]).toBe(0x97);
         // epilogue
         i = expectSequence(track, i, [0xDE, 0xAA, 0xEB]);
     });
