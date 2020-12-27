@@ -197,7 +197,6 @@ describe('DOS format', () => {
         expect(track[i++]).toBe(0b10101011);
         // epilogue
         i = expectSequence(track, i, [0xDE, 0xAA, 0xEB]);
-        console.log(`second sector end ${i}`);
     });
 
     it('has correct Data Field for track 0, sector 1 (BYTES_BY_SECTOR)', () => {
@@ -213,7 +212,6 @@ describe('DOS format', () => {
         let i = findBytes(track, [0xD5, 0xAA, 0xAD]);
         // Second data field prologue
         i = findBytes(track, [0xD5, 0xAA, 0xAD], i);
-        console.log(`second sector data start ${i}`);
         // Sector 1 is DOS sector 7.
         // In 6 x 2 encoding, the lowest 2 bits of all the bytes come first.
         // 0x07 is 0b00000111, so the lowest two bits are 0b11, reversed and
@@ -298,5 +296,43 @@ describe('DOS format', () => {
         expect(track[i++]).toBe(0x96);
         // epilogue
         i = expectSequence(track, i, [0xDE, 0xAA, 0xEB]);
+    });
+
+    it('has correct Address Fields for all tracks', () => {
+        // _Beneath Apple DOS_, TRACK FORMATTING, p. 3-12
+        const disk = DOS({
+            name: 'test disk',
+            data: BYTES_BY_TRACK,
+            volume: 10,
+            readOnly: true,
+        });
+
+        for (let t = 0; t < disk.tracks.length; t++) {
+            // We essentially seek through the track for the Address Fields
+            const track = disk.tracks[t];
+            let i = findBytes(track, [0xD5, 0xAA, 0x96]);
+            for (let s = 0; s <= 15; s++) {
+                // volume 10 = 0b00001010
+                expect(track[i++]).toBe(0b10101111);
+                expect(track[i++]).toBe(0b10101010);
+                // convert track to 4x4 encoding
+                const track4x4XX = ((t & 0b10101010) >> 1) | 0b10101010;
+                const track4x4YY = (t & 0b01010101) | 0b10101010;
+                expect(track[i++]).toBe(track4x4XX);
+                expect(track[i++]).toBe(track4x4YY);
+                // convert sector to 4x4 encoding
+                const sector4x4XX = ((s & 0b10101010) >> 1) | 0b10101010;
+                const sector4x4YY = (s & 0b01010101) | 0b10101010;
+                expect(track[i++]).toBe(sector4x4XX);
+                expect(track[i++]).toBe(sector4x4YY);
+                // checksum
+                expect(track[i++]).toBe(0b10101111 ^ track4x4XX ^ sector4x4XX);
+                expect(track[i++]).toBe(0b10101010 ^ track4x4YY ^ sector4x4YY);
+                // epilogue
+                i = expectSequence(track, i, [0xDE, 0xAA, 0xEB]);
+                // next sector
+                i = findBytes(track, [0xD5, 0xAA, 0x96], i);
+            }
+        }
     });
 });
