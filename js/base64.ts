@@ -3,7 +3,9 @@ import { memory } from './types';
 const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
 
 /** Encode an array of bytes in base64. */
-export function base64_encode(data: memory) {
+export function base64_encode(data: null | undefined): undefined;
+export function base64_encode(data: memory): string;
+export function base64_encode(data: memory | null | undefined): string | undefined {
     // Twacked by Will Scullin to handle arrays of 'bytes'
 
     // http://kevin.vanzonneveld.net
@@ -28,7 +30,7 @@ export function base64_encode(data: memory) {
     const tmp_arr = [];
 
     if (!data) {
-        return data;
+        return undefined;
     }
 
     do { // pack three octets into four hexets
