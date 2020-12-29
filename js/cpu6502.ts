@@ -140,6 +140,7 @@ type StrictInstruction =
     Instruction<ReadAddrFn> |
     Instruction<ImpliedFn> |
     Instruction<flag> |
+    Instruction<flag|0> |
     Instruction<byte>
 
 type Instructions = Record<byte, StrictInstruction>
@@ -147,7 +148,7 @@ type Instructions = Record<byte, StrictInstruction>
 type callback = (cpu: CPU6502) => void;
 
 export default class CPU6502 {
-    private readonly is65C02;
+    private readonly is65C02: boolean;
 
     /* Registers */
     private pc = 0; // Program Counter
@@ -190,7 +191,7 @@ export default class CPU6502 {
      * Set or clears `f` in the status register. `f` must be a byte with a
      * single bit set.
      */
-    private setFlag(f: byte, on: boolean) {
+    private setFlag(f: flag, on: boolean) {
         this.sr = on ? (this.sr | f) : (this.sr & ~f);
     }
 
@@ -844,7 +845,7 @@ export default class CPU6502 {
         }
     }
 
-    brc = (f: flag) => {
+    brc = (f: flag|0) => {
         const off = this.readBytePC(); // changes pc
         if ((f & this.sr) === 0) {
             this.readByte(this.pc);
