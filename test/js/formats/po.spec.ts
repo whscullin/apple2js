@@ -1,11 +1,11 @@
-import DOS from '../../../js/formats/do';
+import ProDOS from '../../../js/formats/po';
 import { memory } from '../../../js/types';
 import { BYTES_BY_SECTOR, BYTES_BY_TRACK } from './testdata/16sector';
 import { expectSequence, findBytes, skipGap } from './util';
 
-describe('DOS format', () => {
+describe('ProDOS format', () => {
     it('is callable', () => {
-        const disk = DOS({
+        const disk = ProDOS({
             name: 'test disk',
             data: BYTES_BY_TRACK,
             volume: 10,
@@ -15,7 +15,7 @@ describe('DOS format', () => {
     });
 
     it('has correct number of tracks', () => {
-        const disk = DOS({
+        const disk = ProDOS({
             name: 'test disk',
             data: BYTES_BY_TRACK,
             volume: 10,
@@ -25,7 +25,7 @@ describe('DOS format', () => {
     });
 
     it('has correct number of bytes in track 0', () => {
-        const disk = DOS({
+        const disk = ProDOS({
             name: 'test disk',
             data: BYTES_BY_TRACK,
             volume: 10,
@@ -35,7 +35,7 @@ describe('DOS format', () => {
     });
 
     it('has correct number of bytes in all tracks', () => {
-        const disk = DOS({
+        const disk = ProDOS({
             name: 'test disk',
             data: BYTES_BY_TRACK,
             volume: 10,
@@ -49,7 +49,7 @@ describe('DOS format', () => {
     });
 
     it('has correct GAP 1', () => {
-        const disk = DOS({
+        const disk = ProDOS({
             name: 'test disk',
             data: BYTES_BY_TRACK,
             volume: 10,
@@ -67,7 +67,7 @@ describe('DOS format', () => {
 
     it('has correct Address Field for track 0, sector 0', () => {
         // _Beneath Apple DOS_, TRACK FORMATTING, p. 3-12
-        const disk = DOS({
+        const disk = ProDOS({
             name: 'test disk',
             data: BYTES_BY_TRACK,
             volume: 10,
@@ -95,7 +95,7 @@ describe('DOS format', () => {
 
     it('has correct Data Field for track 0, sector 0 (BYTES_BY_TRACK)', () => {
         // _Beneath Apple DOS_, DATA FIELD ENCODING, pp. 3-13 to 3-21
-        const disk = DOS({
+        const disk = ProDOS({
             name: 'test disk',
             data: BYTES_BY_TRACK,
             volume: 10,
@@ -120,7 +120,7 @@ describe('DOS format', () => {
 
     it('has correct Address Field for track 0, sector 1', () => {
         // _Beneath Apple DOS_, TRACK FORMATTING, p. 3-12
-        const disk = DOS({
+        const disk = ProDOS({
             name: 'test disk',
             data: BYTES_BY_TRACK,
             volume: 10,
@@ -150,7 +150,7 @@ describe('DOS format', () => {
 
     it('has correct Data Field for track 0, sector 1 (BYTES_BY_SECTOR)', () => {
         // _Beneath Apple DOS_, DATA FIELD ENCODING, pp. 3-13 to 3-21
-        const disk = DOS({
+        const disk = ProDOS({
             name: 'test disk',
             data: BYTES_BY_SECTOR,
             volume: 10,
@@ -161,32 +161,31 @@ describe('DOS format', () => {
         let i = findBytes(track, [0xD5, 0xAA, 0xAD]);
         // Second data field prologue
         i = findBytes(track, [0xD5, 0xAA, 0xAD], i);
-        // Sector 1 is DOS sector 7.
+        // Sector 1 is ProDOS sector 8.
         // In 6 x 2 encoding, the lowest 2 bits of all the bytes come first.
-        // 0x07 is 0b00000111, so the lowest two bits are 0b11, reversed and
-        // repeated would be 0b111111 (3F -> 0xFF), but since each byte is
-        // XOR'd with the previous, this means there are 85 0b00000000 (00 ->
-        // 0x96) bytes.
-        expect(track[i++]).toBe(0xFF);
-        for (let j = 0; j < 85; j++) {
+        // 0x07 is 0b00001000, so the lowest two bits are 0b00, reversed and
+        // repeated would be 0b000000 (00 -> 0x96). Even though each byte is
+        // XOR'd with the previous, they are all the same. This means there
+        // are 86 0b00000000 (00 -> 0x96) bytes.
+        for (let j = 0; j < 86; j++) {
             expect(track[i++]).toBe(0x96);
         }
-        // Next we get 256 instances of the top bits, 0b000001. Again, with
-        // the XOR, this means one 0b000001 XOR 0b111111 = 0b111110
-        // (3E -> 0xFE) followed by 255 0b0000000 (00 -> 0x96).
-        expect(track[i++]).toBe(0xFE);
+        // Next we get 256 instances of the top bits, 0b000010. Again, with
+        // the XOR, this means one 0b000010 XOR 0b000000 = 0b000010
+        // (02 -> 0x9A) followed by 255 0b0000000 (00 -> 0x96).
+        expect(track[i++]).toBe(0x9A);
         for (let j = 0; j < 255; j++) {
             expect(track[i++]).toBe(0x96);
         }
-        // checksum
-        expect(track[i++]).toBe(0x97);
+        // checksum 0b000010 XOR 0b000000 -> 9A
+        expect(track[i++]).toBe(0x9A);
         // epilogue
         i = expectSequence(track, i, [0xDE, 0xAA, 0xEB]);
     });
 
     it('has correct Address Field for track 1, sector 0', () => {
         // _Beneath Apple DOS_, TRACK FORMATTING, p. 3-12
-        const disk = DOS({
+        const disk = ProDOS({
             name: 'test disk',
             data: BYTES_BY_TRACK,
             volume: 10,
@@ -214,7 +213,7 @@ describe('DOS format', () => {
 
     it('has correct Data Field for track 1, sector 0 (BYTES_BY_TRACK)', () => {
         // _Beneath Apple DOS_, DATA FIELD ENCODING, pp. 3-13 to 3-21
-        const disk = DOS({
+        const disk = ProDOS({
             name: 'test disk',
             data: BYTES_BY_TRACK,
             volume: 10,
@@ -247,9 +246,10 @@ describe('DOS format', () => {
         i = expectSequence(track, i, [0xDE, 0xAA, 0xEB]);
     });
 
+
     it('has correct Address Fields for all tracks', () => {
         // _Beneath Apple DOS_, TRACK FORMATTING, p. 3-12
-        const disk = DOS({
+        const disk = ProDOS({
             name: 'test disk',
             data: BYTES_BY_TRACK,
             volume: 10,

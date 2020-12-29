@@ -9,9 +9,14 @@
  * implied warranty.
  */
 
-import { explodeSector16, _PO } from './format_utils';
+import { explodeSector16, PO } from './format_utils';
 import { bytify } from '../util';
 
+/**
+ * Returns a `Disk` object from ProDOS-ordered image data.
+ * @param {*} options the disk image and options
+ * @returns {import('./format_utils').Disk}
+ */
 export default function ProDOS(options) {
     var { data, name, rawData, volume, readOnly } = options;
     var disk = {
@@ -24,21 +29,22 @@ export default function ProDOS(options) {
         rawTracks: null
     };
 
-    for (var t = 0; t < 35; t++) {
+    for (var physical_track = 0; physical_track < 35; physical_track++) {
         var track = [];
-        for (var s = 0; s < 16; s++) {
+        for (var physical_sector = 0; physical_sector < 16; physical_sector++) {
+            const prodos_sector = PO[physical_sector];
             var sector;
             if (rawData) {
-                var off = (16 * t + s) * 256;
+                var off = (16 * physical_track + prodos_sector) * 256;
                 sector = new Uint8Array(rawData.slice(off, off + 256));
             } else {
-                sector = data[t][s];
+                sector = data[physical_track][prodos_sector];
             }
             track = track.concat(
-                explodeSector16(volume, t, _PO[s], sector)
+                explodeSector16(volume, physical_track, physical_sector, sector)
             );
         }
-        disk.tracks[t] = bytify(track);
+        disk.tracks[physical_track] = bytify(track);
     }
 
     return disk;
