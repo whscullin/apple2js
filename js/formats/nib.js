@@ -9,6 +9,11 @@
  * implied warranty.
  */
 
+/**
+ * Returns a `Disk` object from raw nibble image data.
+ * @param {*} options the disk image and options
+ * @returns {import('./format_utils').Disk}
+ */
 export default function Nibble(options) {
     var { data, name, rawData, volume, readOnly } = options;
     var disk = {
