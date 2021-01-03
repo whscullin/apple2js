@@ -16,6 +16,11 @@ import ProDOS from './po';
 
 import { numToString, debug } from '../util';
 
+/**
+ * Returns a `Disk` object from a 2mg image.
+ * @param {*} options the disk image and options
+ * @returns {import('./format_utils').Disk}
+ */
 export default function _2MG(options) {
     var OFFSETS = {
         CREATOR: 0x04,

@@ -184,6 +184,11 @@ function MetaChunk(data) {
     return this;
 }
 
+/**
+ * Returns a `Disk` object from Woz image data.
+ * @param {*} options the disk image and options
+ * @returns {import('./format_utils').Disk}
+ */
 export default function Woz(options) {
     var { rawData } = options;
     var dv = new DataView(rawData, 0);

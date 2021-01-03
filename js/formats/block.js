@@ -9,6 +9,11 @@
  * implied warranty.
  */
 
+/**
+ * Returns a `Disk` object for a block volume with block-ordered data.
+ * @param {*} options the disk image and options
+ * @returns {import('./format_utils').Disk}
+ */
 export default function BlockVolume(options) {
     var { rawData, readOnly, name } = options;
     var disk;
