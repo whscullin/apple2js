@@ -127,8 +127,8 @@ export function handleDrop(drive, event) {
     }
     var dt = event.dataTransfer;
     if (dt.files.length == 1) {
-
-        doLoadLocal(drive, dt.files[0]);
+        var runOnLoad = event.shiftKey;
+        doLoadLocal(drive, dt.files[0], { runOnLoad });
     } else if (dt.files.length == 2) {
         doLoadLocal(1, dt.files[0]);
         doLoadLocal(2, dt.files[1]);
@@ -242,16 +242,46 @@ export function doDelete(name) {
     }
 }
 
-function doLoadLocal(drive, file) {
+const CIDERPRESS_EXTENSION = /#([0-9a-f]{2})([0-9a-f]{4})$/i;
+const BIN_TYPES = ['bin'];
+
+function doLoadLocal(drive, file, options = {}) {
     var parts = file.name.split('.');
     var ext = parts[parts.length - 1].toLowerCase();
-    if (DISK_FORMATS.indexOf(ext) > -1) {
+    var matches = file.name.match(CIDERPRESS_EXTENSION);
+    var type, aux;
+    if (matches && matches.length === 3) {
+        [, type, aux] = matches;
+    }
+    if (DISK_FORMATS.includes(ext)) {
         doLoadLocalDisk(drive, file);
-    } else if (TAPE_TYPES.indexOf(ext) > -1) {
+    } else if (TAPE_TYPES.includes(ext)) {
         tape.doLoadLocalTape(file);
+    } else if (BIN_TYPES.includes(ext) || type === '06' || options.address) {
+        doLoadBinary(file, { address: parseInt(aux || '2000', 16), ...options });
     } else {
         openAlert('Unknown file type: ' + ext);
     }
+}
+
+function doLoadBinary(file, options) {
+    loadingStart();
+
+    var fileReader = new FileReader();
+    fileReader.onload = function() {
+        let { address } = options;
+        const bytes = new Uint8Array(this.result);
+        for (let idx = 0; idx < this.result.byteLength; idx++) {
+            cpu.write(address >> 8, address & 0xff, bytes[idx]);
+            address++;
+        }
+        if (options.runOnLoad) {
+            cpu.reset();
+            cpu.setPC(options.address);
+        }
+        loadingStop();
+    };
+    fileReader.readAsArrayBuffer(file);
 }
 
 function doLoadLocalDisk(drive, file) {
@@ -261,6 +291,12 @@ function doLoadLocalDisk(drive, file) {
         var parts = file.name.split('.');
         var ext = parts.pop().toLowerCase();
         var name = parts.join('.');
+
+        // Remove any json file reference
+        var files = document.location.hash.split('|');
+        files[drive - 1] = '';
+        document.location.hash = files.join('|');
+
         if (this.result.byteLength >= 800 * 1024) {
             if (_smartPort.setBinary(drive, name, ext, this.result)) {
                 driveLights.label(drive, name);
