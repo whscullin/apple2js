@@ -1,4 +1,14 @@
 
+/**
+ * Extracts the members of a constant array as a type. Used as:
+ * 
+ * @example
+ * const SOME_VALUES = ['a', 'b', 1, 2] as const;
+ * type SomeValues = MemberOf<typeof SOME_VALUES>; // 'a' | 'b' | 1 | 2
+ */
+export type MemberOf<T extends ReadonlyArray<unknown>> =
+  T extends ReadonlyArray<infer E> ? E : never;
+
 /** A byte (0..255). This is not enforced by the compiler. */
 export type byte = number;
 
@@ -20,7 +30,18 @@ export interface Memory {
   write(page: byte, offset: byte, value: byte): void;
 }
 
-export type DiskFormat = '2mg' | 'd13' | 'do' | 'dsk' | 'hdv' | 'po' | 'nib' | 'woz';
+export const DISK_FORMATS = [
+    '2mg',
+    'd13',
+    'do',
+    'dsk',
+    'hdv',
+    'po',
+    'nib',
+    'woz'
+] as const;
+
+export type DiskFormat = MemberOf<typeof DISK_FORMATS>;
 
 export interface Drive {
   format: DiskFormat,
