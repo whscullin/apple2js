@@ -119,5 +119,5 @@ export function base64_decode(data: string | null | undefined): memory | undefin
         }
     } while (i < data.length);
 
-    return tmp_arr;
+    return new Uint8Array(tmp_arr);
 }

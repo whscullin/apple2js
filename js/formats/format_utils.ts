@@ -339,7 +339,7 @@ export function readSector(drive: Drive, track: byte, sector: byte) {
         }
     }
     let t = 0, s = 0, v = 0, checkSum;
-    const data = [];
+    const data = new Uint8Array(256);
     while (retry < 4) {
         switch (state) {
             case 0:
@@ -408,7 +408,7 @@ export function readSector(drive: Drive, track: byte, sector: byte) {
                 break;
         }
     }
-    return [];
+    return new Uint8Array();
 }
 
 export function jsonEncode(cur: Drive, pretty: boolean) {

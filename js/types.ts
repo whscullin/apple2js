@@ -7,7 +7,7 @@
  * type SomeValues = MemberOf<typeof SOME_VALUES>; // 'a' | 'b' | 1 | 2
  */
 export type MemberOf<T extends ReadonlyArray<unknown>> =
-  T extends ReadonlyArray<infer E> ? E : never;
+    T extends ReadonlyArray<infer E> ? E : never;
 
 /** A byte (0..255). This is not enforced by the compiler. */
 export type byte = number;
@@ -16,18 +16,21 @@ export type byte = number;
 export type word = number;
 
 /** A raw region of memory. */
-export type memory = number[] | Uint8Array;
+export type memory = Uint8Array;
+
+/** A raw region of memory. */
+export type rom = ReadonlyUint8Array;
 
 /** A mapped region of memory. */
 export interface Memory {
-  /** Start page. */
-  start(): byte;
-  /** End page, inclusive. */
-  end(): byte;
-  /** Read a byte. */
-  read(page: byte, offset: byte): byte;
-  /** Write a byte. */
-  write(page: byte, offset: byte, value: byte): void;
+    /** Start page. */
+    start(): byte;
+    /** End page, inclusive. */
+    end(): byte;
+    /** Read a byte. */
+    read(page: byte, offset: byte): byte;
+    /** Write a byte. */
+    write(page: byte, offset: byte, value: byte): void;
 }
 
 export const DISK_FORMATS = [
@@ -44,22 +47,28 @@ export const DISK_FORMATS = [
 export type DiskFormat = MemberOf<typeof DISK_FORMATS>;
 
 export interface Drive {
-  format: DiskFormat,
-  volume: number,
-  tracks: Array<byte[] | Uint8Array>,
-  trackMap: unknown,
+    format: DiskFormat,
+    volume: number,
+    tracks: Array<byte[] | Uint8Array>,
+    trackMap: unknown,
 }
 
 export interface DiskIIDrive extends Drive {
-  rawTracks: unknown,
-  track: number,
-  head: number,
-  phase: number,
-  readOnly: boolean,
-  dirty: boolean,
+    rawTracks: unknown,
+    track: number,
+    head: number,
+    phase: number,
+    readOnly: boolean,
+    dirty: boolean,
 }
 
 export interface Restorable<T> {
-  getState(): T;
-  setState(state: T): void;
+    getState(): T;
+    setState(state: T): void;
+}
+
+// Read-only typed arrays for constants
+export type TypedArrayMutableProperties = 'copyWithin' | 'fill' | 'reverse' | 'set' | 'sort';
+export interface ReadonlyUint8Array extends Omit<Uint8Array, TypedArrayMutableProperties> {
+    readonly [n: number]: number
 }

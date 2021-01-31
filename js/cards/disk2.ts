@@ -10,7 +10,7 @@
  */
 
 import { base64_decode, base64_encode } from '../base64';
-import { byte, DiskFormat, MemberOf, memory } from '../types';
+import { byte, DiskFormat, MemberOf, memory, rom } from '../types';
 import { debug, toHex } from '../util';
 import { Disk, jsonDecode, jsonEncode, readSector } from '../formats/format_utils';
 
@@ -235,7 +235,7 @@ export default class DiskII {
     private _state = 0;
     private _zeros = 0;
 
-    private _P5: memory;
+    private _P5: rom;
 
     constructor(private io: Apple2IO, private callbacks: Callbacks, private sectors = 16) {
         this._lastCycles = this.io.cycles();
