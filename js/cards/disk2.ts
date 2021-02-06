@@ -10,11 +10,11 @@
  */
 
 import { base64_decode, base64_encode } from '../base64';
-import { byte, DiskFormat, MemberOf, memory, rom } from '../types';
+import { bit, byte, DiskFormat, MemberOf, memory, nibble, rom } from '../types';
 import { debug, toHex } from '../util';
 import { Disk, jsonDecode, jsonEncode, readSector } from '../formats/format_utils';
 
-import { P5_16, P5_13 } from '../roms/cards/disk2';
+import { BOOTSTRAP_ROM_16, BOOTSTRAP_ROM_13 } from '../roms/cards/disk2';
 
 import _2MG from '../formats/2mg';
 import D13 from '../formats/d13';
@@ -60,12 +60,40 @@ const LOC = {
 // B     LOAD                         XXXXXXXX  YYYYYYYY
 // D     SL1                          ABCDEFGH  BCDEFGH1
 
-const _P6 = [
+const SEQUENCER_ROM_13 = [
+    // See Understanding the Apple IIe, Figure 9.10 The DOS 3.2 Logic State Sequencer
+    // Note that the column order here is NOT the same as in Figure 9.10 for Q7 H (Write).
+    //
+    //                Q7 L (Read)                                     Q7 H (Write)
+    //    Q6 L (Shift)            Q6 H (Load)             Q6 L (Shift)             Q6 H (Load)
+    //  QA L        QA H        QA L        QA H        QA L        QA H        QA L        QA H
+    // 1     0     1     0     1     0     1     0     1     0     1     0     1     0     1     0
+    0xD8, 0x18, 0x18, 0x08, 0x0A, 0x0A, 0x0A, 0x0A, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, // 0
+    0xD8, 0x2D, 0x28, 0x28, 0x0A, 0x0A, 0x0A, 0x0A, 0x28, 0x28, 0x28, 0x28, 0x28, 0x28, 0x28, 0x28, // 1
+    0xD8, 0x38, 0x38, 0x38, 0x0A, 0x0A, 0x0A, 0x0A, 0x39, 0x39, 0x39, 0x39, 0x3B, 0x3B, 0x3B, 0x3B, // 2
+    0xD8, 0x48, 0xD8, 0x48, 0x0A, 0x0A, 0x0A, 0x0A, 0x48, 0x48, 0x48, 0x48, 0x48, 0x48, 0x48, 0x48, // 3
+    0xD8, 0x58, 0xD8, 0x58, 0x0A, 0x0A, 0x0A, 0x0A, 0x58, 0x58, 0x58, 0x58, 0x58, 0x58, 0x58, 0x58, // 4
+    0xD8, 0x68, 0xD8, 0x68, 0x0A, 0x0A, 0x0A, 0x0A, 0x68, 0x68, 0x68, 0x68, 0x68, 0x68, 0x68, 0x68, // 5
+    0xD8, 0x78, 0xD8, 0x78, 0x0A, 0x0A, 0x0A, 0x0A, 0x78, 0x78, 0x78, 0x78, 0x78, 0x78, 0x78, 0x78, // 6
+    0xD8, 0x88, 0xD8, 0x88, 0x0A, 0x0A, 0x0A, 0x0A, 0x08, 0x08, 0x88, 0x88, 0x08, 0x08, 0x88, 0x88, // 7
+    0xD8, 0x98, 0xD8, 0x98, 0x0A, 0x0A, 0x0A, 0x0A, 0x98, 0x98, 0x98, 0x98, 0x98, 0x98, 0x98, 0x98, // 8
+    0xD8, 0x09, 0xD8, 0xA8, 0x0A, 0x0A, 0x0A, 0x0A, 0xA8, 0xA8, 0xA8, 0xA8, 0xA8, 0xA8, 0xA8, 0xA8, // 9
+    0xCD, 0xBD, 0xD8, 0xB8, 0x0A, 0x0A, 0x0A, 0x0A, 0xB9, 0xB9, 0xB9, 0xB9, 0xBB, 0xBB, 0xBB, 0xBB, // A
+    0xD9, 0x39, 0xD8, 0xC8, 0x0A, 0x0A, 0x0A, 0x0A, 0xC8, 0xC8, 0xC8, 0xC8, 0xC8, 0xC8, 0xC8, 0xC8, // B
+    0xD9, 0xD9, 0xD8, 0xA0, 0x0A, 0x0A, 0x0A, 0x0A, 0xD8, 0xD8, 0xD8, 0xD8, 0xD8, 0xD8, 0xD8, 0xD8, // C
+    0x1D, 0x0D, 0xE8, 0xE8, 0x0A, 0x0A, 0x0A, 0x0A, 0xE8, 0xE8, 0xE8, 0xE8, 0xE8, 0xE8, 0xE8, 0xE8, // D
+    0xFD, 0xFD, 0xF8, 0xF8, 0x0A, 0x0A, 0x0A, 0x0A, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, // E
+    0xDD, 0x4D, 0xE0, 0xE0, 0x0A, 0x0A, 0x0A, 0x0A, 0x88, 0x88, 0x08, 0x08, 0x88, 0x88, 0x08, 0x08  // F
+] as const;
+
+const SEQUENCER_ROM_16 = [
     // See Understanding the Apple IIe, Figure 9.11 The DOS 3.3 Logic State Sequencer
-    //                Q7 L (Read)                                         Q7 H (Write)
-    //       Q6 L                     Q6 H                   Q6 L (Shift)               Q6 H (Load)
-    //  QA L        QA H         QA L        QA H           QA L        QA H         QA L        QA H
-    //1     0     1     0      1     0     1     0        1     0     1     0      1     0     1     0
+    // Note that the column order here is NOT the same as in Figure 9.11 for Q7 H (Write).
+    //
+    //                Q7 L (Read)                                     Q7 H (Write)
+    //    Q6 L (Shift)            Q6 H (Load)             Q6 L (Shift)             Q6 H (Load)
+    //  QA L        QA H        QA L        QA H        QA L        QA H        QA L        QA H
+    // 1     0     1     0     1     0     1     0     1     0     1     0     1     0     1     0
     0x18, 0x18, 0x18, 0x18, 0x0A, 0x0A, 0x0A, 0x0A, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, // 0
     0x2D, 0x2D, 0x38, 0x38, 0x0A, 0x0A, 0x0A, 0x0A, 0x28, 0x28, 0x28, 0x28, 0x28, 0x28, 0x28, 0x28, // 1
     0xD8, 0x38, 0x08, 0x28, 0x0A, 0x0A, 0x0A, 0x0A, 0x39, 0x39, 0x39, 0x39, 0x3B, 0x3B, 0x3B, 0x3B, // 2
@@ -84,9 +112,33 @@ const _P6 = [
     0xDD, 0x4D, 0xE0, 0xE0, 0x0A, 0x0A, 0x0A, 0x0A, 0x88, 0x88, 0x08, 0x08, 0x88, 0x88, 0x08, 0x08  // F
 ] as const;
 
+type LssClockCycle = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 type Phase = 0 | 1 | 2 | 3;
 
-const _phase_delta = [
+/**
+ * How far the head moves, in quarter tracks, when in phase X and phase Y is
+ * activated. For example, if in phase 0 (top row), turning on phase 3 would
+ * step backwards a quarter track while turning on phase 2 would step forwards
+ * a half track.
+ * 
+ * Note that this emulation is highly simplified as it only takes into account
+ * the order that coils are powered on and ignores when they are powered off.
+ * The actual hardware allows for multiple coils to be powered at the same time
+ * providing different levels of torque on the head arm. Along with that, the
+ * RWTS uses a complex delay system to drive the coils faster based on expected
+ * head momentum.
+ * 
+ * Examining the https://computerhistory.org/blog/apple-ii-dos-source-code/,
+ * one finds that the SEEK routine on line 4831 of `appdos31.lst`. It uses
+ * `ONTABLE` and `OFFTABLE` (each 12 bytes) to know exactly how many
+ * microseconds to power on/off each coil as the head accelerates. At the end,
+ * the final coil is left powered on 9.5 milliseconds to ensure the head has
+ * settled.
+ * 
+ * https://embeddedmicro.weebly.com/apple-2iie.html shows traces of the boot
+ * seek (which is slightly different) and a regular seek.
+ */
+const PHASE_DELTA = [
     [0, 1, 2, -1],
     [-1, 0, 1, 2],
     [-2, -1, 0, 1],
@@ -101,26 +153,35 @@ interface Callbacks {
     dirty: (drive: DriveNumber, dirty: boolean) => void;
 }
 
+/** Common information for Nibble and WOZ disks. */
 interface BaseDrive {
+    /** Current disk format. */
     format: DiskFormat,
+    /** Current disk volume number. */
     volume: byte,
+    /** Quarter track position of read/write head. */
     track: byte,
+    /** Position of the head on the track. */
     head: byte,
+    /** Current active coil in the head stepper motor. */
     phase: Phase,
+    /** Whether the drive write protect is on. */
     readOnly: boolean,
+    /** Whether the drive has been written to since it was loaded. */
     dirty: boolean,
 }
 
-// WOZ format track data from https://applesaucefdc.com/woz/reference2/
+/** WOZ format track data from https://applesaucefdc.com/woz/reference2/. */
 interface WozDrive extends BaseDrive {
-    // Maps quarter tracks to data is rawTracks; 0xFF = random garbage
+    /** Maps quarter tracks to data in rawTracks; `0xFF` = random garbage. */
     trackMap: byte[];
-    // Unique tracks. The index is arbitrary—_not_ the track number.
-    rawTracks: memory[];
+    /** Unique track bitstreams. The index is arbitrary; it is NOT the track number. */
+    rawTracks: bit[][];
 }
 
+/** Nibble format track data. */
 interface NibbleDrive extends BaseDrive {
-    // Nibble data. The index is the track number.
+    /** Nibble data. The index is the track number. */
     tracks: memory[];
 }
 
@@ -191,11 +252,11 @@ function setDriveState(state: DriveState) {
 }
 
 /**
- * Emulates the 16-sector version of the Disk ][ drive and controller.
+ * Emulates the 16-sector and 13-sector versions of the Disk ][ drive and controller.
  */
 export default class DiskII {
 
-    private _drives: Drive[] = [
+    private drives: Drive[] = [
         {   // Drive 1
             format: 'dsk',
             volume: 254,
@@ -217,179 +278,201 @@ export default class DiskII {
             dirty: false
         }];
 
-    private _skip = 0;
-    private _bus = 0;
-    private _latch = 0;
-    private _offTimeout: number | null = null;
-    private _q6 = 0;
-    private _q7 = 0;
-    private _writeMode = false; // q7
-    private _on = false;
-    private _drive: DriveNumber = 1;
-    private _cur = this._drives[this._drive - 1];
+    private skip = 0;
+    /** Last data written by the CPU to card softswitch 0x8D. */
+    private bus = 0;
+    /** Drive data register. */
+    private latch = 0;
+    /** Drive off timeout id or null. */
+    private offTimeout: number | null = null;
+    /** Q6 (Shift/Load): Used by WOZ disks. */
+    private q6 = 0;
+    /** Q7 (Read/Write): Used by WOZ disks. */
+    private q7: boolean = false;
+    /** Q7 (Read/Write): Used by Nibble disks. */
+    private writeMode = false; 
+    /** Whether the selected drive is on. */
+    private on = false;
+    /** Current drive number (0, 1). */
+    private drive: DriveNumber = 1;
+    /** Current drive object. */
+    private cur = this.drives[this.drive - 1];
 
-    private _q = [false, false, false, false]; // q0-3: phase
+    /** Q0-Q3: Coil states. */
+    private q = [false, false, false, false];
 
-    private _clock = 0;
-    private _lastCycles = 0;
-    private _state = 0;
-    private _zeros = 0;
+    /** The 8-cycle LSS clock. */
+    private clock: LssClockCycle = 0;
+    /** Current CPU cycle count. */
+    private lastCycles = 0;
+    /** Current state of the Logic State Sequencer. */
+    private state: nibble = 0;
+    /**
+     * Number of zeros read in a row. The Disk ][ can only read two zeros in a
+     * row reliably; above that and the drive starts reporting garbage.  See
+     * "Freaking Out Like a MC3470" in the WOZ spec.
+     */
+    private zeros = 0;
 
-    private _P5: rom;
+    /** Contents of the P5 ROM at 0xCnXX. */
+    private bootstrapRom: rom;
+    /** Contents of the P6 ROM. */
+    private sequencerRom: typeof SEQUENCER_ROM_16 | typeof SEQUENCER_ROM_13;
 
+    /** Builds a new Disk ][ card. */
     constructor(private io: Apple2IO, private callbacks: Callbacks, private sectors = 16) {
-        this._lastCycles = this.io.cycles();
-        // TODO(flan): This changes the port ROM but does not change the LSS
-        this._P5 = this.sectors == 16 ? P5_16 : P5_13;
+        this.lastCycles = this.io.cycles();
+        this.bootstrapRom = this.sectors == 16 ? BOOTSTRAP_ROM_16 : BOOTSTRAP_ROM_13;
+        this.sequencerRom = this.sectors == 16 ? SEQUENCER_ROM_16 : SEQUENCER_ROM_13;
 
-        this._init();
+        this.init();
     }
 
-    _debug(..._args: any) {
+    private debug(..._args: any) {
         // debug.apply(this, arguments);
     }
 
-    _init() {
-        this._debug('Disk ][');
+    private init() {
+        this.debug('Disk ][');
     }
 
     // Only used for WOZ disks
-    _moveHead() {
-        if (isNibbleDrive(this._cur)) {
+    private moveHead() {
+        if (isNibbleDrive(this.cur)) {
             return;
         }
-        const track = this._cur.rawTracks[this._cur.trackMap[this._cur.track]] || [0];
+        const track: bit[] =
+            this.cur.rawTracks[this.cur.trackMap[this.cur.track]] || [0];
 
         const cycles = this.io.cycles();
-        let workCycles = (cycles - this._lastCycles) * 2;
-        this._lastCycles = cycles;
+
+        // Spin the disk the number of elapsed cycles since last call
+        let workCycles = (cycles - this.lastCycles) * 2;
+        this.lastCycles = cycles;
 
         while (workCycles-- > 0) {
-            let pulse = 0;
-            if (this._clock == 4) {
-                pulse = track[this._cur.head];
+            let pulse: bit = 0;
+            if (this.clock == 4) {
+                pulse = track[this.cur.head];
                 if (!pulse) {
-                    if (++this._zeros > 2) {
-                        pulse = Math.random() > 0.5 ? 1 : 0;
+                    // More that 2 zeros can not be read reliably.
+                    if (++this.zeros > 2) {
+                        pulse = Math.random() >= 0.5 ? 1 : 0;
                     }
                 } else {
-                    this._zeros = 0;
+                    this.zeros = 0;
                 }
             }
 
             let idx = 0;
             idx |= pulse ? 0x00 : 0x01;
-            idx |= this._latch & 0x80 ? 0x02 : 0x00;
-            idx |= this._q6 ? 0x04 : 0x00;
-            idx |= this._q7 ? 0x08 : 0x00;
-            idx |= this._state << 4;
+            idx |= this.latch & 0x80 ? 0x02 : 0x00;
+            idx |= this.q6 ? 0x04 : 0x00;
+            idx |= this.q7 ? 0x08 : 0x00;
+            idx |= this.state << 4;
 
-            const command = _P6[idx];
+            const command = this.sequencerRom[idx];
 
-            if (this._on && this._q7) {
-                debug('clock:', this._clock, 'command:', toHex(command), 'q6:', this._q6);
+            if (this.on && this.q7) {
+                debug('clock:', this.clock, 'command:', toHex(command), 'q6:', this.q6);
             }
 
             switch (command & 0xf) {
                 case 0x0: // CLR
-                    this._latch = 0;
+                    this.latch = 0;
                     break;
                 case 0x8: // NOP
                     break;
                 case 0x9: // SL0
-                    this._latch = (this._latch << 1) & 0xff;
+                    this.latch = (this.latch << 1) & 0xff;
                     break;
                 case 0xA: // SR
-                    this._latch >>= 1;
-                    if (this._cur.readOnly) {
-                        this._latch |= 0x80;
+                    this.latch >>= 1;
+                    if (this.cur.readOnly) {
+                        this.latch |= 0x80;
                     }
                     break;
                 case 0xB: // LD
-                    this._latch = this._bus;
-                    debug('Loading', toHex(this._latch), 'from bus');
+                    this.latch = this.bus;
+                    debug('Loading', toHex(this.latch), 'from bus');
                     break;
                 case 0xD: // SL1
-                    this._latch = ((this._latch << 1) | 0x01) & 0xff;
+                    this.latch = ((this.latch << 1) | 0x01) & 0xff;
                     break;
             }
-            this._state = command >> 4;
+            this.state = (command >> 4 & 0xF) as nibble;
 
-            if (this._clock == 4) {
-                if (this._on) {
-                    if (this._q7) {
-                        track[this._cur.head] = this._state & 0x8 ? 0x01 : 0x00;
-                        debug('Wrote', this._state & 0x8 ? 0x01 : 0x00);
+            if (this.clock == 4) {
+                if (this.on) {
+                    if (this.q7) {
+                        track[this.cur.head] = this.state & 0x8 ? 0x01 : 0x00;
+                        debug('Wrote', this.state & 0x8 ? 0x01 : 0x00);
                     }
 
-                    if (++this._cur.head >= track.length) {
-                        this._cur.head = 0;
+                    if (++this.cur.head >= track.length) {
+                        this.cur.head = 0;
                     }
                 }
             }
 
-            if (++this._clock > 7) {
-                this._clock = 0;
+            if (++this.clock > 7) {
+                this.clock = 0;
             }
         }
     }
 
     // Only called for non-WOZ disks
-    _readWriteNext() {
-        if (!isNibbleDrive(this._cur)) {
+    private readWriteNext() {
+        if (!isNibbleDrive(this.cur)) {
             return;
         }
-        if (this._skip || this._writeMode) {
-            const track = this._cur.tracks![this._cur.track >> 2];
+        if (this.skip || this.writeMode) {
+            const track = this.cur.tracks![this.cur.track >> 2];
             if (track && track.length) {
-                if (this._cur.head >= track.length) {
-                    this._cur.head = 0;
+                if (this.cur.head >= track.length) {
+                    this.cur.head = 0;
                 }
 
-                if (this._writeMode) {
-                    if (!this._cur.readOnly) {
-                        track[this._cur.head] = this._bus;
-                        if (!this._cur.dirty) {
-                            this._updateDirty(this._drive, true);
+                if (this.writeMode) {
+                    if (!this.cur.readOnly) {
+                        track[this.cur.head] = this.bus;
+                        if (!this.cur.dirty) {
+                            this.updateDirty(this.drive, true);
                         }
                     }
                 } else {
-                    this._latch = track[this._cur.head];
+                    this.latch = track[this.cur.head];
                 }
 
-                ++this._cur.head;
+                ++this.cur.head;
             }
         } else {
-            this._latch = 0;
+            this.latch = 0;
         }
-        this._skip = (++this._skip % 2);
+        this.skip = (++this.skip % 2);
     }
 
-    setPhase(phase: Phase, on: boolean) {
-        this._debug('phase ' + phase + (on ? ' on' : ' off'));
-        if (isNibbleDrive(this._cur)) {
-            if (on) {
-                this._cur.track += _phase_delta[this._cur.phase][phase] * 2;
-                this._cur.phase = phase;
-            }
-        } else {
-            if (on) {
-                const delta = _phase_delta[this._cur.phase][phase] * 2;
-                this._cur.track += delta;
-                this._cur.phase = phase;
-            } else {
-                // foo
-            }
+    /**
+     * Sets whether the head positioning stepper motor coil for the given
+     * phase is on or off. Normally, the motor must be stepped two phases
+     * per track. Half tracks can be written by stepping only once; quarter
+     * tracks by activating two neighboring coils at once.
+     */
+    private setPhase(phase: Phase, on: boolean) {
+        this.debug('phase ' + phase + (on ? ' on' : ' off'));
+        if (on) {
+            this.cur.track += PHASE_DELTA[this.cur.phase][phase] * 2;
+            this.cur.phase = phase;
         }
 
-        const maxTrack = isNibbleDrive(this._cur)
-            ? this._cur.tracks.length * 4 - 1
-            : this._cur.trackMap.length - 1;
-        if (this._cur.track > maxTrack) {
-            this._cur.track = maxTrack;
+        const maxTrack = isNibbleDrive(this.cur)
+            ? this.cur.tracks.length * 4 - 1
+            : this.cur.trackMap.length - 1;
+        if (this.cur.track > maxTrack) {
+            this.cur.track = maxTrack;
         }
-        if (this._cur.track < 0x0) {
-            this._cur.track = 0x0;
+        if (this.cur.track < 0x0) {
+            this.cur.track = 0x0;
         }
 
         // debug(
@@ -397,10 +480,10 @@ export default class DiskII {
         //     '(' + toHex(_cur.track) + ')',
         //     '[' + phase + ':' + (on ? 'on' : 'off') + ']');
 
-        this._q[phase] = on;
+        this.q[phase] = on;
     }
 
-    _access(off: byte, val: byte) {
+    private access(off: byte, val?: byte) {
         let result = 0;
         const readMode = val === undefined;
 
@@ -431,156 +514,163 @@ export default class DiskII {
                 break;
 
             case LOC.DRIVEOFF: // 0x08
-                if (!this._offTimeout) {
-                    if (this._on) {
+                if (!this.offTimeout) {
+                    if (this.on) {
                         // TODO(flan): This is fragile because it relies on
                         // wall-clock time instead of emulator time.
-                        this._offTimeout = window.setTimeout(() => {
-                            this._debug('Drive Off');
-                            this._on = false;
+                        this.offTimeout = window.setTimeout(() => {
+                            this.debug('Drive Off');
+                            this.on = false;
                             if (this.callbacks.driveLight) {
-                                this.callbacks.driveLight(this._drive, false);
+                                this.callbacks.driveLight(this.drive, false);
                             }
                         }, 1000);
                     }
                 }
                 break;
             case LOC.DRIVEON: // 0x09
-                if (this._offTimeout) {
+                if (this.offTimeout) {
                     // TODO(flan): Fragile—see above
-                    window.clearTimeout(this._offTimeout);
-                    this._offTimeout = null;
+                    window.clearTimeout(this.offTimeout);
+                    this.offTimeout = null;
                 }
-                if (!this._on) {
-                    this._debug('Drive On');
-                    this._on = true;
-                    this._lastCycles = this.io.cycles();
-                    if (this.callbacks.driveLight) { this.callbacks.driveLight(this._drive, true); }
+                if (!this.on) {
+                    this.debug('Drive On');
+                    this.on = true;
+                    this.lastCycles = this.io.cycles();
+                    if (this.callbacks.driveLight) {
+                        this.callbacks.driveLight(this.drive, true);
+                    }
                 }
                 break;
 
             case LOC.DRIVE1:  // 0x0a
-                this._debug('Disk 1');
-                this._drive = 1;
-                this._cur = this._drives[this._drive - 1];
-                if (this._on && this.callbacks.driveLight) {
+                this.debug('Disk 1');
+                this.drive = 1;
+                this.cur = this.drives[this.drive - 1];
+                if (this.on && this.callbacks.driveLight) {
                     this.callbacks.driveLight(2, false);
                     this.callbacks.driveLight(1, true);
                 }
                 break;
             case LOC.DRIVE2:  // 0x0b
-                this._debug('Disk 2');
-                this._drive = 2;
-                this._cur = this._drives[this._drive - 1];
-                if (this._on && this.callbacks.driveLight) {
+                this.debug('Disk 2');
+                this.drive = 2;
+                this.cur = this.drives[this.drive - 1];
+                if (this.on && this.callbacks.driveLight) {
                     this.callbacks.driveLight(1, false);
                     this.callbacks.driveLight(2, true);
                 }
                 break;
 
             case LOC.DRIVEREAD: // 0x0c (Q6L) Shift
-                this._q6 = 0;
-                if (this._writeMode) {
-                    this._debug('clearing _q6/SHIFT');
+                this.q6 = 0;
+                if (this.writeMode) {
+                    this.debug('clearing _q6/SHIFT');
                 }
-                if (isNibbleDrive(this._cur)) {
-                    this._readWriteNext();
+                if (isNibbleDrive(this.cur)) {
+                    this.readWriteNext();
                 }
                 break;
 
             case LOC.DRIVEWRITE: // 0x0d (Q6H) LOAD
-                this._q6 = 1;
-                if (this._writeMode) {
-                    this._debug('setting _q6/LOAD');
+                this.q6 = 1;
+                if (this.writeMode) {
+                    this.debug('setting _q6/LOAD');
                 }
-                if (isNibbleDrive(this._cur)) {
-                    if (readMode && !this._writeMode) {
-                        if (this._cur.readOnly) {
-                            this._latch = 0xff;
-                            this._debug('Setting readOnly');
+                if (isNibbleDrive(this.cur)) {
+                    if (readMode && !this.writeMode) {
+                        if (this.cur.readOnly) {
+                            this.latch = 0xff;
+                            this.debug('Setting readOnly');
                         } else {
-                            this._latch = this._latch >> 1;
-                            this._debug('Clearing readOnly');
+                            this.latch = this.latch >> 1;
+                            this.debug('Clearing readOnly');
                         }
                     }
                 }
                 break;
 
             case LOC.DRIVEREADMODE:  // 0x0e (Q7L)
-                this._debug('Read Mode');
-                this._q7 = 0;
-                this._writeMode = false;
+                this.debug('Read Mode');
+                this.q7 = false;
+                this.writeMode = false;
                 break;
             case LOC.DRIVEWRITEMODE: // 0x0f (Q7H)
-                this._debug('Write Mode');
-                this._q7 = 1;
-                this._writeMode = true;
+                this.debug('Write Mode');
+                this.q7 = false;
+                this.writeMode = true;
                 break;
 
             default:
                 break;
         }
 
-        this._moveHead();
+        this.moveHead();
 
         if (readMode) {
+            // According to UtAIIe, p. 9-13 to 9-14, any even address can be
+            // used to read the data register onto the CPU bus, although some
+            // also cause conflicts with the disk controller commands.
             if ((off & 0x01) === 0) {
-                result = this._latch;
+                result = this.latch;
             } else {
                 result = 0;
             }
         } else {
-            this._bus = val;
+            // It's not explicitly stated, but writes to any address set the
+            // data register.
+            this.bus = val!;
         }
 
         return result;
     }
 
-    _updateDirty(drive: DriveNumber, dirty: boolean) {
-        this._drives[drive - 1].dirty = dirty;
+    private updateDirty(drive: DriveNumber, dirty: boolean) {
+        this.drives[drive - 1].dirty = dirty;
         if (this.callbacks.dirty) {
             this.callbacks.dirty(drive, dirty);
         }
     }
 
-    ioSwitch(off: byte, val: byte) {
-        return this._access(off, val);
+    ioSwitch(off: byte, val?: byte) {
+        return this.access(off, val);
     }
 
     read(_page: byte, off: byte) {
-        return this._P5[off];
+        return this.bootstrapRom[off];
     }
 
     write() { }
 
     reset() {
-        if (this._on) {
-            this.callbacks.driveLight(this._drive, false);
-            this._writeMode = false;
-            this._on = false;
-            this._drive = 1;
-            this._cur = this._drives[this._drive - 1];
+        if (this.on) {
+            this.callbacks.driveLight(this.drive, false);
+            this.writeMode = false;
+            this.on = false;
+            this.drive = 1;
+            this.cur = this.drives[this.drive - 1];
         }
         for (let idx = 0; idx < 4; idx++) {
-            this._q[idx] = false;
+            this.q[idx] = false;
         }
     }
 
     tick() {
-        this._moveHead();
+        this.moveHead();
     }
 
     // TODO(flan): Does not work for WOZ disks
     getState() {
         const result = {
             drives: [] as DriveState[],
-            skip: this._skip,
-            latch: this._latch,
-            writeMode: this._writeMode,
-            on: this._on,
-            drive: this._drive
+            skip: this.skip,
+            latch: this.latch,
+            writeMode: this.writeMode,
+            on: this.on,
+            drive: this.drive
         };
-        this._drives.forEach(function (drive, idx) {
+        this.drives.forEach(function (drive, idx) {
             result.drives[idx] = getDriveState(drive);
         });
 
@@ -589,22 +679,22 @@ export default class DiskII {
 
     // TODO(flan): Does not work for WOZ disks
     setState(state: State) {
-        this._skip = state.skip;
-        this._latch = state.latch;
-        this._writeMode = state.writeMode;
-        this._on = state.on;
-        this._drive = state.drive;
+        this.skip = state.skip;
+        this.latch = state.latch;
+        this.writeMode = state.writeMode;
+        this.on = state.on;
+        this.drive = state.drive;
         for (const d of DRIVE_NUMBERS) {
-            this._drives[d - 1] = setDriveState(state.drives[d - 1]);
-            this.callbacks.driveLight(d, this._on);
-            this.callbacks.dirty(d, this._drives[d - 1].dirty);
+            this.drives[d - 1] = setDriveState(state.drives[d - 1]);
+            this.callbacks.driveLight(d, this.on);
+            this.callbacks.dirty(d, this.drives[d - 1].dirty);
         }
-        this._cur = this._drives[this._drive - 1];
+        this.cur = this.drives[this.drive - 1];
     }
 
     // TODO(flan): Does not work for WOZ disks
     getMetadata(driveNo: DriveNumber) {
-        const drive = this._drives[driveNo - 1];
+        const drive = this.drives[driveNo - 1];
         if (isNibbleDrive(drive)) {
             return {
                 format: drive.format,
@@ -622,7 +712,7 @@ export default class DiskII {
 
     // TODO(flan): Does not work on WOZ disks
     rwts(disk: DriveNumber, track: byte, sector: byte) {
-        const cur = this._drives[disk - 1];
+        const cur = this.drives[disk - 1];
         if (!isNibbleDrive(cur)) {
             throw new Error('Can\'t read WOZ disks');
         }
@@ -652,7 +742,7 @@ export default class DiskII {
         } else {
             data = disk.data;
         }
-        const cur = this._drives[drive - 1];
+        const cur = this.drives[drive - 1];
 
         // var v = (fmt === 'dsk' ? data[0x11][0x00][0x06] : 0xfe);
         // if (v == 0x00) {
@@ -686,11 +776,11 @@ export default class DiskII {
         }
 
         Object.assign(cur, newDisk);
-        this._updateDirty(this._drive, false);
+        this.updateDirty(this.drive, false);
     }
 
     getJSON(drive: DriveNumber, pretty: boolean) {
-        const cur = this._drives[drive - 1];
+        const cur = this.drives[drive - 1];
         if (!isNibbleDrive(cur)) {
             throw new Error('Can\'t save WOZ disks to JSON');
         }
@@ -698,14 +788,14 @@ export default class DiskII {
     }
 
     setJSON(drive: DriveNumber, data: any) {
-        const cur = this._drives[drive - 1];
+        const cur = this.drives[drive - 1];
         Object.assign(cur, jsonDecode(data));
         return true;
     }
 
     setBinary(drive: DriveNumber, name: string, fmt: DiskFormat, rawData: memory) {
         let disk;
-        const cur = this._drives[drive - 1];
+        const cur = this.drives[drive - 1];
         const readOnly = false;
         const volume = 254;
         const options = {
@@ -740,13 +830,13 @@ export default class DiskII {
         }
 
         Object.assign(cur, disk);
-        this._updateDirty(drive, true);
+        this.updateDirty(drive, true);
         return true;
     }
 
     // TODO(flan): Does not work with WOZ disks
     getBinary(drive: DriveNumber) {
-        const cur = this._drives[drive - 1];
+        const cur = this.drives[drive - 1];
         if (!isNibbleDrive(cur)) {
             return null;
         }
@@ -773,7 +863,7 @@ export default class DiskII {
 
     // TODO(flan): Does not work with WOZ disks
     getBase64(drive: DriveNumber) {
-        const cur = this._drives[drive - 1];
+        const cur = this.drives[drive - 1];
         if (!isNibbleDrive(cur)) {
             return null;
         }

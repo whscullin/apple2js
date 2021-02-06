@@ -9,6 +9,14 @@
 export type MemberOf<T extends ReadonlyArray<unknown>> =
     T extends ReadonlyArray<infer E> ? E : never;
 
+/** A bit. */
+export type bit = 0 | 1;
+
+/** A nibble. */
+export type nibble =
+    0x0 | 0x1 | 0x2 | 0x3 | 0x4 | 0x5 | 0x6 | 0x7 |
+    0x8 | 0x9 | 0xa | 0xb | 0xc | 0xd | 0xe | 0xf;
+
 /** A byte (0..255). This is not enforced by the compiler. */
 export type byte = number;
 
