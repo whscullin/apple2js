@@ -1,4 +1,22 @@
 
+/**
+ * Extracts the members of a constant array as a type. Used as:
+ * 
+ * @example
+ * const SOME_VALUES = ['a', 'b', 1, 2] as const;
+ * type SomeValues = MemberOf<typeof SOME_VALUES>; // 'a' | 'b' | 1 | 2
+ */
+export type MemberOf<T extends ReadonlyArray<unknown>> =
+    T extends ReadonlyArray<infer E> ? E : never;
+
+/** A bit. */
+export type bit = 0 | 1;
+
+/** A nibble. */
+export type nibble =
+    0x0 | 0x1 | 0x2 | 0x3 | 0x4 | 0x5 | 0x6 | 0x7 |
+    0x8 | 0x9 | 0xa | 0xb | 0xc | 0xd | 0xe | 0xf;
+
 /** A byte (0..255). This is not enforced by the compiler. */
 export type byte = number;
 
@@ -6,39 +24,59 @@ export type byte = number;
 export type word = number;
 
 /** A raw region of memory. */
-export type memory = number[] | Uint8Array;
+export type memory = Uint8Array;
+
+/** A raw region of memory. */
+export type rom = ReadonlyUint8Array;
 
 /** A mapped region of memory. */
 export interface Memory {
-  /** Start page. */
-  start(): byte;
-  /** End page, inclusive. */
-  end(): byte;
-  /** Read a byte. */
-  read(page: byte, offset: byte): byte;
-  /** Write a byte. */
-  write(page: byte, offset: byte, value: byte): void;
+    /** Start page. */
+    start(): byte;
+    /** End page, inclusive. */
+    end(): byte;
+    /** Read a byte. */
+    read(page: byte, offset: byte): byte;
+    /** Write a byte. */
+    write(page: byte, offset: byte, value: byte): void;
 }
 
-export type DiskFormat = '2mg' | 'd13' | 'do' | 'dsk' | 'hdv' | 'po' | 'nib' | 'woz';
+export const DISK_FORMATS = [
+    '2mg',
+    'd13',
+    'do',
+    'dsk',
+    'hdv',
+    'po',
+    'nib',
+    'woz'
+] as const;
+
+export type DiskFormat = MemberOf<typeof DISK_FORMATS>;
 
 export interface Drive {
-  format: DiskFormat,
-  volume: number,
-  tracks: Array<byte[] | Uint8Array>,
-  trackMap: unknown,
+    format: DiskFormat,
+    volume: number,
+    tracks: Array<byte[] | Uint8Array>,
+    trackMap: unknown,
 }
 
 export interface DiskIIDrive extends Drive {
-  rawTracks: unknown,
-  track: number,
-  head: number,
-  phase: number,
-  readOnly: boolean,
-  dirty: boolean,
+    rawTracks: unknown,
+    track: number,
+    head: number,
+    phase: number,
+    readOnly: boolean,
+    dirty: boolean,
 }
 
 export interface Restorable<T> {
-  getState(): T;
-  setState(state: T): void;
+    getState(): T;
+    setState(state: T): void;
+}
+
+// Read-only typed arrays for constants
+export type TypedArrayMutableProperties = 'copyWithin' | 'fill' | 'reverse' | 'set' | 'sort';
+export interface ReadonlyUint8Array extends Omit<Uint8Array, TypedArrayMutableProperties> {
+    readonly [n: number]: number
 }

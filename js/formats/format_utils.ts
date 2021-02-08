@@ -9,12 +9,12 @@
  * implied warranty.
  */
 
-import { byte, memory } from '../types';
+import { byte, DiskFormat, memory } from '../types';
 import { base64_decode, base64_encode } from '../base64';
 import { bytify, debug, toHex } from '../util';
 
 export type Disk = {
-    format: string,
+    format: DiskFormat,
     name: string,
     volume: byte,
     tracks: memory[],
@@ -22,11 +22,11 @@ export type Disk = {
 };
 
 export type Drive = {
-    format: string,
-    volume: 254,
+    format: DiskFormat,
+    volume: byte,
     tracks: memory[],
-    readOnly: false,
-    dirty: false
+    readOnly: boolean,
+    dirty: boolean,
 }
 
 /**
@@ -315,6 +315,7 @@ export function explodeSector13(volume: byte, track: byte, sector: byte, data: b
     return buf;
 }
 
+// TODO(flan): Does not work on WOZ disks
 export function readSector(drive: Drive, track: byte, sector: byte) {
     const _sector = drive.format == 'po' ? _PO[sector] : _DO[sector];
     let val, state = 0;
@@ -338,7 +339,7 @@ export function readSector(drive: Drive, track: byte, sector: byte) {
         }
     }
     let t = 0, s = 0, v = 0, checkSum;
-    const data = [];
+    const data = new Uint8Array(256);
     while (retry < 4) {
         switch (state) {
             case 0:
@@ -407,7 +408,7 @@ export function readSector(drive: Drive, track: byte, sector: byte) {
                 break;
         }
     }
-    return [];
+    return new Uint8Array();
 }
 
 export function jsonEncode(cur: Drive, pretty: boolean) {

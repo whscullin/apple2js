@@ -2,7 +2,7 @@ import MicroModal from 'micromodal';
 
 import Audio from './audio';
 import DriveLights from './drive_lights';
-import { DISK_TYPES } from '../cards/disk2';
+import { DISK_FORMATS } from '../types';
 import { gamepad, configGamepad, initGamepad } from './gamepad';
 import KeyBoard from './keyboard';
 import Tape, { TAPE_TYPES } from './tape';
@@ -180,7 +180,7 @@ export function loadAjax(drive, url) {
     }).then(function(data) {
         if (data.type == 'binary') {
             loadBinary(drive, data);
-        } else if (DISK_TYPES.indexOf(data.type) > -1) {
+        } else if (DISK_FORMATS.indexOf(data.type) > -1) {
             loadDisk(drive, data);
         }
         initGamepad(data.gamepad);
@@ -245,7 +245,7 @@ export function doDelete(name) {
 function doLoadLocal(drive, file) {
     var parts = file.name.split('.');
     var ext = parts[parts.length - 1].toLowerCase();
-    if (DISK_TYPES.indexOf(ext) > -1) {
+    if (DISK_FORMATS.indexOf(ext) > -1) {
         doLoadLocalDisk(drive, file);
     } else if (TAPE_TYPES.indexOf(ext) > -1) {
         tape.doLoadLocalTape(file);

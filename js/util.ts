@@ -30,12 +30,7 @@ export const testables = {
  * was just powered on.
  */
 export function allocMem(size: number) {
-    let result: number[] | Uint8Array;
-    if (window.Uint8Array) {
-        result = new Uint8Array(size);
-    } else {
-        result = new Array(size);
-    }
+    const result = new Uint8Array(size);
 
     for (let idx = 0; idx < size; idx++) {
         result[idx] = (idx & 0x02) ? 0x00 : 0xff;
@@ -57,11 +52,7 @@ export function allocMemPages(pages: number): memory {
 
 /** Returns a new Uint8Array for the input array. */
 export function bytify(ary: number[]): memory {
-    let result: number[] | Uint8Array = ary;
-    if (window.Uint8Array) {
-        result = new Uint8Array(ary);
-    }
-    return result;
+    return new Uint8Array(ary);
 }
 
 /** Writes to the console. */
