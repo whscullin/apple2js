@@ -7,6 +7,7 @@ import { debug } from './util';
 
 import SYMBOLS from './symbols';
 import { Restorable } from './types';
+import { processGamepad } from './ui/gamepad';
 
 interface Options {
     characterRom: any,
@@ -142,6 +143,7 @@ export class Apple2 implements Restorable<State> {
             this.stats.frames++;
             this.io.tick();
             this.tick();
+            processGamepad(this.io);
 
             if (!this.paused && requestAnimationFrame) {
                 this.runAnimationFrame = requestAnimationFrame(runFn);
