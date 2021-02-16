@@ -464,10 +464,10 @@ void main(void)
     // details: NTSC_DETAILS, or PAL_DETAILS
     // returns: a canvas
     const screenData = (image, details, dhgr=true) => {
-        // if ((image.naturalWidth != 560) || (image.naturalHeight != 192)) {
-        //     throw new Error('screenData expects an image 560x192;' +
-        //               ` got ${image.naturalWidth}x${image.naturalHeight}`);
-        // }
+        if ((image.naturalWidth != 560) || (image.naturalHeight != 192)) {
+            throw new Error('screenData expects an image 560x192;' +
+                      ` got ${image.naturalWidth}x${image.naturalHeight}`);
+        }
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
         const width = details.imageSize.width;
@@ -477,8 +477,7 @@ void main(void)
         context.fillStyle = 'rgba(0,0,0,1)';
         context.fillRect(0, 0, width, height);
         const topLeft = dhgr ? details.topLeft80Col : details.topLeft;
-        // context.drawImage(image, topLeft.x, topLeft.y);
-        context.putImageData(image, topLeft.x, topLeft.y);
+        context.drawImage(image, topLeft.x, topLeft.y);
         const imageData = context.getImageData(0, 0, width, height);
         return [canvas, imageData];
     };
