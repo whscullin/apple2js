@@ -164,7 +164,9 @@ function loadingStop () {
     MicroModal.close('loading-modal');
 
     if (!paused) {
-        _apple2.run();
+        vm.ready.then(() => {
+            _apple2.run();
+        });
     }
 }
 
@@ -719,7 +721,7 @@ export function updateScreen() {
     } else {
         screen.classList.remove('green');
     }
-    vm.mono(green);
+    // vm.mono(green);
 }
 
 export function updateCPU() {
@@ -780,7 +782,9 @@ function _mousemove(evt) {
 export function pauseRun() {
     var label = document.querySelector('#pause-run i');
     if (paused) {
-        _apple2.run();
+        vm.ready.then(() => {
+            _apple2.run();
+        });
         label.classList.remove('fa-play');
         label.classList.add('fa-pause');
     } else {
@@ -921,6 +925,8 @@ export function initUI(apple2, disk2, smartPort, printer, e) {
         _apple2.stop();
         processHash(hash);
     } else {
-        _apple2.run();
+        vm.ready.then(() => {
+            _apple2.run();
+        });
     }
 }

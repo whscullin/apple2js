@@ -78,7 +78,7 @@ export default function Videoterm(io, context) {
     function _init() {
         var idx;
 
-        _imageData = context.createImageData(560, 384);
+        _imageData = new ImageData(560, 384);
         for (idx = 0; idx < 560 * 384 * 4; idx++) {
             _imageData.data[idx] = 0xff;
         }

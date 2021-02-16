@@ -13,6 +13,8 @@ import { base64_decode, base64_encode } from './base64';
 import { byte, memory, Memory, Restorable } from './types';
 import { allocMemPages } from './util';
 
+import { screenEmu } from './contrib/screenEmu';
+
 let enhanced = false;
 let multiScreen = false;
 let textMode = true;
@@ -23,12 +25,6 @@ let _80colMode = false;
 let altCharMode = false;
 let an3 = false;
 let doubleHiresMode = false;
-let monoDHRMode = false;
-const colorDHRMode = false;
-let mixedDHRMode = false;
-let highColorHGRMode = false;
-let highColorTextMode = false;
-let oneSixtyMode = false;
 
 type bank = 0 | 1;
 type pageNo = 1 | 2;
@@ -47,15 +43,14 @@ interface Region {
 }
 
 
-interface GraphicsState {
+interface GLGraphicsState {
     page: byte;
-    mono: boolean;
     buffer: string[];
 }
 
 interface VideoModesState {
-    grs: [gr1: GraphicsState, _gr2: GraphicsState],
-    hgrs: [hgr1: GraphicsState, hgr2: GraphicsState],
+    grs: [gr1: GLGraphicsState, _gr2: GLGraphicsState],
+    hgrs: [hgr1: GLGraphicsState, hgr2: GLGraphicsState],
     textMode: boolean,
     mixedMode: boolean,
     hiresMode: boolean,
@@ -63,14 +58,6 @@ interface VideoModesState {
     _80colMode: boolean,
     altCharMode: boolean,
     an3: boolean,
-}
-
-function dim(c: Color): Color {
-    return [
-        c[0] * 0.75 & 0xff,
-        c[1] * 0.75 & 0xff,
-        c[2] * 0.75 & 0xff
-    ];
 }
 
 function rowToBase(row: number) {
@@ -82,75 +69,8 @@ function rowToBase(row: number) {
 
 
 // hires colors
-const orangeCol: Color = [255, 106, 60];
-const greenCol: Color = [20, 245, 60];
-const blueCol: Color = [20, 207, 253];
-const violetCol: Color = [255, 68, 253];
 const whiteCol: Color = [255, 255, 255];
 const blackCol: Color = [0, 0, 0];
-
-// lores colors
-const _colors: Color[] = [
-    [0, 0, 0], // 0x0 black
-    [227, 30, 96], // 0x1 deep red
-    [96, 78, 189], // 0x2 dark blue
-    [255, 68, 253], // 0x3 purple
-    [0, 163, 96], // 0x4 dark green
-    [156, 156, 156], // 0x5 dark gray
-    [20, 207, 253], // 0x6 medium blue
-    [208, 195, 255], // 0x7 light blue
-    [96, 114, 3], // 0x8 brown
-    [255, 106, 60], // 0x9 orange
-    [156, 156, 156], // 0xa light gray
-    [255, 160, 208], // 0xb pink
-    [20, 245, 60], // 0xc green
-    [208, 221, 141], // 0xd yellow
-    [114, 255, 208], // 0xe aquamarine
-    [255, 255, 255], // 0xf white
-];
-
-//
-const r4 = [
-    0,   // Black
-    2,   // Dark Blue
-    4,   // Dark Green
-    6,   // Medium Blue
-
-    8,   // Brown
-    5,   // Gray 1
-    12,  // Light Green
-    14,  // Aqua
-
-    1,   // Red
-    3,   // Purple
-    10,  // Gray 2
-    7,  // Pink
-
-    9,   // Orange
-    11,   // Light Blue
-    13,  // Yellow
-    15   // White
-];
-
-const dcolors: Color[] = [
-    [0, 0, 0], // 0x0 black
-    [227, 30, 96], // 0x1 deep red
-    [96, 78, 189], // 0x2 dark blue
-    [255, 68, 253], // 0x3 purple
-    [0, 163, 96], // 0x4 dark green
-    [156, 156, 156], // 0x5 dark gray
-    [20, 207, 253], // 0x6 medium blue
-    [208, 195, 255], // 0x7 light blue
-    [96, 114, 3], // 0x8 brown
-    [255, 106, 60], // 0x9 orange
-    [156, 156, 156], // 0xa light gray
-    [255, 160, 208], // 0xb pink
-    [20, 245, 60], // 0xc green
-    [208, 221, 141], // 0xd yellow
-    [114, 255, 208], // 0xe aquamarine
-    [255, 255, 255], // 0xf white
-];
-
 
 /****************************************************************************
  *
@@ -158,7 +78,7 @@ const dcolors: Color[] = [
  *
  ***************************************************************************/
 
-export class LoresPage implements Memory, Restorable<GraphicsState> {
+export class LoresPage implements Memory, Restorable<GLGraphicsState> {
     // $00-$3F inverse
     // $40-$7F flashing
     // $80-$FF normal
@@ -166,25 +86,19 @@ export class LoresPage implements Memory, Restorable<GraphicsState> {
     private _imageData: ImageData;
     private _buffer: memory[] = [];
     private _refreshing = false;
-    private _monoMode = false;
     private _blink = false;
     private _dirty: Region = {
-        top: 385,
+        top: 193,
         bottom: -1,
         left: 561,
         right: -1
     };
 
     constructor(private page: number,
-        private readonly charset: any,
-        private readonly e: any,
-        private readonly context: any) {
-        this._init();
-    }
-
-    _init() {
-        this._imageData = new ImageData(560, 384);
-        for (let idx = 0; idx < 560 * 384 * 4; idx++) {
+        private readonly charset: memory,
+        private readonly e: boolean) {
+        this._imageData = new ImageData(560, 192);
+        for (let idx = 0; idx < 560 * 192 * 4; idx++) {
             this._imageData.data[idx] = 0xff;
         }
         this._buffer[0] = allocMemPages(0x4);
@@ -196,10 +110,6 @@ export class LoresPage implements Memory, Restorable<GraphicsState> {
         data[off + 0] = data[off + 4] = c0;
         data[off + 1] = data[off + 5] = c1;
         data[off + 2] = data[off + 6] = c2;
-        const nextOff = off + 560 * 4;
-        data[nextOff] = data[nextOff + 4] = c0;
-        data[nextOff + 1] = data[nextOff + 5] = c1;
-        data[nextOff + 2] = data[nextOff + 6] = c2;
     }
 
     _drawHalfPixel(data: Uint8ClampedArray, off: number, color: Color) {
@@ -207,12 +117,7 @@ export class LoresPage implements Memory, Restorable<GraphicsState> {
         data[off + 0] = c0;
         data[off + 1] = c1;
         data[off + 2] = c2;
-        const nextOff = off + 560 * 4;
-        data[nextOff] = c0;
-        data[nextOff + 1] = c1;
-        data[nextOff + 2] = c2;
     }
-
 
     bank0(): Memory {
         return {
@@ -237,6 +142,7 @@ export class LoresPage implements Memory, Restorable<GraphicsState> {
     _start() {
         return (0x04 * this.page);
     }
+
     _end() { return (0x04 * this.page) + 0x03; }
 
     _read(page: byte, off: byte, bank: bank) {
@@ -265,16 +171,15 @@ export class LoresPage implements Memory, Restorable<GraphicsState> {
 
         const data = this._imageData.data;
         if ((row < 24) && (col < 40)) {
-            let y = row << 4;
+            let y = row << 3;
             if (y < this._dirty.top) { this._dirty.top = y; }
-            y += 16;
+            y += 8;
             if (y > this._dirty.bottom) { this._dirty.bottom = y; }
             let x = col * 14;
             if (x < this._dirty.left) { this._dirty.left = x; }
             x += 14;
             if (x > this._dirty.right) { this._dirty.right = x; }
 
-            let color;
             if (textMode || hiresMode || (mixedMode && row > 19)) {
                 let inverse;
                 if (this.e) {
@@ -295,17 +200,17 @@ export class LoresPage implements Memory, Restorable<GraphicsState> {
                         val = (val >= 0x40 && val < 0x80) ? val - 0x40 : val;
                     }
 
-                    off = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8 * 2) * 4;
+                    let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
 
                     for (let jdx = 0; jdx < 8; jdx++) {
                         let b = this.charset[val * 8 + jdx];
                         for (let idx = 0; idx < 7; idx++) {
-                            color = (b & 0x01) ? back : fore;
-                            this._drawHalfPixel(data, off, color);
+                            const color = (b & 0x01) ? back : fore;
+                            this._drawHalfPixel(data, offset, color);
                             b >>= 1;
-                            off += 4;
+                            offset += 4;
                         }
-                        off += 553 * 4 + 560 * 4;
+                        offset += 553 * 4;
                     }
                 } else {
                     val = this._buffer[0][base];
@@ -316,58 +221,30 @@ export class LoresPage implements Memory, Restorable<GraphicsState> {
                         val = (val >= 0x40 && val < 0x80) ? val - 0x40 : val;
                     }
 
-                    off = (col * 14 + row * 560 * 8 * 2) * 4;
-
-                    if (highColorTextMode) {
-                        fore = _colors[this._buffer[1][base] >> 4];
-                        back = _colors[this._buffer[1][base] & 0x0f];
-                    }
+                    let offset = (col * 14 + row * 560 * 8) * 4;
 
                     if (this.e) {
                         for (let jdx = 0; jdx < 8; jdx++) {
                             let b = this.charset[val * 8 + jdx];
                             for (let idx = 0; idx < 7; idx++) {
-                                color = (b & 0x01) ? back : fore;
-                                this._drawPixel(data, off, color);
+                                const color = (b & 0x01) ? back : fore;
+                                this._drawPixel(data, offset, color);
                                 b >>= 1;
-                                off += 8;
+                                offset += 8;
                             }
-                            off += 546 * 4 + 560 * 4;
+                            offset += 546 * 4;
                         }
                     } else {
-                        const colorMode = mixedMode && !textMode && !this._monoMode;
-                        // var val0 = col > 0 ? _buffer[0][base - 1] : 0;
-                        // var val2 = col < 39 ? _buffer[0][base + 1] : 0;
-
                         for (let jdx = 0; jdx < 8; jdx++) {
-                            let odd = !(col & 0x1);
                             let b = this.charset[val * 8 + jdx] << 1;
-                            if (colorMode) {
-                                // var b0 = charset[val0 * 8 + jdx];
-                                // var b2 = charset[val2 * 8 + jdx];
-                                if (inverse) { b ^= 0x1ff; }
-                            }
 
                             for (let idx = 0; idx < 7; idx++) {
-                                if (colorMode) {
-                                    if (b & 0x80) {
-                                        if ((b & 0x1c0) != 0x80) {
-                                            color = whiteCol;
-                                        } else {
-                                            color = odd ? violetCol : greenCol;
-                                        }
-                                    } else {
-                                        color = blackCol;
-                                    }
-                                    odd = !odd;
-                                } else {
-                                    color = (b & 0x80) ? fore : back;
-                                }
-                                this._drawPixel(data, off, color);
+                                const color = (b & 0x80) ? fore : back;
+                                this._drawPixel(data, offset, color);
                                 b <<= 1;
-                                off += 8;
+                                offset += 8;
                             }
-                            off += 546 * 4 + 560 * 4;
+                            offset += 546 * 4;
                         }
                     }
                 }
@@ -376,68 +253,42 @@ export class LoresPage implements Memory, Restorable<GraphicsState> {
                     return;
                 }
                 if (_80colMode && !an3) {
-                    off = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8 * 2) * 4;
-                    if (this._monoMode) {
-                        fore = whiteCol;
-                        back = blackCol;
-                        for (let jdx = 0; jdx < 8; jdx++) {
-                            let b = (jdx < 8) ? (val & 0x0f) : (val >> 4);
-                            b |= (b << 4);
-                            if (bank & 0x1) {
-                                b <<= 1;
-                            }
-                            for (let idx = 0; idx < 7; idx++) {
-                                color = (b & 0x80) ? fore : back;
-                                this._drawHalfPixel(data, off, color);
-                                b <<= 1;
-                                off += 4;
-                            }
-                            off += 553 * 4 + 560 * 4;
-                        }
-                    } else {
+                    let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
+                    fore = whiteCol;
+                    back = blackCol;
+                    for (let jdx = 0; jdx < 8; jdx++) {
+                        let b = (jdx < 8) ? (val & 0x0f) : (val >> 4);
+                        b |= (b << 4);
                         if (bank & 0x1) {
-                            val = ((val & 0x77) << 1) | ((val & 0x88) >> 3);
+                            b <<= 1;
                         }
-                        for (let jdx = 0; jdx < 8; jdx++) {
-                            color = _colors[(jdx < 4) ?
-                                (val & 0x0f) : (val >> 4)];
-                            for (let idx = 0; idx < 7; idx++) {
-                                this._drawHalfPixel(data, off, color);
-                                off += 4;
-                            }
-                            off += 553 * 4 + 560 * 4;
+                        for (let idx = 0; idx < 7; idx++) {
+                            const color = (b & 0x80) ? fore : back;
+                            this._drawHalfPixel(data, offset, color);
+                            b <<= 1;
+                            offset += 4;
                         }
+                        offset += 553 * 4;
                     }
                 } else {
-                    off = (col * 14 + row * 560 * 8 * 2) * 4;
+                    let offset = (col * 14 + row * 560 * 8) * 4;
 
-                    if (this._monoMode) {
-                        fore = whiteCol;
-                        back = blackCol;
-                        for (let jdx = 0; jdx < 8; jdx++) {
-                            let b = (jdx < 4) ? (val & 0x0f) : (val >> 4);
-                            b |= (b << 4);
-                            b |= (b << 8);
-                            if (col & 0x1) {
-                                b <<= 2;
-                            }
-                            for (let idx = 0; idx < 14; idx++) {
-                                color = (b & 0x8000) ? fore : back;
-                                this._drawHalfPixel(data, off, color);
-                                b <<= 1;
-                                off += 4;
-                            }
-                            off += 546 * 4 + 560 * 4;
+                    fore = whiteCol;
+                    back = blackCol;
+                    for (let jdx = 0; jdx < 8; jdx++) {
+                        let b = (jdx < 4) ? (val & 0x0f) : (val >> 4);
+                        b |= (b << 4);
+                        b |= (b << 8);
+                        if (col & 0x1) {
+                            b >>= 2;
                         }
-                    } else {
-                        for (let jdx = 0; jdx < 8; jdx++) {
-                            color = _colors[(jdx < 4) ? (val & 0x0f) : (val >> 4)];
-                            for (let idx = 0; idx < 7; idx++) {
-                                this._drawPixel(data, off, color);
-                                off += 8;
-                            }
-                            off += 546 * 4 + 560 * 4;
+                        for (let idx = 0; idx < 14; idx++) {
+                            const color = (b & 0x0001) ? fore : back;
+                            this._drawHalfPixel(data, offset, color);
+                            b >>= 1;
+                            offset += 4;
                         }
+                        offset += 546 * 4;
                     }
                 }
             }
@@ -469,31 +320,38 @@ export class LoresPage implements Memory, Restorable<GraphicsState> {
         this._refreshing = false;
     }
 
-    mono(on: boolean) {
-        this._monoMode = on;
-        this.refresh();
-    }
+    blit(_sv: any, _mixed: boolean = false): boolean {
+        if (this._dirty.top === 193) { return false; }
 
-    blit(mixed: boolean = false): boolean {
-        if (this._dirty.top === 385) { return false; }
-        let top = this._dirty.top;
-        const bottom = this._dirty.bottom;
-        const left = this._dirty.left;
-        const right = this._dirty.right;
+        // let top = this._dirty.top;
+        // const bottom = this._dirty.bottom;
+        // const left = this._dirty.left;
+        // const right = this._dirty.right;
 
-        if (mixed) {
-            if (bottom < 320) { return false; }
-            if (top < 320) { top = 320; }
-        }
-        this.context.putImageData(
-            this._imageData, 0, 0, left, top, right - left, bottom - top
+        // if (mixed) {
+        //     if (bottom < 160) { return false; }
+        //     if (top < 160) { top = 160; }
+        // }
+        // this.context.putImageData(
+        //     this._imageData, 0, 0, left, top, right - left, bottom - top
+        // );
+
+        const [, imageData] = screenEmu.screenData(
+            this._imageData,
+            screenEmu.C.NTSC_DETAILS,
+            doubleHiresMode
         );
+        const imageInfo = new screenEmu.ImageInfo(imageData);
+        _sv.image = imageInfo;
+        _sv.vsync();
+
         this._dirty = {
-            top: 385,
+            top: 193,
             bottom: -1,
             left: 561,
             right: -1
         };
+
         return true;
     }
 
@@ -514,19 +372,17 @@ export class LoresPage implements Memory, Restorable<GraphicsState> {
         return this._write(page, off, val, 0);
     }
 
-    getState(): GraphicsState {
+    getState(): GLGraphicsState {
         return {
             page: this.page,
-            mono: this._monoMode,
             buffer: [
                 base64_encode(this._buffer[0]),
                 base64_encode(this._buffer[1])
             ]
         };
     }
-    setState(state: GraphicsState) {
+    setState(state: GLGraphicsState) {
         this.page = state.page;
-        this._monoMode = state.mono;
         this._buffer[0] = base64_decode(state.buffer[0]);
         this._buffer[1] = base64_decode(state.buffer[1]);
 
@@ -574,10 +430,10 @@ export class LoresPage implements Memory, Restorable<GraphicsState> {
  *
  ***************************************************************************/
 
-export class HiresPage implements Memory, Restorable<GraphicsState> {
-    private _imageData: { data: Uint8ClampedArray; };
+export class HiresPage implements Memory, Restorable<GLGraphicsState> {
+    private _imageData: ImageData;
     private _dirty: Region = {
-        top: 385,
+        top: 193,
         bottom: -1,
         left: 561,
         right: -1
@@ -586,17 +442,10 @@ export class HiresPage implements Memory, Restorable<GraphicsState> {
     private _buffer: memory[] = [];
     private _refreshing = false;
 
-    private _monoMode = false;
-
     constructor(
-        private page: number,
-        private readonly context: any) {
-        this._init();
-    }
-
-    _init() {
-        this._imageData = this.context.geData(560, 384);
-        for (let idx = 0; idx < 560 * 384 * 4; idx++) {
+        private page: number) {
+        this._imageData = new ImageData(560, 192);
+        for (let idx = 0; idx < 560 * 192 * 4; idx++) {
             this._imageData.data[idx] = 0xff;
         }
         this._buffer[0] = allocMemPages(0x20);
@@ -609,49 +458,14 @@ export class HiresPage implements Memory, Restorable<GraphicsState> {
         data[off + 0] = data[off + 4] = c0;
         data[off + 1] = data[off + 5] = c1;
         data[off + 2] = data[off + 6] = c2;
-        const nextOff = off + 560 * 4;
-        data[nextOff] = data[nextOff + 4] = c0;
-        data[nextOff + 1] = data[nextOff + 5] = c1;
-        data[nextOff + 2] = data[nextOff + 6] = c2;
     }
 
     _drawHalfPixel(data: Uint8ClampedArray, off: number, color: Color) {
         const c0 = color[0], c1 = color[1], c2 = color[2];
+
         data[off + 0] = c0;
         data[off + 1] = c1;
         data[off + 2] = c2;
-        const nextOff = off + 560 * 4;
-        data[nextOff] = c0;
-        data[nextOff + 1] = c1;
-        data[nextOff + 2] = c2;
-    }
-
-    //
-    // 160x192 pixels alternate 3 and 4 base pixels wide
-    //
-
-    _draw3Pixel(data: Uint8ClampedArray, off: number, color: Color) {
-        const c0 = color[0], c1 = color[1], c2 = color[2];
-
-        data[off + 0] = data[off + 4] = data[off + 8] = c0;
-        data[off + 1] = data[off + 5] = data[off + 9] = c1;
-        data[off + 2] = data[off + 6] = data[off + 10] = c2;
-        const nextOff = off + 560 * 4;
-        data[nextOff] = data[nextOff + 4] = data[nextOff + 8] = c0;
-        data[nextOff + 1] = data[nextOff + 5] = data[nextOff + 9] = c1;
-        data[nextOff + 2] = data[nextOff + 6] = data[nextOff + 10] = c2;
-    }
-
-    _draw4Pixel(data: Uint8ClampedArray, off: number, color: Color) {
-        const c0 = color[0], c1 = color[1], c2 = color[2];
-
-        data[off + 0] = data[off + 4] = data[off + 8] = data[off + 12] = c0;
-        data[off + 1] = data[off + 5] = data[off + 9] = data[off + 13] = c1;
-        data[off + 2] = data[off + 6] = data[off + 10] = data[off + 14] = c2;
-        const nextOff = off + 560 * 4;
-        data[nextOff] = data[nextOff + 4] = data[nextOff + 8] = data[nextOff + 12] = c0;
-        data[nextOff + 1] = data[nextOff + 5] = data[nextOff + 9] = data[nextOff + 13] = c1;
-        data[nextOff + 2] = data[nextOff + 6] = data[nextOff + 10] = data[nextOff + 14] = c2;
     }
 
     bank0(): Memory {
@@ -690,7 +504,7 @@ export class HiresPage implements Memory, Restorable<GraphicsState> {
         }
         this._buffer[bank][base] = val;
 
-        let hbs = val & 0x80;
+        // let hbs = val & 0x80;
 
         const col = (base % 0x80) % 0x28;
         const adj = off - col;
@@ -710,28 +524,18 @@ export class HiresPage implements Memory, Restorable<GraphicsState> {
                 return;
             }
 
-            let y = rowa << 4 | rowb << 1;
+            let y = rowa << 3 | rowb;
             if (y < this._dirty.top) { this._dirty.top = y; }
-            y += 2;
+            y += 1;
             if (y > this._dirty.bottom) { this._dirty.bottom = y; }
             let x = col * 14 - 2;
             if (x < this._dirty.left) { this._dirty.left = x; }
             x += 18;
             if (x > this._dirty.right) { this._dirty.right = x; }
 
-            dy = rowa << 4 | rowb << 1;
+            dy = rowa << 3 | rowb;
             let bz, b0, b1, b2, b3, b4, c, hb;
-            if (oneSixtyMode && !this._monoMode) {
-                // 1 byte = two pixels, but 3:4 ratio
-                const c3 = val & 0xf;
-                const c4 = val >> 4;
-
-                dx = col * 2 + (bank ^ 1);
-                off = dx * 28 + dy * 280 * 4 * 2;
-
-                this._draw3Pixel(data, off, dcolors[c3]);
-                this._draw4Pixel(data, off + 12, dcolors[c4]);
-            } else if (doubleHiresMode) {
+            if (doubleHiresMode) {
                 val &= 0x7f;
 
                 // Every 4 bytes is 7 pixels
@@ -780,53 +584,16 @@ export class HiresPage implements Memory, Restorable<GraphicsState> {
                     hb[8] = b4 & 0x80;
                 }
                 dx = mcol * 14;
-                off = dx * 4 + dy * 280 * 4 * 2;
-
-                let monoColor = null;
-                if (this._monoMode || monoDHRMode) {
-                    monoColor = whiteCol;
-                }
+                let offset = dx * 4 + dy * 280 * 4 * 2;
 
                 for (let idx = 1; idx < 8; idx++) {
-                    hbs = hb[idx];
-                    const dcolor = dcolors[r4[c[idx]]];
+                    // hbs = hb[idx];
                     let bits = c[idx - 1] | (c[idx] << 4) | (c[idx + 1] << 8);
-                    for (let jdx = 0; jdx < 4; jdx++, off += 4) {
-                        if (monoColor) {
-                            if (bits & 0x10) {
-                                this._drawHalfPixel(data, off, monoColor);
-                            } else {
-                                this._drawHalfPixel(data, off, blackCol);
-                            }
-                        } else if (mixedDHRMode) {
-                            if (hbs) {
-                                this._drawHalfPixel(data, off, dcolor);
-                            } else {
-                                if (bits & 0x10) {
-                                    this._drawHalfPixel(data, off, whiteCol);
-                                } else {
-                                    this._drawHalfPixel(data, off, blackCol);
-                                }
-                            }
-                        } else if (colorDHRMode) {
-                            this._drawHalfPixel(data, off, dcolor);
-                        } else if (
-                            ((c[idx] != c[idx - 1]) && (c[idx] != c[idx + 1])) &&
-                            (((bits & 0x1c) == 0x1c) ||
-                                ((bits & 0x70) == 0x70) ||
-                                ((bits & 0x38) == 0x38))
-                        ) {
-                            this._drawHalfPixel(data, off, whiteCol);
-                        } else if (
-                            (bits & 0x38) ||
-                            (c[idx] == c[idx + 1]) ||
-                            (c[idx] == c[idx - 1])
-                        ) {
-                            this._drawHalfPixel(data, off, dcolor);
-                        } else if (bits & 0x28) {
-                            this._drawHalfPixel(data, off, dim(dcolor));
+                    for (let jdx = 0; jdx < 4; jdx++, offset += 4) {
+                        if (bits & 0x10) {
+                            this._drawHalfPixel(data, offset, whiteCol);
                         } else {
-                            this._drawHalfPixel(data, off, blackCol);
+                            this._drawHalfPixel(data, offset, blackCol);
                         }
                         bits >>= 1;
                     }
@@ -843,58 +610,34 @@ export class HiresPage implements Memory, Restorable<GraphicsState> {
                 }
             } else {
                 val = this._buffer[0][base];
-                hbs = val & 0x80;
+                const hbs = val & 0x80;
                 val &= 0x7f;
                 dx = col * 14 - 2;
                 b0 = col > 0 ? this._buffer[0][base - 1] : 0;
                 b2 = col < 39 ? this._buffer[0][base + 1] : 0;
                 val |= (b2 & 0x3) << 7;
-                let v0 = b0 & 0x20, v1 = b0 & 0x40, v2 = val & 0x1,
-                    odd = !(col & 0x1),
+                let v1 = b0 & 0x40,
+                    v2 = val & 0x1,
                     color;
-                const oddCol = (hbs ? orangeCol : greenCol);
-                const evenCol = (hbs ? blueCol : violetCol);
 
-                off = dx * 4 + dy * 280 * 4 * 2;
+                let offset = dx * 4 + dy * 560 * 4 + (hbs ? 4 : 0);
 
-                const monoColor = this._monoMode ? whiteCol : null;
-
-                for (let idx = 0; idx < 9; idx++, off += 8) {
+                for (let idx = 0; idx < 9; idx++, offset += 8) {
                     val >>= 1;
 
                     if (v1) {
-                        if (monoColor) {
-                            color = monoColor;
-                        } else if (highColorHGRMode) {
-                            color = dcolors[this._buffer[1][base] >> 4];
-                        } else if (v0 || v2) {
-                            color = whiteCol;
-                        } else {
-                            color = odd ? oddCol : evenCol;
-                        }
+                        color = whiteCol;
                     } else {
-                        if (monoColor) {
-                            color = blackCol;
-                        } else if (highColorHGRMode) {
-                            color = dcolors[this._buffer[1][base] & 0x0f];
-                        } else if (odd && v2 && v0) {
-                            color = v0 ? dim(evenCol) : evenCol;
-                        } else if (!odd && v0 && v2) {
-                            color = v2 ? dim(oddCol) : oddCol;
-                        } else {
-                            color = blackCol;
-                        }
+                        color = blackCol;
                     }
 
                     if (dx > -1 && dx < 560) {
-                        this._drawPixel(data, off, color);
+                        this._drawPixel(data, offset, color);
                     }
                     dx += 2;
 
-                    v0 = v1;
                     v1 = v2;
                     v2 = val & 0x01;
-                    odd = !odd;
                 }
             }
         }
@@ -914,27 +657,32 @@ export class HiresPage implements Memory, Restorable<GraphicsState> {
         this._refreshing = false;
     }
 
-    mono(on: boolean) {
-        this._monoMode = on;
-        this.refresh();
-    }
+    blit(_sv: any, _mixed: boolean = false) {
+        if (this._dirty.top === 193) { return false; }
+        // const top = this._dirty.top;
+        // let bottom = this._dirty.bottom;
+        // const left = this._dirty.left;
+        // const right = this._dirty.right;
 
-    blit(mixed: boolean = false) {
-        if (this._dirty.top === 385) { return false; }
-        const top = this._dirty.top;
-        let bottom = this._dirty.bottom;
-        const left = this._dirty.left;
-        const right = this._dirty.right;
+        // if (mixed) {
+        //     if (top > 160) { return false; }
+        //     if (bottom > 160) { bottom = 160; }
+        // }
+        // this.context.putImageData(
+        //     this._imageData, 0, 0, left, top, right - left, bottom - top
+        // );
 
-        if (mixed) {
-            if (top > 320) { return false; }
-            if (bottom > 320) { bottom = 320; }
-        }
-        this.context.putImageData(
-            this._imageData, 0, 0, left, top, right - left, bottom - top
+        const [, imageData] = screenEmu.screenData(
+            this._imageData,
+            screenEmu.C.NTSC_DETAILS,
+            doubleHiresMode
         );
+        const imageInfo = new screenEmu.ImageInfo(imageData);
+        _sv.image = imageInfo;
+        _sv.vsync();
+
         this._dirty = {
-            top: 385,
+            top: 193,
             bottom: -1,
             left: 561,
             right: -1
@@ -958,10 +706,9 @@ export class HiresPage implements Memory, Restorable<GraphicsState> {
         return this._write(page, off, val, 0);
     }
 
-    getState(): GraphicsState {
+    getState(): GLGraphicsState {
         return {
             page: this.page,
-            mono: this._monoMode,
             buffer: [
                 base64_encode(this._buffer[0]),
                 base64_encode(this._buffer[1])
@@ -969,9 +716,8 @@ export class HiresPage implements Memory, Restorable<GraphicsState> {
         };
     }
 
-    setState(state: GraphicsState) {
+    setState(state: GLGraphicsState) {
         this.page = state.page;
-        this._monoMode = state.mono;
         this._buffer[0] = base64_decode(state.buffer[0]);
         this._buffer[1] = base64_decode(state.buffer[1]);
 
@@ -983,29 +729,53 @@ export class VideoModes implements Restorable<VideoModesState> {
     private _grs: LoresPage[];
     private _hgrs: HiresPage[];
     private _flag = 0;
+    private _sv: any;
+    private _displayConfig: any;
+
+    ready: Promise<void>
 
     constructor(
         gr: LoresPage,
         hgr: HiresPage,
         gr2: LoresPage,
         hgr2: HiresPage,
+        private canvas: HTMLCanvasElement,
         private e: boolean) {
         this._grs = [gr, gr2];
         this._hgrs = [hgr, hgr2];
+        this._sv = new screenEmu.ScreenView(this.canvas);
+
+        this.ready = this.init();
+    }
+
+    async init() {
+        await this._sv.initOpenGL();
+
+        (window as any)._sv = this._sv;
+
+        this._displayConfig = new screenEmu.DisplayConfiguration();
+        this._displayConfig.displayResolution = new screenEmu.Size(this.canvas.width, this.canvas.height);
+        this._displayConfig.displayResolution = new screenEmu.Size(this.canvas.width, this.canvas.height);
+        this._displayConfig.displayScanlineLevel = 0.5;
+        this._displayConfig.videoWhiteOnly = true;
+        this._displayConfig.videoSize = new screenEmu.Size(1.25, 1.15);
+        this._displayConfig.videoCenter = new screenEmu.Point(0.01, 0.02);
+        // this._displayConfig.videoDecoder = 'CANVAS_CXA2025AS';
+        this._sv.displayConfiguration = this._displayConfig;
     }
 
     private _refresh() {
-        highColorTextMode = !an3 && textMode && !_80colMode;
-        highColorHGRMode = !an3 && hiresMode && !_80colMode;
         doubleHiresMode = !an3 && hiresMode && _80colMode;
-        oneSixtyMode = this._flag == 1 && doubleHiresMode;
-        mixedDHRMode = this._flag == 2 && doubleHiresMode;
-        monoDHRMode = this._flag == 3 && doubleHiresMode;
 
         this._grs[0].refresh();
         this._grs[1].refresh();
         this._hgrs[0].refresh();
         this._hgrs[1].refresh();
+
+        if (this._displayConfig) {
+            this._displayConfig.videoWhiteOnly = textMode;
+            this._sv.displayConfiguration = this._displayConfig;
+        }
     }
 
     refresh() {
@@ -1143,20 +913,20 @@ export class VideoModes implements Restorable<VideoModesState> {
     blit() {
         let blitted = false;
         if (multiScreen) {
-            blitted = this._grs[0].blit() || blitted;
-            blitted = this._grs[1].blit() || blitted;
-            blitted = this._hgrs[0].blit() || blitted;
-            blitted = this._hgrs[1].blit() || blitted;
+            blitted = this._grs[0].blit(this._sv) || blitted;
+            blitted = this._grs[1].blit(this._sv) || blitted;
+            blitted = this._hgrs[0].blit(this._sv) || blitted;
+            blitted = this._hgrs[1].blit(this._sv) || blitted;
         } else {
             if (hiresMode && !textMode) {
                 if (mixedMode) {
-                    blitted = this._grs[pageMode - 1].blit(true) || blitted;
-                    blitted = this._hgrs[pageMode - 1].blit(true) || blitted;
+                    blitted = this._grs[pageMode - 1].blit(this._sv, true) || blitted;
+                    blitted = this._hgrs[pageMode - 1].blit(this._sv, true) || blitted;
                 } else {
-                    blitted = this._hgrs[pageMode - 1].blit();
+                    blitted = this._hgrs[pageMode - 1].blit(this._sv);
                 }
             } else {
-                blitted = this._grs[pageMode - 1].blit();
+                blitted = this._grs[pageMode - 1].blit(this._sv);
             }
         }
         return blitted;
@@ -1191,12 +961,6 @@ export class VideoModes implements Restorable<VideoModesState> {
         this._hgrs[1].setState(state.hgrs[1]);
     }
 
-    mono(on: boolean) {
-        this._grs[0].mono(on);
-        this._grs[1].mono(on);
-        this._hgrs[0].mono(on);
-        this._hgrs[1].mono(on);
-    }
     getText() {
         return this._grs[pageMode - 1].getText();
     }

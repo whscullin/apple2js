@@ -55,9 +55,9 @@ body {
     margin: auto;
     position: relative;
     background-color: black;
-    padding: 16px;
-    width: 560px;
-    height: 384px;
+    /* padding: 16px; */
+    width: 592px;
+    height: 416px;
     border: 6px inset #f0edd0;
     border-radius: 10px;
 }

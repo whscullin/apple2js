@@ -74,7 +74,9 @@ var canvas2 = document.getElementById('screen2');
 var canvas3 = document.getElementById('screen3');
 var canvas4 = document.getElementById('screen4');
 
-options.screen[0] = canvas1.getContext('2d');
+options.screen[0] = canvas1.getContext('webgl');
+options.canvas = canvas1;
+
 if (canvas4) {
     options.multiScreen = true;
     options.screen[1] = canvas2.getContext('2d');

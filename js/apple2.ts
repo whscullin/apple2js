@@ -1,5 +1,5 @@
 import Apple2IO from './apple2io';
-import { HiresPage, LoresPage, VideoModes } from './canvas';
+import { HiresPage, LoresPage, VideoModes } from './gl';
 import CPU6502, { PageHandler, CpuState } from './cpu6502';
 import MMU from './mmu';
 import RAM from './ram';
@@ -16,6 +16,7 @@ interface Options {
     multiScreen: boolean,
     rom: PageHandler,
     screen: any[],
+    canvas: HTMLCanvasElement,
     tick: () => void,
 }
 
@@ -54,11 +55,11 @@ export class Apple2 implements Restorable<State> {
 
     constructor(options: Options) {
         this.cpu = new CPU6502({ '65C02': options.enhanced });
-        this.gr = new LoresPage(1, options.characterRom, options.e, options.screen[0]);
-        this.gr2 = new LoresPage(2, options.characterRom, options.e, options.screen[1]);
-        this.hgr = new HiresPage(1, options.screen[2]);
-        this.hgr2 = new HiresPage(2, options.screen[3]);
-        this.vm = new VideoModes(this.gr, this.hgr, this.gr2, this.hgr2, options.e);
+        this.gr = new LoresPage(1, options.characterRom, options.e);
+        this.gr2 = new LoresPage(2, options.characterRom, options.e);
+        this.hgr = new HiresPage(1);
+        this.hgr2 = new HiresPage(2);
+        this.vm = new VideoModes(this.gr, this.hgr, this.gr2, this.hgr2, options.canvas, options.e);
         this.vm.multiScreen(options.multiScreen);
         this.vm.enhanced(options.enhanced);
         this.io = new Apple2IO(this.cpu, this.vm);
