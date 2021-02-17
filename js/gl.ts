@@ -13,7 +13,7 @@ import { base64_decode, base64_encode } from './base64';
 import { byte, memory, Memory, Restorable } from './types';
 import { allocMemPages } from './util';
 
-import { screenEmu } from './contrib/screenEmu';
+import { screenEmu } from 'apple2shader';
 
 let enhanced = false;
 let multiScreen = false;
