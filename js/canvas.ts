@@ -10,8 +10,19 @@
  */
 
 import { base64_decode, base64_encode } from './base64';
-import { byte, memory, Memory, Restorable } from './types';
+import { byte, memory, Memory } from './types';
 import { allocMemPages } from './util';
+import {
+    Color,
+    GraphicsState,
+    HiresPage,
+    LoresPage,
+    Region,
+    VideoModes,
+    VideoModesState,
+    bank,
+    pageNo
+} from './videomodes';
 
 let enhanced = false;
 let multiScreen = false;
@@ -29,41 +40,6 @@ let mixedDHRMode = false;
 let highColorHGRMode = false;
 let highColorTextMode = false;
 let oneSixtyMode = false;
-
-type bank = 0 | 1;
-type pageNo = 1 | 2;
-
-interface Color {
-    0: byte, // red
-    1: byte, // green
-    2: byte, // blue
-}
-
-interface Region {
-    top: number,
-    bottom: number,
-    left: number,
-    right: number,
-}
-
-
-interface GraphicsState {
-    page: byte;
-    mono: boolean;
-    buffer: string[];
-}
-
-interface VideoModesState {
-    grs: [gr1: GraphicsState, _gr2: GraphicsState],
-    hgrs: [hgr1: GraphicsState, hgr2: GraphicsState],
-    textMode: boolean,
-    mixedMode: boolean,
-    hiresMode: boolean,
-    pageMode: pageNo,
-    _80colMode: boolean,
-    altCharMode: boolean,
-    an3: boolean,
-}
 
 function dim(c: Color): Color {
     return [
@@ -158,12 +134,13 @@ const dcolors: Color[] = [
  *
  ***************************************************************************/
 
-export class LoresPage implements Memory, Restorable<GraphicsState> {
+export class LoresPage2D implements LoresPage {
     // $00-$3F inverse
     // $40-$7F flashing
     // $80-$FF normal
 
-    private _imageData: ImageData;
+    public imageData: ImageData;
+
     private _buffer: memory[] = [];
     private _refreshing = false;
     private _monoMode = false;
@@ -176,16 +153,11 @@ export class LoresPage implements Memory, Restorable<GraphicsState> {
     };
 
     constructor(private page: number,
-        private readonly charset: any,
-        private readonly e: any,
-        private readonly context: any) {
-        this._init();
-    }
-
-    _init() {
-        this._imageData = new ImageData(560, 384);
+        private readonly charset: memory,
+        private readonly e: boolean) {
+        this.imageData = new ImageData(560, 384);
         for (let idx = 0; idx < 560 * 384 * 4; idx++) {
-            this._imageData.data[idx] = 0xff;
+            this.imageData.data[idx] = 0xff;
         }
         this._buffer[0] = allocMemPages(0x4);
         this._buffer[1] = allocMemPages(0x4);
@@ -263,7 +235,7 @@ export class LoresPage implements Memory, Restorable<GraphicsState> {
         const ee = adj >> 7;
         const row = ab | cd | ee;
 
-        const data = this._imageData.data;
+        const data = this.imageData.data;
         if ((row < 24) && (col < 40)) {
             let y = row << 4;
             if (y < this._dirty.top) { this._dirty.top = y; }
@@ -474,29 +446,6 @@ export class LoresPage implements Memory, Restorable<GraphicsState> {
         this.refresh();
     }
 
-    blit(mixed: boolean = false): boolean {
-        if (this._dirty.top === 385) { return false; }
-        let top = this._dirty.top;
-        const bottom = this._dirty.bottom;
-        const left = this._dirty.left;
-        const right = this._dirty.right;
-
-        if (mixed) {
-            if (bottom < 320) { return false; }
-            if (top < 320) { top = 320; }
-        }
-        this.context.putImageData(
-            this._imageData, 0, 0, left, top, right - left, bottom - top
-        );
-        this._dirty = {
-            top: 385,
-            bottom: -1,
-            left: 561,
-            right: -1
-        };
-        return true;
-    }
-
     start() {
         setInterval(() => this.blink(), 267);
         return this._start();
@@ -574,8 +523,9 @@ export class LoresPage implements Memory, Restorable<GraphicsState> {
  *
  ***************************************************************************/
 
-export class HiresPage implements Memory, Restorable<GraphicsState> {
-    private _imageData: { data: Uint8ClampedArray; };
+export class HiresPage2D implements HiresPage {
+    public imageData: ImageData;
+
     private _dirty: Region = {
         top: 385,
         bottom: -1,
@@ -589,15 +539,10 @@ export class HiresPage implements Memory, Restorable<GraphicsState> {
     private _monoMode = false;
 
     constructor(
-        private page: number,
-        private readonly context: any) {
-        this._init();
-    }
-
-    _init() {
-        this._imageData = this.context.geData(560, 384);
+        private page: number) {
+        this.imageData = new ImageData(560, 384);
         for (let idx = 0; idx < 560 * 384 * 4; idx++) {
-            this._imageData.data[idx] = 0xff;
+            this.imageData.data[idx] = 0xff;
         }
         this._buffer[0] = allocMemPages(0x20);
         this._buffer[1] = allocMemPages(0x20);
@@ -703,7 +648,7 @@ export class HiresPage implements Memory, Restorable<GraphicsState> {
         const rowa = ab | cd | e,
             rowb = base >> 10;
 
-        const data = this._imageData.data;
+        const data = this.imageData.data;
         let dx, dy;
         if ((rowa < 24) && (col < 40)) {
             if (!multiScreen && !hiresMode) {
@@ -919,29 +864,6 @@ export class HiresPage implements Memory, Restorable<GraphicsState> {
         this.refresh();
     }
 
-    blit(mixed: boolean = false) {
-        if (this._dirty.top === 385) { return false; }
-        const top = this._dirty.top;
-        let bottom = this._dirty.bottom;
-        const left = this._dirty.left;
-        const right = this._dirty.right;
-
-        if (mixed) {
-            if (top > 320) { return false; }
-            if (bottom > 320) { bottom = 320; }
-        }
-        this.context.putImageData(
-            this._imageData, 0, 0, left, top, right - left, bottom - top
-        );
-        this._dirty = {
-            top: 385,
-            bottom: -1,
-            left: 561,
-            right: -1
-        };
-        return true;
-    }
-
     start() {
         return this._start();
     }
@@ -979,19 +901,24 @@ export class HiresPage implements Memory, Restorable<GraphicsState> {
     }
 }
 
-export class VideoModes implements Restorable<VideoModesState> {
+export class VideoModes2D implements VideoModes {
     private _grs: LoresPage[];
     private _hgrs: HiresPage[];
     private _flag = 0;
+    private _context: CanvasRenderingContext2D | null;
+
+    public ready = Promise.resolve();
 
     constructor(
         gr: LoresPage,
         hgr: HiresPage,
         gr2: LoresPage,
         hgr2: HiresPage,
+        private canvas: HTMLCanvasElement,
         private e: boolean) {
         this._grs = [gr, gr2];
         this._hgrs = [hgr, hgr2];
+        this._context = this.canvas.getContext('2d');
     }
 
     private _refresh() {
@@ -1140,24 +1067,30 @@ export class VideoModes implements Restorable<VideoModesState> {
         return altCharMode;
     }
 
+    updateImage(mainData: ImageData, mixData?: ImageData | null) {
+        if (!this._context) {
+            throw new Error('No 2D context');
+        }
+        if (mixData) {
+            this._context.putImageData(mainData, 0, 0, 0, 0, 560, 160);
+            this._context.putImageData(mixData, 0, 0, 0, 160, 560, 32);
+        } else {
+            this._context.putImageData(mainData, 0, 0);
+        }
+        return true;
+    }
+
     blit() {
         let blitted = false;
-        if (multiScreen) {
-            blitted = this._grs[0].blit() || blitted;
-            blitted = this._grs[1].blit() || blitted;
-            blitted = this._hgrs[0].blit() || blitted;
-            blitted = this._hgrs[1].blit() || blitted;
+        if (hiresMode && !textMode) {
+            blitted = this.updateImage(
+                this._hgrs[pageMode - 1].imageData,
+                mixedMode ? this._grs[pageMode - 1].imageData : null
+            );
         } else {
-            if (hiresMode && !textMode) {
-                if (mixedMode) {
-                    blitted = this._grs[pageMode - 1].blit(true) || blitted;
-                    blitted = this._hgrs[pageMode - 1].blit(true) || blitted;
-                } else {
-                    blitted = this._hgrs[pageMode - 1].blit();
-                }
-            } else {
-                blitted = this._grs[pageMode - 1].blit();
-            }
+            blitted = this.updateImage(
+                this._grs[pageMode - 1].imageData
+            );
         }
         return blitted;
     }
@@ -1197,6 +1130,7 @@ export class VideoModes implements Restorable<VideoModesState> {
         this._hgrs[0].mono(on);
         this._hgrs[1].mono(on);
     }
+
     getText() {
         return this._grs[pageMode - 1].getText();
     }

@@ -14,6 +14,17 @@ import { byte, memory, Memory, Restorable } from './types';
 import { allocMemPages } from './util';
 
 import { screenEmu } from 'apple2shader';
+import {
+    Color,
+    GraphicsState,
+    HiresPage,
+    LoresPage,
+    Region,
+    VideoModes,
+    VideoModesState,
+    bank,
+    pageNo
+} from './videomodes';
 
 let enhanced = false;
 let multiScreen = false;
@@ -25,40 +36,6 @@ let _80colMode = false;
 let altCharMode = false;
 let an3 = false;
 let doubleHiresMode = false;
-
-type bank = 0 | 1;
-type pageNo = 1 | 2;
-
-interface Color {
-    0: byte, // red
-    1: byte, // green
-    2: byte, // blue
-}
-
-interface Region {
-    top: number,
-    bottom: number,
-    left: number,
-    right: number,
-}
-
-
-interface GLGraphicsState {
-    page: byte;
-    buffer: string[];
-}
-
-interface VideoModesState {
-    grs: [gr1: GLGraphicsState, _gr2: GLGraphicsState],
-    hgrs: [hgr1: GLGraphicsState, hgr2: GLGraphicsState],
-    textMode: boolean,
-    mixedMode: boolean,
-    hiresMode: boolean,
-    pageMode: pageNo,
-    _80colMode: boolean,
-    altCharMode: boolean,
-    an3: boolean,
-}
 
 function rowToBase(row: number) {
     const ab = (row >> 3) & 3;
@@ -99,12 +76,13 @@ const blackCol: Color = [0, 0, 0];
  *
  ***************************************************************************/
 
-export class LoresPage implements Memory, Restorable<GLGraphicsState> {
+export class LoresPageGL implements LoresPage {
     // $00-$3F inverse
     // $40-$7F flashing
     // $80-$FF normal
 
     private _buffer: memory[] = [];
+    private _monoMode = false;
     private _refreshing = false;
     private _blink = false;
     private _dirty: Region = {
@@ -335,6 +313,11 @@ export class LoresPage implements Memory, Restorable<GLGraphicsState> {
         this._refreshing = false;
     }
 
+    mono(on: boolean) {
+        this._monoMode = on;
+        this.refresh();
+    }
+
     blink() {
         let addr = 0x400 * this.page;
         this._refreshing = true;
@@ -365,16 +348,17 @@ export class LoresPage implements Memory, Restorable<GLGraphicsState> {
         return this._write(page, off, val, 0);
     }
 
-    getState(): GLGraphicsState {
+    getState(): GraphicsState {
         return {
             page: this.page,
+            mono: this._monoMode,
             buffer: [
                 base64_encode(this._buffer[0]),
                 base64_encode(this._buffer[1])
             ]
         };
     }
-    setState(state: GLGraphicsState) {
+    setState(state: GraphicsState) {
         this.page = state.page;
         this._buffer[0] = base64_decode(state.buffer[0]);
         this._buffer[1] = base64_decode(state.buffer[1]);
@@ -423,7 +407,7 @@ export class LoresPage implements Memory, Restorable<GLGraphicsState> {
  *
  ***************************************************************************/
 
-export class HiresPage implements Memory, Restorable<GLGraphicsState> {
+export class HiresPageGL implements Memory, Restorable<GraphicsState> {
     private _dirty: Region = {
         top: 193,
         bottom: -1,
@@ -433,6 +417,7 @@ export class HiresPage implements Memory, Restorable<GLGraphicsState> {
 
     private _buffer: memory[] = [];
     private _refreshing = false;
+    private _monoMode = false;
 
     imageData: ImageData;
 
@@ -651,6 +636,11 @@ export class HiresPage implements Memory, Restorable<GLGraphicsState> {
         this._refreshing = false;
     }
 
+    mono(on: boolean) {
+        this._monoMode = on;
+        this.refresh();
+    }
+
     start() {
         return this._start();
     }
@@ -667,9 +657,10 @@ export class HiresPage implements Memory, Restorable<GLGraphicsState> {
         return this._write(page, off, val, 0);
     }
 
-    getState(): GLGraphicsState {
+    getState(): GraphicsState {
         return {
             page: this.page,
+            mono: this._monoMode,
             buffer: [
                 base64_encode(this._buffer[0]),
                 base64_encode(this._buffer[1])
@@ -677,7 +668,7 @@ export class HiresPage implements Memory, Restorable<GLGraphicsState> {
         };
     }
 
-    setState(state: GLGraphicsState) {
+    setState(state: GraphicsState) {
         this.page = state.page;
         this._buffer[0] = base64_decode(state.buffer[0]);
         this._buffer[1] = base64_decode(state.buffer[1]);
@@ -686,12 +677,13 @@ export class HiresPage implements Memory, Restorable<GLGraphicsState> {
     }
 }
 
-export class VideoModes implements Restorable<VideoModesState> {
+export class VideoModesGL implements VideoModes {
     private _grs: LoresPage[];
     private _hgrs: HiresPage[];
     private _flag = 0;
     private _sv: any;
     private _displayConfig: any;
+    private _monoMode: boolean = false;
 
     ready: Promise<void>
 
@@ -734,7 +726,7 @@ export class VideoModes implements Restorable<VideoModesState> {
         this._hgrs[1].refresh();
 
         if (this._displayConfig) {
-            this._displayConfig.videoWhiteOnly = textMode;
+            this._displayConfig.videoWhiteOnly = textMode || this._monoMode;
             this._sv.displayConfiguration = this._displayConfig;
         }
     }
@@ -928,6 +920,15 @@ export class VideoModes implements Restorable<VideoModesState> {
         this._grs[1].setState(state.grs[1]);
         this._hgrs[0].setState(state.hgrs[0]);
         this._hgrs[1].setState(state.hgrs[1]);
+    }
+
+    mono(on: boolean) {
+        this._grs[0].mono(on);
+        this._grs[1].mono(on);
+        this._hgrs[0].mono(on);
+        this._hgrs[1].mono(on);
+
+        this._monoMode = on;
     }
 
     getText() {

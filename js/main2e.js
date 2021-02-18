@@ -42,7 +42,8 @@ switch (romVersion) {
 }
 
 var options = {
-    screen: [],
+    gl: prefs.readPref('gl_canvas') === 'true',
+    canvas: document.getElementById('screen'),
     multiScreen: false,
     rom: rom,
     characterRom: characterRom,
@@ -51,30 +52,6 @@ var options = {
     cards: [],
     tick: updateUI
 };
-
-var canvas1 = document.getElementById('screen');
-var canvas2 = document.getElementById('screen2');
-var canvas3 = document.getElementById('screen3');
-var canvas4 = document.getElementById('screen4');
-
-options.screen[0] = canvas1.getContext('webgl');
-options.canvas = canvas1;
-
-if (canvas4) {
-    options.multiScreen = true;
-    options.screen[1] = canvas2.getContext('2d');
-    options.screen[2] = canvas3.getContext('2d');
-    options.screen[3] = canvas4.getContext('2d');
-} else if (canvas2) {
-    options.multiScreen = true;
-    options.screen[1] = options.screen[0];
-    options.screen[2] = canvas2.getContext('2d');
-    options.screen[3] = options.screen[2];
-} else {
-    options.screen[1] = options.screen[0];
-    options.screen[2] = options.screen[0];
-    options.screen[3] = options.screen[0];
-}
 
 var apple2 = new Apple2(options);
 var io = apple2.getIO();

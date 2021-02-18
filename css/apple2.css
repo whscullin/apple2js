@@ -55,11 +55,22 @@ body {
     margin: auto;
     position: relative;
     background-color: black;
-    /* padding: 16px; */
     width: 592px;
     height: 416px;
     border: 6px inset #f0edd0;
     border-radius: 10px;
+}
+
+canvas {
+    margin: 32px 0 0 32px;
+    width: 560px;
+    height: 384px;
+}
+
+canvas.gl {
+    margin: 0;
+    width: 592px;
+    height: 416px;
 }
 
 .full-page {
@@ -189,7 +200,7 @@ canvas {
   float: left;
 }
 
-.green {
+.mono {
     filter: url('#green');
 }
 

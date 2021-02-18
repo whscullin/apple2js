@@ -706,7 +706,7 @@ function _keyup(evt) {
 }
 
 export function updateScreen() {
-    var green = document.querySelector('#green_screen').checked;
+    var mono = document.querySelector('#mono_screen').checked;
     var scanlines = document.querySelector('#show_scanlines').checked;
 
     var screen = document.querySelector('#screen');
@@ -716,12 +716,12 @@ export function updateScreen() {
     } else {
         overscan.classList.remove('scanlines');
     }
-    if (green) {
-        screen.classList.add('green');
+    if (mono) {
+        screen.classList.add('mono');
     } else {
-        screen.classList.remove('green');
+        screen.classList.remove('mono');
     }
-    // vm.mono(green);
+    vm.mono(mono);
 }
 
 export function updateCPU() {

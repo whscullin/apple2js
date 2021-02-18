@@ -1,21 +1,36 @@
 import Apple2IO from './apple2io';
-import { HiresPage, LoresPage, VideoModes } from './gl';
+// import * as gl from './gl';
+import {
+    HiresPage,
+    LoresPage,
+    VideoModes,
+} from './videomodes';
+import {
+    HiresPage2D,
+    LoresPage2D,
+    VideoModes2D,
+} from './canvas';
+import {
+    HiresPageGL,
+    LoresPageGL,
+    VideoModesGL,
+} from './gl';
 import CPU6502, { PageHandler, CpuState } from './cpu6502';
 import MMU from './mmu';
 import RAM from './ram';
 import { debug } from './util';
 
 import SYMBOLS from './symbols';
-import { Restorable } from './types';
+import { Restorable, memory } from './types';
 import { processGamepad } from './ui/gamepad';
 
 interface Options {
-    characterRom: any,
+    characterRom: memory,
     enhanced: boolean,
     e: boolean,
+    gl: boolean,
     multiScreen: boolean,
     rom: PageHandler,
-    screen: any[],
     canvas: HTMLCanvasElement,
     tick: () => void,
 }
@@ -54,13 +69,20 @@ export class Apple2 implements Restorable<State> {
     };
 
     constructor(options: Options) {
+        const LoresPage = options.gl ? LoresPageGL : LoresPage2D;
+        const HiresPage = options.gl ? HiresPageGL : HiresPage2D;
+        const VideoModes = options.gl ? VideoModesGL : VideoModes2D;
+
+        if (options.gl) {
+            options.canvas.classList.add('gl');
+        }
+
         this.cpu = new CPU6502({ '65C02': options.enhanced });
         this.gr = new LoresPage(1, options.characterRom, options.e);
         this.gr2 = new LoresPage(2, options.characterRom, options.e);
         this.hgr = new HiresPage(1);
         this.hgr2 = new HiresPage(2);
         this.vm = new VideoModes(this.gr, this.hgr, this.gr2, this.hgr2, options.canvas, options.e);
-        this.vm.multiScreen(options.multiScreen);
         this.vm.enhanced(options.enhanced);
         this.io = new Apple2IO(this.cpu, this.vm);
         this.multiScreen = options.multiScreen;

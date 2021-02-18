@@ -1,0 +1,74 @@
+import { Memory, Restorable, byte } from './types';
+
+export type bank = 0 | 1;
+export type pageNo = 1 | 2;
+
+export interface Color {
+    0: byte, // red
+    1: byte, // green
+    2: byte, // blue
+}
+
+export interface Region {
+    top: number,
+    bottom: number,
+    left: number,
+    right: number,
+}
+
+export interface GraphicsState {
+    page: byte;
+    mono: boolean;
+    buffer: string[];
+}
+
+export interface VideoModesState {
+    grs: [gr1: GraphicsState, _gr2: GraphicsState],
+    hgrs: [hgr1: GraphicsState, hgr2: GraphicsState],
+    textMode: boolean,
+    mixedMode: boolean,
+    hiresMode: boolean,
+    pageMode: pageNo,
+    _80colMode: boolean,
+    altCharMode: boolean,
+    an3: boolean,
+}
+
+export interface VideoPage extends Memory, Restorable<GraphicsState> {
+    imageData: ImageData
+
+    bank0(): Memory
+    bank1(): Memory
+
+    mono: (on: boolean) => void
+    refresh: () => void
+}
+
+export interface LoresPage extends VideoPage {
+    getText: () => string
+}
+
+export interface HiresPage extends VideoPage {
+
+}
+
+export interface VideoModes extends Restorable<VideoModesState> {
+    page(pageNo: number): void
+
+    blit(): boolean
+
+    reset(): void
+
+    _80col(on: boolean): void
+    altchar(on: boolean): void
+    doubleHires(on: boolean): void
+    enhanced(on: boolean): void
+
+    is80Col(): boolean
+    isAltChar(): boolean
+    isDoubleHires(): boolean
+    isHires(): boolean
+    isMixed(): boolean
+    isPage2(): boolean
+    isText(): boolean
+}

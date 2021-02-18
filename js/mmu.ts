@@ -14,7 +14,7 @@ import RAM from './ram';
 import { debug, toHex } from './util';
 import { byte, Memory } from './types';
 import Apple2IO from './apple2io';
-import { HiresPage, LoresPage, VideoModes } from './gl';
+import { HiresPage, LoresPage, VideoModes } from './videomodes';
 
 /*
  * I/O Switch locations

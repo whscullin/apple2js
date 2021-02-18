@@ -10,7 +10,7 @@
  */
 
 import CPU6502, { PageHandler } from './cpu6502';
-import { byte } from './types';
+import { Card, Memory, TapeData, byte } from './types';
 import { debug } from './util';
 
 type slot = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -66,8 +66,8 @@ const LOC = {
 };
 
 export default class Apple2IO implements PageHandler {
-    private _slot: any[] = []; // TODO(flan): Needs typing.
-    private _auxRom: any = null; // TODO(flan): Needs typing.
+    private _slot: Card[] = [];
+    private _auxRom: Memory | null = null; // TODO(flan): Needs typing.
 
     private _khz = 1023;
     private _rate = 44000;
@@ -94,9 +94,9 @@ export default class Apple2IO implements PageHandler {
     private _trigger = 0;
     private _annunciators: Annunciators = [false, false, false, false];
 
-    private _tape = [];
+    private _tape: TapeData = [];
     private _tapeOffset = 0;
-    private _tapeNext = 0;
+    private _tapeNext: number = 0;
     private _tapeCurrent = false;
 
     constructor(private readonly cpu: CPU6502, private readonly vm: any) {
@@ -107,8 +107,8 @@ export default class Apple2IO implements PageHandler {
         this._calcSampleRate();
     }
 
-    _debug(..._args: any) {
-        // debug.apply(this, arguments);
+    _debug(..._args: any[]) {
+        debug.apply(this, arguments);
     }
 
     _tick() {
@@ -318,8 +318,8 @@ export default class Apple2IO implements PageHandler {
     reset() {
         for (let slot = 0; slot < 8; slot++) {
             const card = this._slot[slot];
-            if (card && card.reset) {
-                card.reset();
+            if (card) {
+                card.reset?.();
             }
         }
         this.vm.reset();
@@ -327,20 +327,20 @@ export default class Apple2IO implements PageHandler {
 
     blit() {
         const card = this._slot[3];
-        if (card && card.blit) {
-            return card.blit();
+        if (card) {
+            return card.blit?.();
         }
         return false;
     }
 
     read(page: byte, off: byte) {
-        let result = 0;
+        let result: number = 0;
         let slot;
         let card;
 
         switch (page) {
             case 0xc0:
-                result = this.ioSwitch(off, undefined);
+                result = this.ioSwitch(off, undefined) || 0;
                 break;
             case 0xc1:
             case 0xc2:
@@ -411,7 +411,7 @@ export default class Apple2IO implements PageHandler {
         this._annunciators = state.annunciators;
     }
 
-    setSlot(slot: slot, card: byte) {
+    setSlot(slot: slot, card: Card) {
         this._slot[slot] = card;
     }
 
@@ -453,7 +453,7 @@ export default class Apple2IO implements PageHandler {
         }
     }
 
-    setTape(tape: any) { // TODO(flan): Needs typing.
+    setTape(tape: TapeData) { // TODO(flan): Needs typing.
         debug('Tape length: ' + tape.length);
         this._tape = tape;
         this._tapeOffset = -1;
@@ -470,8 +470,8 @@ export default class Apple2IO implements PageHandler {
     tick() {
         this._tick();
         for (let idx = 0; idx < 8; idx++) {
-            if (this._slot[idx] && this._slot[idx].tick) {
-                this._slot[idx].tick();
+            if (this._slot[idx]) {
+                this._slot[idx].tick?.();
             }
         }
     }
