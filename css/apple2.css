@@ -61,18 +61,6 @@ body {
     border-radius: 10px;
 }
 
-canvas {
-    margin: 32px 0 0 32px;
-    width: 560px;
-    height: 384px;
-}
-
-canvas.gl {
-    margin: 0;
-    width: 592px;
-    height: 416px;
-}
-
 .full-page {
     background: black;
 }

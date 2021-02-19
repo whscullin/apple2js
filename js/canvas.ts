@@ -906,6 +906,8 @@ export class VideoModes2D implements VideoModes {
     private _hgrs: HiresPage[];
     private _flag = 0;
     private _context: CanvasRenderingContext2D | null;
+    private _left: number;
+    private _top: number;
 
     public ready = Promise.resolve();
 
@@ -919,6 +921,8 @@ export class VideoModes2D implements VideoModes {
         this._grs = [gr, gr2];
         this._hgrs = [hgr, hgr2];
         this._context = this.canvas.getContext('2d');
+        this._left = (this.canvas.width - 560) / 2;
+        this._top = (this.canvas.height - 384) / 2;
     }
 
     private _refresh() {
@@ -1072,10 +1076,14 @@ export class VideoModes2D implements VideoModes {
             throw new Error('No 2D context');
         }
         if (mixData) {
-            this._context.putImageData(mainData, 0, 0, 0, 0, 560, 160);
-            this._context.putImageData(mixData, 0, 0, 0, 160, 560, 32);
+            this._context.putImageData(
+                mainData, this._left, this._top, 0, 0, 560, 320
+            );
+            this._context.putImageData(
+                mixData, this._left, this._top, 0, 320, 560, 64
+            );
         } else {
-            this._context.putImageData(mainData, 0, 0);
+            this._context.putImageData(mainData, this._top, this._left);
         }
         return true;
     }

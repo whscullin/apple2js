@@ -85,7 +85,7 @@ export interface DiskIIDrive extends Drive {
     dirty: boolean,
 }
 
-export type TapeData = Array<[number, boolean]>;
+export type TapeData = Array<[duration: number, high: boolean]>;
 
 export interface Restorable<T> {
     getState(): T;

@@ -73,10 +73,6 @@ export class Apple2 implements Restorable<State> {
         const HiresPage = options.gl ? HiresPageGL : HiresPage2D;
         const VideoModes = options.gl ? VideoModesGL : VideoModes2D;
 
-        if (options.gl) {
-            options.canvas.classList.add('gl');
-        }
-
         this.cpu = new CPU6502({ '65C02': options.enhanced });
         this.gr = new LoresPage(1, options.characterRom, options.e);
         this.gr2 = new LoresPage(2, options.characterRom, options.e);

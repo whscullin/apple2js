@@ -67,7 +67,7 @@ const LOC = {
 
 export default class Apple2IO implements PageHandler {
     private _slot: Card[] = [];
-    private _auxRom: Memory | null = null; // TODO(flan): Needs typing.
+    private _auxRom: Memory | null = null;
 
     private _khz = 1023;
     private _rate = 44000;
@@ -108,7 +108,7 @@ export default class Apple2IO implements PageHandler {
     }
 
     _debug(..._args: any[]) {
-        debug.apply(this, arguments);
+        // debug.apply(this, arguments);
     }
 
     _tick() {

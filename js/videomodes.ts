@@ -23,7 +23,7 @@ export interface GraphicsState {
 }
 
 export interface VideoModesState {
-    grs: [gr1: GraphicsState, _gr2: GraphicsState],
+    grs: [gr1: GraphicsState, gr2: GraphicsState],
     hgrs: [hgr1: GraphicsState, hgr2: GraphicsState],
     textMode: boolean,
     mixedMode: boolean,
