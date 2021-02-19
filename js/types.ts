@@ -47,7 +47,7 @@ export interface Card extends Memory {
     reset(): void;
 
     /* Draw card to canvas */
-    blit?(): boolean;
+    blit?(): ImageData;
 
     /* Process period events */
     tick?(): void;

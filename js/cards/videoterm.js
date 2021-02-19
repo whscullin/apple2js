@@ -12,7 +12,7 @@
 import { allocMemPages, debug } from '../util';
 import { ROM, VIDEO_ROM } from '../roms/cards/videoterm';
 
-export default function Videoterm(io, context) {
+export default function Videoterm(_io) {
     debug('Videx Videoterm');
 
     var LOC = {
@@ -252,11 +252,10 @@ export default function Videoterm(io, context) {
                 _shouldRefresh = false;
             }
             if (_dirty) {
-                context.putImageData(_imageData, 0, 0);
                 _dirty = false;
-                return true;
+                return _imageData;
             }
-            return false;
+            return;
         }
     };
 }

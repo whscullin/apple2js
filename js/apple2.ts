@@ -29,7 +29,6 @@ interface Options {
     enhanced: boolean,
     e: boolean,
     gl: boolean,
-    multiScreen: boolean,
     rom: PageHandler,
     canvas: HTMLCanvasElement,
     tick: () => void,
@@ -60,7 +59,6 @@ export class Apple2 implements Restorable<State> {
     private io: Apple2IO;
     private mmu: MMU;
 
-    private multiScreen: boolean;
     private tick: () => void;
 
     private stats = {
@@ -81,7 +79,6 @@ export class Apple2 implements Restorable<State> {
         this.vm = new VideoModes(this.gr, this.hgr, this.gr2, this.hgr2, options.canvas, options.e);
         this.vm.enhanced(options.enhanced);
         this.io = new Apple2IO(this.cpu, this.vm);
-        this.multiScreen = options.multiScreen;
         this.tick = options.tick;
 
         if (options.e) {
@@ -148,11 +145,9 @@ export class Apple2 implements Restorable<State> {
                 this.mmu.resetVB();
             }
             if (this.io.annunciator(0)) {
-                if (this.multiScreen) {
-                    this.vm.blit();
-                }
-                if (this.io.blit()) {
-                    this.stats.renderedFrames++;
+                const imageData = this.io.blit();
+                if (imageData) {
+                    this.vm.blit(imageData);
                 }
             } else {
                 if (this.vm.blit()) {

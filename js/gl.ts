@@ -27,7 +27,6 @@ import {
 } from './videomodes';
 
 let enhanced = false;
-let multiScreen = false;
 let textMode = true;
 let mixedMode = false;
 let hiresMode = false;
@@ -499,7 +498,7 @@ export class HiresPageGL implements Memory, Restorable<GraphicsState> {
         const data = this.imageData.data;
         let dx, dy;
         if ((rowa < 24) && (col < 40)) {
-            if (!multiScreen && !hiresMode) {
+            if (!hiresMode) {
                 return;
             }
 
@@ -831,10 +830,6 @@ export class VideoModesGL implements VideoModes {
         enhanced = on;
     }
 
-    multiScreen(on: boolean) {
-        multiScreen = on;
-    }
-
     isText() {
         return textMode;
     }
@@ -878,9 +873,11 @@ export class VideoModesGL implements VideoModes {
         return true;
     }
 
-    blit() {
+    blit(altData?: ImageData) {
         let blitted = false;
-        if (hiresMode && !textMode) {
+        if (altData) {
+            blitted = this.updateImage(altData);
+        } else if (hiresMode && !textMode) {
             blitted = this.updateImage(
                 this._hgrs[pageMode - 1].imageData,
                 mixedMode ? this._grs[pageMode - 1].imageData : null

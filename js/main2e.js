@@ -44,7 +44,6 @@ switch (romVersion) {
 var options = {
     gl: prefs.readPref('gl_canvas') === 'true',
     canvas: document.getElementById('screen'),
-    multiScreen: false,
     rom: rom,
     characterRom: characterRom,
     e: true,

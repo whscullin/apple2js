@@ -330,7 +330,7 @@ export default class Apple2IO implements PageHandler {
         if (card) {
             return card.blit?.();
         }
-        return false;
+        return undefined;
     }
 
     read(page: byte, off: byte) {

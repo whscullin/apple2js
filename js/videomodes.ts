@@ -55,7 +55,7 @@ export interface HiresPage extends VideoPage {
 export interface VideoModes extends Restorable<VideoModesState> {
     page(pageNo: number): void
 
-    blit(): boolean
+    blit(altData?: ImageData): boolean
 
     reset(): void
 
