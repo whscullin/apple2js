@@ -208,6 +208,8 @@ canvas {
     -moz-image-rendering: -moz-crisp-edges;
     -webkit-image-rendering: -webkit-optimize-contrast;
     image-rendering: optimizeSpeed;
+    width: 592px;
+    height: 416px;
 }
 
 #screen:-webkit-full-screen {

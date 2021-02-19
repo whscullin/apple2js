@@ -708,15 +708,16 @@ function _keyup(evt) {
 export function updateScreen() {
     var mono = document.querySelector('#mono_screen').checked;
     var scanlines = document.querySelector('#show_scanlines').checked;
+    var gl = document.querySelector('#gl_canvas').checked;
 
     var screen = document.querySelector('#screen');
     var overscan = document.querySelector('.overscan');
-    if (scanlines) {
+    if (scanlines && !gl) {
         overscan.classList.add('scanlines');
     } else {
         overscan.classList.remove('scanlines');
     }
-    if (mono) {
+    if (mono && !gl) {
         screen.classList.add('mono');
     } else {
         screen.classList.remove('mono');

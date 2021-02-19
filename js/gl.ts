@@ -1,4 +1,4 @@
-/* Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2021 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -36,36 +36,33 @@ let altCharMode = false;
 let an3 = false;
 let doubleHiresMode = false;
 
-function rowToBase(row: number) {
-    const ab = (row >> 3) & 3;
-    const cd = (row >> 1) & 0x3;
-    const e = row & 1;
-    return (cd << 8) | (e << 7) | (ab << 5) | (ab << 3);
-}
+const tmpCanvas = document.createElement('canvas');
+const tmpContext = tmpCanvas.getContext('2d');
 
-const screenData = (mainData: ImageData, mixData: ImageData | null | undefined, details: any, dhgr=true) => {
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    if (!context) {
-        return;
+const buildScreen = (mainData: ImageData, mixData?: ImageData | null) => {
+    if (!tmpContext) {
+        throw new Error('No webgl context');
     }
-    const width = details.imageSize.width;
-    const height = details.imageSize.height;
-    canvas.width = width;
-    canvas.height = height;
-    context.fillStyle = 'rgba(0,0,0,1)';
-    context.fillRect(0, 0, width, height);
-    const topLeft = dhgr ? details.topLeft80Col : details.topLeft;
+
+    const details = screenEmu.C.NTSC_DETAILS;
+    const { width, height } = details.imageSize;
+    const { x, y } = _80colMode ? details.topLeft80Col : details.topLeft;
+
+    tmpCanvas.width = width;
+    tmpCanvas.height = height;
+    tmpContext.fillStyle = 'rgba(0,0,0,1)';
+    tmpContext.fillRect(0, 0, width, height);
+
     if (mixData) {
-        context.putImageData(mainData, topLeft.x, topLeft.y, 0, 0, 560, 160);
-        context.putImageData(mixData, topLeft.x, topLeft.y, 0, 160, 560, 32);
+        tmpContext.putImageData(mainData, x, y, 0, 0, 560, 160);
+        tmpContext.putImageData(mixData, x, y, 0, 160, 560, 32);
     } else {
-        context.putImageData(mainData, topLeft.x, topLeft.y);
+        tmpContext.putImageData(mainData, x, y);
     }
-    return context.getImageData(0, 0, width, height);
+    return tmpContext.getImageData(0, 0, width, height);
 };
 
-// hires colors
+// Color constants
 const whiteCol: Color = [255, 255, 255];
 const blackCol: Color = [0, 0, 0];
 
@@ -137,18 +134,18 @@ export class LoresPageGL implements LoresPage {
 
     // These are used by both bank 0 and 1
 
-    _start() {
+    private _start() {
         return (0x04 * this.page);
     }
 
-    _end() { return (0x04 * this.page) + 0x03; }
+    private _end() { return (0x04 * this.page) + 0x03; }
 
-    _read(page: byte, off: byte, bank: bank) {
+    private _read(page: byte, off: byte, bank: bank) {
         const addr = (page << 8) | off, base = addr & 0x3FF;
         return this._buffer[bank][base];
     }
 
-    _write(page: byte, off: byte, val: byte, bank: bank) {
+    private _write(page: byte, off: byte, val: byte, bank: bank) {
         const addr = (page << 8) | off;
         const base = addr & 0x3FF;
         let fore, back;
@@ -257,20 +254,9 @@ export class LoresPageGL implements LoresPage {
                         b |= (b << 4);
                         b |= (b << 8);
                         if (col & 0x1) {
-                            b >>= 1;
-                        } else {
-                            const hbs = b & 0x80;
-                            b <<= 1;
-                            if (hbs) {
-                                b |= 0x01;
-                            }
+                            b >>= 2;
                         }
                         for (let idx = 0; idx < 7; idx++) {
-                            // if (bank & 0x01) {
-                            //     const color = (b & 0x80) ? whiteCol : blackCol;
-                            //     this._drawHalfPixel(data, offset, color);
-                            //     b <<= 1;
-                            // } else {
                             const color = (b & 0x01) ? whiteCol : blackCol;
                             this._drawHalfPixel(data, offset, color);
                             b >>= 1;
@@ -314,7 +300,6 @@ export class LoresPageGL implements LoresPage {
 
     mono(on: boolean) {
         this._monoMode = on;
-        this.refresh();
     }
 
     blink() {
@@ -357,12 +342,20 @@ export class LoresPageGL implements LoresPage {
             ]
         };
     }
+
     setState(state: GraphicsState) {
         this.page = state.page;
         this._buffer[0] = base64_decode(state.buffer[0]);
         this._buffer[1] = base64_decode(state.buffer[1]);
 
         this.refresh();
+    }
+
+    private rowToBase(row: number) {
+        const ab = (row >> 3) & 3;
+        const cd = (row >> 1) & 0x3;
+        const e = row & 1;
+        return (cd << 8) | (e << 7) | (ab << 5) | (ab << 3);
     }
 
     private mapCharCode(charCode: byte) {
@@ -380,7 +373,7 @@ export class LoresPageGL implements LoresPage {
         let buffer = '', line, charCode;
         let row, col, base;
         for (row = 0; row < 24; row++) {
-            base = rowToBase(row);
+            base = this.rowToBase(row);
             line = '';
             if (this.e && _80colMode) {
                 for (col = 0; col < 80; col++) {
@@ -637,7 +630,6 @@ export class HiresPageGL implements Memory, Restorable<GraphicsState> {
 
     mono(on: boolean) {
         this._monoMode = on;
-        this.refresh();
     }
 
     start() {
@@ -859,13 +851,7 @@ export class VideoModesGL implements VideoModes {
     }
 
     updateImage(mainData: ImageData, mixData?: ImageData | null) {
-        const imageData = screenData(
-            mainData,
-            mixData,
-            screenEmu.C.NTSC_DETAILS,
-            doubleHiresMode
-        );
-
+        const imageData = buildScreen(mainData, mixData);
         const imageInfo = new screenEmu.ImageInfo(imageData);
         this._sv.image = imageInfo;
         this._sv.vsync();
@@ -926,6 +912,7 @@ export class VideoModesGL implements VideoModes {
         this._hgrs[1].mono(on);
 
         this._monoMode = on;
+        this._refresh();
     }
 
     getText() {
