@@ -36,6 +36,7 @@ export interface VideoModesState {
 
 export interface VideoPage extends Memory, Restorable<GraphicsState> {
     imageData: ImageData
+    dirty: Region;
 
     bank0(): Memory
     bank1(): Memory

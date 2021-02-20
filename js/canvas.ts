@@ -126,6 +126,12 @@ const dcolors: Color[] = [
     [255, 255, 255], // 0xf white
 ];
 
+const notDirty: Region = {
+    top: 385,
+    bottom: -1,
+    left: 561,
+    right: -1
+};
 
 /****************************************************************************
  *
@@ -138,18 +144,13 @@ export class LoresPage2D implements LoresPage {
     // $40-$7F flashing
     // $80-$FF normal
 
-    public imageData: ImageData;
-
     private _buffer: memory[] = [];
     private _refreshing = false;
     private _monoMode = false;
     private _blink = false;
-    private _dirty: Region = {
-        top: 385,
-        bottom: -1,
-        left: 561,
-        right: -1
-    };
+
+    dirty: Region = {...notDirty}
+    imageData: ImageData;
 
     constructor(private page: number,
         private readonly charset: memory,
@@ -237,13 +238,13 @@ export class LoresPage2D implements LoresPage {
         const data = this.imageData.data;
         if ((row < 24) && (col < 40)) {
             let y = row << 4;
-            if (y < this._dirty.top) { this._dirty.top = y; }
+            if (y < this.dirty.top) { this.dirty.top = y; }
             y += 16;
-            if (y > this._dirty.bottom) { this._dirty.bottom = y; }
+            if (y > this.dirty.bottom) { this.dirty.bottom = y; }
             let x = col * 14;
-            if (x < this._dirty.left) { this._dirty.left = x; }
+            if (x < this.dirty.left) { this.dirty.left = x; }
             x += 14;
-            if (x > this._dirty.right) { this._dirty.right = x; }
+            if (x > this.dirty.right) { this.dirty.right = x; }
 
             let color;
             if (textMode || hiresMode || (mixedMode && row > 19)) {
@@ -524,13 +525,7 @@ export class LoresPage2D implements LoresPage {
 
 export class HiresPage2D implements HiresPage {
     public imageData: ImageData;
-
-    private _dirty: Region = {
-        top: 385,
-        bottom: -1,
-        left: 561,
-        right: -1
-    };
+    dirty: Region = {...notDirty}
 
     private _buffer: memory[] = [];
     private _refreshing = false;
@@ -655,13 +650,13 @@ export class HiresPage2D implements HiresPage {
             }
 
             let y = rowa << 4 | rowb << 1;
-            if (y < this._dirty.top) { this._dirty.top = y; }
+            if (y < this.dirty.top) { this.dirty.top = y; }
             y += 2;
-            if (y > this._dirty.bottom) { this._dirty.bottom = y; }
+            if (y > this.dirty.bottom) { this.dirty.bottom = y; }
             let x = col * 14 - 2;
-            if (x < this._dirty.left) { this._dirty.left = x; }
+            if (x < this.dirty.left) { this.dirty.left = x; }
             x += 18;
-            if (x > this._dirty.right) { this._dirty.right = x; }
+            if (x > this.dirty.right) { this.dirty.right = x; }
 
             dy = rowa << 4 | rowb << 1;
             let bz, b0, b1, b2, b3, b4, c, hb;
@@ -1066,37 +1061,56 @@ export class VideoModes2D implements VideoModes {
         return altCharMode;
     }
 
-    updateImage(mainData: ImageData, mixData?: ImageData | null) {
+    updateImage(
+        mainData: ImageData,
+        mainDirty: Region,
+        mixData?: ImageData | null,
+        mixDirty?: Region | null
+    ) {
         if (!this._context) {
             throw new Error('No 2D context');
         }
-        if (mixData) {
-            this._context.putImageData(
-                mainData, this._left, this._top, 0, 0, 560, 320
-            );
-            this._context.putImageData(
-                mixData, this._left, this._top, 0, 320, 560, 64
-            );
+        if (mainDirty.bottom !== -1 || (mixDirty && mixDirty.bottom !== -1)) {
+            if (mixData) {
+                this._context.putImageData(
+                    mainData, this._left, this._top, 0, 0, 560, 320
+                );
+                this._context.putImageData(
+                    mixData, this._left, this._top, 0, 320, 560, 64
+                );
+            } else {
+                this._context.putImageData(mainData, this._top, this._left);
+            }
+            return true;
         } else {
-            this._context.putImageData(mainData, this._top, this._left);
+            return false;
         }
-        return true;
     }
 
     blit(altData?: ImageData) {
         let blitted = false;
+        const hgr = this._hgrs[pageMode - 1];
+        const gr = this._grs[pageMode - 1];
+
         if (altData) {
-            blitted = this.updateImage(altData);
+            blitted = this.updateImage(
+                altData,
+                {top: 0, left: 0, right: 560, bottom: 384}
+            );
         } else if (hiresMode && !textMode) {
             blitted = this.updateImage(
-                this._hgrs[pageMode - 1].imageData,
-                mixedMode ? this._grs[pageMode - 1].imageData : null
+                hgr.imageData,
+                hgr.dirty,
+                mixedMode ? gr.imageData : null,
+                mixedMode ? gr.dirty : null
             );
         } else {
             blitted = this.updateImage(
-                this._grs[pageMode - 1].imageData
+                gr.imageData, gr.dirty
             );
         }
+        hgr.dirty = {...notDirty};
+        gr.dirty = {...notDirty};
         return blitted;
     }
 

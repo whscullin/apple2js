@@ -66,6 +66,13 @@ const buildScreen = (mainData: ImageData, mixData?: ImageData | null) => {
 const whiteCol: Color = [255, 255, 255];
 const blackCol: Color = [0, 0, 0];
 
+const notDirty: Region = {
+    top: 385,
+    bottom: -1,
+    left: 561,
+    right: -1
+};
+
 /****************************************************************************
  *
  * Text/Lores Graphics
@@ -81,12 +88,8 @@ export class LoresPageGL implements LoresPage {
     private _monoMode = false;
     private _refreshing = false;
     private _blink = false;
-    private _dirty: Region = {
-        top: 193,
-        bottom: -1,
-        left: 561,
-        right: -1
-    };
+
+    dirty: Region = {...notDirty}
     imageData: ImageData;
 
     constructor(private page: number,
@@ -167,13 +170,13 @@ export class LoresPageGL implements LoresPage {
         const data = this.imageData.data;
         if ((row < 24) && (col < 40)) {
             let y = row << 3;
-            if (y < this._dirty.top) { this._dirty.top = y; }
+            if (y < this.dirty.top) { this.dirty.top = y; }
             y += 8;
-            if (y > this._dirty.bottom) { this._dirty.bottom = y; }
+            if (y > this.dirty.bottom) { this.dirty.bottom = y; }
             let x = col * 14;
-            if (x < this._dirty.left) { this._dirty.left = x; }
+            if (x < this.dirty.left) { this.dirty.left = x; }
             x += 14;
-            if (x > this._dirty.right) { this._dirty.right = x; }
+            if (x > this.dirty.right) { this.dirty.right = x; }
 
             if (textMode || hiresMode || (mixedMode && row > 19)) {
                 let inverse;
@@ -400,17 +403,17 @@ export class LoresPageGL implements LoresPage {
  ***************************************************************************/
 
 export class HiresPageGL implements Memory, Restorable<GraphicsState> {
-    private _dirty: Region = {
-        top: 193,
-        bottom: -1,
-        left: 561,
-        right: -1
-    };
 
     private _buffer: memory[] = [];
     private _refreshing = false;
     private _monoMode = false;
 
+    dirty: Region = {
+        top: 193,
+        bottom: -1,
+        left: 561,
+        right: -1
+    };
     imageData: ImageData;
 
     constructor(
@@ -496,13 +499,13 @@ export class HiresPageGL implements Memory, Restorable<GraphicsState> {
             }
 
             let y = rowa << 3 | rowb;
-            if (y < this._dirty.top) { this._dirty.top = y; }
+            if (y < this.dirty.top) { this.dirty.top = y; }
             y += 1;
-            if (y > this._dirty.bottom) { this._dirty.bottom = y; }
+            if (y > this.dirty.bottom) { this.dirty.bottom = y; }
             let x = col * 14 - 2;
-            if (x < this._dirty.left) { this._dirty.left = x; }
+            if (x < this.dirty.left) { this.dirty.left = x; }
             x += 18;
-            if (x > this._dirty.right) { this._dirty.right = x; }
+            if (x > this.dirty.right) { this.dirty.right = x; }
 
             dy = rowa << 3 | rowb;
             let bz, b0, b1, b2, b3, b4, c, hb;
@@ -850,29 +853,46 @@ export class VideoModesGL implements VideoModes {
         return altCharMode;
     }
 
-    updateImage(mainData: ImageData, mixData?: ImageData | null) {
-        const imageData = buildScreen(mainData, mixData);
-        const imageInfo = new screenEmu.ImageInfo(imageData);
-        this._sv.image = imageInfo;
-        this._sv.vsync();
-
-        return true;
+    updateImage(
+        mainData: ImageData,
+        mainDirty: Region,
+        mixData?: ImageData | null,
+        mixDirty?: Region | null
+    ) {
+        if (mainDirty.bottom !== -1 || (mixDirty && mixDirty.bottom !== -1)) {
+            const imageData = buildScreen(mainData, mixData);
+            const imageInfo = new screenEmu.ImageInfo(imageData);
+            this._sv.image = imageInfo;
+            this._sv.vsync();
+            return true;
+        } else {
+            return false;
+        }
     }
 
     blit(altData?: ImageData) {
         let blitted = false;
+        const hgr = this._hgrs[pageMode - 1];
+        const gr = this._grs[pageMode - 1];
+
         if (altData) {
-            blitted = this.updateImage(altData);
+            blitted = this.updateImage(
+                altData,
+                { top: 0, left: 0, right: 560, bottom: 384 }
+            );
         } else if (hiresMode && !textMode) {
             blitted = this.updateImage(
-                this._hgrs[pageMode - 1].imageData,
-                mixedMode ? this._grs[pageMode - 1].imageData : null
+                hgr.imageData, hgr.dirty,
+                mixedMode ? gr.imageData : null, mixedMode ? gr.dirty : null,
             );
         } else {
             blitted = this.updateImage(
-                this._grs[pageMode - 1].imageData
+                gr.imageData, gr.dirty
             );
         }
+        hgr.dirty = {...notDirty};
+        gr.dirty = {...notDirty};
+
         return blitted;
     }
 
