@@ -705,6 +705,7 @@ export class VideoModesGL implements VideoModes {
         this._displayConfig.displayResolution = new screenEmu.Size(this.canvas.width, this.canvas.height);
         this._displayConfig.displayScanlineLevel = 0.5;
         this._displayConfig.videoWhiteOnly = true;
+        this._displayConfig.videoSaturation = 0.8;
         this._displayConfig.videoSize = new screenEmu.Size(1.25, 1.15);
         this._displayConfig.videoCenter = new screenEmu.Point(0.01, 0.02);
         // this._displayConfig.videoDecoder = 'CANVAS_CXA2025AS';
@@ -859,15 +860,15 @@ export class VideoModesGL implements VideoModes {
         mixData?: ImageData | null,
         mixDirty?: Region | null
     ) {
+        let blitted = false;
         if (mainDirty.bottom !== -1 || (mixDirty && mixDirty.bottom !== -1)) {
             const imageData = buildScreen(mainData, mixData);
             const imageInfo = new screenEmu.ImageInfo(imageData);
             this._sv.image = imageInfo;
-            this._sv.vsync();
-            return true;
-        } else {
-            return false;
+            blitted = true;
         }
+        this._sv.vsync();
+        return blitted;
     }
 
     blit(altData?: ImageData) {
