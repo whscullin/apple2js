@@ -572,16 +572,6 @@ export class HiresPageGL implements Memory, Restorable<GraphicsState> {
                         bits >>= 1;
                     }
                 }
-
-                if (!this._refreshing) {
-                    this._refreshing = true;
-                    const bb: bank = bank ? 0 : 1;
-                    for (let rr = addr - 1; rr <= addr + 1; rr++) {
-                        const vv = this._buffer[bb][rr - 0x2000 * this.page];
-                        this._write(rr >> 8, rr & 0xff, vv, bb);
-                    }
-                    this._refreshing = false;
-                }
             } else {
                 val = this._buffer[0][base];
                 const hbs = val & 0x80;

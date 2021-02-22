@@ -839,6 +839,7 @@ export default class CPU6502 {
             this.readByte(this.pc);
             const oldPage = this.pc >> 8;
             this.pc += off > 127 ? off - 256 : off;
+            this.pc &= 0xffff;
             const newPage = this.pc >> 8;
             const newOff = this.pc & 0xff;
             if (newPage != oldPage) this.readByte(oldPage << 8 | newOff);
@@ -851,6 +852,7 @@ export default class CPU6502 {
             this.readByte(this.pc);
             const oldPage = this.pc >> 8;
             this.pc += off > 127 ? off - 256 : off;
+            this.pc &= 0xffff;
             const newPage = this.pc >> 8;
             const newOff = this.pc & 0xff;
             if (newPage != oldPage) this.readByte(oldPage << 8 | newOff);
@@ -870,6 +872,7 @@ export default class CPU6502 {
             const oldPage = oldPc >> 8;
             this.readByte(oldPc);
             this.pc += off > 127 ? off - 256 : off;
+            this.pc &= 0xffff;
             const newPage = this.pc >> 8;
             if (oldPage != newPage) {
                 this.readByte(oldPc);
@@ -888,6 +891,7 @@ export default class CPU6502 {
             const oldPage = oldPc >> 8;
             this.readByte(oldPc);
             this.pc += off > 127 ? off - 256 : off;
+            this.pc &= 0xffff;
             const newPage = this.pc >> 8;
             if (oldPage != newPage) {
                 this.readByte(oldPc);

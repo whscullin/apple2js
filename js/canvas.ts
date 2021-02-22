@@ -775,7 +775,7 @@ export class HiresPage2D implements HiresPage {
                     this._refreshing = true;
                     const bb: bank = bank ? 0 : 1;
                     for (let rr = addr - 1; rr <= addr + 1; rr++) {
-                        const vv = this._buffer[bb][rr - 0x2000 * this.page];
+                        const vv = this._buffer[bb][rr & 0x1FFF];
                         this._write(rr >> 8, rr & 0xff, vv, bb);
                     }
                     this._refreshing = false;
