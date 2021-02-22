@@ -55,9 +55,8 @@ body {
     margin: auto;
     position: relative;
     background-color: black;
-    padding: 16px;
-    width: 560px;
-    height: 384px;
+    width: 592px;
+    height: 416px;
     border: 6px inset #f0edd0;
     border-radius: 10px;
 }
@@ -189,7 +188,7 @@ canvas {
   float: left;
 }
 
-.green {
+.mono {
     filter: url('#green');
 }
 
@@ -209,6 +208,8 @@ canvas {
     -moz-image-rendering: -moz-crisp-edges;
     -webkit-image-rendering: -webkit-optimize-contrast;
     image-rendering: optimizeSpeed;
+    width: 592px;
+    height: 416px;
 }
 
 #screen:-webkit-full-screen {

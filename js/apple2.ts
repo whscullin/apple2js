@@ -1,21 +1,36 @@
 import Apple2IO from './apple2io';
-import { HiresPage, LoresPage, VideoModes } from './canvas';
+// import * as gl from './gl';
+import {
+    HiresPage,
+    LoresPage,
+    VideoModes,
+} from './videomodes';
+import {
+    HiresPage2D,
+    LoresPage2D,
+    VideoModes2D,
+} from './canvas';
+import {
+    HiresPageGL,
+    LoresPageGL,
+    VideoModesGL,
+} from './gl';
 import CPU6502, { PageHandler, CpuState } from './cpu6502';
 import MMU from './mmu';
 import RAM from './ram';
 import { debug } from './util';
 
 import SYMBOLS from './symbols';
-import { Restorable } from './types';
+import { Restorable, memory } from './types';
 import { processGamepad } from './ui/gamepad';
 
 interface Options {
-    characterRom: any,
+    characterRom: memory,
     enhanced: boolean,
     e: boolean,
-    multiScreen: boolean,
+    gl: boolean,
     rom: PageHandler,
-    screen: any[],
+    canvas: HTMLCanvasElement,
     tick: () => void,
 }
 
@@ -44,7 +59,6 @@ export class Apple2 implements Restorable<State> {
     private io: Apple2IO;
     private mmu: MMU;
 
-    private multiScreen: boolean;
     private tick: () => void;
 
     private stats = {
@@ -53,16 +67,18 @@ export class Apple2 implements Restorable<State> {
     };
 
     constructor(options: Options) {
+        const LoresPage = options.gl ? LoresPageGL : LoresPage2D;
+        const HiresPage = options.gl ? HiresPageGL : HiresPage2D;
+        const VideoModes = options.gl ? VideoModesGL : VideoModes2D;
+
         this.cpu = new CPU6502({ '65C02': options.enhanced });
-        this.gr = new LoresPage(1, options.characterRom, options.e, options.screen[0]);
-        this.gr2 = new LoresPage(2, options.characterRom, options.e, options.screen[1]);
-        this.hgr = new HiresPage(1, options.screen[2]);
-        this.hgr2 = new HiresPage(2, options.screen[3]);
-        this.vm = new VideoModes(this.gr, this.hgr, this.gr2, this.hgr2, options.e);
-        this.vm.multiScreen(options.multiScreen);
+        this.gr = new LoresPage(1, options.characterRom, options.e);
+        this.gr2 = new LoresPage(2, options.characterRom, options.e);
+        this.hgr = new HiresPage(1);
+        this.hgr2 = new HiresPage(2);
+        this.vm = new VideoModes(this.gr, this.hgr, this.gr2, this.hgr2, options.canvas, options.e);
         this.vm.enhanced(options.enhanced);
         this.io = new Apple2IO(this.cpu, this.vm);
-        this.multiScreen = options.multiScreen;
         this.tick = options.tick;
 
         if (options.e) {
@@ -129,11 +145,9 @@ export class Apple2 implements Restorable<State> {
                 this.mmu.resetVB();
             }
             if (this.io.annunciator(0)) {
-                if (this.multiScreen) {
-                    this.vm.blit();
-                }
-                if (this.io.blit()) {
-                    this.stats.renderedFrames++;
+                const imageData = this.io.blit();
+                if (imageData) {
+                    this.vm.blit(imageData);
                 }
             } else {
                 if (this.vm.blit()) {

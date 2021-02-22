@@ -46,7 +46,7 @@
     </div>
     <div id="display">
       <div class="overscan">
-        <canvas id="screen" width="560" height="384"></canvas>
+        <canvas id="screen" width="592" height="416"></canvas>
       </div>
     </div>
     <div class="inset">
@@ -195,10 +195,10 @@
           <h3>Monitor</h3>
           <ul>
             <li>
-              <input type="checkbox" id="green_screen"
+              <input type="checkbox" id="mono_screen"
                     onclick="Apple2.updateScreen()" />
-              <label for="green_screen">
-                Green Screen
+              <label for="mono_screen">
+                Mono Screen
               </label>
             </li>
             <li>
@@ -206,6 +206,13 @@
                     onclick="Apple2.updateScreen()" />
               <label for="show_scanlines">
                 Show Scanlines
+              </label>
+            </li>
+            <li>
+              <input type="checkbox" id="gl_canvas"
+                    onclick="Apple2.updateScreen()" />
+              <label for="gl_canvas">
+                GL Renderer (Restart required)
               </label>
             </li>
           </ul>

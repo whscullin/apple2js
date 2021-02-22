@@ -1,7 +1,7 @@
 
 /**
  * Extracts the members of a constant array as a type. Used as:
- * 
+ *
  * @example
  * const SOME_VALUES = ['a', 'b', 1, 2] as const;
  * type SomeValues = MemberOf<typeof SOME_VALUES>; // 'a' | 'b' | 1 | 2
@@ -41,6 +41,21 @@ export interface Memory {
     write(page: byte, offset: byte, value: byte): void;
 }
 
+/* An interface card */
+export interface Card extends Memory {
+    /* Reset the card */
+    reset(): void;
+
+    /* Draw card to canvas */
+    blit?(): ImageData;
+
+    /* Process period events */
+    tick?(): void;
+
+    /* Read or Write an I/O switch */
+    ioSwitch(off: byte, val?: byte): byte | undefined;
+}
+
 export const DISK_FORMATS = [
     '2mg',
     'd13',
@@ -69,6 +84,8 @@ export interface DiskIIDrive extends Drive {
     readOnly: boolean,
     dirty: boolean,
 }
+
+export type TapeData = Array<[duration: number, high: boolean]>;
 
 export interface Restorable<T> {
     getState(): T;

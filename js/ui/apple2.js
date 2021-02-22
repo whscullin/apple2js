@@ -164,7 +164,9 @@ function loadingStop () {
     MicroModal.close('loading-modal');
 
     if (!paused) {
-        _apple2.run();
+        vm.ready.then(() => {
+            _apple2.run();
+        });
     }
 }
 
@@ -704,22 +706,23 @@ function _keyup(evt) {
 }
 
 export function updateScreen() {
-    var green = document.querySelector('#green_screen').checked;
+    var mono = document.querySelector('#mono_screen').checked;
     var scanlines = document.querySelector('#show_scanlines').checked;
+    var gl = document.querySelector('#gl_canvas').checked;
 
     var screen = document.querySelector('#screen');
     var overscan = document.querySelector('.overscan');
-    if (scanlines) {
+    if (scanlines && !gl) {
         overscan.classList.add('scanlines');
     } else {
         overscan.classList.remove('scanlines');
     }
-    if (green) {
-        screen.classList.add('green');
+    if (mono && !gl) {
+        screen.classList.add('mono');
     } else {
-        screen.classList.remove('green');
+        screen.classList.remove('mono');
     }
-    vm.mono(green);
+    vm.mono(mono);
 }
 
 export function updateCPU() {
@@ -780,7 +783,9 @@ function _mousemove(evt) {
 export function pauseRun() {
     var label = document.querySelector('#pause-run i');
     if (paused) {
-        _apple2.run();
+        vm.ready.then(() => {
+            _apple2.run();
+        });
         label.classList.remove('fa-play');
         label.classList.add('fa-pause');
     } else {
@@ -921,6 +926,8 @@ export function initUI(apple2, disk2, smartPort, printer, e) {
         _apple2.stop();
         processHash(hash);
     } else {
-        _apple2.run();
+        vm.ready.then(() => {
+            _apple2.run();
+        });
     }
 }

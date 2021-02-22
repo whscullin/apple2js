@@ -16,13 +16,17 @@ export default class Prefs {
     havePrefs() {
         return havePrefs;
     }
-    readPref(name: string): string | null {
-        if (havePrefs)
-            return window.localStorage.getItem(name);
-        return null;
+
+    readPref(name: string, defaultValue: string | null = null) {
+        if (havePrefs) {
+            return window.localStorage.getItem(name) ?? defaultValue;
+        }
+        return defaultValue;
     }
+
     writePref(name: string, value: string) {
-        if (havePrefs)
+        if (havePrefs) {
             window.localStorage.setItem(name, value);
+        }
     }
 }
