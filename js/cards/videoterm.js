@@ -256,6 +256,13 @@ export default function Videoterm(_io) {
                 return _imageData;
             }
             return;
+        },
+
+        getState() {
+            // TODO: Videoterm State
+            return {};
+        },
+        setState(_) {
         }
     };
 }

@@ -42,7 +42,7 @@ export interface Memory {
 }
 
 /* An interface card */
-export interface Card extends Memory {
+export interface Card extends Memory, Restorable {
     /* Reset the card */
     reset(): void;
 
@@ -87,7 +87,7 @@ export interface DiskIIDrive extends Drive {
 
 export type TapeData = Array<[duration: number, high: boolean]>;
 
-export interface Restorable<T> {
+export interface Restorable<T = any> {
     getState(): T;
     setState(state: T): void;
 }

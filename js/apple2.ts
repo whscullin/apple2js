@@ -1,9 +1,9 @@
 import Apple2IO from './apple2io';
-// import * as gl from './gl';
 import {
     HiresPage,
     LoresPage,
     VideoModes,
+    VideoModesState,
 } from './videomodes';
 import {
     HiresPage2D,
@@ -15,6 +15,7 @@ import {
     LoresPageGL,
     VideoModesGL,
 } from './gl';
+import { Apple2IOState } from './apple2io';
 import CPU6502, { PageHandler, CpuState } from './cpu6502';
 import MMU from './mmu';
 import RAM from './ram';
@@ -36,6 +37,8 @@ interface Options {
 
 interface State {
     cpu: CpuState,
+    vm: VideoModesState,
+    io: Apple2IOState,
 }
 
 export class Apple2 implements Restorable<State> {
@@ -184,6 +187,8 @@ export class Apple2 implements Restorable<State> {
     getState(): State {
         const state: State = {
             cpu: this.cpu.getState(),
+            vm: this.vm.getState(),
+            io: this.io.getState(),
         };
 
         return state;
@@ -191,6 +196,8 @@ export class Apple2 implements Restorable<State> {
 
     setState(state: State) {
         this.cpu.setState(state.cpu);
+        this.vm.setState(state.vm);
+        this.io.setState(state.io);
     }
 
     reset() {

@@ -10,14 +10,10 @@
  */
 
 import { base64_decode, base64_encode } from './base64';
-import { byte, memory, Memory } from './types';
+import { byte, memory, Memory, Restorable } from './types';
 import { allocMemPages } from './util';
 
-export interface State {
-    /** Start of memory region. */
-    start: byte;
-    /** End of memory region. */
-    end: byte;
+export interface RAMState {
     /** Base64-encoded contents. */
     mem: string;
 }
@@ -26,7 +22,7 @@ export interface State {
  * Represents RAM from the start page `sp` to end page `ep`. The memory
  * is addressed by `page` and `offset`.
  */
-export default class RAM implements Memory {
+export default class RAM implements Memory, Restorable<RAMState> {
     private start_page: byte;
     private end_page: byte;
     private mem: memory;
@@ -54,17 +50,13 @@ export default class RAM implements Memory {
         this.mem[(page - this.start_page) << 8 | offset] = val;
     }
 
-    public getState(): State {
+    public getState(): RAMState {
         return {
-            start: this.start_page,
-            end: this.end_page,
             mem: base64_encode(this.mem)
         };
     }
 
-    public setState(state: State) {
-        this.start_page = state.start;
-        this.end_page = state.end;
+    public setState(state: RAMState) {
         this.mem = base64_decode(state.mem);
     }
 }

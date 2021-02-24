@@ -413,9 +413,11 @@ export default function SmartPort(io, cpu, options ) {
         },
 
         getState: function() {
+            // TODO: Smartport State
+            return {};
         },
 
-        setState: function() {
+        setState: function(_) {
         },
 
         setBinary: function (drive, name, fmt, data) {

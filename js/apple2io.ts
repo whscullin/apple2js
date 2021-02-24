@@ -10,7 +10,7 @@
  */
 
 import CPU6502, { PageHandler } from './cpu6502';
-import { Card, Memory, TapeData, byte } from './types';
+import { Card, Memory, TapeData, byte, Restorable } from './types';
 import { debug } from './util';
 
 type slot = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -25,7 +25,7 @@ interface Annunciators {
     3: boolean,
 }
 
-interface State {
+export interface Apple2IOState {
     annunciators: Annunciators;
 }
 
@@ -65,7 +65,7 @@ const LOC = {
     ACCEL: 0x74, // CPU Speed control
 };
 
-export default class Apple2IO implements PageHandler {
+export default class Apple2IO implements PageHandler, Restorable<Apple2IOState> {
     private _slot: Card[] = [];
     private _auxRom: Memory | null = null;
 
@@ -139,6 +139,7 @@ export default class Apple2IO implements PageHandler {
     _access(off: byte, val?: byte): byte | undefined {
         let result: number | undefined = 0;
         const now = this.cpu.getCycles();
+        const writeMode = val === undefined;
         const delta = now - this._trigger;
         switch (off) {
             case LOC.CLRTEXT:
@@ -256,7 +257,9 @@ export default class Apple2IO implements PageHandler {
                         result = this._key;
                         break;
                     case LOC.STROBE: // C01x
-                        this._key &= 0x7f;
+                        if (off === LOC.STROBE || writeMode) {
+                            this._key &= 0x7f;
+                        }
                         if (this._buffer.length > 0) {
                             let val = this._buffer.shift() as string;
                             if (val == '\n') {
@@ -264,7 +267,10 @@ export default class Apple2IO implements PageHandler {
                             }
                             this._key = val.charCodeAt(0) | 0x80;
                         }
-                        result = (this._keyDown ? 0x80 : 0x00) | this._key;
+                        result = this._key & 0x7f;
+                        if (off === LOC.STROBE) {
+                            result |= this._keyDown ? 0x80 : 0x00;
+                        }
                         break;
                     case LOC.TAPEOUT: // C02x
                         this._phase = -this._phase;
@@ -401,13 +407,13 @@ export default class Apple2IO implements PageHandler {
         }
     }
 
-    getState() {
+    getState(): Apple2IOState {
         return {
-            annunciators: this._annunciators[0]
+            annunciators: this._annunciators
         };
     }
 
-    setState(state: State) {
+    setState(state: Apple2IOState) {
         this._annunciators = state.annunciators;
     }
 

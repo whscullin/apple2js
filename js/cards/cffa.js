@@ -372,6 +372,13 @@ export default function CFFA() {
             }
         },
 
+        getState() {
+            // TODO CFFA State
+            return {};
+        },
+
+        setState(_) {},
+
         // Assign a raw disk image to a drive. Must be 2mg or raw PO image.
 
         setBinary: function(drive, name, ext, rawData) {
