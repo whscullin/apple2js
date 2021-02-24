@@ -18,7 +18,7 @@ module.exports =
         publicPath: '/dist/',
         watchContentBase: true,
         watchOptions: {
-            ignored: /node_modules/
+            ignored: [/node_modules/, /\.git/]
         }
     },
     module: {
