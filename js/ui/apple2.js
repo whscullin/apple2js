@@ -630,7 +630,7 @@ function _keydown(evt) {
         evt.preventDefault();
 
         var key = keyboard.mapKeyEvent(evt);
-        if (key !== null) {
+        if (key !== 0xff) {
             io.keyDown(key);
         }
     }
