@@ -635,7 +635,7 @@ function _keydown(evt) {
         evt.preventDefault();
 
         var key = keyboard.mapKeyEvent(evt);
-        if (key != 0xff) {
+        if (key !== null) {
             io.keyDown(key);
         }
     }
@@ -666,9 +666,11 @@ function _keydown(evt) {
     } else if (evt.keyCode === 114) { // F3
         io.keyDown(0x1b);
     } else if (evt.keyCode === 117) { // F6 Quick Save
-        _apple2.getState();
+        window.localStorage.state = JSON.stringify(_apple2.getState());
     } else if (evt.keyCode === 120) { // F9 Quick Restore
-        _apple2.setState();
+        if (window.localStorage.state) {
+            _apple2.setState(JSON.parse(window.localStorage.state));
+        }
     } else if (evt.keyCode == 16) { // Shift
         keyboard.shiftKey(true);
     } else if (evt.keyCode == 20) { // Caps lock

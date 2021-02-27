@@ -914,6 +914,7 @@ export class VideoModesGL implements VideoModes {
         this._grs[1].setState(state.grs[1]);
         this._hgrs[0].setState(state.hgrs[0]);
         this._hgrs[1].setState(state.hgrs[1]);
+        this._refresh();
     }
 
     mono(on: boolean) {

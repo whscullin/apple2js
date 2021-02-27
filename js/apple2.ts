@@ -15,9 +15,10 @@ import {
     LoresPageGL,
     VideoModesGL,
 } from './gl';
+import ROM from './roms/rom';
 import { Apple2IOState } from './apple2io';
-import CPU6502, { PageHandler, CpuState } from './cpu6502';
-import MMU from './mmu';
+import CPU6502, { CpuState } from './cpu6502';
+import MMU, { MMUState } from './mmu';
 import RAM from './ram';
 import { debug } from './util';
 
@@ -30,7 +31,7 @@ interface Options {
     enhanced: boolean,
     e: boolean,
     gl: boolean,
-    rom: PageHandler,
+    rom: ROM,
     canvas: HTMLCanvasElement,
     tick: () => void,
 }
@@ -39,6 +40,7 @@ interface State {
     cpu: CpuState,
     vm: VideoModesState,
     io: Apple2IOState,
+    mmu: MMUState,
 }
 
 export class Apple2 implements Restorable<State> {
@@ -189,6 +191,7 @@ export class Apple2 implements Restorable<State> {
             cpu: this.cpu.getState(),
             vm: this.vm.getState(),
             io: this.io.getState(),
+            mmu: this.mmu?.getState(),
         };
 
         return state;
@@ -198,6 +201,9 @@ export class Apple2 implements Restorable<State> {
         this.cpu.setState(state.cpu);
         this.vm.setState(state.vm);
         this.io.setState(state.io);
+        if (this.mmu) {
+            this.mmu.setState(state.mmu);
+        }
     }
 
     reset() {

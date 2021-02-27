@@ -27,6 +27,7 @@ interface Annunciators {
 
 export interface Apple2IOState {
     annunciators: Annunciators;
+    cards: Array<any | null>
 }
 
 export type SampleListener = (sample: number[]) => void;
@@ -66,7 +67,7 @@ const LOC = {
 };
 
 export default class Apple2IO implements PageHandler, Restorable<Apple2IOState> {
-    private _slot: Card[] = [];
+    private _slot: Array<Card | null> = new Array(7).fill(null);
     private _auxRom: Memory | null = null;
 
     private _khz = 1023;
@@ -408,13 +409,16 @@ export default class Apple2IO implements PageHandler, Restorable<Apple2IOState> 
     }
 
     getState(): Apple2IOState {
+        // TODO vet more potential state
         return {
-            annunciators: this._annunciators
+            annunciators: this._annunciators,
+            cards: this._slot.map((card) => card ? card.getState() : null)
         };
     }
 
     setState(state: Apple2IOState) {
         this._annunciators = state.annunciators;
+        state.cards.map((cardState, idx) => this._slot[idx]?.setState(cardState));
     }
 
     setSlot(slot: slot, card: Card) {
@@ -459,7 +463,7 @@ export default class Apple2IO implements PageHandler, Restorable<Apple2IOState> 
         }
     }
 
-    setTape(tape: TapeData) { // TODO(flan): Needs typing.
+    setTape(tape: TapeData) {
         debug('Tape length: ' + tape.length);
         this._tape = tape;
         this._tapeOffset = -1;
@@ -476,9 +480,7 @@ export default class Apple2IO implements PageHandler, Restorable<Apple2IOState> 
     tick() {
         this._tick();
         for (let idx = 0; idx < 8; idx++) {
-            if (this._slot[idx]) {
-                this._slot[idx].tick?.();
-            }
+            this._slot[idx]?.tick?.();
         }
     }
 
