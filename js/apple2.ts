@@ -19,7 +19,7 @@ import ROM from './roms/rom';
 import { Apple2IOState } from './apple2io';
 import CPU6502, { CpuState } from './cpu6502';
 import MMU, { MMUState } from './mmu';
-import RAM from './ram';
+import RAM, { RAMState } from './ram';
 import { debug } from './util';
 
 import SYMBOLS from './symbols';
@@ -40,7 +40,8 @@ interface State {
     cpu: CpuState,
     vm: VideoModesState,
     io: Apple2IOState,
-    mmu: MMUState,
+    mmu?: MMUState,
+    ram?: RAMState[],
 }
 
 export class Apple2 implements Restorable<State> {
@@ -62,7 +63,8 @@ export class Apple2 implements Restorable<State> {
     private vm: VideoModes;
 
     private io: Apple2IO;
-    private mmu: MMU;
+    private mmu: MMU | undefined;
+    private ram: [RAM, RAM, RAM] | undefined;
 
     private tick: () => void;
 
@@ -90,17 +92,19 @@ export class Apple2 implements Restorable<State> {
             this.mmu = new MMU(this.cpu, this.vm, this.gr, this.gr2, this.hgr, this.hgr2, this.io, options.rom);
             this.cpu.addPageHandler(this.mmu);
         } else {
-            const ram1 = new RAM(0x00, 0x03);
-            const ram2 = new RAM(0x0C, 0x1F);
-            const ram3 = new RAM(0x60, 0xBF);
+            this.ram = [
+                new RAM(0x00, 0x03),
+                new RAM(0x0C, 0x1F),
+                new RAM(0x60, 0xBF)
+            ];
 
-            this.cpu.addPageHandler(ram1);
+            this.cpu.addPageHandler(this.ram[0]);
             this.cpu.addPageHandler(this.gr);
             this.cpu.addPageHandler(this.gr2);
-            this.cpu.addPageHandler(ram2);
+            this.cpu.addPageHandler(this.ram[1]);
             this.cpu.addPageHandler(this.hgr);
             this.cpu.addPageHandler(this.hgr2);
-            this.cpu.addPageHandler(ram3);
+            this.cpu.addPageHandler(this.ram[2]);
             this.cpu.addPageHandler(this.io);
             this.cpu.addPageHandler(options.rom);
         }
@@ -192,6 +196,7 @@ export class Apple2 implements Restorable<State> {
             vm: this.vm.getState(),
             io: this.io.getState(),
             mmu: this.mmu?.getState(),
+            ram: this.ram?.map(bank => bank.getState()),
         };
 
         return state;
@@ -201,8 +206,15 @@ export class Apple2 implements Restorable<State> {
         this.cpu.setState(state.cpu);
         this.vm.setState(state.vm);
         this.io.setState(state.io);
-        if (this.mmu) {
+        if (this.mmu && state.mmu) {
             this.mmu.setState(state.mmu);
+        }
+        if (this.ram) {
+            this.ram.forEach((bank, idx) => {
+                if (state.ram) {
+                    bank.setState(state.ram[idx]);
+                }
+            });
         }
     }
 
