@@ -301,13 +301,11 @@ function doLoadLocalDisk(drive, file) {
 
         if (this.result.byteLength >= 800 * 1024) {
             if (_smartPort.setBinary(drive, name, ext, this.result)) {
-                driveLights.label(drive, name);
                 focused = false;
                 initGamepad();
             }
         } else {
             if (_disk2.setBinary(drive, name, ext, this.result)) {
-                driveLights.label(drive, name);
                 focused = false;
                 initGamepad();
             }
@@ -362,12 +360,10 @@ export function doLoadHTTP(drive, _url) {
             var name = decodeURIComponent(fileParts.join('.'));
             if (data.byteLength >= 800 * 1024) {
                 if (_smartPort.setBinary(drive, name, ext, data)) {
-                    driveLights.label(drive, name);
                     initGamepad();
                 }
             } else {
                 if (_disk2.setBinary(drive, name, ext, data)) {
-                    driveLights.label(drive, name);
                     initGamepad();
                 }
             }
@@ -503,7 +499,6 @@ function loadDisk(drive, disk) {
     disk_cur_cat[drive] = category;
     disk_cur_name[drive] = name;
 
-    driveLights.label(drive, name);
     _disk2.setDisk(drive, disk);
     initGamepad(disk.gamepad);
 }

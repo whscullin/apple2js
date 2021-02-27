@@ -120,21 +120,21 @@ type Phase = 0 | 1 | 2 | 3;
  * activated. For example, if in phase 0 (top row), turning on phase 3 would
  * step backwards a quarter track while turning on phase 2 would step forwards
  * a half track.
- * 
+ *
  * Note that this emulation is highly simplified as it only takes into account
  * the order that coils are powered on and ignores when they are powered off.
  * The actual hardware allows for multiple coils to be powered at the same time
  * providing different levels of torque on the head arm. Along with that, the
  * RWTS uses a complex delay system to drive the coils faster based on expected
  * head momentum.
- * 
+ *
  * Examining the https://computerhistory.org/blog/apple-ii-dos-source-code/,
  * one finds that the SEEK routine on line 4831 of `appdos31.lst`. It uses
  * `ONTABLE` and `OFFTABLE` (each 12 bytes) to know exactly how many
  * microseconds to power on/off each coil as the head accelerates. At the end,
  * the final coil is left powered on 9.5 milliseconds to ensure the head has
  * settled.
- * 
+ *
  * https://embeddedmicro.weebly.com/apple-2iie.html shows traces of the boot
  * seek (which is slightly different) and a regular seek.
  */
@@ -151,6 +151,7 @@ type DriveNumber = MemberOf<typeof DRIVE_NUMBERS>;
 interface Callbacks {
     driveLight: (drive: DriveNumber, on: boolean) => void;
     dirty: (drive: DriveNumber, dirty: boolean) => void;
+    label: (drive: DriveNumber, name: string) => void;
 }
 
 /** Common information for Nibble and WOZ disks. */
@@ -159,6 +160,8 @@ interface BaseDrive {
     format: DiskFormat,
     /** Current disk volume number. */
     volume: byte,
+    /** Displayed disk name */
+    name: string,
     /** Quarter track position of read/write head. */
     track: byte,
     /** Position of the head on the track. */
@@ -195,6 +198,7 @@ function isNibbleDrive(drive: Drive): drive is NibbleDrive {
 interface DriveState {
     format: DiskFormat,
     volume: byte,
+    name: string,
     tracks: string[],
     track: byte,
     head: byte,
@@ -217,6 +221,7 @@ function getDriveState(drive: Drive): DriveState {
     const result: DriveState = {
         format: drive.format,
         volume: drive.volume,
+        name: drive.name,
         tracks: [] as string[],
         track: drive.track,
         head: drive.head,
@@ -238,6 +243,7 @@ function setDriveState(state: DriveState) {
     const result: Drive = {
         format: state.format,
         volume: state.volume,
+        name: state.name,
         tracks: [] as memory[],
         track: state.track,
         head: state.head,
@@ -248,6 +254,7 @@ function setDriveState(state: DriveState) {
     for (let idx = 0; idx < state.tracks.length; idx++) {
         result.tracks!.push(base64_decode(state.tracks[idx]));
     }
+
     return result;
 }
 
@@ -260,6 +267,7 @@ export default class DiskII {
         {   // Drive 1
             format: 'dsk',
             volume: 254,
+            name: 'Disk 1',
             tracks: [],
             track: 0,
             head: 0,
@@ -270,6 +278,7 @@ export default class DiskII {
         {   // Drive 2
             format: 'dsk',
             volume: 254,
+            name: 'Disk 2',
             tracks: [],
             track: 0,
             head: 0,
@@ -290,7 +299,7 @@ export default class DiskII {
     /** Q7 (Read/Write): Used by WOZ disks. */
     private q7: boolean = false;
     /** Q7 (Read/Write): Used by Nibble disks. */
-    private writeMode = false; 
+    private writeMode = false;
     /** Whether the selected drive is on. */
     private on = false;
     /** Current drive number (0, 1). */
@@ -521,9 +530,7 @@ export default class DiskII {
                         this.offTimeout = window.setTimeout(() => {
                             this.debug('Drive Off');
                             this.on = false;
-                            if (this.callbacks.driveLight) {
-                                this.callbacks.driveLight(this.drive, false);
-                            }
+                            this.callbacks.driveLight(this.drive, false);
                         }, 1000);
                     }
                 }
@@ -538,9 +545,7 @@ export default class DiskII {
                     this.debug('Drive On');
                     this.on = true;
                     this.lastCycles = this.io.cycles();
-                    if (this.callbacks.driveLight) {
-                        this.callbacks.driveLight(this.drive, true);
-                    }
+                    this.callbacks.driveLight(this.drive, true);
                 }
                 break;
 
@@ -548,7 +553,7 @@ export default class DiskII {
                 this.debug('Disk 1');
                 this.drive = 1;
                 this.cur = this.drives[this.drive - 1];
-                if (this.on && this.callbacks.driveLight) {
+                if (this.on) {
                     this.callbacks.driveLight(2, false);
                     this.callbacks.driveLight(1, true);
                 }
@@ -557,7 +562,7 @@ export default class DiskII {
                 this.debug('Disk 2');
                 this.drive = 2;
                 this.cur = this.drives[this.drive - 1];
-                if (this.on && this.callbacks.driveLight) {
+                if (this.on) {
                     this.callbacks.driveLight(1, false);
                     this.callbacks.driveLight(2, true);
                 }
@@ -685,9 +690,11 @@ export default class DiskII {
         this.on = state.on;
         this.drive = state.drive;
         for (const d of DRIVE_NUMBERS) {
-            this.drives[d - 1] = setDriveState(state.drives[d - 1]);
+            const idx = d - 1;
+            this.drives[idx] = setDriveState(state.drives[idx]);
+            this.callbacks.label(d, state.drives[idx].name);
             this.callbacks.driveLight(d, this.on);
-            this.callbacks.dirty(d, this.drives[d - 1].dirty);
+            this.callbacks.dirty(d, this.drives[idx].dirty);
         }
         this.cur = this.drives[this.drive - 1];
     }
@@ -777,6 +784,7 @@ export default class DiskII {
 
         Object.assign(cur, newDisk);
         this.updateDirty(this.drive, false);
+        this.callbacks.label(this.drive, name);
     }
 
     getJSON(drive: DriveNumber, pretty: boolean) {
@@ -831,6 +839,7 @@ export default class DiskII {
 
         Object.assign(cur, disk);
         this.updateDirty(drive, true);
+        this.callbacks.label(this.drive, name);
         return true;
     }
 
