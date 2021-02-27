@@ -299,6 +299,7 @@ export function doDelete(name: string) {
 
 const CIDERPRESS_EXTENSION = /#([0-9a-f]{2})([0-9a-f]{4})$/i;
 const BIN_TYPES = ['bin'];
+const BASIC_TYPES = ['bas', 'fp'];
 
 interface LoadOptions {
     address: word,
@@ -329,6 +330,8 @@ function doLoadLocal(drive: DriveNumber, file: File, options: Partial<LoadOption
                 return;
             }
             doLoadBinary(file, { address, ...options });
+        } else if (BASIC_TYPES.includes(ext)) {
+            doLoadBasic(file, { ...options });
         } else {
             openAlert('Unknown file type: ' + ext);
         }
@@ -355,6 +358,29 @@ function doLoadBinary(file: File, options: LoadOptions) {
     };
     fileReader.readAsArrayBuffer(file);
 }
+
+function doLoadBasic(file: File, options: LoadOptions) {
+    loadingStart();
+
+    const fileReader = new FileReader();
+    fileReader.onload = function() {
+        cpu.reset();
+        let str = '';
+        const array = new Uint8Array(this.result);
+        for (let idx = 0; idx < array.length; idx++) {
+            str += String.fromCharCode(array[idx]);
+        }
+        compileAppleSoftProgram(str);
+        if (options.runOnLoad) {
+            cpu.setPC(0xD912);
+        } else {
+            cpu.setPC(0xD43C); // RESTART
+        }
+        loadingStop();
+    };
+    fileReader.readAsArrayBuffer(file);
+}
+
 
 function doLoadLocalDisk(drive: DriveNumber, file: File) {
     loadingStart();

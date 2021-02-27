@@ -111,10 +111,14 @@ const TOKENS = {
     'MID$': 0xea
 } as const;
 
-const LOMEM = 0x69;
-const ARRAY_START = 0x6B;
-const ARRAY_END = 0x6D;
 const PROGRAM_START = 0x801;
+const TXTTAB = 0x67; // Start of program text
+const VARTAB = 0x69; // Start of variable storage
+const ARYTAB = 0x6B; // Start of array storage
+const STREND = 0x6D; // End of array storage
+const PRGEND = 0xAf; //
+
+const PROGRAM_PROLOG = 0x800;
 
 const STATES = {
     NORMAL: 0,
@@ -277,12 +281,15 @@ export default class ApplesoftCompiler {
             compiled = compiled.concat(compiledLine);
         }
         compiled.push(0, 0);
+        this.writeByte(PROGRAM_PROLOG, 0x00);
 
         for (let idx = 0; idx < compiled.length; idx++) {
             this.writeByte(PROGRAM_START + idx, compiled[idx]);
         }
-        this.writeWord(LOMEM, PROGRAM_START + compiled.length);
-        this.writeWord(ARRAY_START, PROGRAM_START + compiled.length);
-        this.writeWord(ARRAY_END, PROGRAM_START + compiled.length);
+        this.writeWord(TXTTAB, PROGRAM_START);
+        this.writeWord(VARTAB, PROGRAM_START + compiled.length);
+        this.writeWord(ARYTAB, PROGRAM_START + compiled.length);
+        this.writeWord(STREND, PROGRAM_START + compiled.length);
+        this.writeWord(PRGEND, PROGRAM_START + compiled.length);
     }
 }
