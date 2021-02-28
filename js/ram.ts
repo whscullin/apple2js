@@ -13,7 +13,7 @@ import { byte, memory, Memory, Restorable } from './types';
 import { allocMemPages } from './util';
 
 export interface RAMState {
-    /** Base64-encoded contents. */
+    /** Copy of contents. */
     mem: memory;
 }
 
