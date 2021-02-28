@@ -135,7 +135,7 @@ export function base64_json_parse(json: string) {
     return JSON.parse(json, reviver);
 }
 
-export function base64_json_stringify(json: string) {
+export function base64_json_stringify(json: any) {
     const replacer = (_key: string, value: any) => {
         if (value instanceof Uint8Array) {
             return DATA_URL_PREFIX + base64_encode(value);
