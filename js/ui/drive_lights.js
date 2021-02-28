@@ -15,20 +15,6 @@ export default function DriveLights()
                 document.querySelector('#disk-label' + drive).innerText = label;
             }
             return document.querySelector('#disk-label' + drive).innerText;
-        },
-        getState: function() {
-            return {
-                disks: [
-                    this.label(1),
-                    this.label(2)
-                ]
-            };
-        },
-        setState: function(state) {
-            if (state && state.disks) {
-                this.label(1, state.disks[0].label);
-                this.label(2, state.disks[1].label);
-            }
         }
     };
 }

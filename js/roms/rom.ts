@@ -1,7 +1,9 @@
 import { PageHandler } from '../cpu6502';
-import { byte, rom } from '../types';
+import { Restorable, byte, rom } from '../types';
 
-export default class ROM implements PageHandler {
+export type ROMState = null;
+
+export default class ROM implements PageHandler, Restorable<ROMState> {
 
     constructor(
     private readonly startPage: byte,
@@ -22,6 +24,11 @@ export default class ROM implements PageHandler {
     read(page: byte, off: byte) {
         return this.rom[(page - this.startPage) << 8 | off];
     }
-    write() { 
+    write() {
+    }
+    getState() {
+        return null;
+    }
+    setState(_state: null) {
     }
 }

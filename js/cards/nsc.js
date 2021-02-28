@@ -115,5 +115,12 @@ export default function NoSlotClock(rom)
             _access(off);
             rom.write(page, off, val);
         },
+
+        getState() {
+            return {};
+        },
+
+        setState(_) {
+        }
     };
 }

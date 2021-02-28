@@ -210,7 +210,7 @@ export default function KeyBoard(cpu, io, e) {
 
     return {
         mapKeyEvent: function keyboard_mapKeyEvent(evt) {
-            var code = evt.keyCode, key = '\xff';
+            var code = evt.keyCode, key = 0xff;
 
             if (evt.key in uiKitMap) {
                 key = uiKitMap[evt.key];
@@ -230,7 +230,7 @@ export default function KeyBoard(cpu, io, e) {
 
             if (key == 0x7F && evt.shiftKey && evt.ctrlKey) {
                 cpu.reset();
-                key = '\xff';
+                key = 0xff;
             }
 
             return key;

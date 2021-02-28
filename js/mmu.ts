@@ -10,9 +10,10 @@
  */
 
 import CPU6502 from './cpu6502';
-import RAM from './ram';
+import RAM, { RAMState } from './ram';
+import ROM, { ROMState } from './roms/rom';
 import { debug, toHex } from './util';
-import { byte, Memory } from './types';
+import { byte, Memory, Restorable } from './types';
 import Apple2IO from './apple2io';
 import { HiresPage, LoresPage, VideoModes } from './videomodes';
 
@@ -138,10 +139,18 @@ class Switches implements Memory {
     }
 }
 
-class AuxRom {
+class AuxRom implements Memory {
     constructor(
         private readonly mmu: MMU,
-        private readonly rom: Memory) { }
+        private readonly rom: ROM) { }
+
+    start() {
+        return 0xc1;
+    }
+
+    end() {
+        return 0xcf;
+    }
 
     read(page: byte, off: byte) {
         if (page == 0xc3) {
@@ -160,38 +169,33 @@ class AuxRom {
     }
 }
 
-/*
-interface State {
-    bank1: this._bank1,
-    readbsr: this._readbsr,
-    writebsr: this._writebsr,
-    prewrite: this._prewrite,
+export interface MMUState {
+    bank1: boolean
+    readbsr: boolean
+    writebsr: boolean
+    prewrite: boolean
 
-    intcxrom: this._intcxrom,
-    slot3rom: this._slot3rom,
-    intc8rom: this._intc8rom,
+    intcxrom: boolean
+    slot3rom: boolean
+    intc8rom: boolean
 
-    auxRamRead: this._auxRamRead,
-    auxRamWrite: this._auxRamWrite,
-    altzp: this._altzp,
+    auxRamRead: boolean
+    auxRamWrite: boolean
+    altzp: boolean
 
-    _80store: this._80store,
-    page2: this._page2,
-    hires: this._hires,
+    _80store: boolean
+    page2: boolean
+    hires: boolean
 
-    mem00_01: [this.mem00_01[0].getState(), this.mem00_01[1].getState()],
-    mem02_03: [this.mem02_03[0].getState(), this.mem02_03[1].getState()],
-    mem0C_1F: [this.mem0C_1F[0].getState(), this.mem0C_1F[1].getState()],
-    mem60_BF: [this.mem60_BF[0].getState(), this.mem60_BF[1].getState()],
-    memD0_DF: [
-        this.memD0_DF[0].getState(), this.memD0_DF[1].getState(),
-        this.memD0_DF[2].getState(), this.memD0_DF[3].getState()
-    ],
-    memE0_FF: [this.memE0_FF[0].getState(), this.memE0_FF[1].getState()]
-};
-*/
+    mem00_01: [RAMState, RAMState]
+    mem02_03: [RAMState, RAMState]
+    mem0C_1F: [RAMState, RAMState]
+    mem60_BF: [RAMState, RAMState]
+    memD0_DF: [ROMState, RAMState, RAMState, RAMState, RAMState]
+    memE0_FF: [ROMState, RAMState, RAMState]
+}
 
-export default class MMU implements Memory {
+export default class MMU implements Memory, Restorable<MMUState> {
     private _readPages = new Array(0x100);
     private _writePages = new Array(0x100);
     private _pages = new Array(0x100);
@@ -235,12 +239,15 @@ export default class MMU implements Memory {
     private mem60_BF = [new RAM(0x60, 0xBF), new RAM(0x60, 0xBF)];
     private memC0_C0 = [this.switches];
     private memC1_CF = [this.io, this.auxRom];
-    private memD0_DF = [
+    private memD0_DF: [ROM, RAM, RAM, RAM, RAM] = [
         this.rom,
         new RAM(0xD0, 0xDF), new RAM(0xD0, 0xDF),
         new RAM(0xD0, 0xDF), new RAM(0xD0, 0xDF)
     ];
-    private memE0_FF = [this.rom, new RAM(0xE0, 0xFF), new RAM(0xE0, 0xFF)];
+    private memE0_FF: [ROM, RAM, RAM] = [
+        this.rom,
+        new RAM(0xE0, 0xFF), new RAM(0xE0, 0xFF)
+    ];
 
     constructor(
         private readonly cpu: CPU6502,
@@ -250,8 +257,7 @@ export default class MMU implements Memory {
         private readonly hires1: HiresPage,
         private readonly hires2: HiresPage,
         private readonly io: Apple2IO,
-        // TODO(flan): Better typing.
-        private readonly rom: any) {
+        private readonly rom: ROM) {
         /*
          * Initialize read/write banks
          */
@@ -332,7 +338,7 @@ export default class MMU implements Memory {
     }
 
     _initSwitches() {
-        this._bank1 = true;
+        this._bank1 = false;
         this._readbsr = false;
         this._writebsr = false;
         this._prewrite = false;
@@ -352,7 +358,7 @@ export default class MMU implements Memory {
         this._iouDisable = true;
     }
 
-    _debug(..._args: any) {
+    _debug(..._args: any[]) {
         // debug.apply(this, arguments);
     }
 
@@ -813,6 +819,9 @@ export default class MMU implements Memory {
     }
 
     public read(page: byte, off: byte) {
+        if (page === 0xff && off === 0xfc && this._intcxrom) {
+            this._initSwitches();
+        }
         return this._readPages[page].read(page, off);
     }
 
@@ -823,8 +832,8 @@ export default class MMU implements Memory {
     public resetVB() {
         this._vbEnd = this.cpu.getCycles() + 1000;
     }
-/*
-    public getState(): State {
+
+    public getState(): MMUState {
         return {
             bank1: this._bank1,
             readbsr: this._readbsr,
@@ -848,14 +857,21 @@ export default class MMU implements Memory {
             mem0C_1F: [this.mem0C_1F[0].getState(), this.mem0C_1F[1].getState()],
             mem60_BF: [this.mem60_BF[0].getState(), this.mem60_BF[1].getState()],
             memD0_DF: [
-                this.memD0_DF[0].getState(), this.memD0_DF[1].getState(),
-                this.memD0_DF[2].getState(), this.memD0_DF[3].getState()
+                this.memD0_DF[0].getState(),
+                this.memD0_DF[1].getState(),
+                this.memD0_DF[2].getState(),
+                this.memD0_DF[3].getState(),
+                this.memD0_DF[4].getState()
             ],
-            memE0_FF: [this.memE0_FF[0].getState(), this.memE0_FF[1].getState()]
+            memE0_FF: [
+                this.memE0_FF[0].getState(),
+                this.memE0_FF[1].getState(),
+                this.memE0_FF[2].getState()
+            ]
         };
     }
 
-    public setState(state: State) {
+    public setState(state: MMUState) {
         this._readbsr = state.readbsr;
         this._writebsr = state.writebsr;
         this._bank1 = state.bank1;
@@ -885,10 +901,11 @@ export default class MMU implements Memory {
         this.memD0_DF[1].setState(state.memD0_DF[1]);
         this.memD0_DF[2].setState(state.memD0_DF[2]);
         this.memD0_DF[3].setState(state.memD0_DF[3]);
+        this.memD0_DF[4].setState(state.memD0_DF[4]);
         this.memE0_FF[0].setState(state.memE0_FF[0]);
         this.memE0_FF[1].setState(state.memE0_FF[1]);
+        this.memE0_FF[2].setState(state.memE0_FF[2]);
 
         this._updateBanks();
     }
-*/
 }

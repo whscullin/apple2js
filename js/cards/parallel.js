@@ -39,6 +39,10 @@ export default function Parallel(io, cbs) {
         read: function(page, off) {
             return rom[off];
         },
-        write: function() {}
+        write: function() {},
+        getState() {
+            return {};
+        },
+        setState(_) {}
     };
 }

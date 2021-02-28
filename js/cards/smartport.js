@@ -9,7 +9,6 @@
  * implied warranty.
  */
 
-import { base64_decode } from '../base64';
 import { debug, toHex } from '../util';
 import { rom } from '../roms/cards/smartport';
 
@@ -20,7 +19,6 @@ export default function SmartPort(io, cpu, options ) {
     // var ADDRESS_HI = 0x45;
     var BLOCK_LO = 0x46;
     // var BLOCK_HI = 0x47;
-
 
     var disks = [];
 
@@ -36,7 +34,7 @@ export default function SmartPort(io, cpu, options ) {
     function decodeDisk(unit, disk) {
         disks[unit] = [];
         for (var idx = 0; idx < disk.blocks.length; idx++) {
-            disks[unit][idx] = base64_decode(disk.blocks[idx]);
+            disks[unit][idx] = new Uint8Array(disk.blocks[idx]);
         }
     }
 
@@ -413,9 +411,21 @@ export default function SmartPort(io, cpu, options ) {
         },
 
         getState: function() {
+            return {
+                disks: disks.map(
+                    (disk) => disk.map(
+                        (block) => new Uint8Array(block)
+                    )
+                )
+            };
         },
 
-        setState: function() {
+        setState: function(state) {
+            disks = state.disks.map(
+                (disk) => disk.map(
+                    (block) => new Uint8Array(block)
+                )
+            );
         },
 
         setBinary: function (drive, name, fmt, data) {

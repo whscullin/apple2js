@@ -121,3 +121,27 @@ export function base64_decode(data: string | null | undefined): memory | undefin
 
     return new Uint8Array(tmp_arr);
 }
+
+const DATA_URL_PREFIX = 'data:application/octet-stream;base64,';
+
+export function base64_json_parse(json: string) {
+    const reviver = (_key: string, value: any) => {
+        if (typeof value ==='string' && value.startsWith(DATA_URL_PREFIX)) {
+            return base64_decode(value.slice(DATA_URL_PREFIX.length));
+        }
+        return value;
+    };
+
+    return JSON.parse(json, reviver);
+}
+
+export function base64_json_stringify(json: any) {
+    const replacer = (_key: string, value: any) => {
+        if (value instanceof Uint8Array) {
+            return DATA_URL_PREFIX + base64_encode(value);
+        }
+        return value;
+    };
+
+    return JSON.stringify(json, replacer);
+}

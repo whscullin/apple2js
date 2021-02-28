@@ -150,6 +150,10 @@ export default function Thunderclock()
         },
         ioSwitch: function thunderclock_ioSwitch(off, val) {
             return _access(off, val);
-        }
+        },
+        getState() {
+            return {};
+        },
+        setState(_) {}
     };
 }
