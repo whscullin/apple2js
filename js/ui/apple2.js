@@ -1,5 +1,6 @@
 import MicroModal from 'micromodal';
 
+import { base64_json_parse, base64_json_stringify } from '../base64';
 import Audio from './audio';
 import DriveLights from './drive_lights';
 import { DISK_FORMATS } from '../types';
@@ -661,10 +662,10 @@ function _keydown(evt) {
     } else if (evt.keyCode === 114) { // F3
         io.keyDown(0x1b);
     } else if (evt.keyCode === 117) { // F6 Quick Save
-        window.localStorage.state = JSON.stringify(_apple2.getState());
+        window.localStorage.state = base64_json_stringify(_apple2.getState());
     } else if (evt.keyCode === 120) { // F9 Quick Restore
         if (window.localStorage.state) {
-            _apple2.setState(JSON.parse(window.localStorage.state));
+            _apple2.setState(base64_json_parse(window.localStorage.state));
         }
     } else if (evt.keyCode == 16) { // Shift
         keyboard.shiftKey(true);

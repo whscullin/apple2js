@@ -9,7 +9,6 @@
  * implied warranty.
  */
 
-import { base64_decode, base64_encode } from './base64';
 import { byte, memory, Memory, Restorable } from './types';
 import { allocMemPages } from './util';
 
@@ -340,16 +339,16 @@ export class LoresPageGL implements LoresPage {
             page: this.page,
             mono: this._monoMode,
             buffer: [
-                base64_encode(this._buffer[0]),
-                base64_encode(this._buffer[1])
+                new Uint8Array(this._buffer[0]),
+                new Uint8Array(this._buffer[1]),
             ]
         };
     }
 
     setState(state: GraphicsState) {
         this.page = state.page;
-        this._buffer[0] = base64_decode(state.buffer[0]);
-        this._buffer[1] = base64_decode(state.buffer[1]);
+        this._buffer[0] = new Uint8Array(state.buffer[0]);
+        this._buffer[1] = new Uint8Array(state.buffer[1]);
 
         this.refresh();
     }
@@ -646,16 +645,16 @@ export class HiresPageGL implements Memory, Restorable<GraphicsState> {
             page: this.page,
             mono: this._monoMode,
             buffer: [
-                base64_encode(this._buffer[0]),
-                base64_encode(this._buffer[1])
+                new Uint8Array(this._buffer[0]),
+                new Uint8Array(this._buffer[1]),
             ]
         };
     }
 
     setState(state: GraphicsState) {
         this.page = state.page;
-        this._buffer[0] = base64_decode(state.buffer[0]);
-        this._buffer[1] = base64_decode(state.buffer[1]);
+        this._buffer[0] = new Uint8Array(state.buffer[0]);
+        this._buffer[1] = new Uint8Array(state.buffer[1]);
 
         this.refresh();
     }

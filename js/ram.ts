@@ -9,13 +9,12 @@
  * implied warranty.
  */
 
-import { base64_decode, base64_encode } from './base64';
 import { byte, memory, Memory, Restorable } from './types';
 import { allocMemPages } from './util';
 
 export interface RAMState {
     /** Base64-encoded contents. */
-    mem: string;
+    mem: memory;
 }
 
 /**
@@ -52,11 +51,11 @@ export default class RAM implements Memory, Restorable<RAMState> {
 
     public getState(): RAMState {
         return {
-            mem: base64_encode(this.mem)
+            mem: new Uint8Array(this.mem)
         };
     }
 
     public setState(state: RAMState) {
-        this.mem = base64_decode(state.mem);
+        this.mem = new Uint8Array(state.mem);
     }
 }

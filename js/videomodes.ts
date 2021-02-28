@@ -1,4 +1,4 @@
-import { Memory, Restorable, byte } from './types';
+import { Memory, Restorable, byte, memory } from './types';
 
 export type bank = 0 | 1;
 export type pageNo = 1 | 2;
@@ -19,7 +19,7 @@ export interface Region {
 export interface GraphicsState {
     page: byte;
     mono: boolean;
-    buffer: string[];
+    buffer: memory[];
 }
 
 export interface VideoModesState {

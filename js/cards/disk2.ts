@@ -9,7 +9,7 @@
  * implied warranty.
  */
 
-import { base64_decode, base64_encode } from '../base64';
+import { base64_decode, base64_encode} from '../base64';
 import { bit, byte, DiskFormat, MemberOf, memory, nibble, rom } from '../types';
 import { debug, toHex } from '../util';
 import { Disk, jsonDecode, jsonEncode, readSector } from '../formats/format_utils';
@@ -199,7 +199,7 @@ interface DriveState {
     format: DiskFormat,
     volume: byte,
     name: string,
-    tracks: string[],
+    tracks: memory[],
     track: byte,
     head: byte,
     phase: Phase,
@@ -222,7 +222,7 @@ function getDriveState(drive: Drive): DriveState {
         format: drive.format,
         volume: drive.volume,
         name: drive.name,
-        tracks: [] as string[],
+        tracks: [],
         track: drive.track,
         head: drive.head,
         phase: drive.phase,
@@ -233,7 +233,7 @@ function getDriveState(drive: Drive): DriveState {
         throw Error('No tracks.');
     }
     for (let idx = 0; idx < drive.tracks.length; idx++) {
-        result.tracks.push(base64_encode(drive.tracks[idx]));
+        result.tracks.push(new Uint8Array(drive.tracks[idx]));
     }
     return result;
 }
@@ -252,7 +252,7 @@ function setDriveState(state: DriveState) {
         dirty: state.dirty
     };
     for (let idx = 0; idx < state.tracks.length; idx++) {
-        result.tracks!.push(base64_decode(state.tracks[idx]));
+        result.tracks!.push(new Uint8Array(state.tracks[idx]));
     }
 
     return result;

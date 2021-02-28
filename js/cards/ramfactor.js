@@ -9,7 +9,6 @@
  * implied warranty.
  */
 
-import { base64_decode, base64_encode } from '../base64';
 import { allocMem, debug } from '../util';
 import { rom } from '../roms/cards/ramfactor';
 
@@ -140,14 +139,14 @@ export default function RAMFactor(io, size) {
             return {
                 loc: _loc,
                 firmware: _firmware,
-                mem: base64_encode(mem)
+                mem: new Uint8Array(mem)
             };
         },
 
         setState: function(state) {
             _loc = state.loc;
             _firmware = state.firmware;
-            mem = base64_decode(state.mem);
+            mem = new Uint8Array(state.mem);
 
             _ramhi = (_loc >> 16) & 0xff;
             _rammid = (_loc >> 8) & 0xff;
