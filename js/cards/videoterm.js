@@ -259,10 +259,26 @@ export default function Videoterm(_io) {
         },
 
         getState() {
-            // TODO: Videoterm State
-            return {};
+            return {
+                curReg: _curReg,
+                startPos: _startPos,
+                cursorPos: _cursorPos,
+                bank: _bank,
+                buffer: new Uint8Array(_buffer),
+                regs: [..._regs],
+            };
         },
-        setState(_) {
+
+        setState(state) {
+            _curReg = state.curReg;
+            _startPos = state.startPos;
+            _cursorPos = state.cursorPos;
+            _bank = state.bank;
+            _buffer = new Uint8Array(_buffer);
+            _regs = [...state.regs];
+
+            _shouldRefresh = true;
+            _dirty = true;
         }
     };
 }
