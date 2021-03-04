@@ -664,7 +664,6 @@ export class HiresPageGL implements Memory, Restorable<GraphicsState> {
 export class VideoModesGL implements VideoModes {
     private _grs: LoresPage[];
     private _hgrs: HiresPage[];
-    private _flag = 0;
     private _sv: any;
     private _displayConfig: any;
     private _monoMode: boolean = false;
@@ -729,7 +728,6 @@ export class VideoModesGL implements VideoModes {
         _80colMode = false;
         altCharMode = false;
 
-        this._flag = 0;
         an3 = true;
 
         this._refresh();
@@ -768,9 +766,6 @@ export class VideoModesGL implements VideoModes {
     hires(on: boolean) {
         const old = hiresMode;
         hiresMode = on;
-        if (!on) {
-            this._flag = 0;
-        }
 
         if (old != on) {
             this._refresh();
@@ -782,10 +777,6 @@ export class VideoModesGL implements VideoModes {
 
         const old = an3;
         an3 = on;
-
-        if (on) {
-            this._flag = ((this._flag << 1) | (_80colMode ? 0x0 : 0x1)) & 0x3;
-        }
 
         if (old != on) {
             this._refresh();

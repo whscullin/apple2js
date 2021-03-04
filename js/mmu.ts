@@ -12,7 +12,7 @@
 import CPU6502 from './cpu6502';
 import RAM, { RAMState } from './ram';
 import ROM, { ROMState } from './roms/rom';
-import { debug, toHex } from './util';
+import { debug } from './util';
 import { byte, Memory, Restorable } from './types';
 import Apple2IO from './apple2io';
 import { HiresPage, LoresPage, VideoModes } from './videomodes';
@@ -21,7 +21,7 @@ import { HiresPage, LoresPage, VideoModes } from './videomodes';
  * I/O Switch locations
  */
 const LOC = {
-    // 80 Column
+    // 80 Column memory
     _80STOREOFF: 0x00,
     _80STOREON: 0x01,
 
@@ -40,6 +40,7 @@ const LOC = {
     SLOTC3ROMOFF: 0x0A,
     SLOTC3ROMON: 0x0B,
 
+    // 80 Column video
     CLR80VID: 0x0C, // clear 80 column mode
     SET80VID: 0x0D, // set 80 column mode
     CLRALTCH: 0x0E, // clear mousetext
@@ -63,18 +64,22 @@ const LOC = {
     RDALTCH: 0x1E, // using alternate character set
     RD80VID: 0x1F, // using 80-column display mode
 
+    // Graphics
     PAGE1: 0x54, // select text/graphics page1 main/aux
     PAGE2: 0x55, // select text/graphics page2 main/aux
     RESET_HIRES: 0x56,
     SET_HIRES: 0x57,
 
-    DHIRESON: 0x5E, // Enable double hires
-    DHIRESOFF: 0x5F, // Disable double hires
+    DHIRESON: 0x5E, // Enable double hires (CLRAN3)
+    DHIRESOFF: 0x5F, // Disable double hires (SETAN3)
 
+    // Misc
     BANK: 0x73, // Back switched RAM card bank
 
     IOUDISON: 0x7E, // W IOU Disable on / R7 IOU Disable
     IOUDISOFF: 0x7F, // W IOU Disable off / R7 Double Hires
+
+    // Language Card
 
     // Bank 2
     READBSR2: 0x80,
@@ -82,35 +87,15 @@ const LOC = {
     OFFBSR2: 0x82,
     READWRBSR2: 0x83,
 
-    // Shadow Bank 2
-    _READBSR2: 0x84,
-    _WRITEBSR2: 0x85,
-    _OFFBSR2: 0x86,
-    _READWRBSR2: 0x87,
-
     // Bank 1
     READBSR1: 0x88,
     WRITEBSR1: 0x89,
     OFFBSR1: 0x8a,
     READWRBSR1: 0x8b,
-
-    // Shadow Bank 1
-    _READBSR1: 0x8c,
-    _WRITEBSR1: 0x8d,
-    _OFFBSR1: 0x8e,
-    _READWRBSR1: 0x8f
 };
 
 class Switches implements Memory {
-    // Remapping of LOCS from string -> number to number -> string
-    private locs: { [loc: number]: string } = {};
-
-    constructor(private readonly mmu: MMU, private readonly io: any) {
-        Object.keys(LOC).forEach((loc: keyof typeof LOC) => {
-            const v = LOC[loc];
-            this.locs[v] = loc;
-        });
-    }
+    constructor(private mmu: MMU) {}
 
     start() {
         return 0xC0;
@@ -121,21 +106,11 @@ class Switches implements Memory {
     }
 
     read(_page: byte, off: byte) {
-        let result;
-        if (off in this.locs) {
-            result = this.mmu._access(off);
-        } else {
-            result = this.io.ioSwitch(off, undefined);
-        }
-        return result;
+        return this.mmu._access(off) || 0;
     }
 
     write(_page: byte, off: byte, val: byte) {
-        if (off in this.locs) {
-            this.mmu._access(off, val);
-        } else {
-            this.io.ioSwitch(off, val);
-        }
+        this.mmu._access(off, val);
     }
 }
 
@@ -225,7 +200,7 @@ export default class MMU implements Memory, Restorable<MMUState> {
 
     private _vbEnd = 0;
 
-    private switches = new Switches(this, this.io);
+    private switches = new Switches(this);
     private auxRom = new AuxRom(this, this.rom);
 
     // These fields represent the bank-switched memory ranges.
@@ -359,7 +334,7 @@ export default class MMU implements Memory, Restorable<MMUState> {
     }
 
     _debug(..._args: any[]) {
-        // debug.apply(this, arguments);
+        // debug.apply(this, _args);
     }
 
     _setIntc8rom(on: boolean) {
@@ -482,254 +457,90 @@ export default class MMU implements Memory, Restorable<MMUState> {
         }
     }
 
-    /*
-     * The Big Switch
-     */
+    // Apple //e memory management
 
-    _access(off: byte, val?: byte) {
-        let result;
-        const readMode = val === undefined;
-        const writeMode = val !== undefined;
+    _accessMMUSet(off: byte, _val?: byte) {
         switch (off) {
-
-            // Apple //e memory management
-
             case LOC._80STOREOFF:
-                if (writeMode) {
-                    this._80store = false;
-                    this._debug('80 Store Off');
-                    this.vm.page(this._page2 ? 2 : 1);
-                } else {
-                // Chain to io for keyboard
-                    result = this.io.ioSwitch(off, val);
-                }
+                this._80store = false;
+                this._debug('80 Store Off', _val);
+                this.vm.page(this._page2 ? 2 : 1);
                 break;
             case LOC._80STOREON:
-                if (writeMode) {
-                    this._80store = true;
-                    this._debug('80 Store On');
-                } else
-                    result = 0;
+                this._80store = true;
+                this._debug('80 Store On', _val);
                 break;
             case LOC.RAMRDOFF:
-                if (writeMode) {
-                    this._auxRamRead = false;
-                    this._debug('Aux RAM Read Off');
-                } else
-                    result = 0;
+                this._auxRamRead = false;
+                this._debug('Aux RAM Read Off');
                 break;
             case LOC.RAMRDON:
-                if (writeMode) {
-                    this._auxRamRead = true;
-                    this._debug('Aux RAM Read On');
-                } else
-                    result = 0;
+                this._auxRamRead = true;
+                this._debug('Aux RAM Read On');
                 break;
             case LOC.RAMWROFF:
-                if (writeMode) {
-                    this._auxRamWrite = false;
-                    this._debug('Aux RAM Write Off');
-                } else
-                    result = 0;
+                this._auxRamWrite = false;
+                this._debug('Aux RAM Write Off');
                 break;
             case LOC.RAMWRON:
-                if (writeMode) {
-                    this._auxRamWrite = true;
-                    this._debug('Aux RAM Write On');
-                } else
-                    result = 0;
+                this._auxRamWrite = true;
+                this._debug('Aux RAM Write On');
                 break;
 
             case LOC.INTCXROMOFF:
-                if (writeMode) {
-                    this._intcxrom = false;
-                    this._intc8rom = false;
-                    this._debug('Int CX ROM Off');
-                }
+                this._intcxrom = false;
+                this._intc8rom = false;
+                this._debug('Int CX ROM Off');
                 break;
             case LOC.INTCXROMON:
-                if (writeMode) {
-                    this._intcxrom = true;
-                    this._debug('Int CX ROM On');
-                }
+                this._intcxrom = true;
+                this._debug('Int CX ROM On');
                 break;
             case LOC.ALTZPOFF: // 0x08
-                if (writeMode) {
-                    this._altzp = false;
-                    this._debug('Alt ZP Off');
-                }
+                this._altzp = false;
+                this._debug('Alt ZP Off');
                 break;
             case LOC.ALTZPON: // 0x09
-                if (writeMode) {
-                    this._altzp = true;
-                    this._debug('Alt ZP On');
-                }
+                this._altzp = true;
+                this._debug('Alt ZP On');
                 break;
             case LOC.SLOTC3ROMOFF: // 0x0A
-                if (writeMode) {
-                    this._slot3rom = false;
-                    this._debug('Slot 3 ROM Off');
-                }
+                this._slot3rom = false;
+                this._debug('Slot 3 ROM Off');
                 break;
             case LOC.SLOTC3ROMON: // 0x0B
-                if (writeMode) {
-                    this._slot3rom = true;
-                    this._debug('Slot 3 ROM On');
-                }
+                this._slot3rom = true;
+                this._debug('Slot 3 ROM On');
                 break;
 
                 // Graphics Switches
 
             case LOC.CLR80VID:
-                if (writeMode) {
-                    this._debug('80 Column Mode off');
-                    this.vm._80col(false);
-                }
+                this._debug('80 Column Mode off');
+                this.vm._80col(false);
                 break;
             case LOC.SET80VID:
-                if (writeMode) {
-                    this._debug('80 Column Mode on');
-                    this.vm._80col(true);
-                }
+                this._debug('80 Column Mode on');
+                this.vm._80col(true);
                 break;
             case LOC.CLRALTCH:
-                if (writeMode) {
-                    this._debug('Alt Char off');
-                    this.vm.altchar(false);
-                }
+                this._debug('Alt Char off');
+                this.vm.altchar(false);
                 break;
             case LOC.SETALTCH:
-                if (writeMode) {
-                    this._debug('Alt Char on');
-                    this.vm.altchar(true);
-                }
+                this._debug('Alt Char on');
+                this.vm.altchar(true);
                 break;
-            case LOC.PAGE1:
-                this._page2 = false;
-                if (!this._80store) {
-                    result = this.io.ioSwitch(off, val);
-                }
-                this._debug('Page 2 off');
-                break;
-            case LOC.PAGE2:
-                this._page2 = true;
-                if (!this._80store) {
-                    result = this.io.ioSwitch(off, val);
-                }
-                this._debug('Page 2 on');
-                break;
+        }
+        this._updateBanks();
+    }
 
-            case LOC.RESET_HIRES:
-                this._hires = false;
-                result = this.io.ioSwitch(off, val);
-                this._debug('Hires off');
-                break;
+    // Status registers
 
-            case LOC.DHIRESON:
-                if (this._iouDisable) {
-                    this.vm.doubleHires(true);
-                } else {
-                    result = this.io.ioSwitch(off, val); // an3
-                }
-                break;
+    _accessStatus(off: byte, _val?: byte) {
+        let result = 0;
 
-            case LOC.DHIRESOFF:
-                if (this._iouDisable) {
-                    this.vm.doubleHires(false);
-                } else {
-                    result = this.io.ioSwitch(off, val); // an3
-                }
-                break;
-
-            case LOC.SET_HIRES:
-                this._hires = true;
-                result = this.io.ioSwitch(off, val);
-                this._debug('Hires on');
-                break;
-
-            case LOC.IOUDISON:
-                if (writeMode) {
-                    this._iouDisable = true;
-                }
-                result = this._iouDisable ? 0x00 : 0x80;
-                break;
-
-            case LOC.IOUDISOFF:
-                if (writeMode) {
-                    this._iouDisable = false;
-                }
-                result = this.vm.isDoubleHires() ? 0x80 : 0x00;
-                break;
-
-                // Language Card Switches
-
-            case LOC.READBSR2:  // 0xC080
-            case LOC._READBSR2: // 0xC084
-                this._bank1 = false;
-                this._readbsr = true;
-                this._writebsr = false;
-                this._prewrite = false;
-                // _debug('Bank 2 Read');
-                break;
-            case LOC.WRITEBSR2: // 0xC081
-            case LOC._WRITEBSR2: // 0xC085
-                this._bank1 = false;
-                this._readbsr = false;
-                if (readMode) { this._writebsr = this._prewrite; }
-                this._prewrite = readMode;
-                // _debug('Bank 2 Write');
-                break;
-            case LOC.OFFBSR2: // 0xC082
-            case LOC._OFFBSR2: // 0xC086
-                this._bank1 = false;
-                this._readbsr = false;
-                this._writebsr = false;
-                this._prewrite = false;
-                // _debug('Bank 2 Off');
-                break;
-            case LOC.READWRBSR2: // 0xC083
-            case LOC._READWRBSR2: // 0xC087
-                this._bank1 = false;
-                this._readbsr = true;
-                if (readMode) { this._writebsr = this._prewrite; }
-                this._prewrite = readMode;
-                // _debug('Bank 2 Read/Write');
-                break;
-            case LOC.READBSR1: // 0xC088
-            case LOC._READBSR1: // 0xC08c
-                this._bank1 = true;
-                this._readbsr = true;
-                this._writebsr = false;
-                this._prewrite = false;
-                // _debug('Bank 1 Read');
-                break;
-            case LOC.WRITEBSR1: // 0xC089
-            case LOC._WRITEBSR1: // 0xC08D
-                this._bank1 = true;
-                this._readbsr = false;
-                if (readMode) { this._writebsr = this._prewrite; }
-                this._prewrite = readMode;
-                // _debug('Bank 1 Write');
-                break;
-            case LOC.OFFBSR1: // 0xC08A
-            case LOC._OFFBSR1: // 0xC08E
-                this._bank1 = true;
-                this._readbsr = false;
-                this._writebsr = false;
-                this._prewrite = false;
-                // _debug('Bank 1 Off');
-                break;
-            case LOC.READWRBSR1: // 0xC08B
-            case LOC._READWRBSR1:  // 0xC08F
-                this._bank1 = true;
-                this._readbsr = true;
-                if (readMode) { this._writebsr = this._prewrite; }
-                this._prewrite = readMode;
-                //_debug('Bank 1 Read/Write');
-                break;
-
-                // Status registers
-
+        switch(off) {
             case LOC.BSRBANK2:
                 this._debug('Bank 2 Read ' + !this._bank1);
                 result = !this._bank1 ? 0x80 : 0x00;
@@ -784,18 +595,204 @@ export default class MMU implements Memory, Restorable<MMUState> {
             case LOC.RDALTCH:
                 result = this.vm.isAltChar() ? 0x80 : 0x0;
                 break;
-
-            default:
-                debug('MMU missing register ' + toHex(off));
-                break;
         }
 
-        if (result !== undefined)
-            return result;
+        return result;
+    }
 
-        result = 0;
+    _accessIOUDisable(off: byte, val?: byte) {
+        const writeMode = val !== undefined;
+        let result;
 
+        switch (off) {
+            case LOC.IOUDISON:
+                if (writeMode) {
+                    this._iouDisable = true;
+                } else {
+                    result = this._iouDisable ? 0x00 : 0x80;
+                }
+                break;
+
+            case LOC.IOUDISOFF:
+                if (writeMode) {
+                    this._iouDisable = false;
+                } else {
+                    result = this.vm.isDoubleHires() ? 0x80 : 0x00;
+                }
+                break;
+
+            default:
+                result = this.io.ioSwitch(off, val);
+        }
+
+        return result;
+    }
+
+
+    _accessGraphics(off: byte, val?: byte) {
+        let result: byte | undefined = 0;
+
+        switch (off) {
+            case LOC.PAGE1:
+                this._page2 = false;
+                if (!this._80store) {
+                    result = this.io.ioSwitch(off, val);
+                }
+                this._debug('Page 2 off');
+                break;
+
+            case LOC.PAGE2:
+                this._page2 = true;
+                if (!this._80store) {
+                    result = this.io.ioSwitch(off, val);
+                }
+                this._debug('Page 2 on');
+                break;
+
+            case LOC.RESET_HIRES:
+                this._hires = false;
+                result = this.io.ioSwitch(off, val);
+                this._debug('Hires off');
+                break;
+
+            case LOC.DHIRESON:
+                if (this._iouDisable) {
+                    this.vm.doubleHires(true);
+                } else {
+                    result = this.io.ioSwitch(off, val); // an3
+                }
+                break;
+
+            case LOC.DHIRESOFF:
+                if (this._iouDisable) {
+                    this.vm.doubleHires(false);
+                } else {
+                    result = this.io.ioSwitch(off, val); // an3
+                }
+                break;
+
+            case LOC.SET_HIRES:
+                this._hires = true;
+                result = this.io.ioSwitch(off, val);
+                this._debug('Hires on');
+                break;
+
+            default:
+                result = this.io.ioSwitch(off, val);
+                break;
+        }
         this._updateBanks();
+
+        return result;
+    }
+
+    _accessLangCard(off: byte, val?: byte) {
+        const readMode = val === undefined;
+
+        switch (off & 0x8b) {
+            // Language Card Switches
+
+            case LOC.READBSR2:  // 0xC080
+                this._bank1 = false;
+                this._readbsr = true;
+                this._writebsr = false;
+                this._prewrite = false;
+                // _debug('Bank 2 Read');
+                break;
+            case LOC.WRITEBSR2: // 0xC081
+                this._bank1 = false;
+                this._readbsr = false;
+                if (readMode) { this._writebsr = this._prewrite; }
+                this._prewrite = readMode;
+                // _debug('Bank 2 Write');
+                break;
+            case LOC.OFFBSR2: // 0xC082
+                this._bank1 = false;
+                this._readbsr = false;
+                this._writebsr = false;
+                this._prewrite = false;
+                // _debug('Bank 2 Off');
+                break;
+            case LOC.READWRBSR2: // 0xC083
+                this._bank1 = false;
+                this._readbsr = true;
+                if (readMode) { this._writebsr = this._prewrite; }
+                this._prewrite = readMode;
+                // _debug('Bank 2 Read/Write');
+                break;
+            case LOC.READBSR1: // 0xC088
+                this._bank1 = true;
+                this._readbsr = true;
+                this._writebsr = false;
+                this._prewrite = false;
+                // _debug('Bank 1 Read');
+                break;
+            case LOC.WRITEBSR1: // 0xC089
+                this._bank1 = true;
+                this._readbsr = false;
+                if (readMode) { this._writebsr = this._prewrite; }
+                this._prewrite = readMode;
+                // _debug('Bank 1 Write');
+                break;
+            case LOC.OFFBSR1: // 0xC08A
+                this._bank1 = true;
+                this._readbsr = false;
+                this._writebsr = false;
+                this._prewrite = false;
+                // _debug('Bank 1 Off');
+                break;
+            case LOC.READWRBSR1: // 0xC08B
+                this._bank1 = true;
+                this._readbsr = true;
+                if (readMode) { this._writebsr = this._prewrite; }
+                this._prewrite = readMode;
+                //_debug('Bank 1 Read/Write');
+                break;
+        }
+        this._updateBanks();
+    }
+
+    /*
+     * The Big Switch
+     */
+
+    _access(off: byte, val?: byte) {
+        let result;
+        const writeMode = val !== undefined;
+        const highNibble = off >> 4;
+
+        switch (highNibble) {
+            case 0x0:
+                if (writeMode) {
+                    this._accessMMUSet(off, val);
+                } else {
+                    result = this.io.ioSwitch(off);
+                }
+                break;
+
+            case 0x1:
+                if (writeMode) {
+                    this.io.ioSwitch(off);
+                } else {
+                    result = this._accessStatus(off, val);
+                }
+                break;
+
+            case 0x5:
+                result = this._accessGraphics(off, val);
+                break;
+
+            case 0x7:
+                result = this._accessIOUDisable(off, val);
+                break;
+
+            case 0x8:
+                result = this._accessLangCard(off, val);
+                break;
+
+            default:
+                result = this.io.ioSwitch(off, val);
+        }
 
         return result;
     }
