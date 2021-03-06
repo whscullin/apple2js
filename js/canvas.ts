@@ -717,7 +717,7 @@ export class HiresPage2D implements HiresPage {
                     hb[8] = b4 & 0x80;
                 }
                 dx = mcol * 14;
-                const offset = dx * 4 + dy * 280 * 4 * 2;
+                let offset = dx * 4 + dy * 280 * 4;
 
                 let monoColor = null;
                 if (this._monoMode || monoDHRMode) {
@@ -728,7 +728,7 @@ export class HiresPage2D implements HiresPage {
                     hbs = hb[idx];
                     const dcolor = dcolors[r4[c[idx]]];
                     let bits = c[idx - 1] | (c[idx] << 4) | (c[idx + 1] << 8);
-                    for (let jdx = 0; jdx < 4; jdx++, off += 4) {
+                    for (let jdx = 0; jdx < 4; jdx++, offset += 4) {
                         if (monoColor) {
                             if (bits & 0x10) {
                                 this._drawHalfPixel(data, offset, monoColor);
