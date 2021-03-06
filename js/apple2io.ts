@@ -9,8 +9,8 @@
  * implied warranty.
  */
 
-import CPU6502, { PageHandler } from './cpu6502';
-import { Card, Memory, TapeData, byte, Restorable } from './types';
+import CPU6502 from './cpu6502';
+import { Card, Memory, MemoryPages, TapeData, byte, Restorable } from './types';
 import { debug } from './util';
 
 type slot = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -66,7 +66,7 @@ const LOC = {
     ACCEL: 0x74, // CPU Speed control
 };
 
-export default class Apple2IO implements PageHandler, Restorable<Apple2IOState> {
+export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> {
     private _slot: Array<Card | null> = new Array(7).fill(null);
     private _auxRom: Memory | null = null;
 

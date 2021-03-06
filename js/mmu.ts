@@ -9,6 +9,7 @@
  * implied warranty.
  */
 
+import { MemoryPages } from './types';
 import CPU6502 from './cpu6502';
 import RAM, { RAMState } from './ram';
 import ROM, { ROMState } from './roms/rom';
@@ -94,7 +95,7 @@ const LOC = {
     READWRBSR1: 0x8b,
 };
 
-class Switches implements Memory {
+class Switches implements MemoryPages {
     constructor(private mmu: MMU) {}
 
     start() {
@@ -114,7 +115,7 @@ class Switches implements Memory {
     }
 }
 
-class AuxRom implements Memory {
+class AuxRom implements MemoryPages {
     constructor(
         private readonly mmu: MMU,
         private readonly rom: ROM) { }

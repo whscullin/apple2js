@@ -29,16 +29,19 @@ export type memory = Uint8Array;
 /** A raw region of memory. */
 export type rom = ReadonlyUint8Array;
 
-/** A mapped region of memory. */
 export interface Memory {
-    /** Start page. */
-    start(): byte;
-    /** End page, inclusive. */
-    end(): byte;
     /** Read a byte. */
     read(page: byte, offset: byte): byte;
     /** Write a byte. */
     write(page: byte, offset: byte, value: byte): void;
+}
+
+/** A mapped region of memory. */
+export interface MemoryPages extends Memory {
+    /** Start page. */
+    start(): byte;
+    /** End page, inclusive. */
+    end(): byte;
 }
 
 /* An interface card */

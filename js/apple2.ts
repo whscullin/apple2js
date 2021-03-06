@@ -23,11 +23,11 @@ import RAM, { RAMState } from './ram';
 import { debug } from './util';
 
 import SYMBOLS from './symbols';
-import { Restorable, memory } from './types';
+import { Restorable, rom } from './types';
 import { processGamepad } from './ui/gamepad';
 
-interface Options {
-    characterRom: memory,
+export interface Apple2Options {
+    characterRom: rom,
     enhanced: boolean,
     e: boolean,
     gl: boolean,
@@ -73,7 +73,7 @@ export class Apple2 implements Restorable<State> {
         renderedFrames: 0
     };
 
-    constructor(options: Options) {
+    constructor(options: Apple2Options) {
         const LoresPage = options.gl ? LoresPageGL : LoresPage2D;
         const HiresPage = options.gl ? HiresPageGL : HiresPage2D;
         const VideoModes = options.gl ? VideoModesGL : VideoModes2D;

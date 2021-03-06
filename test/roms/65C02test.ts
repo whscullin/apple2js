@@ -2,10 +2,9 @@
 
 import fs from 'fs';
 import path from 'path';
-import { PageHandler } from '../../js/cpu6502';
-import { byte } from '../../js/types';
+import { MemoryPages, byte } from '../../js/types';
 
-export default class Test65C02 implements PageHandler {
+export default class Test65C02 implements MemoryPages {
     private data: Buffer
 
     constructor() {

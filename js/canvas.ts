@@ -9,7 +9,7 @@
  * implied warranty.
  */
 
-import { byte, memory, Memory } from './types';
+import { byte, memory, MemoryPages, rom } from './types';
 import { allocMemPages } from './util';
 import {
     Color,
@@ -152,7 +152,7 @@ export class LoresPage2D implements LoresPage {
     imageData: ImageData;
 
     constructor(private page: number,
-        private readonly charset: memory,
+        private readonly charset: rom,
         private readonly e: boolean) {
         this.imageData = new ImageData(560, 384);
         for (let idx = 0; idx < 560 * 384 * 4; idx++) {
@@ -184,8 +184,7 @@ export class LoresPage2D implements LoresPage {
         data[nextOff + 2] = c2;
     }
 
-
-    bank0(): Memory {
+    bank0(): MemoryPages {
         return {
             start: () => this._start(),
             end: () => this._end(),
@@ -194,7 +193,7 @@ export class LoresPage2D implements LoresPage {
         };
     }
 
-    bank1(): Memory {
+    bank1(): MemoryPages {
         return {
             start: () => this._start(),
             end: () => this._end(),
@@ -592,7 +591,7 @@ export class HiresPage2D implements HiresPage {
         data[nextOff + 2] = data[nextOff + 6] = data[nextOff + 10] = data[nextOff + 14] = c2;
     }
 
-    bank0(): Memory {
+    bank0(): MemoryPages {
         return {
             start: () => this._start(),
             end: () => this._end(),
@@ -601,7 +600,7 @@ export class HiresPage2D implements HiresPage {
         };
     }
 
-    bank1(): Memory {
+    bank1(): MemoryPages {
         return {
             start: () => this._start(),
             end: () => this._end(),

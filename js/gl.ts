@@ -9,7 +9,7 @@
  * implied warranty.
  */
 
-import { byte, memory, Memory, Restorable } from './types';
+import { byte, memory, MemoryPages, rom } from './types';
 import { allocMemPages } from './util';
 
 import { screenEmu } from 'apple2shader';
@@ -92,7 +92,7 @@ export class LoresPageGL implements LoresPage {
     imageData: ImageData;
 
     constructor(private page: number,
-        private readonly charset: memory,
+        private readonly charset: rom,
         private readonly e: boolean) {
         this.imageData = new ImageData(560, 192);
         for (let idx = 0; idx < 560 * 192 * 4; idx++) {
@@ -116,7 +116,7 @@ export class LoresPageGL implements LoresPage {
         data[off + 2] = c2;
     }
 
-    bank0(): Memory {
+    bank0(): MemoryPages {
         return {
             start: () => this._start(),
             end: () => this._end(),
@@ -125,7 +125,7 @@ export class LoresPageGL implements LoresPage {
         };
     }
 
-    bank1(): Memory {
+    bank1(): MemoryPages {
         return {
             start: () => this._start(),
             end: () => this._end(),
@@ -402,7 +402,7 @@ export class LoresPageGL implements LoresPage {
  *
  ***************************************************************************/
 
-export class HiresPageGL implements Memory, Restorable<GraphicsState> {
+export class HiresPageGL implements HiresPage {
 
     private _buffer: memory[] = [];
     private _refreshing = false;
@@ -442,7 +442,7 @@ export class HiresPageGL implements Memory, Restorable<GraphicsState> {
         data[off + 2] = c2;
     }
 
-    bank0(): Memory {
+    bank0(): MemoryPages {
         return {
             start: () => this._start(),
             end: () => this._end(),
@@ -451,7 +451,7 @@ export class HiresPageGL implements Memory, Restorable<GraphicsState> {
         };
     }
 
-    bank1(): Memory {
+    bank1(): MemoryPages {
         return {
             start: () => this._start(),
             end: () => this._end(),

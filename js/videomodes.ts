@@ -1,4 +1,4 @@
-import { Memory, Restorable, byte, memory } from './types';
+import { MemoryPages, Restorable, byte, memory } from './types';
 
 export type bank = 0 | 1;
 export type pageNo = 1 | 2;
@@ -34,12 +34,12 @@ export interface VideoModesState {
     an3: boolean,
 }
 
-export interface VideoPage extends Memory, Restorable<GraphicsState> {
+export interface VideoPage extends MemoryPages, Restorable<GraphicsState> {
     imageData: ImageData
     dirty: Region;
 
-    bank0(): Memory
-    bank1(): Memory
+    bank0(): MemoryPages
+    bank1(): MemoryPages
 
     mono: (on: boolean) => void
     refresh: () => void

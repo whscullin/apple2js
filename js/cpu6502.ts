@@ -10,7 +10,7 @@
  * implied warranty.
  */
 
-import { byte, word } from './types';
+import { Memory, MemoryPages, byte, word } from './types';
 import { debug, toHex } from './util';
 
 type symbols = { [key: number]: string };
@@ -95,25 +95,15 @@ const loc = {
     BRK: 0xFFFE
 };
 
-export interface Page {
-    read(page: byte, offset: byte): byte;
-    write(page: byte, offset: byte, value: byte): void;
-}
-
-export interface PageHandler extends Page {
-    start(): byte;
-    end(): byte;
-}
-
-interface ResettablePageHandler extends PageHandler {
+interface ResettablePageHandler extends MemoryPages {
     reset(): void;
 }
 
-function isResettablePageHandler(pageHandler: PageHandler | ResettablePageHandler): pageHandler is ResettablePageHandler {
+function isResettablePageHandler(pageHandler: MemoryPages | ResettablePageHandler): pageHandler is ResettablePageHandler {
     return (pageHandler as ResettablePageHandler).reset !== undefined;
 }
 
-const BLANK_PAGE: Page = {
+const BLANK_PAGE: Memory = {
     read: function () { return 0; },
     write: function () { }
 };
@@ -158,7 +148,7 @@ export default class CPU6502 {
     private yr = 0; // Y Register
     private sp = 0xff; // Stack Pointer
 
-    private memPages: Page[] = new Array(0x100);
+    private memPages: Memory[] = new Array(0x100);
     private resetHandlers: ResettablePageHandler[] = [];
     private cycles = 0;
     private sync = false;
@@ -1129,7 +1119,7 @@ export default class CPU6502 {
         }
     }
 
-    public addPageHandler(pho: (PageHandler | ResettablePageHandler) & Page) {
+    public addPageHandler(pho: (MemoryPages | ResettablePageHandler)) {
         for (let idx = pho.start(); idx <= pho.end(); idx++) {
             this.memPages[idx] = pho;
         }

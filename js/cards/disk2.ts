@@ -10,7 +10,7 @@
  */
 
 import { base64_decode, base64_encode} from '../base64';
-import { bit, byte, DiskFormat, MemberOf, memory, nibble, rom } from '../types';
+import { bit, byte, Card, DiskFormat, MemberOf, memory, nibble, rom } from '../types';
 import { debug, toHex } from '../util';
 import { Disk, jsonDecode, jsonEncode, readSector } from '../formats/format_utils';
 
@@ -261,7 +261,7 @@ function setDriveState(state: DriveState) {
 /**
  * Emulates the 16-sector and 13-sector versions of the Disk ][ drive and controller.
  */
-export default class DiskII {
+export default class DiskII implements Card {
 
     private drives: Drive[] = [
         {   // Drive 1
