@@ -66,7 +66,7 @@ const whiteCol: Color = [255, 255, 255];
 const blackCol: Color = [0, 0, 0];
 
 const notDirty: Region = {
-    top: 385,
+    top: 193,
     bottom: -1,
     left: 561,
     right: -1
@@ -84,8 +84,8 @@ export class LoresPageGL implements LoresPage {
     // $80-$FF normal
 
     private _buffer: memory[] = [];
-    private _monoMode = false;
     private _refreshing = false;
+    private _monoMode = false;
     private _blink = false;
 
     dirty: Region = {...notDirty}
@@ -348,6 +348,7 @@ export class LoresPageGL implements LoresPage {
 
     setState(state: GraphicsState) {
         this.page = state.page;
+        this._monoMode = state.mono;
         this._buffer[0] = new Uint8Array(state.buffer[0]);
         this._buffer[1] = new Uint8Array(state.buffer[1]);
 
@@ -403,18 +404,12 @@ export class LoresPageGL implements LoresPage {
  ***************************************************************************/
 
 export class HiresPageGL implements HiresPage {
+    public imageData: ImageData;
+    dirty: Region = {...notDirty};
 
     private _buffer: memory[] = [];
     private _refreshing = false;
     private _monoMode = false;
-
-    dirty: Region = {
-        top: 193,
-        bottom: -1,
-        left: 561,
-        right: -1
-    };
-    imageData: ImageData;
 
     constructor(
         private page: number) {
@@ -460,16 +455,16 @@ export class HiresPageGL implements HiresPage {
         };
     }
 
-    _start() { return (0x20 * this.page); }
+    private _start() { return (0x20 * this.page); }
 
-    _end() { return (0x020 * this.page) + 0x1f; }
+    private _end() { return (0x020 * this.page) + 0x1f; }
 
-    _read(page: byte, off: byte, bank: bank) {
+    private _read(page: byte, off: byte, bank: bank) {
         const addr = (page << 8) | off, base = addr & 0x1FFF;
         return this._buffer[bank][base];
     }
 
-    _write(page: byte, off: byte, val: byte, bank: bank) {
+    private _write(page: byte, off: byte, val: byte, bank: bank) {
         const addr = (page << 8) | off;
         const base = addr & 0x1FFF;
 
@@ -654,6 +649,7 @@ export class HiresPageGL implements HiresPage {
 
     setState(state: GraphicsState) {
         this.page = state.page;
+        this._monoMode = state.mono;
         this._buffer[0] = new Uint8Array(state.buffer[0]);
         this._buffer[1] = new Uint8Array(state.buffer[1]);
 
@@ -885,12 +881,14 @@ export class VideoModesGL implements VideoModes {
         if (altData) {
             blitted = this.updateImage(
                 altData,
-                { top: 0, left: 0, right: 560, bottom: 384 }
+                { top: 0, left: 0, right: 560, bottom: 192 }
             );
         } else if (hiresMode && !textMode) {
             blitted = this.updateImage(
-                hgr.imageData, hgr.dirty,
-                mixedMode ? gr.imageData : null, mixedMode ? gr.dirty : null,
+                hgr.imageData,
+                hgr.dirty,
+                mixedMode ? gr.imageData : null,
+                mixedMode ? gr.dirty : null
             );
         } else {
             blitted = this.updateImage(
