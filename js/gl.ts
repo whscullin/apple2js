@@ -473,8 +473,6 @@ export class HiresPageGL implements HiresPage {
         }
         this._buffer[bank][base] = val;
 
-        // let hbs = val & 0x80;
-
         const col = (base % 0x80) % 0x28;
         const adj = off - col;
 
@@ -487,7 +485,6 @@ export class HiresPageGL implements HiresPage {
             rowb = base >> 10;
 
         const data = this.imageData.data;
-        let dx, dy;
         if ((rowa < 24) && (col < 40)) {
             if (!hiresMode) {
                 return;
@@ -499,104 +496,36 @@ export class HiresPageGL implements HiresPage {
             if (y > this.dirty.bottom) { this.dirty.bottom = y; }
             let x = col * 14 - 2;
             if (x < this.dirty.left) { this.dirty.left = x; }
-            x += 18;
+            x += 14;
             if (x > this.dirty.right) { this.dirty.right = x; }
 
-            dy = rowa << 3 | rowb;
-            let bz, b0, b1, b2, b3, b4, c, hb;
+            const dy = rowa << 3 | rowb;
             if (doubleHiresMode) {
-                val &= 0x7f;
-
-                // Every 4 bytes is 7 pixels
-                // 2 bytes per bank
-
-                // b0       b1       b2       b3
-                //  c0  c1    c2  c3    c4  c5    c6
-                // 76543210 76543210 76543210 76543210
-                //  1111222  2333344  4455556  6667777
-
-                const mod = col % 2, mcol = col - mod, baseOff = base - mod;
-                bz = this._buffer[0][baseOff - 1];
-                b0 = this._buffer[1][baseOff];
-                b1 = this._buffer[0][baseOff];
-                b2 = this._buffer[1][baseOff + 1];
-                b3 = this._buffer[0][baseOff + 1];
-                b4 = this._buffer[1][baseOff + 2];
-                c = [
-                    0,
-                    ((b0 & 0x0f) >> 0), // 0
-                    ((b0 & 0x70) >> 4) | ((b1 & 0x01) << 3), // 1
-                    ((b1 & 0x1e) >> 1), // 2
-                    ((b1 & 0x60) >> 5) | ((b2 & 0x03) << 2), // 3
-                    ((b2 & 0x3c) >> 2), // 4
-                    ((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1), // 5
-                    ((b3 & 0x78) >> 3), // 6
-                    0
-                ], // 7
-                hb = [
-                    0,
-                    b0 & 0x80, // 0
-                    b0 & 0x80, // 1
-                    b1 & 0x80, // 2
-                    b2 & 0x80, // 3
-                    b2 & 0x80, // 4
-                    b3 & 0x80, // 5
-                    b3 & 0x80, // 6
-                    0
-                ]; // 7
-                if (col > 0) {
-                    c[0] = (bz & 0x78) >> 3;
-                    hb[0] = bz & 0x80;
-                }
-                if (col < 39) {
-                    c[8] = b4 & 0x0f;
-                    hb[8] = b4 & 0x80;
-                }
-                dx = mcol * 14;
+                const dx = col * 14 + (bank ? 0 : 7);
                 let offset = dx * 4 + dy * 280 * 4 * 2;
 
-                for (let idx = 1; idx < 8; idx++) {
-                    // hbs = hb[idx];
-                    let bits = c[idx - 1] | (c[idx] << 4) | (c[idx + 1] << 8);
-                    for (let jdx = 0; jdx < 4; jdx++, offset += 4) {
-                        if (bits & 0x10) {
-                            this._drawHalfPixel(data, offset, whiteCol);
-                        } else {
-                            this._drawHalfPixel(data, offset, blackCol);
-                        }
-                        bits >>= 1;
+                let bits = val;
+                for (let jdx = 0; jdx < 7; jdx++, offset += 4) {
+                    if (bits & 0x01) {
+                        this._drawHalfPixel(data, offset, whiteCol);
+                    } else {
+                        this._drawHalfPixel(data, offset, blackCol);
                     }
+                    bits >>= 1;
                 }
-            } else {
-                val = this._buffer[0][base];
+            } else if (bank === 0) {
                 const hbs = val & 0x80;
-                val &= 0x7f;
-                dx = col * 14 - 2;
-                b0 = col > 0 ? this._buffer[0][base - 1] : 0;
-                b2 = col < 39 ? this._buffer[0][base + 1] : 0;
-                val |= (b2 & 0x3) << 7;
-                let v1 = b0 & 0x40,
-                    v2 = val & 0x1,
-                    color;
-
+                const dx = col * 14;
                 let offset = dx * 4 + dy * 560 * 4 + (hbs ? 4 : 0);
 
-                for (let idx = 0; idx < 9; idx++, offset += 8) {
-                    val >>= 1;
-
-                    if (v1) {
-                        color = whiteCol;
+                let bits = val;
+                for (let idx = 0; idx < 7; idx++, offset += 8) {
+                    if (bits & 0x01) {
+                        this._drawPixel(data, offset, whiteCol);
                     } else {
-                        color = blackCol;
+                        this._drawPixel(data, offset, blackCol);
                     }
-
-                    if (dx > -1 && dx < 560) {
-                        this._drawPixel(data, offset, color);
-                    }
-                    dx += 2;
-
-                    v1 = v2;
-                    v2 = val & 0x01;
+                    bits >>= 1;
                 }
             }
         }
