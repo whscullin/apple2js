@@ -585,7 +585,7 @@ export default class MMU implements Memory, Restorable<MMUState> {
                 result = this.vm.isMixed() ? 0x80 : 0x0;
                 break;
             case LOC.RDPAGE2:
-                result = this.vm.isPage2() ? 0x80 : 0x0;
+                result = this._page2 ? 0x80 : 0x0;
                 break;
             case LOC.RDHIRES:
                 result = this.vm.isHires() ? 0x80 : 0x0;
