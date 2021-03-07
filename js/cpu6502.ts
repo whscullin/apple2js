@@ -1177,7 +1177,7 @@ export default class CPU6502 {
         if (pc === undefined) {
             pc = this.pc;
         }
-        const b = this.readByte(pc),
+        const b = this.readByteDebug(pc),
             op = this.opary[b],
             size = sizes[op.mode];
         let result = toHex(pc, 4) + '- ';
@@ -1193,7 +1193,7 @@ export default class CPU6502 {
 
         for (let idx = 0; idx < 4; idx++) {
             if (idx < size) {
-                result += toHex(this.readByte(pc + idx)) + ' ';
+                result += toHex(this.readByteDebug(pc + idx)) + ' ';
             } else {
                 result += '   ';
             }
