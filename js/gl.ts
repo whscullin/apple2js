@@ -157,10 +157,6 @@ export class LoresPageGL implements LoresPage {
         }
         this._buffer[bank][base] = val;
 
-        if (!_80colMode && bank === 1) {
-            return;
-        }
-
         const col = (base % 0x80) % 0x28;
         const adj = off - col;
 
@@ -213,7 +209,7 @@ export class LoresPageGL implements LoresPage {
                         }
                         offset += 553 * 4;
                     }
-                } else {
+                } else if (bank === 0) {
                     val = this._buffer[0][base];
 
                     if (!enhanced) {
@@ -267,7 +263,7 @@ export class LoresPageGL implements LoresPage {
                         }
                         offset += 553 * 4;
                     }
-                } else {
+                } else if (bank === 0) {
                     let offset = (col * 14 + row * 560 * 8) * 4;
                     for (let jdx = 0; jdx < 8; jdx++) {
                         let b = (jdx < 4) ? (val & 0x0f) : (val >> 4);
