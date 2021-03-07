@@ -538,8 +538,8 @@ export default class MMU implements Memory, Restorable<MMUState> {
 
     // Status registers
 
-    _accessStatus(off: byte, _val?: byte) {
-        let result = 0;
+    _accessStatus(off: byte, val?: byte) {
+        let result = undefined;
 
         switch(off) {
             case LOC.BSRBANK2:
@@ -596,6 +596,8 @@ export default class MMU implements Memory, Restorable<MMUState> {
             case LOC.RDALTCH:
                 result = this.vm.isAltChar() ? 0x80 : 0x0;
                 break;
+            default:
+                result = this.io.ioSwitch(off, val);
         }
 
         return result;
@@ -773,7 +775,7 @@ export default class MMU implements Memory, Restorable<MMUState> {
 
             case 0x1:
                 if (writeMode) {
-                    this.io.ioSwitch(off);
+                    this.io.ioSwitch(off, val);
                 } else {
                     result = this._accessStatus(off, val);
                 }
