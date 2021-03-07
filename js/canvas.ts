@@ -773,7 +773,7 @@ export class HiresPage2D implements HiresPage {
                     this._refreshing = true;
                     const bb: bank = bank ? 0 : 1;
                     for (let rr = addr - 1; rr <= addr + 1; rr++) {
-                        const vv = this._buffer[bb][rr & 0x1FFF];
+                        const vv = this._read(rr >> 8, rr & 0xff, bb);
                         this._write(rr >> 8, rr & 0xff, vv, bb);
                     }
                     this._refreshing = false;
@@ -953,6 +953,7 @@ export class VideoModes2D implements VideoModes {
     text(on: boolean) {
         const old = textMode;
         textMode = on;
+        this._flag = 0;
 
         if (old != on) {
             this._refresh();
@@ -983,9 +984,7 @@ export class VideoModes2D implements VideoModes {
     hires(on: boolean) {
         const old = hiresMode;
         hiresMode = on;
-        if (!on) {
-            this._flag = 0;
-        }
+        this._flag = 0;
 
         if (old != on) {
             this._refresh();
