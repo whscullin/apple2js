@@ -512,8 +512,16 @@ export class HiresPageGL implements HiresPage {
             } else if (bank === 0) {
                 const hbs = val & 0x80;
                 const dx = col * 14;
-                let offset = dx * 4 + dy * 560 * 4 + (hbs ? 4 : 0);
-
+                let offset = dx * 4 + dy * 560 * 4;
+                if (hbs) {
+                    const val0 = this._buffer[bank][base - 1] || 0;
+                    if (val0 & 0x40) {
+                        this._drawHalfPixel(data, offset, whiteCol);
+                    } else {
+                        this._drawHalfPixel(data, offset, blackCol);
+                    }
+                    offset += 4;
+                }
                 let bits = val;
                 for (let idx = 0; idx < 7; idx++, offset += 8) {
                     if (bits & 0x01) {
