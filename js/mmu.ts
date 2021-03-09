@@ -394,10 +394,6 @@ export default class MMU implements Memory, Restorable<MMUState> {
                 this._readPages[idx] = this._pages[idx][1];
                 this._writePages[idx] = this._pages[idx][1];
             }
-            if (this._slot3rom) {
-                this._readPages[0xc3] = this._pages[0xc3][0];
-                this._writePages[0xc3] = this._pages[0xc3][0];
-            }
         } else {
             for (let idx = 0xc1; idx < 0xd0; idx++) {
                 this._readPages[idx] = this._pages[idx][0];
