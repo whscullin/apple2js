@@ -17,7 +17,7 @@ const hex_digits = '0123456789ABCDEF';
 const bin_digits = '01';
 
 /** Returns a random byte. */
-function garbage(): byte {
+export function garbage(): byte {
     return (Math.random() * 0x100) & 0xff;
 }
 

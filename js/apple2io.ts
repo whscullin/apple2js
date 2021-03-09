@@ -11,7 +11,7 @@
 
 import CPU6502 from './cpu6502';
 import { Card, Memory, MemoryPages, TapeData, byte, Restorable } from './types';
-import { debug } from './util';
+import { debug, garbage } from './util';
 
 type slot = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 type button = 0 | 1 | 2;
@@ -364,6 +364,8 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
                 }
                 if (card) {
                     result = card.read(page, off);
+                } else {
+                    result = garbage();
                 }
                 break;
             default:
