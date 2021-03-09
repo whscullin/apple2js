@@ -9,7 +9,6 @@
  * implied warranty.
  */
 
-import { MemoryPages } from './types';
 import CPU6502 from './cpu6502';
 import RAM, { RAMState } from './ram';
 import ROM, { ROMState } from './roms/rom';
@@ -95,16 +94,8 @@ const LOC = {
     READWRBSR1: 0x8b,
 };
 
-class Switches implements MemoryPages {
+class Switches implements Memory {
     constructor(private mmu: MMU) {}
-
-    start() {
-        return 0xC0;
-    }
-
-    end() {
-        return 0xC0;
-    }
 
     read(_page: byte, off: byte) {
         return this.mmu._access(off) || 0;
@@ -115,18 +106,10 @@ class Switches implements MemoryPages {
     }
 }
 
-class AuxRom implements MemoryPages {
+class AuxRom implements Memory {
     constructor(
         private readonly mmu: MMU,
         private readonly rom: ROM) { }
-
-    start() {
-        return 0xc1;
-    }
-
-    end() {
-        return 0xcf;
-    }
 
     read(page: byte, off: byte) {
         if (page == 0xc3) {

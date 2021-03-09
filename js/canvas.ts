@@ -178,18 +178,30 @@ export class LoresPage2D implements LoresPage {
         this._buffer[1] = allocMemPages(0x4);
     }
 
-    _drawPixel(data: Uint8ClampedArray, off: number, color: Color) {
+    private _drawPixel(data: Uint8ClampedArray, off: number, color: Color) {
         const c0 = color[0], c1 = color[1], c2 = color[2];
         data[off + 0] = data[off + 4] = c0;
         data[off + 1] = data[off + 5] = c1;
         data[off + 2] = data[off + 6] = c2;
     }
 
-    _drawHalfPixel(data: Uint8ClampedArray, off: number, color: Color) {
+    private _drawHalfPixel(data: Uint8ClampedArray, off: number, color: Color) {
         const c0 = color[0], c1 = color[1], c2 = color[2];
         data[off + 0] = c0;
         data[off + 1] = c1;
         data[off + 2] = c2;
+    }
+
+    private _checkInverse(val: byte) {
+        let inverse = false;
+        if (this.e) {
+            if (!_80colMode && !altCharMode) {
+                inverse = ((val & 0xc0) == 0x40) && this._blink;
+            }
+        } else {
+            inverse = !((val & 0x80) || (val & 0x40) && this._blink);
+        }
+        return inverse;
     }
 
     bank0(): MemoryPages {
@@ -254,19 +266,12 @@ export class LoresPage2D implements LoresPage {
             if (x > this.dirty.right) { this.dirty.right = x; }
 
             if (textMode || hiresMode || (mixedMode && row > 19)) {
-                let inverse;
-                if (this.e) {
-                    if (!_80colMode && !altCharMode) {
-                        inverse = ((val & 0xc0) == 0x40) && this._blink;
-                    }
-                } else {
-                    inverse = !((val & 0x80) || (val & 0x40) && this._blink);
-                }
-
-                fore = inverse ? blackCol : whiteCol;
-                back = inverse ? whiteCol : blackCol;
-
                 if (_80colMode) {
+                    const inverse = this._checkInverse(val);
+
+                    fore = inverse ? blackCol : whiteCol;
+                    back = inverse ? whiteCol : blackCol;
+
                     if (!enhanced) {
                         val = (val >= 0x40 && val < 0x60) ? val - 0x40 : val;
                     } else if (!altCharMode) {
@@ -287,6 +292,11 @@ export class LoresPage2D implements LoresPage {
                     }
                 } else {
                     val = this._buffer[0][base];
+
+                    const inverse = this._checkInverse(val);
+
+                    fore = inverse ? blackCol : whiteCol;
+                    back = inverse ? whiteCol : blackCol;
 
                     if (!enhanced) {
                         val = (val >= 0x40 && val < 0x60) ? val - 0x40 : val;
@@ -346,7 +356,7 @@ export class LoresPage2D implements LoresPage {
                                 b <<= 1;
                                 offset += 8;
                             }
-                            offset += 546 * 4 + 560 * 4;
+                            offset += 546 * 4;
                         }
                     }
                 }
@@ -555,7 +565,7 @@ export class HiresPage2D implements HiresPage {
         this._buffer[1] = allocMemPages(0x20);
     }
 
-    _drawPixel(data: Uint8ClampedArray, off: number, color: Color) {
+    private _drawPixel(data: Uint8ClampedArray, off: number, color: Color) {
         const c0 = color[0], c1 = color[1], c2 = color[2];
 
         data[off + 0] = data[off + 4] = c0;
@@ -563,7 +573,7 @@ export class HiresPage2D implements HiresPage {
         data[off + 2] = data[off + 6] = c2;
     }
 
-    _drawHalfPixel(data: Uint8ClampedArray, off: number, color: Color) {
+    private _drawHalfPixel(data: Uint8ClampedArray, off: number, color: Color) {
         const c0 = color[0], c1 = color[1], c2 = color[2];
 
         data[off + 0] = c0;
@@ -575,7 +585,7 @@ export class HiresPage2D implements HiresPage {
     // 160x192 pixels alternate 3 and 4 base pixels wide
     //
 
-    _draw3Pixel(data: Uint8ClampedArray, off: number, color: Color) {
+    private _draw3Pixel(data: Uint8ClampedArray, off: number, color: Color) {
         const c0 = color[0], c1 = color[1], c2 = color[2];
 
         data[off + 0] = data[off + 4] = data[off + 8] = c0;
@@ -583,7 +593,7 @@ export class HiresPage2D implements HiresPage {
         data[off + 2] = data[off + 6] = data[off + 10] = c2;
     }
 
-    _draw4Pixel(data: Uint8ClampedArray, off: number, color: Color) {
+    private _draw4Pixel(data: Uint8ClampedArray, off: number, color: Color) {
         const c0 = color[0], c1 = color[1], c2 = color[2];
 
         data[off + 0] = data[off + 4] = data[off + 8] = data[off + 12] = c0;
@@ -627,8 +637,6 @@ export class HiresPage2D implements HiresPage {
         }
         this._buffer[bank][base] = val;
 
-        let hbs = val & 0x80;
-
         const col = (base % 0x80) % 0x28;
         const adj = off - col;
 
@@ -642,11 +650,7 @@ export class HiresPage2D implements HiresPage {
 
         const data = this.imageData.data;
         let dx, dy;
-        if ((rowa < 24) && (col < 40)) {
-            if (!hiresMode) {
-                return;
-            }
-
+        if ((rowa < 24) && (col < 40) && hiresMode) {
             let y = rowa << 4 | rowb << 1;
             if (y < this.dirty.top) { this.dirty.top = y; }
             y += 1;
@@ -664,7 +668,7 @@ export class HiresPage2D implements HiresPage {
                 const c4 = val >> 4;
 
                 dx = col * 2 + (bank ^ 1);
-                const offset = dx * 28 + dy * 280 * 4 * 2;
+                const offset = dx * 28 + dy * 280 * 4;
 
                 this._draw3Pixel(data, offset, dcolors[c3]);
                 this._draw4Pixel(data, offset + 12, dcolors[c4]);
@@ -725,7 +729,7 @@ export class HiresPage2D implements HiresPage {
                 }
 
                 for (let idx = 1; idx < 8; idx++) {
-                    hbs = hb[idx];
+                    const hbs = hb[idx];
                     const dcolor = dcolors[r4[c[idx]]];
                     let bits = c[idx - 1] | (c[idx] << 4) | (c[idx + 1] << 8);
                     for (let jdx = 0; jdx < 4; jdx++, offset += 4) {
@@ -780,7 +784,7 @@ export class HiresPage2D implements HiresPage {
                 }
             } else {
                 val = this._buffer[0][base];
-                hbs = val & 0x80;
+                const hbs = val & 0x80;
                 val &= 0x7f;
                 dx = col * 14 - 2;
                 b0 = col > 0 ? this._buffer[0][base - 1] : 0;
@@ -1069,6 +1073,7 @@ export class VideoModes2D implements VideoModes {
         if (!this._context) {
             throw new Error('No 2D context');
         }
+        let blitted = false;
 
         if (mainDirty.bottom !== -1 || (mixDirty && mixDirty.bottom !== -1)) {
             const imageData = buildScreen(mainData, mixData);
@@ -1077,10 +1082,9 @@ export class VideoModes2D implements VideoModes {
                 0, 0, 560, 192,
                 this._left, this._top, 560, 384
             );
-            return true;
-        } else {
-            return false;
+            blitted = true;
         }
+        return blitted;
     }
 
     blit(altData?: ImageData) {

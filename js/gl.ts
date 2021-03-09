@@ -40,7 +40,7 @@ const tmpContext = tmpCanvas.getContext('2d');
 
 const buildScreen = (mainData: ImageData, mixData?: ImageData | null) => {
     if (!tmpContext) {
-        throw new Error('No webgl context');
+        throw new Error('No 2d context');
     }
 
     const details = screenEmu.C.NTSC_DETAILS;
@@ -102,18 +102,30 @@ export class LoresPageGL implements LoresPage {
         this._buffer[1] = allocMemPages(0x4);
     }
 
-    _drawPixel(data: Uint8ClampedArray, off: number, color: Color) {
+    private _drawPixel(data: Uint8ClampedArray, off: number, color: Color) {
         const c0 = color[0], c1 = color[1], c2 = color[2];
         data[off + 0] = data[off + 4] = c0;
         data[off + 1] = data[off + 5] = c1;
         data[off + 2] = data[off + 6] = c2;
     }
 
-    _drawHalfPixel(data: Uint8ClampedArray, off: number, color: Color) {
+    private _drawHalfPixel(data: Uint8ClampedArray, off: number, color: Color) {
         const c0 = color[0], c1 = color[1], c2 = color[2];
         data[off + 0] = c0;
         data[off + 1] = c1;
         data[off + 2] = c2;
+    }
+
+    private _checkInverse(val: byte) {
+        let inverse = false;
+        if (this.e) {
+            if (!_80colMode && !altCharMode) {
+                inverse = ((val & 0xc0) == 0x40) && this._blink;
+            }
+        } else {
+            inverse = !((val & 0x80) || (val & 0x40) && this._blink);
+        }
+        return inverse;
     }
 
     bank0(): MemoryPages {
@@ -178,19 +190,12 @@ export class LoresPageGL implements LoresPage {
             if (x > this.dirty.right) { this.dirty.right = x; }
 
             if (textMode || hiresMode || (mixedMode && row > 19)) {
-                let inverse;
-                if (this.e) {
-                    if (!_80colMode && !altCharMode) {
-                        inverse = ((val & 0xc0) == 0x40) && this._blink;
-                    }
-                } else {
-                    inverse = !((val & 0x80) || (val & 0x40) && this._blink);
-                }
-
-                fore = inverse ? blackCol : whiteCol;
-                back = inverse ? whiteCol : blackCol;
-
                 if (_80colMode) {
+                    const inverse = this._checkInverse(val);
+
+                    fore = inverse ? blackCol : whiteCol;
+                    back = inverse ? whiteCol : blackCol;
+
                     if (!enhanced) {
                         val = (val >= 0x40 && val < 0x60) ? val - 0x40 : val;
                     } else if (!altCharMode) {
@@ -211,6 +216,11 @@ export class LoresPageGL implements LoresPage {
                     }
                 } else if (bank === 0) {
                     val = this._buffer[0][base];
+
+                    const inverse = this._checkInverse(val);
+
+                    fore = inverse ? blackCol : whiteCol;
+                    back = inverse ? whiteCol : blackCol;
 
                     if (!enhanced) {
                         val = (val >= 0x40 && val < 0x60) ? val - 0x40 : val;
@@ -417,7 +427,7 @@ export class HiresPageGL implements HiresPage {
         this._buffer[1] = allocMemPages(0x20);
     }
 
-    _drawPixel(data: Uint8ClampedArray, off: number, color: Color) {
+    private _drawPixel(data: Uint8ClampedArray, off: number, color: Color) {
         const c0 = color[0], c1 = color[1], c2 = color[2];
 
         data[off + 0] = data[off + 4] = c0;
@@ -425,7 +435,7 @@ export class HiresPageGL implements HiresPage {
         data[off + 2] = data[off + 6] = c2;
     }
 
-    _drawHalfPixel(data: Uint8ClampedArray, off: number, color: Color) {
+    private _drawHalfPixel(data: Uint8ClampedArray, off: number, color: Color) {
         const c0 = color[0], c1 = color[1], c2 = color[2];
 
         data[off + 0] = c0;
@@ -481,11 +491,7 @@ export class HiresPageGL implements HiresPage {
             rowb = base >> 10;
 
         const data = this.imageData.data;
-        if ((rowa < 24) && (col < 40)) {
-            if (!hiresMode) {
-                return;
-            }
-
+        if ((rowa < 24) && (col < 40) && hiresMode) {
             let y = rowa << 3 | rowb;
             if (y < this.dirty.top) { this.dirty.top = y; }
             y += 1;
