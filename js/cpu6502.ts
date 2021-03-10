@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
+ * Copyright 2010-2021 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -12,8 +12,6 @@
 
 import { Memory, MemoryPages, byte, word } from './types';
 import { debug, toHex } from './util';
-
-type symbols = { [key: number]: string };
 
 export interface CpuOptions {
     '65C02'?: boolean;
@@ -29,7 +27,7 @@ export interface CpuState {
     cycles: number
 }
 
-type Mode =
+export type Mode =
     'accumulator' |        // A (Accumulator)
     'implied' |            // Implied
     'immediate' |          // # Immediate
@@ -47,10 +45,10 @@ type Mode =
     'absoluteXIndirect' |  // (a, X),
     'zeroPage_relative';   // zp, Relative
 
-type Modes = Record<Mode, number>;
+export type Modes = Record<Mode, number>;
 
 /** Addressing mode name to instruction size mapping. */
-const sizes: Modes = {
+export const sizes: Modes = {
     accumulator: 1,
     implied: 1,
     immediate: 2,
@@ -74,20 +72,20 @@ const sizes: Modes = {
 };
 
 /** Status register flag numbers. */
-type flag = 0x80 | 0x40 | 0x20 | 0x10 | 0x08 | 0x04 | 0x02 | 0x01;
+export type flag = 0x80 | 0x40 | 0x20 | 0x10 | 0x08 | 0x04 | 0x02 | 0x01;
 
-export type DebugInfo = [
-    pc: byte,
+export type DebugInfo = {
+    pc: word,
     ar: byte,
     xr: byte,
     yr: byte,
     sr: byte,
     sp: byte,
     cmd: byte[],
-]
+};
 
 /** Flags to status byte mask. */
-const flags: { [key: string]: flag } = {
+export const flags: { [key: string]: flag } = {
     N: 0x80, // Negative
     V: 0x40, // oVerflow
     B: 0x10, // Break
@@ -151,12 +149,12 @@ export default class CPU6502 {
     private readonly is65C02: boolean;
 
     /* Registers */
-    private pc = 0; // Program Counter
-    private sr = 0x20; // Process Status Register
-    private ar = 0; // Accumulator
-    private xr = 0; // X Register
-    private yr = 0; // Y Register
-    private sp = 0xff; // Stack Pointer
+    private pc: word = 0; // Program Counter
+    private sr: byte = 0x20; // Process Status Register
+    private ar: byte = 0; // Accumulator
+    private xr: byte = 0; // X Register
+    private yr: byte = 0; // Y Register
+    private sp: byte = 0xff; // Stack Pointer
 
     private memPages: Memory[] = new Array(0x100);
     private resetHandlers: ResettablePageHandler[] = [];
@@ -997,122 +995,24 @@ export default class CPU6502 {
         return unk;
     }
 
-    private dumpRawOp(parts: byte[]) {
-        const result = new Array(4);
-        for (let idx = 0; idx < 4; idx++) {
-            if (idx < parts.length) {
-                result[idx] = toHex(parts[idx]);
-            } else {
-                result[idx] = '  ';
-            }
-        }
-        return result.join(' ');
-    }
 
-    private dumpOp(pc: word, parts: byte[], symbols: symbols) {
-        const op = this.opary[parts[0]];
-        const lsb = parts[1];
-        const msb = parts[2];
-        const addr = (msb << 8) | lsb;
-        let val;
-        let off;
-        const toHexOrSymbol = (v: word, n?: number) => {
-            if (symbols && symbols[v]) {
-                return symbols[v];
-            } else {
-                return '$' + toHex(v, n);
-            }
-        };
-
-        let result = op.name + ' ';
-        switch (op.mode) {
-            case 'implied':
-                break;
-            case 'immediate':
-                result += '#' + toHexOrSymbol(lsb);
-                break;
-            case 'absolute':
-                result += '' + toHexOrSymbol(addr, 4);
-                break;
-            case 'zeroPage':
-                result += '' + toHexOrSymbol(lsb);
-                break;
-            case 'relative':
-                {
-                    off = lsb;
-                    if (off > 127) {
-                        off -= 256;
-                    }
-                    pc += off + 1;
-                    result += '' + toHexOrSymbol(pc, 4) + ' (' + off + ')';
-                }
-                break;
-            case 'absoluteX':
-                result += '' + toHexOrSymbol(addr, 4)+ ',X';
-                break;
-            case 'absoluteY':
-                result += '' + toHexOrSymbol(addr, 4) + ',Y';
-                break;
-            case 'zeroPageX':
-                result += '' + toHexOrSymbol(lsb) + ',X';
-                break;
-            case 'zeroPageY':
-                result += '' + toHexOrSymbol(lsb) + ',Y';
-                break;
-            case 'absoluteIndirect':
-                result += '(' + toHexOrSymbol(addr, 4) + ')';
-                break;
-            case 'zeroPageXIndirect':
-                result += '(' + toHexOrSymbol(lsb) + ',X)';
-                break;
-            case 'zeroPageIndirectY':
-                result += '(' + toHexOrSymbol(lsb) + '),Y';
-                break;
-            case 'accumulator':
-                result += 'A';
-                break;
-            case 'zeroPageIndirect':
-                result += '(' + toHexOrSymbol(lsb) + ')';
-                break;
-            case 'absoluteXIndirect':
-                result += '(' + toHexOrSymbol(addr, 4) + ',X)';
-                break;
-            case 'zeroPage_relative':
-                val = lsb;
-                off = msb;
-                if (off > 127) {
-                    off -= 256;
-                }
-                pc += off + 2;
-                result += '' + toHexOrSymbol(val) + ',' + toHexOrSymbol(pc, 4) + ' (' + off + ')';
-                break;
-            default:
-                break;
-        }
-        return result;
-    }
-
-    public step(cb: callback) {
+    public step(cb?: callback) {
         this.sync = true;
         const op = this.opary[this.readBytePC()];
         this.sync = false;
         op.op(op.modeFn);
 
-        if (cb) {
-            cb(this);
-        }
+        cb?.(this);
     }
 
-    public stepN(n: number, cb: callback) {
+    public stepN(n: number, cb?: callback) {
         for (let idx = 0; idx < n; idx++) {
             this.sync = true;
             const op = this.opary[this.readBytePC()];
             this.sync = false;
             op.op(op.modeFn);
 
-            if (cb) {
-                cb(this);
-            }
+            cb?.(this);
         }
     }
 
@@ -1127,7 +1027,7 @@ export default class CPU6502 {
         }
     }
 
-    public stepCyclesDebug(c: number, cb: callback): void {
+    public stepCyclesDebug(c: number, cb?: callback): void {
         const end = this.cycles + c;
 
         while (this.cycles < end) {
@@ -1136,9 +1036,7 @@ export default class CPU6502 {
             this.sync = false;
             op.op(op.modeFn);
 
-            if (cb) {
-                cb(this);
-            }
+            cb?.(this);
         }
     }
 
@@ -1206,119 +1104,16 @@ export default class CPU6502 {
             cmd[idx] = this.readByteDebug(this.pc + idx);
         }
 
-        return [
-            this.pc,
-            this.ar,
-            this.xr,
-            this.yr,
-            this.sr,
-            this.sp,
+        return {
+            pc: this.pc,
+            ar: this.ar,
+            xr: this.xr,
+            yr: this.yr,
+            sr: this.sr,
+            sp: this.sp,
             cmd
-        ];
+        };
     }
-
-    public printDebugInfo(info: DebugInfo, symbols: symbols) {
-        let symbol = '          ';
-        if (symbols && symbols[info[0]]) {
-            symbol = symbols[info[0]];
-            symbol +=  '          '.substring(symbol.length);
-        }
-
-        return [
-            toHex(info[0], 4),
-            '- ', symbol,
-            ' A=', toHex(info[1]),
-            ' X=', toHex(info[2]),
-            ' Y=', toHex(info[3]),
-            ' P=', toHex(info[4]),
-            ' S=', toHex(info[5]),
-            ' ',
-            ((info[4] & flags.N) ? 'N' : '-'),
-            ((info[4] & flags.V) ? 'V' : '-'),
-            '-',
-            ((info[4] & flags.B) ? 'B' : '-'),
-            ((info[4] & flags.D) ? 'D' : '-'),
-            ((info[4] & flags.I) ? 'I' : '-'),
-            ((info[4] & flags.Z) ? 'Z' : '-'),
-            ((info[4] & flags.C) ? 'C' : '-'),
-            ' ',
-            this.dumpRawOp(info[6]),
-            ' ',
-            this.dumpOp(info[0], info[6], symbols)
-        ].join('');
-    }
-
-    public dumpPC(_pc: word, symbols: symbols) {
-        if (_pc === undefined) {
-            _pc = this.pc;
-        }
-        const b = this.readByteDebug(_pc);
-        const op = this.opary[b];
-        const size = sizes[op.mode];
-        let result = toHex(_pc, 4) + '- ';
-
-        if (symbols) {
-            if (symbols[_pc]) {
-                result += symbols[_pc] +
-                    '          '.substring(symbols[_pc].length);
-            } else {
-                result += '          ';
-            }
-        }
-
-        const cmd = new Array(size);
-        for (let idx = 0; idx < size; idx++) {
-            cmd[idx] = this.readByteDebug(_pc + idx);
-        }
-
-        result += this.dumpRawOp(cmd) + ' ' + this.dumpOp(_pc, cmd, symbols);
-
-        return result;
-    }
-
-    public dumpPage(start?: word, end?: word) {
-        let result = '';
-        if (start === undefined) {
-            start = this.pc >> 8;
-        }
-        if (end === undefined) {
-            end = start;
-        }
-        for (let page = start; page <= end; page++) {
-            for (let idx = 0; idx < 16; idx++) {
-                result += toHex(page) + toHex(idx << 4) + ': ';
-                for (let jdx = 0; jdx < 16; jdx++) {
-                    const b = this.readByteDebug(page * 256 + idx * 16 + jdx);
-                    result += toHex(b) + ' ';
-                }
-                result += '        ';
-                for (let jdx = 0; jdx < 16; jdx++) {
-                    const b = this.readByte(page * 256 + idx * 16 + jdx) & 0x7f;
-                    if (b >= 0x20 && b < 0x7f) {
-                        result += String.fromCharCode(b);
-                    } else {
-                        result += '.';
-                    }
-                }
-                result += '\n';
-            }
-        }
-        return result;
-    }
-
-    public list(_pc: word, symbols: symbols) {
-        if (_pc === undefined) {
-            _pc = this.pc;
-        }
-        const results = [];
-        for (let jdx = 0; jdx < 20; jdx++) {
-            const b = this.readByte(_pc), op = this.opary[b];
-            results.push(this.dumpPC(_pc, symbols));
-            _pc += sizes[op.mode];
-        }
-        return results;
-    }
-
     public getSync() {
         return this.sync;
     }
@@ -1327,8 +1122,8 @@ export default class CPU6502 {
         return this.cycles;
     }
 
-    public registers() {
-        return [this.pc, this.ar, this.xr, this.yr, this.sr, this.sp];
+    public getOpInfo(opcode: byte) {
+        return this.opary[opcode];
     }
 
     public getState(): CpuState {
@@ -1353,25 +1148,18 @@ export default class CPU6502 {
         this.cycles = state.cycles;
     }
 
-    public dumpRegisters() {
-        return toHex(this.pc, 4) +
-            '-   A=' + toHex(this.ar) +
-            ' X=' + toHex(this.xr) +
-            ' Y=' + toHex(this.yr) +
-            ' P=' + toHex(this.sr) +
-            ' S=' + toHex(this.sp) +
-            ' ' +
-            ((this.sr & flags.N) ? 'N' : '-') +
-            ((this.sr & flags.V) ? 'V' : '-') +
-            '-' +
-            ((this.sr & flags.B) ? 'B' : '-') +
-            ((this.sr & flags.D) ? 'D' : '-') +
-            ((this.sr & flags.I) ? 'I' : '-') +
-            ((this.sr & flags.Z) ? 'Z' : '-') +
-            ((this.sr & flags.C) ? 'C' : '-');
-    }
+    public read(addr: word): byte;
+    public read(page: byte, off: byte): byte;
 
-    public read(page: byte, off: byte): byte {
+    public read(a: number, b?: number): byte {
+        let page, off;
+        if (b !== undefined) {
+            page = a;
+            off = b;
+        } else {
+            page = a >> 8;
+            off = page & 0xff;
+        }
         return this.memPages[page].read(page, off);
     }
 

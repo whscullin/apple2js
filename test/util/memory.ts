@@ -1,0 +1,42 @@
+
+import { MemoryPages, byte } from '../../js/types';
+
+const assertByte = (b: byte) => {
+    expect(b <= 0xFF).toEqual(true);
+    expect(b >= 0x00).toEqual(true);
+};
+
+export class TestMemory implements MemoryPages {
+    private data: Buffer;
+
+    constructor(private size: number) {
+        this.data = Buffer.alloc(size << 8);
+    }
+
+    start() {
+        return 0;
+    }
+
+    end() {
+        return this.size - 1;
+    }
+
+    read(page: byte, off: byte) {
+        assertByte(page);
+        assertByte(off);
+
+        return this.data[(page << 8) | off];
+    }
+
+    write(page: byte, off: byte, val: byte) {
+        assertByte(page);
+        assertByte(off);
+        assertByte(val);
+
+        this.data[(page << 8) | off] = val;
+    }
+
+    reset() {
+    }
+}
+

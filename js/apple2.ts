@@ -21,7 +21,8 @@ import CPU6502, { CpuState } from './cpu6502';
 import MMU, { MMUState } from './mmu';
 import RAM, { RAMState } from './ram';
 
-import Debugger from './debugger';
+import SYMBOLS from './symbols';
+import Debugger, { DebuggerContainer } from './debugger';
 
 import { Restorable, rom } from './types';
 import { processGamepad } from './ui/gamepad';
@@ -44,7 +45,7 @@ interface State {
     ram?: RAMState[],
 }
 
-export class Apple2 implements Restorable<State> {
+export class Apple2 implements Restorable<State>, DebuggerContainer {
     private paused = false;
 
     private theDebugger?: Debugger;
@@ -117,7 +118,8 @@ export class Apple2 implements Restorable<State> {
             return; // already running
         }
 
-        this.theDebugger = new Debugger(this.cpu);
+        this.theDebugger = new Debugger(this);
+        this.theDebugger.addSymbols(SYMBOLS);
 
         const interval = 30;
 
