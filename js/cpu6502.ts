@@ -1158,12 +1158,26 @@ export default class CPU6502 {
             off = b;
         } else {
             page = a >> 8;
-            off = page & 0xff;
+            off = a & 0xff;
         }
         return this.memPages[page].read(page, off);
     }
 
-    public write(page: byte, off: byte, val: byte) {
+    public write(addr: word, val: byte): void;
+    public write(page: byte, off: byte, val: byte): void;
+
+    public write(a: number, b: number, c?: byte): void {
+        let page, off, val;
+
+        if (c !== undefined ) {
+            page = a;
+            off = b;
+            val = c;
+        } else {
+            page = a >> 8;
+            off = a & 0xff;
+            val = b;
+        }
         this.memPages[page].write(page, off, val);
     }
 

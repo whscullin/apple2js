@@ -85,30 +85,13 @@ export default class Debugger {
     }
 
     printDebugInfo(info: DebugInfo) {
-        const { pc, ar, xr, yr, sr, sp, cmd } = info;
-        let symbol = '          ';
-        if (this.symbols[pc]) {
-            symbol = this.symbols[pc];
-            symbol +=  '          '.substring(symbol.length);
-        }
+        const { pc, cmd } = info;
+        const symbol = this.padWithSymbol(pc);
 
         return [
             toHex(pc, 4),
             '- ', symbol,
-            ' A=', toHex(ar),
-            ' X=', toHex(xr),
-            ' Y=', toHex(yr),
-            ' P=', toHex(sr),
-            ' S=', toHex(sp),
-            ' ',
-            ((sr & flags.N) ? 'N' : '-'),
-            ((sr & flags.V) ? 'V' : '-'),
-            '-',
-            ((sr & flags.B) ? 'B' : '-'),
-            ((sr & flags.D) ? 'D' : '-'),
-            ((sr & flags.I) ? 'I' : '-'),
-            ((sr & flags.Z) ? 'Z' : '-'),
-            ((sr & flags.C) ? 'C' : '-'),
+            this.dumpRegisters(info),
             ' ',
             this.dumpRawOp(cmd),
             ' ',
@@ -117,21 +100,16 @@ export default class Debugger {
     }
 
     dumpPC(pc: word) {
-        const b = this.cpu.read(pc >> 8, pc & 0xff);
+        const b = this.cpu.read(pc);
         const op = this.cpu.getOpInfo(b);
         const size = sizes[op.mode];
         let result = toHex(pc, 4) + '- ';
 
-        if (this.symbols[pc]) {
-            result += this.symbols[pc] +
-                '          '.substring(this.symbols[pc].length);
-        } else {
-            result += '          ';
-        }
+        result += this.padWithSymbol(pc);
 
         const cmd = new Array(size);
-        for (let idx = 0; idx < size; idx++) {
-            cmd[idx] = this.cpu.read(pc >> 8, pc & 0xff);
+        for (let idx = 0, jdx = pc; idx < size; idx++, jdx++) {
+            cmd[idx] = this.cpu.read(jdx);
         }
 
         result += this.dumpRawOp(cmd) + ' ' + this.dumpOp(pc, cmd);
@@ -139,26 +117,32 @@ export default class Debugger {
         return result;
     }
 
-    public dumpRegisters() {
-        const { pc, a, x, y, s, sp } = this.cpu.getState();
-        return toHex(pc, 4) +
-            '-   A=' + toHex(a) +
-            ' X=' + toHex(x) +
-            ' Y=' + toHex(y) +
-            ' P=' + toHex(s) +
-            ' S=' + toHex(sp) +
-            ' ' +
-            ((s & flags.N) ? 'N' : '-') +
-            ((s & flags.V) ? 'V' : '-') +
-            '-' +
-            ((s & flags.B) ? 'B' : '-') +
-            ((s & flags.D) ? 'D' : '-') +
-            ((s & flags.I) ? 'I' : '-') +
-            ((s & flags.Z) ? 'Z' : '-') +
-            ((s & flags.C) ? 'C' : '-');
+    dumpRegisters(debugInfo?: DebugInfo) {
+        if (debugInfo === undefined) {
+            debugInfo = this.cpu.getDebugInfo();
+        }
+        const { pc, ar, xr, yr, sr, sp } = debugInfo;
+        return [
+            toHex(pc, 4),
+            '-  ',
+            ' A=' + toHex(ar),
+            ' X=' + toHex(xr),
+            ' Y=' + toHex(yr),
+            ' P=' + toHex(sr),
+            ' S=' + toHex(sp),
+            ' ',
+            ((sr & flags.N) ? 'N' : '-'),
+            ((sr & flags.V) ? 'V' : '-'),
+            '-',
+            ((sr & flags.B) ? 'B' : '-'),
+            ((sr & flags.D) ? 'D' : '-'),
+            ((sr & flags.I) ? 'I' : '-'),
+            ((sr & flags.Z) ? 'Z' : '-'),
+            ((sr & flags.C) ? 'C' : '-')
+        ].join('');
     }
 
-    public dumpPage(start: word, end?: word) {
+    dumpPage(start: byte, end?: byte) {
         let result = '';
         if (end === undefined) {
             end = start;
@@ -185,14 +169,26 @@ export default class Debugger {
         return result;
     }
 
-    public list(pc: word) {
+    list(pc: word) {
         const results = [];
-        for (let jdx = 0; jdx < 20; jdx++) {
-            const b = this.cpu.read(pc), op = this.cpu.getOpInfo(b);
+        for (let idx = 0; idx < 20; idx++) {
+            const b = this.cpu.read(pc);
+            const op = this.cpu.getOpInfo(b);
             results.push(this.dumpPC(pc));
             pc += sizes[op.mode];
         }
         return results;
+    }
+
+    private padWithSymbol(pc: word): string {
+        const padding = '          ';
+        const symbol = this.symbols[pc];
+
+        let result: string = padding;
+        if (symbol) {
+            result = `${symbol}${padding.substring(symbol.length)}`;
+        }
+        return result;
     }
 
     private dumpRawOp(parts: byte[]) {

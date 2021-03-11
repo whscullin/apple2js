@@ -26,7 +26,7 @@ describe('Debugger', () => {
     });
 
     describe('#utility', () => {
-        it('should list with symbols', () => {
+        it('should list without symbols', () => {
             const listing = theDebugger.list(0xff00);
             expect(listing[0]).toEqual(
                 'FF00-           00 00       BRK #$00'

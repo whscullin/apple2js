@@ -1,9 +1,5 @@
 import { MemoryPages, byte } from '../../js/types';
-
-const assertByte = (b: byte) => {
-    expect(b <= 0xFF).toEqual(true);
-    expect(b >= 0x00).toEqual(true);
-};
+import { assertByte } from './asserts';
 
 export class Program implements MemoryPages {
     private data: Buffer;
