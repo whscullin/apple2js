@@ -20,9 +20,10 @@ import { Apple2IOState } from './apple2io';
 import CPU6502, { CpuState } from './cpu6502';
 import MMU, { MMUState } from './mmu';
 import RAM, { RAMState } from './ram';
-import { debug } from './util';
 
 import SYMBOLS from './symbols';
+import Debugger, { DebuggerContainer } from './debugger';
+
 import { Restorable, rom } from './types';
 import { processGamepad } from './ui/gamepad';
 
@@ -44,13 +45,10 @@ interface State {
     ram?: RAMState[],
 }
 
-export class Apple2 implements Restorable<State> {
+export class Apple2 implements Restorable<State>, DebuggerContainer {
     private paused = false;
 
-    private DEBUG = false;
-    private TRACE = false;
-    private MAX_TRACE = 256;
-    private trace: string[] = [];
+    private theDebugger?: Debugger;
 
     private runTimer: number | null = null;
     private runAnimationFrame: number | null = null;
@@ -120,6 +118,9 @@ export class Apple2 implements Restorable<State> {
             return; // already running
         }
 
+        this.theDebugger = new Debugger(this);
+        this.theDebugger.addSymbols(SYMBOLS);
+
         const interval = 30;
 
         let now, last = Date.now();
@@ -134,19 +135,8 @@ export class Apple2 implements Restorable<State> {
                 step = stepMax;
             }
 
-            if (this.DEBUG) {
-                this.cpu.stepCyclesDebug(this.TRACE ? 1 : step, () => {
-                    const line = this.cpu.dumpRegisters() + ' ' +
-                        this.cpu.dumpPC(undefined, SYMBOLS);
-                    if (this.TRACE) {
-                        debug(line);
-                    } else {
-                        this.trace.push(line);
-                        if (this.trace.length > this.MAX_TRACE) {
-                            this.trace.shift();
-                        }
-                    }
-                });
+            if (this.theDebugger) {
+                this.theDebugger.stepCycles(step);
             } else {
                 this.cpu.stepCycles(step);
             }
@@ -234,7 +224,16 @@ export class Apple2 implements Restorable<State> {
         return this.io;
     }
 
+    getMMU() {
+        return this.mmu;
+    }
+
+
     getVideoModes() {
         return this.vm;
+    }
+
+    getDebugger() {
+        return this.theDebugger;
     }
 }
