@@ -47,7 +47,7 @@ export interface MemoryPages extends Memory {
 /* An interface card */
 export interface Card extends Memory, Restorable {
     /* Reset the card */
-    reset(): void;
+    reset?(): void;
 
     /* Draw card to canvas */
     blit?(): ImageData;

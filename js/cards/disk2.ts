@@ -12,7 +12,7 @@
 import { base64_decode, base64_encode} from '../base64';
 import { bit, byte, Card, DiskFormat, MemberOf, memory, nibble, rom } from '../types';
 import { debug, toHex } from '../util';
-import { Disk, jsonDecode, jsonEncode, readSector } from '../formats/format_utils';
+import { Disk, JSONDisk, jsonDecode, jsonEncode, readSector } from '../formats/format_utils';
 
 import { BOOTSTRAP_ROM_16, BOOTSTRAP_ROM_13 } from '../roms/cards/disk2';
 
@@ -337,7 +337,7 @@ export default class DiskII implements Card {
         this.init();
     }
 
-    private debug(..._args: any) {
+    private debug(..._args: any[]) {
         // debug.apply(this, arguments);
     }
 
@@ -728,8 +728,8 @@ export default class DiskII implements Card {
 
     /** Sets the data for `drive` from `disk`, which is expected to be JSON. */
     // TODO(flan): This implementation is not very safe.
-    setDisk(drive: DriveNumber, disk: any) {
-        const fmt = disk.type as DiskFormat;
+    setDisk(drive: DriveNumber, disk: JSONDisk) {
+        const fmt = disk.type;
         const readOnly = disk.readOnly;
         const name = disk.name;
 
@@ -795,7 +795,7 @@ export default class DiskII implements Card {
         return jsonEncode(cur, pretty);
     }
 
-    setJSON(drive: DriveNumber, data: any) {
+    setJSON(drive: DriveNumber, data: string) {
         const cur = this.drives[drive - 1];
         Object.assign(cur, jsonDecode(data));
         return true;

@@ -695,69 +695,53 @@ export default class MMU implements Memory, Restorable<MMUState> {
 
     _accessLangCard(off: byte, val?: byte) {
         const readMode = val === undefined;
+        const result = readMode ? 0 : undefined;
 
-        switch (off & 0x8b) {
-            // Language Card Switches
+        const writeSwitch = off & 0x01;
+        const offSwitch = off & 0x02;
+        const bank1Switch = off & 0x08;
 
-            case LOC.READBSR2:  // 0xC080
-                this._bank1 = false;
+        let bankStr;
+        let rwStr;
+
+        if (writeSwitch) { // 0xC081, 0xC083
+            if (readMode) {
+                this._writebsr = this._prewrite;
+            }
+            this._prewrite = readMode;
+
+            if (offSwitch) { // 0xC08B
                 this._readbsr = true;
-                this._writebsr = false;
-                this._prewrite = false;
-                // _debug('Bank 2 Read');
-                break;
-            case LOC.WRITEBSR2: // 0xC081
-                this._bank1 = false;
+                rwStr = 'Read/Write';
+            } else {
                 this._readbsr = false;
-                if (readMode) { this._writebsr = this._prewrite; }
-                this._prewrite = readMode;
-                // _debug('Bank 2 Write');
-                break;
-            case LOC.OFFBSR2: // 0xC082
-                this._bank1 = false;
+                rwStr = 'Write';
+            }
+        } else { // 0xC080, 0xC082
+            this._writebsr = false;
+            this._prewrite = false;
+
+            if (offSwitch) { // 0xC082
                 this._readbsr = false;
-                this._writebsr = false;
-                this._prewrite = false;
-                // _debug('Bank 2 Off');
-                break;
-            case LOC.READWRBSR2: // 0xC083
-                this._bank1 = false;
+                rwStr = 'Off';
+            } else { // 0xC080
                 this._readbsr = true;
-                if (readMode) { this._writebsr = this._prewrite; }
-                this._prewrite = readMode;
-                // _debug('Bank 2 Read/Write');
-                break;
-            case LOC.READBSR1: // 0xC088
-                this._bank1 = true;
-                this._readbsr = true;
-                this._writebsr = false;
-                this._prewrite = false;
-                // _debug('Bank 1 Read');
-                break;
-            case LOC.WRITEBSR1: // 0xC089
-                this._bank1 = true;
-                this._readbsr = false;
-                if (readMode) { this._writebsr = this._prewrite; }
-                this._prewrite = readMode;
-                // _debug('Bank 1 Write');
-                break;
-            case LOC.OFFBSR1: // 0xC08A
-                this._bank1 = true;
-                this._readbsr = false;
-                this._writebsr = false;
-                this._prewrite = false;
-                // _debug('Bank 1 Off');
-                break;
-            case LOC.READWRBSR1: // 0xC08B
-                this._bank1 = true;
-                this._readbsr = true;
-                if (readMode) { this._writebsr = this._prewrite; }
-                this._prewrite = readMode;
-                //_debug('Bank 1 Read/Write');
-                break;
+                rwStr = 'Read';
+            }
         }
+
+        if (bank1Switch) {
+            this._bank1 = true;
+            bankStr = 'Bank 1';
+        } else {
+            this._bank1 = false;
+            bankStr = 'Bank 2';
+        }
+
+        this._debug(bankStr, rwStr);
         this._updateBanks();
-    }
+
+        return result;    }
 
     /*
      * The Big Switch
