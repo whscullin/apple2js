@@ -54,8 +54,8 @@ export default class LanguageCard implements Card, Restorable<LanguageCardState>
         this.read2 = this.rom;
     }
 
-    private debug(...args: any[]) {
-        debug.apply(null, args);
+    private debug(..._args: any[]) {
+        // debug.apply(null, args);
     }
 
     private updateBanks() {

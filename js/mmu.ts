@@ -741,7 +741,8 @@ export default class MMU implements Memory, Restorable<MMUState> {
         this._debug(bankStr, rwStr);
         this._updateBanks();
 
-        return result;    }
+        return result;
+    }
 
     /*
      * The Big Switch
