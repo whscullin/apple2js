@@ -62,7 +62,7 @@ var parallel = new Parallel(io, printer);
 var slinky = new RAMFactor(io, 1024 * 1024);
 var disk2 = new DiskII(io, driveLights);
 var clock = new Thunderclock(io);
-var smartport = new SmartPort(io, cpu);
+var smartport = new SmartPort(cpu);
 
 initUI(apple2, disk2, smartport, printer, options.e);
 
