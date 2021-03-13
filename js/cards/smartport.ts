@@ -10,9 +10,9 @@
  */
 
 import { debug, toHex } from '../util';
-import { rom } from '../roms/cards/smartport';
-import { Card, Restorable, byte, word } from '../types';
-import CPU6502, { CpuState } from '../cpu6502';
+import { rom as smartPortRom } from '../roms/cards/smartport';
+import { Card, Restorable, byte, word, rom } from '../types';
+import CPU6502, { CpuState, flags } from '../cpu6502';
 
 type SmartDisk = Uint8Array[];
 
@@ -91,25 +91,30 @@ class Address {
     }
 }
 
-export default class SmartPort implements Card, Restorable<SmartPortState> {
-    COMMAND = 0x42;
-    UNIT = 0x43;
-    ADDRESS_LO = 0x44;
-    // const ADDRESS_HI = 0x45;
-    BLOCK_LO = 0x46;
-    // const BLOCK_HI = 0x47;
+// ProDOS zero page locations
 
-    private rom: Uint8Array;
+const COMMAND = 0x42;
+const UNIT = 0x43;
+const ADDRESS_LO = 0x44;
+// const ADDRESS_HI = 0x45;
+const BLOCK_LO = 0x46;
+// const BLOCK_HI = 0x47;
+
+export default class SmartPort implements Card, Restorable<SmartPortState> {
+
+    private rom: rom;
     private disks: SmartDisk[] = [];
 
     constructor(private cpu: CPU6502, options: SmartPortOptions) {
-        this.rom = new Uint8Array(rom);
         if (options?.block) {
-            this.rom[0x07] = 0x3C;
+            const dumbPortRom =  new Uint8Array(smartPortRom);
+            dumbPortRom[0x07] = 0x3C;
+            this.rom = dumbPortRom;
             debug('DumbPort card');
         } else {
             debug('SmartPort card');
         }
+        this.rom = smartPortRom;
     }
 
     private decodeDisk(unit: number, disk: BlockDevice) {
@@ -122,7 +127,6 @@ export default class SmartPort implements Card, Restorable<SmartPortState> {
     private debug(..._args: any[]) {
         // debug.apply(this, arguments);
     }
-
 
     /*
      * dumpBlock
@@ -170,10 +174,10 @@ export default class SmartPort implements Card, Restorable<SmartPortState> {
             state.y = blocks >> 8;
 
             state.a = 0;
-            state.s &= 0xfe;
+            state.s &= ~flags.C;
         } else {
             state.a = 0x28;
-            state.s |= 0x01;
+            state.s |= flags.C;
         }
     }
 
@@ -282,10 +286,10 @@ export default class SmartPort implements Card, Restorable<SmartPortState> {
 
         if (off === blockOff && this.cpu.getSync()) { // Regular block device entry POINT
             this.debug('block device entry');
-            cmd = this.cpu.read(0x00, this.COMMAND);
-            unit = this.cpu.read(0x00, this.UNIT);
-            const bufferAddr = new Address(this.cpu, this.ADDRESS_LO);
-            const blockAddr = new Address(this.cpu, this.BLOCK_LO);
+            cmd = this.cpu.read(0x00, COMMAND);
+            unit = this.cpu.read(0x00, UNIT);
+            const bufferAddr = new Address(this.cpu, ADDRESS_LO);
+            const blockAddr = new Address(this.cpu, BLOCK_LO);
             const drive = (unit & 0x80) ? 2 : 1;
             const driveSlot = (unit & 0x70) >> 4;
 

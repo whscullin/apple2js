@@ -25,20 +25,6 @@ export interface LanguageCardState {
 }
 
 export default class LanguageCard implements Card, Restorable<LanguageCardState> {
-    LOC = {
-        // Bank 2
-        READBSR2: 0x80,
-        WRITEBSR2: 0x81,
-        OFFBSR2: 0x82,
-        READWRBSR2: 0x83,
-
-        // Bank 1
-        READBSR1: 0x88,
-        WRITEBSR1: 0x89,
-        OFFBSR1: 0x8a,
-        READWRBSR1: 0x8b,
-    }
-
     private bank1: RAM;
     private bank2: RAM;
     private ram: RAM;
@@ -68,12 +54,11 @@ export default class LanguageCard implements Card, Restorable<LanguageCardState>
         this.read2 = this.rom;
     }
 
-    private debug(..._args: any[]) {
-        // debug.apply(null, arguments);
+    private debug(...args: any[]) {
+        debug.apply(null, args);
     }
 
-
-    updateBanks() {
+    private updateBanks() {
         if (this.readbsr) {
             this.read1 = this.bsr2 ? this.bank2 : this.bank1;
             this.read2 = this.ram;
@@ -91,80 +76,64 @@ export default class LanguageCard implements Card, Restorable<LanguageCardState>
         }
     }
 
-    private access(off: byte, val: byte) {
+    // Bank 2
+    // READBSR2: 0x80
+    // WRITEBSR2: 0x81
+    // OFFBSR2: 0x82
+    // READWRBSR2: 0x83
+
+    // Bank 1
+    // READBSR1: 0x88
+    // WRITEBSR1: 0x89
+    // OFFBSR1: 0x8a
+    // READWRBSR1: 0x8b
+
+    private access(off: byte, val?: byte) {
         const readMode = val === undefined;
         const result = readMode ? 0 : undefined;
 
-        switch (off & 0x8B) {
-            case this.LOC.READBSR2: // 0xC080
-                this.readbsr = true;
-                this.writebsr = false;
-                this.bsr2 = true;
-                this.prewrite = false;
-                this.debug('Bank 2 Read');
-                break;
-            case this.LOC.WRITEBSR2: // 0xC081
-                this.readbsr = false;
-                if (readMode) {
-                    this.writebsr = this.prewrite;
-                }
-                this.bsr2 = true;
-                this.prewrite = readMode;
-                this.debug('Bank 2 Write');
-                break;
-            case this.LOC.OFFBSR2: // 0xC082
-                this.readbsr = false;
-                this.writebsr = false;
-                this.bsr2 = true;
-                this.prewrite = false;
-                this.debug('Bank 2 Off');
-                break;
-            case this.LOC.READWRBSR2: // 0xC083
-                this.readbsr = true;
-                if (readMode) {
-                    this.writebsr = this.prewrite;
-                }
-                this.bsr2 = true;
-                this.prewrite = readMode;
-                this.debug('Bank 2 Read/Write');
-                break;
+        const writeSwitch = off & 0x01;
+        const offSwitch = off & 0x02;
+        const bank1Switch = off & 0x08;
 
-            case this.LOC.READBSR1: // 0xC088
+        let bankStr;
+        let rwStr;
+
+        if (writeSwitch) { // $C081, $C083, $C089, $C08B
+            if (readMode) {
+                this.writebsr = this.prewrite;
+            }
+            this.prewrite = readMode;
+
+            if (offSwitch) { // $C083, $C08B
                 this.readbsr = true;
-                this.writebsr = false;
-                this.bsr2 = false;
-                this.prewrite = false;
-                this.debug('Bank 1 Read');
-                break;
-            case this.LOC.WRITEBSR1: // 0xC089
+                rwStr = 'Read/Write';
+            } else { // $C081, $C089
                 this.readbsr = false;
-                if (readMode) {
-                    this.writebsr = this.prewrite;
-                }
-                this.bsr2 = false;
-                this.prewrite = readMode;
-                this.debug('Bank 1 Write');
-                break;
-            case this.LOC.OFFBSR1: // 0xC08A
+                rwStr = 'Write';
+            }
+        } else { // $C080, $C082, $C088, $C08A
+            this.writebsr = false;
+            this.prewrite = false;
+
+            if (offSwitch) { // $C082, $C08A
                 this.readbsr = false;
-                this.writebsr = false;
-                this.bsr2 = false;
-                this.prewrite = false;
-                this.debug('Bank 1 Off');
-                break;
-            case this.LOC.READWRBSR1: // 0xC08B
+                rwStr = 'Off';
+            } else { // $C080, $C088
                 this.readbsr = true;
-                if (readMode) {
-                    this.writebsr = this.prewrite;
-                }
-                this.bsr2 = false;
-                this.prewrite = readMode;
-                this.debug('Bank 1 Read/Write');
-                break;
-            default:
-                break;
+                rwStr = 'Read';
+            }
         }
 
+        if (bank1Switch) { // C08[8-C]
+            this.bsr2 = false;
+            bankStr = 'Bank 1';
+        } else { // C08[0-3]
+            this.bsr2 = true;
+            bankStr = 'Bank 2';
+        }
+
+        this.debug(bankStr, rwStr);
         this.updateBanks();
 
         return result;
@@ -178,12 +147,12 @@ export default class LanguageCard implements Card, Restorable<LanguageCardState>
         return 0xff;
     }
 
-    ioSwitch(off: byte, val: byte) {
+    ioSwitch(off: byte, val?: byte) {
         return this.access(off, val);
     }
 
     read(page: byte, off: byte): byte {
-        let result = 0;
+        let result: number = 0;
         if (page < 0xe0) {
             result = this.read1.read(page, off);
         } else {
