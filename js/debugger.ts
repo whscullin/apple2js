@@ -46,45 +46,45 @@ export default class Debugger {
         });
     }
 
-    continue() {
+    continue = () => {
         this.container.run();
     }
 
-    setVerbose(verbose: boolean) {
+    setVerbose = (verbose: boolean) => {
         this.verbose = verbose;
     }
 
-    setMaxTrace(maxTrace: number) {
+    setMaxTrace = (maxTrace: number) => {
         this.maxTrace = maxTrace;
     }
 
-    getTrace() {
+    getTrace = () => {
         return this.trace.map(this.printDebugInfo).join('\n');
     }
 
-    printTrace() {
+    printTrace = () => {
         debug(this.getTrace());
     }
 
-    setBreakpoint(addr: word, exp?: breakpointFn) {
+    setBreakpoint = (addr: word, exp?: breakpointFn) => {
         this.breakpoints.set(addr, exp || alwaysBreak);
     }
 
-    clearBreakpoint(addr: word) {
+    clearBreakpoint = (addr: word) => {
         this.breakpoints.delete(addr);
     }
 
-    listBreakpoints() {
+    listBreakpoints = () => {
         for(const [addr, fn] of this.breakpoints.entries()) {
             debug(toHex(addr, 4), fn);
         }
     }
 
-    addSymbols(symbols: symbols) {
+    addSymbols = (symbols: symbols) => {
         this.symbols = { ...this.symbols, ...symbols };
     }
 
-    printDebugInfo(info: DebugInfo) {
+    printDebugInfo = (info: DebugInfo) => {
         const { pc, cmd } = info;
         const symbol = this.padWithSymbol(pc);
 
@@ -99,7 +99,7 @@ export default class Debugger {
         ].join('');
     }
 
-    dumpPC(pc: word) {
+    dumpPC = (pc: word) => {
         const b = this.cpu.read(pc);
         const op = this.cpu.getOpInfo(b);
         const size = sizes[op.mode];
@@ -117,7 +117,7 @@ export default class Debugger {
         return result;
     }
 
-    dumpRegisters(debugInfo?: DebugInfo) {
+    dumpRegisters = (debugInfo?: DebugInfo) => {
         if (debugInfo === undefined) {
             debugInfo = this.cpu.getDebugInfo();
         }
@@ -142,7 +142,7 @@ export default class Debugger {
         ].join('');
     }
 
-    dumpPage(start: byte, end?: byte) {
+    dumpPage = (start: byte, end?: byte) => {
         let result = '';
         if (end === undefined) {
             end = start;
@@ -169,7 +169,7 @@ export default class Debugger {
         return result;
     }
 
-    list(pc: word) {
+    list = (pc: word) => {
         const results = [];
         for (let idx = 0; idx < 20; idx++) {
             const b = this.cpu.read(pc);
