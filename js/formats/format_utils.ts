@@ -13,20 +13,54 @@ import { byte, DiskFormat, memory } from '../types';
 import { base64_decode, base64_encode } from '../base64';
 import { bytify, debug, toHex } from '../util';
 
-export type Disk = {
-    format: DiskFormat,
-    name: string,
-    volume: byte,
-    tracks: memory[],
-    readOnly: boolean,
-};
+export interface Disk {
+    format: DiskFormat
+    name: string
+    volume: byte
+    tracks: memory[]
+    readOnly: boolean
+}
 
-export type Drive = {
-    format: DiskFormat,
-    volume: byte,
-    tracks: memory[],
-    readOnly: boolean,
-    dirty: boolean,
+/**
+ * Base format for JSON defined disks
+ */
+export class JSONDiskBase {
+    type: DiskFormat
+    name: string
+    volume: byte
+    readOnly: boolean
+}
+
+/**
+ * JSON Disk format with base64 encoded tracks
+ */
+
+export interface Base64JSONDisk extends JSONDiskBase {
+    encoding: 'base64'
+    data: string[]
+}
+
+/**
+ * JSON Disk format with byte array tracks
+ */
+
+export interface BinaryJSONDisk extends JSONDiskBase {
+    encoding: 'binary'
+    data: memory[][]
+}
+
+/**
+ * General JSON Disk format
+ */
+
+export type JSONDisk = Base64JSONDisk | BinaryJSONDisk;
+
+export interface Drive {
+    format: DiskFormat
+    volume: byte
+    tracks: memory[]
+    readOnly: boolean
+    dirty: boolean
 }
 
 /**
@@ -52,7 +86,7 @@ export const PO = [
     0x0, 0x8, 0x1, 0x9, 0x2, 0xa, 0x3, 0xb,
     0x4, 0xc, 0x5, 0xd, 0x6, 0xe, 0x7, 0xf
 ];
-    
+
 /**
  * ProDOS Logical sector order (index is ProDOS sector, value is physical sector).
  */
