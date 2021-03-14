@@ -953,8 +953,9 @@ export class VideoModes2D implements VideoModes {
     text(on: boolean) {
         const old = textMode;
         textMode = on;
-        this._flag = 0;
-
+        if (on) {
+            this._flag = 0;
+        }
         if (old != on) {
             this._refresh();
         }
@@ -984,7 +985,9 @@ export class VideoModes2D implements VideoModes {
     hires(on: boolean) {
         const old = hiresMode;
         hiresMode = on;
-        this._flag = 0;
+        if (!on) {
+            this._flag = 0;
+        }
 
         if (old != on) {
             this._refresh();
