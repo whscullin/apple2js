@@ -9,10 +9,9 @@
  * implied warranty.
  */
 
-import { byte, memory, MemoryPages, rom } from './types';
+import { byte, Color, memory, MemoryPages, rom } from './types';
 import { allocMemPages } from './util';
 import {
-    Color,
     GraphicsState,
     HiresPage,
     LoresPage,

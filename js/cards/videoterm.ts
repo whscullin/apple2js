@@ -10,7 +10,7 @@
  */
 
 import { allocMemPages, debug } from '../util';
-import { Card, Restorable, byte, memory, word } from '../types';
+import { Card, Restorable, byte, Color, memory, word } from '../types';
 import { ROM, VIDEO_ROM } from '../roms/cards/videoterm';
 
 interface VideotermState {
@@ -26,7 +26,6 @@ const LOC = {
     IOREG: 0x80,
     IOVAL: 0x81
 } as const;
-
 
 const REGS = {
     CURSOR_UPPER: 0x0A,
@@ -45,6 +44,9 @@ const CURSOR_MODES = {
     BLINK: 0x10,
     FAST_BLINK: 0x11
 } as const;
+
+const BLACK: Color = [0x00, 0x00, 0x00];
+const WHITE: Color = [0xff, 0xff, 0xff];
 
 export default class Videoterm implements Card, Restorable<VideotermState> {
     private regs = [
@@ -80,19 +82,15 @@ export default class Videoterm implements Card, Restorable<VideotermState> {
     private imageData;
     private dirty = false;
 
-    private black = [0x00, 0x00, 0x00];
-    private white = [0xff, 0xff, 0xff];
-
     constructor() {
         debug('Videx Videoterm');
-        let idx;
 
         this.imageData = new ImageData(560, 192);
-        for (idx = 0; idx < 560 * 192 * 4; idx++) {
+        for (let idx = 0; idx < 560 * 192 * 4; idx++) {
             this.imageData.data[idx] = 0xff;
         }
 
-        for (idx = 0; idx < 0x800; idx++) {
+        for (let idx = 0; idx < 0x800; idx++) {
             this.buffer[idx] = idx & 0xff;
         }
 
@@ -122,9 +120,9 @@ export default class Videoterm implements Card, Restorable<VideotermState> {
                 let cdata = VIDEO_ROM[c + idx];
                 for (let jdx = 0; jdx < 7; jdx++) {
                     if (cdata & 0x80) {
-                        color = this.white;
+                        color = WHITE;
                     } else {
-                        color = this.black;
+                        color = BLACK;
                     }
                     data[(y + idx) * 560 * 4 + (x + jdx) * 4] = color[0];
                     data[(y + idx) * 560 * 4 + (x + jdx) * 4 + 1] = color[1];
@@ -160,7 +158,7 @@ export default class Videoterm implements Card, Restorable<VideotermState> {
         if (this.blink || (blinkmode === CURSOR_MODES.SOLID)) {
             this.dirty = true;
             for (let idx = 0; idx < 8; idx++) {
-                const color = this.white;
+                const color = WHITE;
                 if (idx >= (this.regs[REGS.CURSOR_UPPER] & 0x1f) &&
                     idx <= (this.regs[REGS.CURSOR_LOWER] & 0x1f)) {
                     for (let jdx = 0; jdx < 7; jdx++) {

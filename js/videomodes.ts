@@ -3,12 +3,6 @@ import { MemoryPages, Restorable, byte, memory } from './types';
 export type bank = 0 | 1;
 export type pageNo = 1 | 2;
 
-export interface Color {
-    0: byte, // red
-    1: byte, // green
-    2: byte, // blue
-}
-
 export interface Region {
     top: number,
     bottom: number,
