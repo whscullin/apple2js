@@ -52,7 +52,7 @@ describe('Debugger', () => {
         it('should dump registers', () => {
             const regs = theDebugger.dumpRegisters();
             expect(regs).toEqual(
-                '0000-   A=00 X=00 Y=00 P=20 S=FF --------'
+                'A=00 X=00 Y=00 P=20 S=FF --------'
             );
         });
     });

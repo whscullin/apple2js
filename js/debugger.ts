@@ -132,7 +132,7 @@ export default class Debugger {
         }
         const { ar, xr, yr, sr, sp } = debugInfo;
         return [
-            ' A=' + toHex(ar),
+            'A=' + toHex(ar),
             ' X=' + toHex(xr),
             ' Y=' + toHex(yr),
             ' P=' + toHex(sr),
