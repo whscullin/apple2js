@@ -148,6 +148,7 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
                 const imageData = this.io.blit();
                 if (imageData) {
                     this.vm.blit(imageData);
+                    this.stats.renderedFrames++;
                 }
             } else {
                 if (this.vm.blit()) {

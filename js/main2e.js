@@ -58,10 +58,10 @@ var cpu = apple2.getCPU();
 
 var printer = new Printer('#printer-modal .paper');
 
-var parallel = new Parallel(io, printer);
-var slinky = new RAMFactor(io, 1024 * 1024);
+var parallel = new Parallel(printer);
+var slinky = new RAMFactor(1024 * 1024);
 var disk2 = new DiskII(io, driveLights);
-var clock = new Thunderclock(io);
+var clock = new Thunderclock();
 var smartport = new SmartPort(cpu, { block: !enhanced });
 
 initUI(apple2, disk2, smartport, printer, options.e);

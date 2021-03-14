@@ -50,7 +50,7 @@ export interface Card extends Memory, Restorable {
     reset?(): void;
 
     /* Draw card to canvas */
-    blit?(): ImageData;
+    blit?(): ImageData | undefined;
 
     /* Process period events */
     tick?(): void;

@@ -10,39 +10,49 @@
  */
 
 import { debug } from '../util';
+import { Card, Restorable, byte } from '../types';
 import { rom } from '../roms/cards/parallel';
 
-export default function Parallel(io, cbs) {
+const LOC = {
+    IOREG: 0x80
+} as const;
 
-    debug('Parallel card');
+export interface ParallelState {}
+export interface ParallelOptions {
+    putChar: (val: byte) => void;
+}
 
-    var LOC = {
-        IOREG: 0x80
-    };
+export default class Parallel implements Card, Restorable<ParallelState> {
+    constructor(private cbs: ParallelOptions) {
+        debug('Parallel card');
+    }
 
-    function _access(off, val) {
+    private access(off: byte, val?: byte) {
         switch (off & 0x8f) {
             case LOC.IOREG:
-                if (cbs.putChar && val) {
-                    cbs.putChar(val);
+                if (this.cbs.putChar && val) {
+                    this.cbs.putChar(val);
                 }
                 break;
             default:
                 debug('Parallel card unknown softswitch', off);
         }
+        return 0;
     }
 
-    return {
-        ioSwitch: function (off, val) {
-            return _access(off, val);
-        },
-        read: function(page, off) {
-            return rom[off];
-        },
-        write: function() {},
-        getState() {
-            return {};
-        },
-        setState(_) {}
-    };
+    ioSwitch(off: byte, val?: byte) {
+        return this.access(off, val);
+    }
+
+    read(_page: byte, off: byte) {
+        return rom[off];
+    }
+
+    write() {}
+
+    getState() {
+        return {};
+    }
+
+    setState(_state: ParallelState) {}
 }
