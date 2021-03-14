@@ -114,6 +114,7 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
      * `runAnimationFrame` will be non-null.
      */
     run() {
+        this.paused = false;
         if (this.runTimer || this.runAnimationFrame) {
             return; // already running
         }
@@ -170,6 +171,7 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
     }
 
     stop() {
+        this.paused = true;
         if (this.runTimer) {
             clearInterval(this.runTimer);
         }

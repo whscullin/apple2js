@@ -113,8 +113,8 @@ export default class SmartPort implements Card, Restorable<SmartPortState> {
             debug('DumbPort card');
         } else {
             debug('SmartPort card');
+            this.rom = smartPortRom;
         }
-        this.rom = smartPortRom;
     }
 
     private decodeDisk(unit: number, disk: BlockDevice) {

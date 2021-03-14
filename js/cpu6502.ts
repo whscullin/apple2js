@@ -1012,7 +1012,9 @@ export default class CPU6502 {
             this.sync = false;
             op.op(op.modeFn);
 
-            cb?.(this);
+            if (cb?.(this)) {
+                return;
+            }
         }
     }
 
@@ -1036,7 +1038,9 @@ export default class CPU6502 {
             this.sync = false;
             op.op(op.modeFn);
 
-            cb?.(this);
+            if (cb?.(this)) {
+                return;
+            }
         }
     }
 

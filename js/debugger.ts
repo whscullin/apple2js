@@ -33,16 +33,25 @@ export default class Debugger {
             if (this.breakpoints.get(info.pc)?.(info)) {
                 debug('breakpoint', this.printDebugInfo(info));
                 this.container.stop();
-                return;
+                return true;
             }
             if (this.verbose) {
                 debug(this.printDebugInfo(info));
             } else {
-                this.trace.push(info);
-                if (this.trace.length > this.maxTrace) {
-                    this.trace.shift();
-                }
+                this.updateTrace(info);
             }
+        });
+    }
+
+    break = () => {
+        this.container.stop();
+    }
+
+    step = () => {
+        this.cpu.step(() => {
+            const info = this.cpu.getDebugInfo();
+            debug(this.printDebugInfo(info));
+            this.updateTrace(info);
         });
     }
 
@@ -121,10 +130,8 @@ export default class Debugger {
         if (debugInfo === undefined) {
             debugInfo = this.cpu.getDebugInfo();
         }
-        const { pc, ar, xr, yr, sr, sp } = debugInfo;
+        const { ar, xr, yr, sr, sp } = debugInfo;
         return [
-            toHex(pc, 4),
-            '-  ',
             ' A=' + toHex(ar),
             ' X=' + toHex(xr),
             ' Y=' + toHex(yr),
@@ -180,6 +187,13 @@ export default class Debugger {
         return results;
     }
 
+    private updateTrace(info: DebugInfo) {
+        this.trace.push(info);
+        if (this.trace.length > this.maxTrace) {
+            this.trace.shift();
+        }
+    }
+
     private padWithSymbol(pc: word): string {
         const padding = '          ';
         const symbol = this.symbols[pc];
@@ -233,7 +247,7 @@ export default class Debugger {
                     if (off > 127) {
                         off -= 256;
                     }
-                    pc += off + 1;
+                    pc += off + 2;
                     result += '' + toHexOrSymbol(pc, 4) + ' (' + off + ')';
                 }
                 break;
