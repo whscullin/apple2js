@@ -50,7 +50,7 @@ export interface Card extends Memory, Restorable {
     reset?(): void;
 
     /* Draw card to canvas */
-    blit?(): ImageData;
+    blit?(): ImageData | undefined;
 
     /* Process period events */
     tick?(): void;
@@ -100,3 +100,6 @@ export type TypedArrayMutableProperties = 'copyWithin' | 'fill' | 'reverse' | 's
 export interface ReadonlyUint8Array extends Omit<Uint8Array, TypedArrayMutableProperties> {
     readonly [n: number]: number
 }
+
+// Readonly RGB color value
+export type Color = readonly [r: byte, g: byte, b: byte];

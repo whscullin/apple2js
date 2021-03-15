@@ -77,11 +77,11 @@ var io = apple2.getIO();
 var printer = new Printer('#printer-modal .paper');
 
 var lc = new LanguageCard(rom);
-var parallel = new Parallel(io, printer);
-var videoTerm = new VideoTerm(io);
-var slinky = new RAMFactor(io, 1024 * 1024);
+var parallel = new Parallel(printer);
+var videoTerm = new VideoTerm();
+var slinky = new RAMFactor(1024 * 1024);
 var disk2 = new DiskII(io, driveLights, sectors);
-var clock = new Thunderclock(io);
+var clock = new Thunderclock();
 var smartport = new SmartPort(cpu, { block: true });
 
 initUI(apple2, disk2, smartport, printer, false);
