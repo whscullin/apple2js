@@ -819,7 +819,7 @@ export function clearPrinterPaper() {
     _printer.clear();
 }
 
-export function initUI(apple2, disk2, smartPort, printer, e) {
+function onLoaded(apple2, disk2, smartPort, printer, e) {
     _apple2 = apple2;
     cpu = _apple2.getCPU();
     io = _apple2.getIO();
@@ -928,4 +928,10 @@ export function initUI(apple2, disk2, smartPort, printer, e) {
             _apple2.run();
         });
     }
+}
+
+export function initUI(apple2, disk2, smartPort, printer, e) {
+    window.addEventListener('load', () => {
+        onLoaded(apple2, disk2, smartPort, printer, e)
+    });
 }
