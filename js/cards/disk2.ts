@@ -435,7 +435,7 @@ export default class DiskII implements Card {
         if (!isNibbleDrive(this.cur)) {
             return;
         }
-        if (this.skip || this.writeMode) {
+        if (this.on && (this.skip || this.writeMode)) {
             const track = this.cur.tracks![this.cur.track >> 2];
             if (track && track.length) {
                 if (this.cur.head >= track.length) {
