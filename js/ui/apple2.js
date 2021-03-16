@@ -932,6 +932,6 @@ function onLoaded(apple2, disk2, smartPort, printer, e) {
 
 export function initUI(apple2, disk2, smartPort, printer, e) {
     window.addEventListener('load', () => {
-        onLoaded(apple2, disk2, smartPort, printer, e)
+        onLoaded(apple2, disk2, smartPort, printer, e);
     });
 }
