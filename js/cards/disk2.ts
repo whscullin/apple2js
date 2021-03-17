@@ -4,6 +4,7 @@ import type {
     Card,
     memory,
     nibble,
+    Restorable,
     rom,
 } from '../types';
 
@@ -116,8 +117,29 @@ const SEQUENCER_ROM_16 = [
     0xD9, 0xD9, 0xD8, 0xA0, 0x0A, 0x0A, 0x0A, 0x0A, 0xD8, 0xD8, 0xD8, 0xD8, 0xD8, 0xD8, 0xD8, 0xD8, // C
     0xD8, 0x08, 0xE8, 0xE8, 0x0A, 0x0A, 0x0A, 0x0A, 0xE8, 0xE8, 0xE8, 0xE8, 0xE8, 0xE8, 0xE8, 0xE8, // D
     0xFD, 0xFD, 0xF8, 0xF8, 0x0A, 0x0A, 0x0A, 0x0A, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, // E
-    0xDD, 0x4D, 0xE0, 0xE0, 0x0A, 0x0A, 0x0A, 0x0A, 0x88, 0x88, 0x08, 0x08, 0x88, 0x88, 0x08, 0x08  // F
+    0xDD, 0x4D, 0xE0, 0xE0, 0x0A, 0x0A, 0x0A, 0x0A, 0x08, 0x08, 0x88, 0x88, 0x08, 0x08, 0x88, 0x88  // F
 ] as const;
+
+const CMDS = [
+    'CLR', // 0
+    'clr', // 1
+    'clr', // 2
+    'clr', // 3
+    'clr', // 4
+    'clr', // 5
+    'clr', // 6
+    'clr', // 7
+    'NOP', // 8
+    'SL0', // 9
+    'SR',  // A
+    'LD',  // B
+    'nop', // C
+    'SL1', // D
+    'sr',  // E
+    'ld',  // F
+] as const;
+
+const PULSE = 5;
 
 type LssClockCycle = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 type Phase = 0 | 1 | 2 | 3;
@@ -224,11 +246,12 @@ interface DriveState {
     rawTracks: Uint8Array[],
 }
 
-interface State {
+export interface DiskIIState {
     drives: DriveState[];
     skip: number;
     latch: number;
-    writeMode: boolean;
+    q6: boolean;
+    q7: boolean;
     on: boolean;
     drive: DriveNumber;
 }
@@ -308,7 +331,7 @@ function setDriveState(state: DriveState) {
 /**
  * Emulates the 16-sector and 13-sector versions of the Disk ][ drive and controller.
  */
-export default class DiskII implements Card {
+export default class DiskII implements Card, Restorable<DiskIIState> {
 
     private drives: Drive[] = [
         {   // Drive 1
@@ -343,12 +366,10 @@ export default class DiskII implements Card {
     private latch = 0;
     /** Drive off timeout id or null. */
     private offTimeout: number | null = null;
-    /** Q6 (Shift/Load): Used by WOZ disks. */
-    private q6 = 0;
-    /** Q7 (Read/Write): Used by WOZ disks. */
+    /** Q6 (Shift/Load) */
+    private q6: boolean = false;
+    /** Q7 (Read/Write) */
     private q7: boolean = false;
-    /** Q7 (Read/Write): Used by Nibble disks. */
-    private writeMode = false;
     /** Whether the selected drive is on. */
     private on = false;
     /** Current drive number (1, 2). */
@@ -413,7 +434,7 @@ export default class DiskII implements Card {
 
         while (workCycles-- > 0) {
             let pulse: number = 0;
-            if (this.clock == 4) {
+            if (this.clock === PULSE) {
                 pulse = track[this.cur.head];
                 if (!pulse) {
                     // More that 2 zeros can not be read reliably.
@@ -435,7 +456,12 @@ export default class DiskII implements Card {
             const command = this.sequencerRom[idx];
 
             if (this.on && this.q7) {
-                debug('clock:', this.clock, 'command:', toHex(command), 'q6:', this.q6);
+                debug(
+                    'clock:', this.clock,
+                    'state', this.state.toString(16),
+                    this.q6 ? 'load' : 'shift',
+                    'command:', CMDS[command & 0xf]
+                );
             }
 
             switch (command & 0xf) {
@@ -463,11 +489,12 @@ export default class DiskII implements Card {
             }
             this.state = (command >> 4 & 0xF) as nibble;
 
-            if (this.clock == 4) {
+            if (this.clock == PULSE) {
                 if (this.on) {
                     if (this.q7) {
+                        const oldCur = track[this.cur.head];
                         track[this.cur.head] = this.state & 0x8 ? 0x01 : 0x00;
-                        debug('Wrote', this.state & 0x8 ? 0x01 : 0x00);
+                        debug('Wrote', this.state & 0x8 ? 0x01 : 0x00, 'over', oldCur, 'at', this.cur.head);
                     }
 
                     if (++this.cur.head >= track.length) {
@@ -487,14 +514,14 @@ export default class DiskII implements Card {
         if (!isNibbleDrive(this.cur)) {
             return;
         }
-        if (this.on && (this.skip || this.writeMode)) {
+        if (this.on && (this.skip || this.q7)) {
             const track = this.cur.tracks![this.cur.track >> 2];
             if (track && track.length) {
                 if (this.cur.head >= track.length) {
                     this.cur.head = 0;
                 }
 
-                if (this.writeMode) {
+                if (this.q7) {
                     if (!this.cur.readOnly) {
                         track[this.cur.head] = this.bus;
                         if (!this.cur.dirty) {
@@ -548,6 +575,15 @@ export default class DiskII implements Card {
         let result = 0;
         const readMode = val === undefined;
 
+        this.moveHead();
+
+        if (val !== undefined) {
+            // It's not explicitly stated, but writes to any address set the
+            // data register.
+            this.debug(toHex(val), 'to bus');
+            this.bus = val;
+        }
+
         switch (off & 0x8f) {
             case LOC.PHASE0OFF: // 0x00
                 this.setPhase(0, false);
@@ -582,6 +618,8 @@ export default class DiskII implements Card {
                         this.offTimeout = window.setTimeout(() => {
                             this.debug('Drive Off');
                             this.on = false;
+                            this.state = 0;
+                            this.clock = 0;
                             this.callbacks.driveLight(this.drive, false);
                             this.debug('nibbles read', this.nibbleCount);
                         }, 1000);
@@ -623,8 +661,8 @@ export default class DiskII implements Card {
                 break;
 
             case LOC.DRIVEREAD: // 0x0c (Q6L) Shift
-                this.q6 = 0;
-                if (this.writeMode) {
+                this.q6 = false;
+                if (this.q7) {
                     this.debug('clearing _q6/SHIFT');
                 }
                 if (isNibbleDrive(this.cur)) {
@@ -633,12 +671,12 @@ export default class DiskII implements Card {
                 break;
 
             case LOC.DRIVEWRITE: // 0x0d (Q6H) LOAD
-                this.q6 = 1;
-                if (this.writeMode) {
+                this.q6 = true;
+                if (this.q7) {
                     this.debug('setting _q6/LOAD');
                 }
                 if (isNibbleDrive(this.cur)) {
-                    if (readMode && !this.writeMode) {
+                    if (readMode && !this.q7) {
                         if (this.cur.readOnly) {
                             this.latch = 0xff;
                             this.debug('Setting readOnly');
@@ -653,19 +691,17 @@ export default class DiskII implements Card {
             case LOC.DRIVEREADMODE:  // 0x0e (Q7L)
                 this.debug('Read Mode');
                 this.q7 = false;
-                this.writeMode = false;
+                this.q7 = false;
                 break;
             case LOC.DRIVEWRITEMODE: // 0x0f (Q7H)
                 this.debug('Write Mode');
                 this.q7 = false;
-                this.writeMode = true;
+                this.q7 = true;
                 break;
 
             default:
                 break;
         }
-
-        this.moveHead();
 
         if (readMode) {
             // According to UtAIIe, p. 9-13 to 9-14, any even address can be
@@ -679,10 +715,6 @@ export default class DiskII implements Card {
             } else {
                 result = 0;
             }
-        } else {
-            // It's not explicitly stated, but writes to any address set the
-            // data register.
-            this.bus = val!;
         }
 
         return result;
@@ -708,7 +740,7 @@ export default class DiskII implements Card {
     reset() {
         if (this.on) {
             this.callbacks.driveLight(this.drive, false);
-            this.writeMode = false;
+            this.q7 = false;
             this.on = false;
             this.drive = 1;
             this.cur = this.drives[this.drive - 1];
@@ -727,7 +759,8 @@ export default class DiskII implements Card {
             drives: [] as DriveState[],
             skip: this.skip,
             latch: this.latch,
-            writeMode: this.writeMode,
+            q6: this.q6,
+            q7: this.q7,
             on: this.on,
             drive: this.drive
         };
@@ -738,10 +771,12 @@ export default class DiskII implements Card {
         return result;
     }
 
-    setState(state: State) {
+    // TODO(flan): Does not work for WOZ disks
+    setState(state: DiskIIState) {
         this.skip = state.skip;
         this.latch = state.latch;
-        this.writeMode = state.writeMode;
+        this.q6 = state.q6;
+        this.q7 = state.q7;
         this.on = state.on;
         this.drive = state.drive;
         for (const d of DRIVE_NUMBERS) {
