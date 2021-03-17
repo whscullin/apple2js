@@ -12,6 +12,7 @@
 import CPU6502 from './cpu6502';
 import { Card, Memory, MemoryPages, TapeData, byte, Restorable } from './types';
 import { debug, garbage } from './util';
+import { VideoModes } from './videomodes';
 
 type slot = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 type button = 0 | 1 | 2;
@@ -80,7 +81,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
     private _key = 0;
     private _keyDown = false;
     private _button = [false, false, false];
-    private _paddle = [0.0, 0.0, 0.0, 0, 0];
+    private _paddle = [0.0, 0.0, 0.0, 0.0];
     private _phase = -1;
     private _sample: number[] = [];
     private _sampleIdx = 0;
@@ -100,7 +101,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
     private _tapeNext: number = 0;
     private _tapeCurrent = false;
 
-    constructor(private readonly cpu: CPU6502, private readonly vm: any) {
+    constructor(private readonly cpu: CPU6502, private readonly vm: VideoModes) {
         this.init();
     }
 
