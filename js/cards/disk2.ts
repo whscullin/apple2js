@@ -145,10 +145,10 @@ const PHASE_DELTA = [
     [1, -2, -1, 0]
 ] as const;
 
-const DRIVE_NUMBERS = [1, 2] as const;
-type DriveNumber = MemberOf<typeof DRIVE_NUMBERS>;
+export const DRIVE_NUMBERS = [1, 2] as const;
+export type DriveNumber = MemberOf<typeof DRIVE_NUMBERS>;
 
-interface Callbacks {
+export interface Callbacks {
     driveLight: (drive: DriveNumber, on: boolean) => void;
     dirty: (drive: DriveNumber, dirty: boolean) => void;
     label: (drive: DriveNumber, name: string) => void;
