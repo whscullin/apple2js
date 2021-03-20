@@ -302,7 +302,7 @@ export default class DiskII implements Card {
     private writeMode = false;
     /** Whether the selected drive is on. */
     private on = false;
-    /** Current drive number (0, 1). */
+    /** Current drive number (1, 2). */
     private drive: DriveNumber = 1;
     /** Current drive object. */
     private cur = this.drives[this.drive - 1];
@@ -783,8 +783,8 @@ export default class DiskII implements Card {
         }
 
         Object.assign(cur, newDisk);
-        this.updateDirty(this.drive, false);
-        this.callbacks.label(this.drive, name);
+        this.updateDirty(drive, false);
+        this.callbacks.label(drive, name);
     }
 
     getJSON(drive: DriveNumber, pretty: boolean) {
