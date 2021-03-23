@@ -13,6 +13,7 @@ import { byte, Color, memory, MemoryPages, rom } from './types';
 import { allocMemPages } from './util';
 
 import { screenEmu } from 'apple2shader';
+
 import {
     GraphicsState,
     HiresPage,
@@ -664,7 +665,7 @@ export class VideoModesGL implements VideoModes {
     private _grs: LoresPage[];
     private _hgrs: HiresPage[];
     private _sv: any;
-    private _displayConfig: any;
+    private _displayConfig: screenEmu.DisplayConfiguration;
     private _monoMode: boolean = false;
 
     ready: Promise<void>
@@ -688,16 +689,41 @@ export class VideoModesGL implements VideoModes {
 
         (window as any)._sv = this._sv;
 
-        this._displayConfig = new screenEmu.DisplayConfiguration();
-        this._displayConfig.displayResolution = new screenEmu.Size(this.canvas.width, this.canvas.height);
-        this._displayConfig.displayResolution = new screenEmu.Size(this.canvas.width, this.canvas.height);
-        this._displayConfig.displayScanlineLevel = 0.5;
-        this._displayConfig.videoWhiteOnly = true;
-        this._displayConfig.videoSaturation = 0.8;
-        this._displayConfig.videoSize = new screenEmu.Size(1.25, 1.15);
-        this._displayConfig.videoCenter = new screenEmu.Point(0.01, 0.02);
-        // this._displayConfig.videoDecoder = 'CANVAS_CXA2025AS';
+        this._displayConfig = this.defaultMonitor();
         this._sv.displayConfiguration = this._displayConfig;
+    }
+
+    private defaultMonitor(): screenEmu.DisplayConfiguration {
+        let config = new screenEmu.DisplayConfiguration();
+        config.displayResolution = new screenEmu.Size(this.canvas.width, this.canvas.height);
+        config.displayResolution = new screenEmu.Size(this.canvas.width, this.canvas.height);
+        config.displayScanlineLevel = 0.5;
+        config.videoWhiteOnly = true;
+        config.videoSaturation = 0.8;
+        config.videoSize = new screenEmu.Size(1.25, 1.15);
+        config.videoCenter = new screenEmu.Point(0.01, 0.02);
+        // config.videoDecoder = 'CANVAS_CXA2025AS';
+        return config;
+    }
+
+    private monitorII(): screenEmu.DisplayConfiguration {
+        // Values taken from openemulator/libemulation/res/library/Monitors/Apple Monitor II.xml
+        let config = new screenEmu.DisplayConfiguration();
+        config.displayResolution = new screenEmu.Size(this.canvas.width, this.canvas.height);
+        config.displayResolution = new screenEmu.Size(this.canvas.width, this.canvas.height);
+        config.videoDecoder = 'CANVAS_MONOCHROME';
+        config.videoBrightness = 0.15;
+        config.videoContrast = 0.8;
+        config.videoSaturation = 1.45;
+        config.videoHue = 0.27;
+        config.videoCenter = new screenEmu.Point(0, 0);
+        config.videoSize = new screenEmu.Size(1.05, 1.05);
+        config.videoBandwidth = 6000000;
+        config.displayBarrel = 0.1;
+        config.displayScanlineLevel = 0.5;
+        config.displayCenterLighting = 0.5;
+        config.displayLuninanceGain = 1.5;
+        return config;
     }
 
     private _refresh() {
@@ -914,6 +940,7 @@ export class VideoModesGL implements VideoModes {
         this._hgrs[1].mono(on);
 
         this._monoMode = on;
+        this._displayConfig = on ? this.monitorII() : this.defaultMonitor();
         this._refresh();
     }
 
