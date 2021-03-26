@@ -4,10 +4,10 @@
   "description": "Apple II Emulator in JavaScript",
   "scripts": {
     "build": "webpack --mode=production",
-    "dev": "webpack serve",
+    "dev": "webpack serve --mode=development",
     "index": "bin/index > json/disks/index.js",
     "lint": "eslint '**/*.js' '**/*.ts'",
-    "start": "webpack serve",
+    "start": "webpack serve --mode=production",
     "test": "jest"
   },
   "engines": {
