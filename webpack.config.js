@@ -20,7 +20,7 @@ module.exports =
         compress: true,
         static: {
             watch: {
-                ignored: /(node_modules|.git)/
+                ignored: /(node_modules|\.git)/
             },
             directory: __dirname,
         },
