@@ -19,15 +19,14 @@ module.exports =
     devServer: {
         compress: true,
         static: {
-            watch: false,
+            watch: {
+                ignored: /(node_modules|.git)/
+            },
             directory: __dirname,
         },
         dev: {
             publicPath: '/dist/',
         },
-        // watchContentBase: true,
-        // watchOptions: {
-        //     ignored: ['**/node_modules/', '**/.git/']
     },
     module: {
         rules: [
