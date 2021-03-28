@@ -19,6 +19,8 @@ import { debug } from '../util';
 const SAMPLE_SIZE = 1024;
 const SAMPLE_RATE = 44000;
 
+const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+
 export default class Audio {
     private sound = true;
     private samples: number[][] = [];
