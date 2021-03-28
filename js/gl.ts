@@ -694,7 +694,7 @@ export class VideoModesGL implements VideoModes {
     }
 
     private defaultMonitor(): screenEmu.DisplayConfiguration {
-        let config = new screenEmu.DisplayConfiguration();
+        const config = new screenEmu.DisplayConfiguration();
         config.displayResolution = new screenEmu.Size(this.canvas.width, this.canvas.height);
         config.displayResolution = new screenEmu.Size(this.canvas.width, this.canvas.height);
         config.displayScanlineLevel = 0.5;
@@ -708,7 +708,7 @@ export class VideoModesGL implements VideoModes {
 
     private monitorII(): screenEmu.DisplayConfiguration {
         // Values taken from openemulator/libemulation/res/library/Monitors/Apple Monitor II.xml
-        let config = new screenEmu.DisplayConfiguration();
+        const config = new screenEmu.DisplayConfiguration();
         config.displayResolution = new screenEmu.Size(this.canvas.width, this.canvas.height);
         config.displayResolution = new screenEmu.Size(this.canvas.width, this.canvas.height);
         config.videoDecoder = 'CANVAS_MONOCHROME';
