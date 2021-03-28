@@ -9,6 +9,29 @@
 export type MemberOf<T extends ReadonlyArray<unknown>> =
     T extends ReadonlyArray<infer E> ? E : never;
 
+/**
+ * Recursively extracts all members of a constant array as a type. Used as:
+ * 
+ * @example
+ * const SOME_ARRAYS = [['a'],['b', 2], 3] as const;
+ * type SomeArrayValues = DeepMemberOf<typeof SOME_ARRAYS>; // 'a' | 'b' | 2 | 3
+ */
+export type DeepMemberOf<T extends ReadonlyArray<unknown>> =
+    T extends ReadonlyArray<infer E>
+    ? (E extends ReadonlyArray<unknown> ? DeepMemberOf<E> : E)
+    : never;
+
+/**
+ * Extracts the declared keys of a type by removing `string` and `number`.
+ * 
+ * Cribbed from the interwebs:
+ * https://github.com/microsoft/TypeScript/issues/25987#issuecomment-408339599
+ */
+export type KnownKeys<T> = {
+    [K in keyof T]: string extends K ? never : number extends K ? never : K
+} extends { [_ in keyof T]: infer U } ? U : never;
+
+
 /** A bit. */
 export type bit = 0 | 1;
 
