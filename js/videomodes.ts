@@ -69,4 +69,10 @@ export interface VideoModes extends Restorable<VideoModesState> {
     isMixed(): boolean
     isPage2(): boolean
     isText(): boolean
+
+    mono(on: boolean): void
+
+    getText(): string
+
+    ready: Promise<void>
 }

@@ -31,6 +31,25 @@ export type KnownKeys<T> = {
     [K in keyof T]: string extends K ? never : number extends K ? never : K
 } extends { [_ in keyof T]: infer U } ? U : never;
 
+/**
+ * Extracts the declared values of a constant object.
+ */
+export type KnownValues<T> = T extends {
+    [_ in keyof T]: infer U } ? U : never;
+
+/**
+ * Replacement for `includes` on constant types that is also a type assertion.
+ * 
+ * @example
+ * const SOME_VALUES = [1, 2, 'a'] as const;
+ * let n: number = 1;
+ * let r = includes(SOME_VALUES, n); // r === true, n is 1 | 2 | 'a'
+ * n = 5;
+ * r = includes(SOME_VALUES, n); // r === false, n is number
+ */
+export function includes<S extends T, T>(a: ReadonlyArray<S>, v: T): v is S {
+    return (a as ReadonlyArray<T>).includes(v);
+}
 
 /** A bit. */
 export type bit = 0 | 1;

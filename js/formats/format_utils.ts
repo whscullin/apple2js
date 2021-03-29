@@ -12,6 +12,7 @@
 import { byte, DiskFormat, memory } from '../types';
 import { base64_decode, base64_encode } from '../base64';
 import { bytify, debug, toHex } from '../util';
+import { GamepadConfiguration } from '../ui/gamepad';
 
 export interface Disk {
     format: DiskFormat
@@ -27,8 +28,12 @@ export interface Disk {
 export class JSONDiskBase {
     type: DiskFormat
     name: string
+    disk?: number
+    category?: string
+    writeProtected?: boolean
     volume: byte
     readOnly: boolean
+    gamepad?: GamepadConfiguration
 }
 
 /**

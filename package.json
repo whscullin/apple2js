@@ -27,6 +27,7 @@
     "@babel/core": "^7.9.0",
     "@babel/preset-env": "^7.9.0",
     "@types/jest": "^26.0.14",
+    "@types/micromodal": "^0.3.2",
     "@typescript-eslint/eslint-plugin": "^4.6.1",
     "@typescript-eslint/parser": "^4.6.1",
     "ajv": "^6.12.0",

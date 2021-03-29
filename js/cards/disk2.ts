@@ -787,7 +787,7 @@ export default class DiskII implements Card {
         this.callbacks.label(drive, name);
     }
 
-    getJSON(drive: DriveNumber, pretty: boolean) {
+    getJSON(drive: DriveNumber, pretty: boolean = false) {
         const cur = this.drives[drive - 1];
         if (!isNibbleDrive(cur)) {
             throw new Error('Can\'t save WOZ disks to JSON');
@@ -801,7 +801,7 @@ export default class DiskII implements Card {
         return true;
     }
 
-    setBinary(drive: DriveNumber, name: string, fmt: DiskFormat, rawData: memory) {
+    setBinary(drive: DriveNumber, name: string, fmt: DiskFormat, rawData: ArrayBuffer) {
         let disk;
         const cur = this.drives[drive - 1];
         const readOnly = false;

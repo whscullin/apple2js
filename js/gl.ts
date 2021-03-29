@@ -668,7 +668,7 @@ export class VideoModesGL implements VideoModes {
     private _displayConfig: screenEmu.DisplayConfiguration;
     private _monoMode: boolean = false;
 
-    ready: Promise<void>
+    public ready: Promise<void>
 
     constructor(
         gr: LoresPage,
