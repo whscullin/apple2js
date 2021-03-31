@@ -37,6 +37,11 @@ export interface Apple2Options {
     tick: () => void,
 }
 
+export interface Stats {
+    frames: number,
+    renderedFrames: number,
+}
+
 interface State {
     cpu: CpuState,
     vm: VideoModesState,
@@ -66,7 +71,7 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
 
     private tick: () => void;
 
-    private stats = {
+    private stats: Stats = {
         frames: 0,
         renderedFrames: 0
     };
@@ -215,7 +220,7 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
         this.cpu.reset();
     }
 
-    getStats() {
+    getStats(): Stats {
         return this.stats;
     }
 

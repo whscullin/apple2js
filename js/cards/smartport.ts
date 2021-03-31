@@ -456,6 +456,7 @@ export default class SmartPort implements Card, Restorable<SmartPortState> {
         for (let idx = 0; idx < data.byteLength; idx += 512) {
             this.disks[drive].push(new Uint8Array(data.slice(idx, idx + 512)));
         }
+        return true;
     }
 
     setDisk(drive: number, json: BlockDevice) {

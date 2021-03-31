@@ -19,7 +19,7 @@ export const TAPE_TYPES = ['wav', 'aiff', 'aif', 'mp3', 'm4a'] as const;
 export default class Tape {
     constructor(private readonly io: Apple2IO) {}
 
-    public doLoadLocalTape(file: File, done: () => void) {
+    public doLoadLocalTape(file: File, done?: () => void) {
         const kHz = this.io.getKHz();
 
         // Audio Buffer Source
@@ -28,7 +28,7 @@ export default class Tape {
             context = new AudioContext();
         } else {
             window.alert('Not supported by your browser');
-            done();
+            done && done();
             return;
         }
 
