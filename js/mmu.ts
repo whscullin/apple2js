@@ -808,9 +808,6 @@ export default class MMU implements Memory, Restorable<MMUState> {
     }
 
     public read(page: byte, off: byte) {
-        if (page === 0xff && off === 0xfc && this._intcxrom) {
-            this._initSwitches();
-        }
         return this._readPages[page].read(page, off);
     }
 
