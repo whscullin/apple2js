@@ -6,7 +6,8 @@
             "error",
             4,
             {
-                "SwitchCase": 1
+                "SwitchCase": 1,
+                "SwitchDefault": 1
             }
         ],
         "quotes": [

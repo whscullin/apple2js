@@ -18,8 +18,6 @@ import Apple2eEnhancedROM from './roms/apple2enh';
 
 import { Apple2 } from './apple2';
 
-export * from './ui/apple2';
-
 var prefs = new Prefs();
 var romVersion = prefs.readPref('computer_type2e');
 var enhanced = false;

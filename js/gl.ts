@@ -881,6 +881,10 @@ export class VideoModesGL implements VideoModes {
         this._refresh();
     }
 
+    scanlines(_on: boolean) {
+        // TODO whscullin
+    }
+
     getText() {
         return this._grs[pageMode - 1].getText();
     }

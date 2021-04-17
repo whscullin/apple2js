@@ -1146,11 +1146,28 @@ export class VideoModes2D implements VideoModes {
     }
 
     mono(on: boolean) {
+        if (on) {
+            this.canvas.classList.add('mono');
+        } else {
+            this.canvas.classList.remove('mono');
+        }
         this._grs[0].mono(on);
         this._grs[1].mono(on);
         this._hgrs[0].mono(on);
         this._hgrs[1].mono(on);
         this._refresh();
+    }
+
+    scanlines(on: boolean) {
+        // Can't apply scanline filter to canvas
+        const parent = this.canvas.parentElement;
+        if (parent) {
+            if (on) {
+                parent.classList.add('scanlines');
+            } else {
+                parent.classList.remove('scanlines');
+            }
+        }
     }
 
     getText() {

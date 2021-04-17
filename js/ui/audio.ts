@@ -9,6 +9,7 @@
  * implied warranty.
  */
 
+import { BOOLEAN_OPTION, OptionHandler } from './options_modal';
 import Apple2IO from '../apple2io';
 import { debug } from '../util';
 
@@ -19,9 +20,17 @@ import { debug } from '../util';
 const SAMPLE_SIZE = 1024;
 const SAMPLE_RATE = 44000;
 
-const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+const SOUND_ENABLED_OPTION = 'enable_sound';
 
-export default class Audio {
+declare global {
+    interface Window {
+        webkitAudioContext: AudioContext;
+    }
+}
+
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+
+export default class Audio implements OptionHandler {
     private sound = true;
     private samples: number[][] = [];
 
@@ -66,6 +75,13 @@ export default class Audio {
                 }
             }
         });
+
+        window.addEventListener('keydown', this.autoStart);
+        if (window.ontouchstart !== undefined) {
+            window.addEventListener('touchstart', this.autoStart);
+        }
+        window.addEventListener('mousedown', this.autoStart);
+
         debug('Sound initialized');
     }
 
@@ -85,7 +101,30 @@ export default class Audio {
         }
     }
 
-    enable(enable: boolean) {
-        this.sound = enable;
+    isEnabled() {
+        return this.sound;
+    }
+
+    getOptions() {
+        return [
+            {
+                name: 'Audio',
+                options: [
+                    {
+                        name: SOUND_ENABLED_OPTION,
+                        label: 'Enabled',
+                        type: BOOLEAN_OPTION,
+                        defaultVal: true,
+                    }
+                ]
+            }
+        ];
+    }
+
+    setOption(name: string, value: boolean) {
+        switch (name) {
+            case SOUND_ENABLED_OPTION:
+                this.sound = value;
+        }
     }
 }
