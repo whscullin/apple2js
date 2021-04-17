@@ -723,47 +723,6 @@ function processHash(hash: string) {
     }
 }
 
-
-/*
- * Keyboard/Gamepad routines
- */
-declare global {
-    interface Document {
-        webkitCancelFullScreen: () => void;
-        webkitIsFullScreen: boolean;
-        mozCancelFullScreen: () => void;
-        mozIsFullScreen: boolean;
-    }
-    interface Element {
-        webkitRequestFullScreen: (options?: any) => void;
-        mozRequestFullScreen: () => void;
-    }
-}
-
-function enterFullScreen(evt: KeyboardEvent) {
-    const elem = document.getElementById('screen')!;
-    if (evt.shiftKey) { // Full window, but not full screen
-        document.body.classList.toggle('full-page');
-    } else if (document.webkitCancelFullScreen) {
-        if (document.webkitIsFullScreen) {
-            document.webkitCancelFullScreen();
-        } else {
-            const allowKeyboardInput = (Element as any).ALLOW_KEYBOARD_INPUT;
-            if (allowKeyboardInput) {
-                elem.webkitRequestFullScreen(allowKeyboardInput);
-            } else {
-                elem.webkitRequestFullScreen();
-            }
-        }
-    } else if (document.mozCancelFullScreen) {
-        if (document.mozIsFullScreen) {
-            document.mozCancelFullScreen();
-        } else {
-            elem.mozRequestFullScreen();
-        }
-    }
-}
-
 export function updateUI() {
     if (document.location.hash != hashtag) {
         hashtag = document.location.hash;
@@ -832,20 +791,6 @@ function onLoaded(apple2: Apple2, disk2: DiskII, smartPort: SmartPort, printer: 
     _smartPort = smartPort;
     _printer = printer;
 
-    keyboard = new KeyBoard(cpu, io, e);
-    keyboard.create('#keyboard');
-    keyboard.setFunction('F1', () => cpu.reset());
-    keyboard.setFunction('F2', enterFullScreen);
-    keyboard.setFunction('F3', () => io.keyDown(0x1b)); // Escape
-    keyboard.setFunction('F6', () => {
-        window.localStorage.state = base64_json_stringify(_apple2.getState());
-    });
-    keyboard.setFunction('F9', () => {
-        if (window.localStorage.state) {
-            _apple2.setState(base64_json_parse(window.localStorage.state));
-        }
-    });
-
     system = new System(io, e);
     optionsModal.addOptions(system);
 
@@ -860,6 +805,20 @@ function onLoaded(apple2: Apple2, disk2: DiskII, smartPort: SmartPort, printer: 
     initSoundToggle();
 
     MicroModal.init();
+
+    keyboard = new KeyBoard(cpu, io, e);
+    keyboard.create('#keyboard');
+    keyboard.setFunction('F1', () => cpu.reset());
+    keyboard.setFunction('F2', screen.enterFullScreen);
+    keyboard.setFunction('F3', () => io.keyDown(0x1b)); // Escape
+    keyboard.setFunction('F6', () => {
+        window.localStorage.state = base64_json_stringify(_apple2.getState());
+    });
+    keyboard.setFunction('F9', () => {
+        if (window.localStorage.state) {
+            _apple2.setState(base64_json_parse(window.localStorage.state));
+        }
+    });
 
     /*
      * Input Handling
