@@ -98,8 +98,8 @@ export function toBinary(v: byte) {
  *     meta-characters except '[' and ']' or it will fail.
  */
 export function gup(name: string) {
-    const params = new URLSearchParams(window.location.search)
-    return params.get(name)
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name);
 }
 
 /** Returns the URL fragment. */

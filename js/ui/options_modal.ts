@@ -60,15 +60,14 @@ export class OptionsModal {
     }
 
     getOption(name: string): string | boolean | undefined {
-        const option = this.options[name]
+        const option = this.options[name];
         if (option) {
             const { name, defaultVal, type } = option;
             const stringVal = String(defaultVal);
             const prefVal = this.prefs.readPref(name, stringVal);
             switch (type) {
                 case BOOLEAN_OPTION:
-                    return prefVal === 'true'
-                    break;
+                    return prefVal === 'true';
                 default:
                     return prefVal;
             }
@@ -128,7 +127,7 @@ export class OptionsModal {
                                 const inputElement = document.createElement('input');
                                 const checked = this.prefs.readPref(name, String(defaultVal)) === 'true';
                                 inputElement.setAttribute('type', 'checkbox');
-                                inputElement.checked = checked
+                                inputElement.checked = checked;
                                 element = inputElement;
                             }
                             break;
@@ -148,12 +147,12 @@ export class OptionsModal {
                             }
                             break;
                         default:
-                            {
-                                const inputElement = document.createElement('input');
-                                const value = this.prefs.readPref(name, String(defaultVal));
-                                inputElement.value = value;
-                                element = inputElement;
-                            }
+                        {
+                            const inputElement = document.createElement('input');
+                            const value = this.prefs.readPref(name, String(defaultVal));
+                            inputElement.value = value;
+                            element = inputElement;
+                        }
                     }
                     element.id = name;
                     element.addEventListener('change', onChange);
@@ -168,11 +167,11 @@ export class OptionsModal {
                 }
                 content.appendChild(list);
             }
-            const reloadElement = document.createElement('i')
+            const reloadElement = document.createElement('i');
             reloadElement.textContent = '* Reload page to take effect';
-            content.append(reloadElement)
+            content.append(reloadElement);
         } else {
-            console.error('Cannot find target div#options-modal-content')
+            console.error('Cannot find target div#options-modal-content');
         }
         MicroModal.show('options-modal');
     }

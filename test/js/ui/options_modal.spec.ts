@@ -1,14 +1,14 @@
-import { screen } from '@testing-library/dom'
-import userEvent from '@testing-library/user-event'
+import { screen } from '@testing-library/dom';
+import userEvent from '@testing-library/user-event';
 
 import {
     BOOLEAN_OPTION,
     SELECT_OPTION,
     OptionHandler,
     OptionsModal
-} from 'js/ui/options_modal'
+} from 'js/ui/options_modal';
 
-jest.mock('micromodal')
+jest.mock('micromodal');
 
 const mockOptionHandler: OptionHandler = {
     getOptions() {
@@ -51,21 +51,21 @@ const mockOptionHandler: OptionHandler = {
                     },
                 ]
             }
-        ]
+        ];
     },
 
     setOption: jest.fn()
-}
+};
 
 describe('OptionsModal', () => {
     let modal: OptionsModal;
     beforeEach(() => {
         modal = new OptionsModal();
         modal.addOptions(mockOptionHandler);
-    })
+    });
     afterEach(() => {
         localStorage.clear();
-    })
+    });
 
     describe('openModal', () => {
         let content: HTMLDivElement;
@@ -79,20 +79,20 @@ describe('OptionsModal', () => {
         afterEach(() => {
             jest.resetAllMocks();
             content.remove();
-        })
+        });
 
         it('renders', () => {
             modal.openModal();
             expect(content).toMatchSnapshot();
-        })
+        });
 
         it('toggles booleans', () => {
             modal.openModal();
-            const toggle = screen.getByText('Option 3')
-            userEvent.click(toggle)
+            const toggle = screen.getByText('Option 3');
+            userEvent.click(toggle);
             expect(mockOptionHandler.setOption)
-                .toHaveBeenCalledWith('option_3', false)
-        })
+                .toHaveBeenCalledWith('option_3', false);
+        });
 
         it('selects', () => {
             modal.openModal();
@@ -100,39 +100,39 @@ describe('OptionsModal', () => {
             userEvent.selectOptions(combobox, 'select_2');
 
             expect(mockOptionHandler.setOption)
-                .toHaveBeenCalledWith('option_2', 'select_2')
-        })
+                .toHaveBeenCalledWith('option_2', 'select_2');
+        });
     });
 
     describe('getOption', () => {
         beforeEach(() => {
             modal = new OptionsModal();
             modal.addOptions(mockOptionHandler);
-        })
+        });
         it('gets boolean', () => {
             expect(modal.getOption('option_1'))
-                .toEqual(false)
+                .toEqual(false);
             expect(modal.getOption('option_3'))
-                .toEqual(true)
-        })
+                .toEqual(true);
+        });
 
         it('gets selector', () => {
             expect(modal.getOption('option_2'))
-                .toEqual('select_1')
-        })
-    })
+                .toEqual('select_1');
+        });
+    });
 
     describe('setOption', () => {
         it('sets boolean', () => {
             modal.setOption('option_1', true);
             expect(mockOptionHandler.setOption)
-                .toHaveBeenCalledWith('option_1', true)
-        })
+                .toHaveBeenCalledWith('option_1', true);
+        });
 
         it('sets selector', () => {
             modal.setOption('option_2', 'select_2');
             expect(mockOptionHandler.setOption)
-                .toHaveBeenCalledWith('option_2', 'select_2')
-        })
-    })
-})
+                .toHaveBeenCalledWith('option_2', 'select_2');
+        });
+    });
+});
