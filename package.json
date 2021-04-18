@@ -47,7 +47,7 @@
     "webpack-dev-server": "^4.0.0-beta.1"
   },
   "dependencies": {
-    "apple2shader": "whscullin/apple2shader#f42252d8c2ad7055e3e5f5c39e235a710804e7a6",
+    "apple2shader": "whscullin/apple2shader#d365fa3b45f27890c97a2fe6ecbab6a77d02f177",
     "micromodal": "^0.4.2"
   }
 }
