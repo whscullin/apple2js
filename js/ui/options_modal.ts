@@ -32,7 +32,7 @@ export interface OptionHandler {
     setOption: (name: string, value: string | boolean) => void
 }
 
-export class OptionModal {
+export class OptionsModal {
     private prefs: Prefs = new Prefs();
     private options: Record<string, Option> = {}
     private handlers: Record<string, OptionHandler> = {}
@@ -47,24 +47,31 @@ export class OptionModal {
         for (const section of sections) {
             const { options } = section;
             for (const option of options) {
-                const { name, defaultVal, type } = option;
-                const stringVal = String(defaultVal);
-                const prefVal = this.prefs.readPref(name, stringVal);
-
-                this.handlers[option.name] = handler;
-                if (prefVal !== null && prefVal !== stringVal) {
-                    switch (type) {
-                        case BOOLEAN_OPTION:
-                            handler.setOption(name, Boolean(prefVal));
-                            break;
-                        default:
-                            handler.setOption(name, prefVal);
-                    }
-                }
-                this.options[name] = option;
+                const { name } = option;
                 this.handlers[name] = handler;
+                this.options[name] = option;
+                const value = this.getOption(name);
+                if (value != null) {
+                    handler.setOption(name, value);
+                }
             }
             this.sections.push(section);
+        }
+    }
+
+    getOption(name: string): string | boolean | undefined {
+        const option = this.options[name]
+        if (option) {
+            const { name, defaultVal, type } = option;
+            const stringVal = String(defaultVal);
+            const prefVal = this.prefs.readPref(name, stringVal);
+            switch (type) {
+                case BOOLEAN_OPTION:
+                    return prefVal === 'true'
+                    break;
+                default:
+                    return prefVal;
+            }
         }
     }
 
@@ -164,6 +171,8 @@ export class OptionModal {
             const reloadElement = document.createElement('i')
             reloadElement.textContent = '* Reload page to take effect';
             content.append(reloadElement)
+        } else {
+            console.error('Cannot find target div#options-modal-content')
         }
         MicroModal.show('options-modal');
     }

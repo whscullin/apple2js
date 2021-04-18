@@ -21,7 +21,7 @@ import Apple2IO from '../apple2io';
 import { JSONDisk } from '../formats/format_utils';
 import Printer from './printer';
 
-import { OptionModal } from './options_modal';
+import { OptionsModal } from './options_modal';
 import { Screen } from './screen';
 import { JoyStick } from './joystick';
 import { System } from './system';
@@ -35,7 +35,7 @@ let lastRenderedFrames = 0;
 
 let hashtag = document.location.hash;
 
-const optionsModal = new OptionModal();
+const optionsModal = new OptionsModal();
 
 interface DiskDescriptor {
     name: string;
