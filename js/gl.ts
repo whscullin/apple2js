@@ -40,7 +40,7 @@ const tmpContext = tmpCanvas.getContext('2d');
 
 const buildScreen = (mainData: ImageData, mixData?: ImageData | null) => {
     if (!tmpContext) {
-        throw new Error('No webgl context');
+        throw new Error('No 2d context');
     }
 
     const details = screenEmu.C.NTSC_DETAILS;
@@ -66,7 +66,7 @@ const whiteCol: Color = [255, 255, 255];
 const blackCol: Color = [0, 0, 0];
 
 const notDirty: Region = {
-    top: 385,
+    top: 193,
     bottom: -1,
     left: 561,
     right: -1
@@ -84,8 +84,8 @@ export class LoresPageGL implements LoresPage {
     // $80-$FF normal
 
     private _buffer: memory[] = [];
-    private _monoMode = false;
     private _refreshing = false;
+    private _monoMode = false;
     private _blink = false;
 
     dirty: Region = {...notDirty}
@@ -102,18 +102,30 @@ export class LoresPageGL implements LoresPage {
         this._buffer[1] = allocMemPages(0x4);
     }
 
-    _drawPixel(data: Uint8ClampedArray, off: number, color: Color) {
+    private _drawPixel(data: Uint8ClampedArray, off: number, color: Color) {
         const c0 = color[0], c1 = color[1], c2 = color[2];
         data[off + 0] = data[off + 4] = c0;
         data[off + 1] = data[off + 5] = c1;
         data[off + 2] = data[off + 6] = c2;
     }
 
-    _drawHalfPixel(data: Uint8ClampedArray, off: number, color: Color) {
+    private _drawHalfPixel(data: Uint8ClampedArray, off: number, color: Color) {
         const c0 = color[0], c1 = color[1], c2 = color[2];
         data[off + 0] = c0;
         data[off + 1] = c1;
         data[off + 2] = c2;
+    }
+
+    private _checkInverse(val: byte) {
+        let inverse = false;
+        if (this.e) {
+            if (!_80colMode && !altCharMode) {
+                inverse = ((val & 0xc0) == 0x40) && this._blink;
+            }
+        } else {
+            inverse = !((val & 0x80) || (val & 0x40) && this._blink);
+        }
+        return inverse;
     }
 
     bank0(): MemoryPages {
@@ -157,10 +169,6 @@ export class LoresPageGL implements LoresPage {
         }
         this._buffer[bank][base] = val;
 
-        if (!_80colMode && bank === 1) {
-            return;
-        }
-
         const col = (base % 0x80) % 0x28;
         const adj = off - col;
 
@@ -182,19 +190,12 @@ export class LoresPageGL implements LoresPage {
             if (x > this.dirty.right) { this.dirty.right = x; }
 
             if (textMode || hiresMode || (mixedMode && row > 19)) {
-                let inverse;
-                if (this.e) {
-                    if (!_80colMode && !altCharMode) {
-                        inverse = ((val & 0xc0) == 0x40) && this._blink;
-                    }
-                } else {
-                    inverse = !((val & 0x80) || (val & 0x40) && this._blink);
-                }
-
-                fore = inverse ? blackCol : whiteCol;
-                back = inverse ? whiteCol : blackCol;
-
                 if (_80colMode) {
+                    const inverse = this._checkInverse(val);
+
+                    fore = inverse ? blackCol : whiteCol;
+                    back = inverse ? whiteCol : blackCol;
+
                     if (!enhanced) {
                         val = (val >= 0x40 && val < 0x60) ? val - 0x40 : val;
                     } else if (!altCharMode) {
@@ -213,8 +214,13 @@ export class LoresPageGL implements LoresPage {
                         }
                         offset += 553 * 4;
                     }
-                } else {
+                } else if (bank === 0) {
                     val = this._buffer[0][base];
+
+                    const inverse = this._checkInverse(val);
+
+                    fore = inverse ? blackCol : whiteCol;
+                    back = inverse ? whiteCol : blackCol;
 
                     if (!enhanced) {
                         val = (val >= 0x40 && val < 0x60) ? val - 0x40 : val;
@@ -267,7 +273,7 @@ export class LoresPageGL implements LoresPage {
                         }
                         offset += 553 * 4;
                     }
-                } else {
+                } else if (bank === 0) {
                     let offset = (col * 14 + row * 560 * 8) * 4;
                     for (let jdx = 0; jdx < 8; jdx++) {
                         let b = (jdx < 4) ? (val & 0x0f) : (val >> 4);
@@ -348,6 +354,7 @@ export class LoresPageGL implements LoresPage {
 
     setState(state: GraphicsState) {
         this.page = state.page;
+        this._monoMode = state.mono;
         this._buffer[0] = new Uint8Array(state.buffer[0]);
         this._buffer[1] = new Uint8Array(state.buffer[1]);
 
@@ -403,18 +410,12 @@ export class LoresPageGL implements LoresPage {
  ***************************************************************************/
 
 export class HiresPageGL implements HiresPage {
+    public imageData: ImageData;
+    dirty: Region = {...notDirty};
 
     private _buffer: memory[] = [];
     private _refreshing = false;
     private _monoMode = false;
-
-    dirty: Region = {
-        top: 193,
-        bottom: -1,
-        left: 561,
-        right: -1
-    };
-    imageData: ImageData;
 
     constructor(
         private page: number) {
@@ -426,7 +427,7 @@ export class HiresPageGL implements HiresPage {
         this._buffer[1] = allocMemPages(0x20);
     }
 
-    _drawPixel(data: Uint8ClampedArray, off: number, color: Color) {
+    private _drawPixel(data: Uint8ClampedArray, off: number, color: Color) {
         const c0 = color[0], c1 = color[1], c2 = color[2];
 
         data[off + 0] = data[off + 4] = c0;
@@ -434,7 +435,7 @@ export class HiresPageGL implements HiresPage {
         data[off + 2] = data[off + 6] = c2;
     }
 
-    _drawHalfPixel(data: Uint8ClampedArray, off: number, color: Color) {
+    private _drawHalfPixel(data: Uint8ClampedArray, off: number, color: Color) {
         const c0 = color[0], c1 = color[1], c2 = color[2];
 
         data[off + 0] = c0;
@@ -460,16 +461,16 @@ export class HiresPageGL implements HiresPage {
         };
     }
 
-    _start() { return (0x20 * this.page); }
+    private _start() { return (0x20 * this.page); }
 
-    _end() { return (0x020 * this.page) + 0x1f; }
+    private _end() { return (0x020 * this.page) + 0x1f; }
 
-    _read(page: byte, off: byte, bank: bank) {
+    private _read(page: byte, off: byte, bank: bank) {
         const addr = (page << 8) | off, base = addr & 0x1FFF;
         return this._buffer[bank][base];
     }
 
-    _write(page: byte, off: byte, val: byte, bank: bank) {
+    private _write(page: byte, off: byte, val: byte, bank: bank) {
         const addr = (page << 8) | off;
         const base = addr & 0x1FFF;
 
@@ -477,8 +478,6 @@ export class HiresPageGL implements HiresPage {
             return;
         }
         this._buffer[bank][base] = val;
-
-        // let hbs = val & 0x80;
 
         const col = (base % 0x80) % 0x28;
         const adj = off - col;
@@ -492,116 +491,51 @@ export class HiresPageGL implements HiresPage {
             rowb = base >> 10;
 
         const data = this.imageData.data;
-        let dx, dy;
-        if ((rowa < 24) && (col < 40)) {
-            if (!hiresMode) {
-                return;
-            }
-
+        if ((rowa < 24) && (col < 40) && hiresMode) {
             let y = rowa << 3 | rowb;
             if (y < this.dirty.top) { this.dirty.top = y; }
             y += 1;
             if (y > this.dirty.bottom) { this.dirty.bottom = y; }
             let x = col * 14 - 2;
             if (x < this.dirty.left) { this.dirty.left = x; }
-            x += 18;
+            x += 14;
             if (x > this.dirty.right) { this.dirty.right = x; }
 
-            dy = rowa << 3 | rowb;
-            let bz, b0, b1, b2, b3, b4, c, hb;
+            const dy = rowa << 3 | rowb;
             if (doubleHiresMode) {
-                val &= 0x7f;
-
-                // Every 4 bytes is 7 pixels
-                // 2 bytes per bank
-
-                // b0       b1       b2       b3
-                //  c0  c1    c2  c3    c4  c5    c6
-                // 76543210 76543210 76543210 76543210
-                //  1111222  2333344  4455556  6667777
-
-                const mod = col % 2, mcol = col - mod, baseOff = base - mod;
-                bz = this._buffer[0][baseOff - 1];
-                b0 = this._buffer[1][baseOff];
-                b1 = this._buffer[0][baseOff];
-                b2 = this._buffer[1][baseOff + 1];
-                b3 = this._buffer[0][baseOff + 1];
-                b4 = this._buffer[1][baseOff + 2];
-                c = [
-                    0,
-                    ((b0 & 0x0f) >> 0), // 0
-                    ((b0 & 0x70) >> 4) | ((b1 & 0x01) << 3), // 1
-                    ((b1 & 0x1e) >> 1), // 2
-                    ((b1 & 0x60) >> 5) | ((b2 & 0x03) << 2), // 3
-                    ((b2 & 0x3c) >> 2), // 4
-                    ((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1), // 5
-                    ((b3 & 0x78) >> 3), // 6
-                    0
-                ], // 7
-                hb = [
-                    0,
-                    b0 & 0x80, // 0
-                    b0 & 0x80, // 1
-                    b1 & 0x80, // 2
-                    b2 & 0x80, // 3
-                    b2 & 0x80, // 4
-                    b3 & 0x80, // 5
-                    b3 & 0x80, // 6
-                    0
-                ]; // 7
-                if (col > 0) {
-                    c[0] = (bz & 0x78) >> 3;
-                    hb[0] = bz & 0x80;
-                }
-                if (col < 39) {
-                    c[8] = b4 & 0x0f;
-                    hb[8] = b4 & 0x80;
-                }
-                dx = mcol * 14;
+                const dx = col * 14 + (bank ? 0 : 7);
                 let offset = dx * 4 + dy * 280 * 4 * 2;
 
-                for (let idx = 1; idx < 8; idx++) {
-                    // hbs = hb[idx];
-                    let bits = c[idx - 1] | (c[idx] << 4) | (c[idx + 1] << 8);
-                    for (let jdx = 0; jdx < 4; jdx++, offset += 4) {
-                        if (bits & 0x10) {
-                            this._drawHalfPixel(data, offset, whiteCol);
-                        } else {
-                            this._drawHalfPixel(data, offset, blackCol);
-                        }
-                        bits >>= 1;
-                    }
-                }
-            } else {
-                val = this._buffer[0][base];
-                const hbs = val & 0x80;
-                val &= 0x7f;
-                dx = col * 14 - 2;
-                b0 = col > 0 ? this._buffer[0][base - 1] : 0;
-                b2 = col < 39 ? this._buffer[0][base + 1] : 0;
-                val |= (b2 & 0x3) << 7;
-                let v1 = b0 & 0x40,
-                    v2 = val & 0x1,
-                    color;
-
-                let offset = dx * 4 + dy * 560 * 4 + (hbs ? 4 : 0);
-
-                for (let idx = 0; idx < 9; idx++, offset += 8) {
-                    val >>= 1;
-
-                    if (v1) {
-                        color = whiteCol;
+                let bits = val;
+                for (let jdx = 0; jdx < 7; jdx++, offset += 4) {
+                    if (bits & 0x01) {
+                        this._drawHalfPixel(data, offset, whiteCol);
                     } else {
-                        color = blackCol;
+                        this._drawHalfPixel(data, offset, blackCol);
                     }
-
-                    if (dx > -1 && dx < 560) {
-                        this._drawPixel(data, offset, color);
+                    bits >>= 1;
+                }
+            } else if (bank === 0) {
+                const hbs = val & 0x80;
+                const dx = col * 14;
+                let offset = dx * 4 + dy * 560 * 4;
+                if (hbs) {
+                    const val0 = this._buffer[bank][base - 1] || 0;
+                    if (val0 & 0x40) {
+                        this._drawHalfPixel(data, offset, whiteCol);
+                    } else {
+                        this._drawHalfPixel(data, offset, blackCol);
                     }
-                    dx += 2;
-
-                    v1 = v2;
-                    v2 = val & 0x01;
+                    offset += 4;
+                }
+                let bits = val;
+                for (let idx = 0; idx < 7; idx++, offset += 8) {
+                    if (bits & 0x01) {
+                        this._drawPixel(data, offset, whiteCol);
+                    } else {
+                        this._drawPixel(data, offset, blackCol);
+                    }
+                    bits >>= 1;
                 }
             }
         }
@@ -654,6 +588,7 @@ export class HiresPageGL implements HiresPage {
 
     setState(state: GraphicsState) {
         this.page = state.page;
+        this._monoMode = state.mono;
         this._buffer[0] = new Uint8Array(state.buffer[0]);
         this._buffer[1] = new Uint8Array(state.buffer[1]);
 
@@ -885,12 +820,14 @@ export class VideoModesGL implements VideoModes {
         if (altData) {
             blitted = this.updateImage(
                 altData,
-                { top: 0, left: 0, right: 560, bottom: 384 }
+                { top: 0, left: 0, right: 560, bottom: 192 }
             );
         } else if (hiresMode && !textMode) {
             blitted = this.updateImage(
-                hgr.imageData, hgr.dirty,
-                mixedMode ? gr.imageData : null, mixedMode ? gr.dirty : null,
+                hgr.imageData,
+                hgr.dirty,
+                mixedMode ? gr.imageData : null,
+                mixedMode ? gr.dirty : null
             );
         } else {
             blitted = this.updateImage(
