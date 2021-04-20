@@ -216,7 +216,6 @@ type Key = Key2 | Key2e;
 type KeyFunction = (key: KeyboardEvent) => void
 
 export default class KeyBoard {
-    private focused: boolean = false;
     private kb: HTMLElement;
     private keys;
 
@@ -237,11 +236,6 @@ export default class KeyBoard {
 
         window.addEventListener('keydown', this.keydown);
         window.addEventListener('keyup', this.keyup);
-
-        document.querySelectorAll('input,textarea').forEach((input) => {
-            input.addEventListener('focus', () => { this.focused = true; });
-            input.addEventListener('blur', () => { this.focused = false; });
-        });
     }
 
     setFunction(key: string, fn: KeyFunction) {
@@ -514,12 +508,16 @@ export default class KeyBoard {
         };
     }
 
+    private dialogOpen() {
+        return !!document.querySelector('.modal.is-open');
+    }
+
     private genMouseUp(target: HTMLElement) {
         return () => target.classList.remove('pressed');
     }
 
     private keydown = (evt: KeyboardEvent) => {
-        if (!this.focused && (!evt.metaKey || evt.ctrlKey || this.e)) {
+        if (!this.dialogOpen() && (!evt.metaKey || evt.ctrlKey || this.e)) {
             evt.preventDefault();
 
             const key = this.mapKeyEvent(evt);
@@ -553,7 +551,7 @@ export default class KeyBoard {
     }
 
     private keyup = (evt: KeyboardEvent) => {
-        if (!this.focused) {
+        if (!this.dialogOpen()) {
             this.io.keyUp();
         }
 

@@ -213,6 +213,7 @@ canvas {
 }
 
 #screen:-webkit-full-screen {
+    background-color: black;
     top: 0;
     left: 0;
     width: 100%;
@@ -630,10 +631,6 @@ button:focus {
 
 .standalone #header {
     display: none;
-}
-
-#textarea textarea {
-    font-family: courier;
 }
 
 #http_url {

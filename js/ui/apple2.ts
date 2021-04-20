@@ -1,7 +1,7 @@
 import MicroModal from 'micromodal';
 
 import { base64_json_parse, base64_json_stringify } from '../base64';
-import Audio from './audio';
+import { Audio, SOUND_ENABLED_OPTION } from './audio';
 import DriveLights from './drive_lights';
 import { byte, DISK_FORMATS, includes, word } from '../types';
 import { initGamepad, GamepadConfiguration } from './gamepad';
@@ -490,7 +490,7 @@ export function toggleShowFPS() {
 
 export function toggleSound() {
     const on = !audio.isEnabled();
-    optionsModal.setOption('AUDIO_ENABLE', on);
+    optionsModal.setOption(SOUND_ENABLED_OPTION, on);
     updateSoundButton(on);
 }
 

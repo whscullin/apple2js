@@ -20,7 +20,7 @@ import { debug } from '../util';
 const SAMPLE_SIZE = 1024;
 const SAMPLE_RATE = 44000;
 
-const SOUND_ENABLED_OPTION = 'enable_sound';
+export const SOUND_ENABLED_OPTION = 'enable_sound';
 
 declare global {
     interface Window {
@@ -30,7 +30,7 @@ declare global {
 
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 
-export default class Audio implements OptionHandler {
+export class Audio implements OptionHandler {
     private sound = true;
     private samples: number[][] = [];
 
