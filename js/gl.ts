@@ -539,6 +539,12 @@ export class HiresPageGL implements HiresPage {
                 }
             }
         }
+        if (!this._refreshing && !doubleHiresMode && bank === 0) {
+            this._refreshing = true;
+            const after = addr + 1;
+            this._write(after >> 8, after & 0xff, this._buffer[0][after & 0x1fff], 0);
+            this._refreshing = false;
+        }
     }
 
     refresh() {
