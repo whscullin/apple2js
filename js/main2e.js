@@ -40,7 +40,7 @@ switch (romVersion) {
 }
 
 var options = {
-    gl: prefs.readPref('gl_canvas') === 'true',
+    gl: prefs.readPref('gl_canvas', 'true') === 'true',
     canvas: document.getElementById('screen'),
     rom: rom,
     characterRom: characterRom,
