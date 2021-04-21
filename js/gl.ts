@@ -603,6 +603,7 @@ export class VideoModesGL implements VideoModes {
     private _displayConfig: screenEmu.DisplayConfiguration;
     private _monoMode: boolean = false;
     private _scanlines: boolean = false;
+    private _refreshFlag: boolean = true;
 
     public ready: Promise<void>
 
@@ -663,10 +664,7 @@ export class VideoModesGL implements VideoModes {
     private _refresh() {
         doubleHiresMode = !an3 && hiresMode && _80colMode;
 
-        this._grs[0].refresh();
-        this._grs[1].refresh();
-        this._hgrs[0].refresh();
-        this._hgrs[1].refresh();
+        this._refreshFlag = true;
 
         if (this._displayConfig) {
             this._displayConfig.videoWhiteOnly = textMode || this._monoMode;
@@ -816,6 +814,12 @@ export class VideoModesGL implements VideoModes {
         let blitted = false;
         const hgr = this._hgrs[pageMode - 1];
         const gr = this._grs[pageMode - 1];
+
+        if (this._refreshFlag) {
+            hgr.refresh();
+            gr.refresh();
+            this._refreshFlag = false;
+        }
 
         if (altData) {
             blitted = this.updateImage(

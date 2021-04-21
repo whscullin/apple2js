@@ -903,6 +903,7 @@ export class VideoModes2D implements VideoModes {
     private _context: CanvasRenderingContext2D | null;
     private _left: number;
     private _top: number;
+    private _refreshFlag: boolean = true;
 
     public ready = Promise.resolve();
 
@@ -928,10 +929,7 @@ export class VideoModes2D implements VideoModes {
         mixedDHRMode = this._flag == 2 && doubleHiresMode;
         monoDHRMode = this._flag == 3 && doubleHiresMode;
 
-        this._grs[0].refresh();
-        this._grs[1].refresh();
-        this._hgrs[0].refresh();
-        this._hgrs[1].refresh();
+        this._refreshFlag = true;
     }
 
     refresh() {
@@ -1091,6 +1089,12 @@ export class VideoModes2D implements VideoModes {
         let blitted = false;
         const hgr = this._hgrs[pageMode - 1];
         const gr = this._grs[pageMode - 1];
+
+        if (this._refreshFlag) {
+            hgr.refresh();
+            gr.refresh();
+            this._refreshFlag = false;
+        }
 
         if (altData) {
             blitted = this.updateImage(
