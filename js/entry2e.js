@@ -1,5 +1,4 @@
-import { apple2 as _apple2 } from './main2e';
+import { apple2 } from './main2e';
 import * as UI from './ui/apple2';
 
-export const Apple2 = UI;
-export const apple2 = _apple2;
+export const Apple2 = { ...UI, apple2 };

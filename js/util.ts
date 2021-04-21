@@ -97,16 +97,9 @@ export function toBinary(v: byte) {
  * @param name the parameter name. Note that `name` must not have any RegExp
  *     meta-characters except '[' and ']' or it will fail.
  */
-// From http://www.netlobo.com/url_query_string_javascript.html
 export function gup(name: string) {
-    name = name.replace(/[[]/, '\\[').replace(/[\]]/, '\\]');
-    const regexS = '[\\?&]' + name + '=([^&#]*)';
-    const regex = new RegExp(regexS);
-    const results = regex.exec(window.location.href);
-    if (!results)
-        return '';
-    else
-        return results[1];
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name);
 }
 
 /** Returns the URL fragment. */

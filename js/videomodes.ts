@@ -71,6 +71,7 @@ export interface VideoModes extends Restorable<VideoModesState> {
     isText(): boolean
 
     mono(on: boolean): void
+    scanlines(on: boolean): void
 
     getText(): string
 

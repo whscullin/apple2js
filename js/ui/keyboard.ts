@@ -213,6 +213,8 @@ type Key2e = DeepMemberOf<typeof keys2e>;
 
 type Key = Key2 | Key2e;
 
+type KeyFunction = (key: KeyboardEvent) => void
+
 export default class KeyBoard {
     private kb: HTMLElement;
     private keys;
@@ -227,8 +229,17 @@ export default class KeyBoard {
     private optioned = false;
     private commanded = false;
 
+    private functions: Record<string, KeyFunction> = {};
+
     constructor(private cpu: CPU6502, private io: Apple2IO, private e: boolean) {
         this.keys = e ? keys2e : keys2;
+
+        window.addEventListener('keydown', this.keydown);
+        window.addEventListener('keyup', this.keyup);
+    }
+
+    setFunction(key: string, fn: KeyFunction) {
+        this.functions[key] = fn;
     }
 
     mapKeyEvent(evt: KeyboardEvent) {
@@ -497,7 +508,65 @@ export default class KeyBoard {
         };
     }
 
+    private dialogOpen() {
+        return !!document.querySelector('.modal.is-open');
+    }
+
     private genMouseUp(target: HTMLElement) {
         return () => target.classList.remove('pressed');
+    }
+
+    private keydown = (evt: KeyboardEvent) => {
+        if (!this.dialogOpen() && (!evt.metaKey || evt.ctrlKey || this.e)) {
+            evt.preventDefault();
+
+            const key = this.mapKeyEvent(evt);
+            if (key !== 0xff) {
+                this.io.keyDown(key);
+                return;
+            }
+        }
+
+        if (evt.key === 'Shift') {
+            this.shiftKey(true);
+        } else if (evt.key === 'CapsLock') {
+            this.capslockKey();
+        } else if (evt.key === 'Control') {
+            this.controlKey(true);
+        } else if (evt.key === 'Meta') { // AKA Command
+            this.commandKey(true);
+        } else if (evt.key === 'Alt') {
+            if (evt.location === 1) {
+                this.commandKey(true);
+            } else {
+                this.optionKey(true);
+            }
+        } else {
+            if (evt.key in this.functions) {
+                this.functions[evt.key](evt);
+                evt.preventDefault();
+            }
+        }
+
+    }
+
+    private keyup = (evt: KeyboardEvent) => {
+        if (!this.dialogOpen()) {
+            this.io.keyUp();
+        }
+
+        if (evt.key === 'Shift') { // Shift
+            this.shiftKey(false);
+        } else if (evt.key === 'Control') { // Control
+            this.controlKey(false);
+        } else if (evt.key === 'Meta') { // AKA Command
+            this.commandKey(false);
+        } else if (evt.key === 'Alt') { // Alt
+            if (evt.location === 1) {
+                this.commandKey(false);
+            } else {
+                this.optionKey(false);
+            }
+        }
     }
 }

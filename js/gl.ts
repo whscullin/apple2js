@@ -602,6 +602,7 @@ export class VideoModesGL implements VideoModes {
     private _sv: any;
     private _displayConfig: screenEmu.DisplayConfiguration;
     private _monoMode: boolean = false;
+    private _scanlines: boolean = false;
 
     public ready: Promise<void>
 
@@ -631,7 +632,6 @@ export class VideoModesGL implements VideoModes {
     private defaultMonitor(): screenEmu.DisplayConfiguration {
         const config = new screenEmu.DisplayConfiguration();
         config.displayResolution = new screenEmu.Size(this.canvas.width, this.canvas.height);
-        config.displayResolution = new screenEmu.Size(this.canvas.width, this.canvas.height);
         config.displayScanlineLevel = 0.5;
         config.videoWhiteOnly = true;
         config.videoSaturation = 0.8;
@@ -645,7 +645,6 @@ export class VideoModesGL implements VideoModes {
         // Values taken from openemulator/libemulation/res/library/Monitors/Apple Monitor II.xml
         const config = new screenEmu.DisplayConfiguration();
         config.displayResolution = new screenEmu.Size(this.canvas.width, this.canvas.height);
-        config.displayResolution = new screenEmu.Size(this.canvas.width, this.canvas.height);
         config.videoDecoder = 'CANVAS_MONOCHROME';
         config.videoBrightness = 0.15;
         config.videoContrast = 0.8;
@@ -657,7 +656,7 @@ export class VideoModesGL implements VideoModes {
         config.displayBarrel = 0.1;
         config.displayScanlineLevel = 0.5;
         config.displayCenterLighting = 0.5;
-        config.displayLuninanceGain = 1.5;
+        config.displayLuminanceGain = 1.5;
         return config;
     }
 
@@ -671,6 +670,7 @@ export class VideoModesGL implements VideoModes {
 
         if (this._displayConfig) {
             this._displayConfig.videoWhiteOnly = textMode || this._monoMode;
+            this._displayConfig.displayScanlineLevel = this._scanlines ? 0.5 : 0;
             this._sv.displayConfiguration = this._displayConfig;
         }
     }
@@ -878,6 +878,11 @@ export class VideoModesGL implements VideoModes {
 
         this._monoMode = on;
         this._displayConfig = on ? this.monitorII() : this.defaultMonitor();
+        this._refresh();
+    }
+
+    scanlines(on: boolean) {
+        this._scanlines = on;
         this._refresh();
     }
 

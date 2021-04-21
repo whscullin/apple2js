@@ -1,0 +1,64 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`OptionsModal openModal renders 1`] = `
+<div
+  id="options-modal-content"
+>
+  <h3>
+    Section 1
+  </h3>
+  <ul>
+    <li>
+      <input
+        id="option_1"
+        type="checkbox"
+      />
+      <label
+        for="option_1"
+      >
+        Option 1
+      </label>
+    </li>
+    <li>
+      <select
+        id="option_2"
+      >
+        <option
+          value="select_1"
+        >
+          Select 1
+        </option>
+        <option
+          value="select_2"
+        >
+          Select 2
+        </option>
+      </select>
+      <label
+        for="option_2"
+      >
+        Option 2
+      </label>
+    </li>
+  </ul>
+  <h3>
+    Section 2
+  </h3>
+  <ul>
+    <li>
+      <input
+        id="option_3"
+        type="checkbox"
+      />
+      <label
+        for="option_3"
+      >
+        Option 3
+      </label>
+    </li>
+  </ul>
+  <i>
+    * Reload page to take effect
+  </i>
+</div>
+`;

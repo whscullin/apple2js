@@ -1,4 +1,7 @@
 module.exports = {
+    'moduleNameMapper': {
+        '^js/(.*)': '<rootDir>/js/$1',
+    },
     'roots': [
         'js/',
         'test/',

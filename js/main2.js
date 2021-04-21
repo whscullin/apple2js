@@ -23,8 +23,6 @@ import OriginalROM from './roms/original';
 
 import { Apple2 } from './apple2';
 
-export * from './ui/apple2';
-
 var prefs = new Prefs();
 var romVersion = prefs.readPref('computer_type2');
 var rom;

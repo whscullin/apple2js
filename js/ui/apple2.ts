@@ -1,10 +1,10 @@
 import MicroModal from 'micromodal';
 
 import { base64_json_parse, base64_json_stringify } from '../base64';
-import Audio from './audio';
+import { Audio, SOUND_ENABLED_OPTION } from './audio';
 import DriveLights from './drive_lights';
 import { byte, DISK_FORMATS, includes, word } from '../types';
-import { gamepad, configGamepad, initGamepad, GamepadConfiguration } from './gamepad';
+import { initGamepad, GamepadConfiguration } from './gamepad';
 import KeyBoard from './keyboard';
 import Tape, { TAPE_TYPES } from './tape';
 
@@ -12,7 +12,6 @@ import ApplesoftDump from '../applesoft/decompiler';
 import ApplesoftCompiler from '../applesoft/compiler';
 
 import { debug, gup, hup } from '../util';
-import Prefs from '../prefs';
 import { Apple2, Stats } from '../apple2';
 import DiskII, { DriveNumber, DRIVE_NUMBERS } from '../cards/disk2';
 import SmartPort from '../cards/smartport';
@@ -22,15 +21,21 @@ import Apple2IO from '../apple2io';
 import { JSONDisk } from '../formats/format_utils';
 import Printer from './printer';
 
+import { OptionsModal } from './options_modal';
+import { Screen } from './screen';
+import { JoyStick } from './joystick';
+import { System } from './system';
+
 let paused = false;
 
-let focused = false;
 let startTime = Date.now();
 let lastCycles = 0;
 let lastFrames = 0;
 let lastRenderedFrames = 0;
 
 let hashtag = document.location.hash;
+
+const optionsModal = new OptionsModal();
 
 interface DiskDescriptor {
     name: string;
@@ -60,6 +65,9 @@ let _disk2: DiskII;
 let _smartPort: SmartPort;
 let _printer: Printer;
 let audio: Audio;
+let screen: Screen;
+let joystick: JoyStick;
+let system: System;
 let keyboard: KeyBoard;
 let io: Apple2IO;
 let _currentDrive: DriveNumber = 1;
@@ -350,13 +358,11 @@ function doLoadLocalDisk(drive: DriveNumber, file: File) {
 
         if (result.byteLength >= 800 * 1024) {
             if (_smartPort.setBinary(drive, name, ext, result)) {
-                focused = false;
                 initGamepad();
             }
         } else {
             if (includes(DISK_FORMATS, ext)
                 && _disk2.setBinary(drive, name, ext, result)) {
-                focused = false;
                 initGamepad();
             } else {
                 openAlert(`Unable to load ${name}`);
@@ -441,7 +447,6 @@ function openManage() {
     MicroModal.show('manage-modal');
 }
 
-const prefs = new Prefs();
 let showStats = 0;
 
 export function updateKHz() {
@@ -483,11 +488,18 @@ export function toggleShowFPS() {
     showStats = ++showStats % 3;
 }
 
-export function updateSound() {
-    const soundCheckbox = document.querySelector<HTMLInputElement>('#enable_sound')!;
-    const on = soundCheckbox.checked;
+export function toggleSound() {
+    const on = !audio.isEnabled();
+    optionsModal.setOption(SOUND_ENABLED_OPTION, on);
+    updateSoundButton(on);
+}
+
+function initSoundToggle() {
+    updateSoundButton(audio.isEnabled());
+}
+
+function updateSoundButton(on: boolean) {
     const label = document.querySelector<HTMLDivElement>('#toggle-sound i')!;
-    audio.enable(on);
     if (on) {
         label.classList.remove('fa-volume-off');
         label.classList.add('fa-volume-up');
@@ -651,7 +663,7 @@ declare global {
     }
 }
 
-let oldcat = '';
+let oldCat = '';
 let option;
 for (let idx = 0; idx < window.disk_index.length; idx++) {
     const file = window.disk_index[idx];
@@ -661,14 +673,14 @@ for (let idx = 0; idx < window.disk_index.length; idx++) {
     if (file.e && !window.e) {
         continue;
     }
-    if (cat != oldcat) {
+    if (cat != oldCat) {
         option = document.createElement('option');
         option.value = cat;
         option.innerText = cat;
         categorySelect.append(option);
 
         disk_categories[cat] = [];
-        oldcat = cat;
+        oldCat = cat;
     }
     disk_categories[cat].push(file);
     if (disk) {
@@ -711,128 +723,6 @@ function processHash(hash: string) {
     }
 }
 
-
-/*
- * Keyboard/Gamepad routines
- */
-declare global {
-    interface Document {
-        webkitCancelFullScreen: () => void;
-        webkitIsFullScreen: boolean;
-        mozCancelFullScreen: () => void;
-        mozIsFullScreen: boolean;
-    }
-    interface Element {
-        webkitRequestFullScreen: (options?: any) => void;
-        mozRequestFullScreen: () => void;
-    }
-}
-
-
-function _keydown(evt: KeyboardEvent) {
-    if (!focused && (!evt.metaKey || evt.ctrlKey || window.e)) {
-        evt.preventDefault();
-
-        const key = keyboard.mapKeyEvent(evt);
-        if (key !== 0xff) {
-            io.keyDown(key);
-        }
-    }
-    if (evt.keyCode === 112) { // F1 - Reset
-        cpu.reset();
-        evt.preventDefault(); // prevent launching help
-    } else if (evt.keyCode === 113) { // F2 - Full Screen
-        const elem = document.getElementById('screen')!;
-        if (evt.shiftKey) { // Full window, but not full screen
-            document.body.classList.toggle('full-page');
-        } else if (document.webkitCancelFullScreen) {
-            if (document.webkitIsFullScreen) {
-                document.webkitCancelFullScreen();
-            } else {
-                const allowKeyboardInput = (Element as any).ALLOW_KEYBOARD_INPUT;
-                if (allowKeyboardInput) {
-                    elem.webkitRequestFullScreen(allowKeyboardInput);
-                } else {
-                    elem.webkitRequestFullScreen();
-                }
-            }
-        } else if (document.mozCancelFullScreen) {
-            if (document.mozIsFullScreen) {
-                document.mozCancelFullScreen();
-            } else {
-                elem.mozRequestFullScreen();
-            }
-        }
-    } else if (evt.keyCode === 114) { // F3
-        io.keyDown(0x1b);
-    } else if (evt.keyCode === 117) { // F6 Quick Save
-        window.localStorage.state = base64_json_stringify(_apple2.getState());
-    } else if (evt.keyCode === 120) { // F9 Quick Restore
-        if (window.localStorage.state) {
-            _apple2.setState(base64_json_parse(window.localStorage.state));
-        }
-    } else if (evt.keyCode == 16) { // Shift
-        keyboard.shiftKey(true);
-    } else if (evt.keyCode == 20) { // Caps lock
-        keyboard.capslockKey();
-    } else if (evt.keyCode == 17) { // Control
-        keyboard.controlKey(true);
-    } else if (evt.keyCode == 91 || evt.keyCode == 93) { // Command
-        keyboard.commandKey(true);
-    } else if (evt.keyCode == 18) { // Alt
-        if (evt.location == 1) {
-            keyboard.commandKey(true);
-        } else {
-            keyboard.optionKey(true);
-        }
-    }
-}
-
-function _keyup(evt: KeyboardEvent) {
-    if (!focused)
-        io.keyUp();
-
-    if (evt.keyCode == 16) { // Shift
-        keyboard.shiftKey(false);
-    } else if (evt.keyCode == 17) { // Control
-        keyboard.controlKey(false);
-    } else if (evt.keyCode == 91 || evt.keyCode == 93) { // Command
-        keyboard.commandKey(false);
-    } else if (evt.keyCode == 18) { // Alt
-        if (evt.location == 1) {
-            keyboard.commandKey(false);
-        } else {
-            keyboard.optionKey(false);
-        }
-    }
-}
-
-export function updateScreen() {
-    const mono = document.querySelector<HTMLInputElement>('#mono_screen')!.checked;
-    const scanlines = document.querySelector<HTMLInputElement>('#show_scanlines')!.checked;
-    const gl = document.querySelector<HTMLInputElement>('#gl_canvas')!.checked;
-
-    const screen = document.querySelector<HTMLDivElement>('#screen')!;
-    const overscan = document.querySelector<HTMLDivElement>('.overscan')!;
-    if (scanlines && !gl) {
-        overscan.classList.add('scanlines');
-    } else {
-        overscan.classList.remove('scanlines');
-    }
-    if (mono && !gl) {
-        screen.classList.add('mono');
-    } else {
-        screen.classList.remove('mono');
-    }
-    vm.mono(mono);
-}
-
-export function updateCPU() {
-    const accelerated = document.querySelector<HTMLInputElement>('#accelerator_toggle')!.checked;
-    const kHz = accelerated ? 4092 : 1023;
-    io.updateKHz(kHz);
-}
-
 export function updateUI() {
     if (document.location.hash != hashtag) {
         hashtag = document.location.hash;
@@ -841,45 +731,6 @@ export function updateUI() {
             processHash(hash);
         }
     }
-}
-
-let disableMouseJoystick = false;
-let flipX = false;
-let flipY = false;
-let swapXY = false;
-
-export function updateJoystick() {
-    disableMouseJoystick = document.querySelector<HTMLInputElement>('#disable_mouse')!.checked;
-    flipX = document.querySelector<HTMLInputElement>('#flip_x')!.checked;
-    flipY = document.querySelector<HTMLInputElement>('#flip_y')!.checked;
-    swapXY = document.querySelector<HTMLInputElement>('#swap_x_y')!.checked;
-    configGamepad(flipX, flipY);
-
-    if (disableMouseJoystick) {
-        io.paddle(0, 0.5);
-        io.paddle(1, 0.5);
-        return;
-    }
-}
-
-function _mousemove(evt: MouseEvent) {
-    if (gamepad || disableMouseJoystick) {
-        return;
-    }
-
-    const s = document.querySelector<HTMLDivElement>('#screen')!;
-    const offset = s.getBoundingClientRect();
-    let x = (evt.pageX - offset.left) / s.clientWidth;
-    let y = (evt.pageY - offset.top) / s.clientHeight;
-    const z = x;
-
-    if (swapXY) {
-        x = y;
-        y = z;
-    }
-
-    io.paddle(0, flipX ? 1 - x : x);
-    io.paddle(1, flipY ? 1 - y : y);
 }
 
 export function pauseRun() {
@@ -898,14 +749,8 @@ export function pauseRun() {
     paused = !paused;
 }
 
-export function toggleSound() {
-    const enableSound = document.querySelector<HTMLInputElement>('#enable_sound')!;
-    enableSound.checked = !enableSound.checked;
-    updateSound();
-}
-
 export function openOptions() {
-    MicroModal.show('options-modal');
+    optionsModal.openModal();
 }
 
 export function openPrinterModal() {
@@ -946,24 +791,38 @@ function onLoaded(apple2: Apple2, disk2: DiskII, smartPort: SmartPort, printer: 
     _smartPort = smartPort;
     _printer = printer;
 
-    keyboard = new KeyBoard(cpu, io, e);
-    keyboard.create('#keyboard');
+    system = new System(io, e);
+    optionsModal.addOptions(system);
+
+    joystick = new JoyStick(io);
+    optionsModal.addOptions(joystick);
+
+    screen = new Screen(vm);
+    optionsModal.addOptions(screen);
+
     audio = new Audio(io);
+    optionsModal.addOptions(audio);
+    initSoundToggle();
 
     MicroModal.init();
+
+    keyboard = new KeyBoard(cpu, io, e);
+    keyboard.create('#keyboard');
+    keyboard.setFunction('F1', () => cpu.reset());
+    keyboard.setFunction('F2', screen.enterFullScreen);
+    keyboard.setFunction('F3', () => io.keyDown(0x1b)); // Escape
+    keyboard.setFunction('F6', () => {
+        window.localStorage.state = base64_json_stringify(_apple2.getState());
+    });
+    keyboard.setFunction('F9', () => {
+        if (window.localStorage.state) {
+            _apple2.setState(base64_json_parse(window.localStorage.state));
+        }
+    });
 
     /*
      * Input Handling
      */
-
-    window.addEventListener('keydown', _keydown);
-    window.addEventListener('keyup', _keyup);
-
-    window.addEventListener('keydown', audio.autoStart);
-    if (window.ontouchstart !== undefined) {
-        window.addEventListener('touchstart', audio.autoStart);
-    }
-    window.addEventListener('mousedown', audio.autoStart);
 
     window.addEventListener('paste', (event: Event) => {
         const paste = (event.clipboardData || window.clipboardData)!.getData('text');
@@ -976,61 +835,12 @@ function onLoaded(apple2: Apple2, disk2: DiskII, smartPort: SmartPort, printer: 
         event.preventDefault();
     });
 
-
-    document.querySelectorAll('canvas').forEach(function (canvas) {
-        canvas.addEventListener('mousedown', function (evt) {
-            if (!gamepad) {
-                io.buttonDown(evt.which == 1 ? 0 : 1);
-            }
-            evt.preventDefault();
-        });
-        canvas.addEventListener('mouseup', function (evt) {
-            if (!gamepad) {
-                io.buttonUp(evt.which == 1 ? 0 : 1);
-            }
-        });
-        canvas.addEventListener('contextmenu', function (evt) {
-            evt.preventDefault();
-        });
-    });
-
-    document.body.addEventListener('mousemove', _mousemove);
-
-    document.querySelectorAll('input,textarea').forEach(function (input) {
-        input.addEventListener('focus', function () { focused = true; });
-        input.addEventListener('blur', function () { focused = false; });
-    });
-
-    if (prefs.havePrefs()) {
-        document.querySelectorAll<HTMLInputElement>('#options-modal input[type=checkbox]').forEach(function (el) {
-            const val = prefs.readPref(el.id);
-            if (val) {
-                el.checked = JSON.parse(val);
-            }
-            el.addEventListener('change', function () {
-                prefs.writePref(el.id, JSON.stringify(el.checked));
-            });
-        });
-        document.querySelectorAll<HTMLSelectElement>('#options-modal select').forEach(function (el) {
-            const val = prefs.readPref(el.id);
-            if (val) {
-                el.value = val;
-            }
-            el.addEventListener('change', function () {
-                prefs.writePref(el.id, el.value);
-            });
-        });
-    }
-
     if (navigator.standalone) {
         document.body.classList.add('standalone');
     }
 
     cpu.reset();
     setInterval(updateKHz, 1000);
-    updateSound();
-    updateScreen();
-    updateCPU();
     initGamepad();
 
     // Check for disks in hashtag
