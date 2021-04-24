@@ -23,11 +23,11 @@ import OriginalROM from './roms/original';
 
 import { Apple2 } from './apple2';
 
-var prefs = new Prefs();
-var romVersion = prefs.readPref('computer_type2');
-var rom;
-var characterRom = apple2_charset;
-var sectors = 16;
+const prefs = new Prefs();
+const romVersion = prefs.readPref('computer_type2');
+let rom;
+let characterRom = apple2_charset;
+let sectors = 16;
 
 switch (romVersion) {
     case 'apple2':
@@ -56,33 +56,29 @@ switch (romVersion) {
         rom = new Apple2ROM();
 }
 
-var options = {
-    canvas: document.getElementById('screen'),
+const options = {
+    canvas: document.querySelector<HTMLCanvasElement>('#screen')!,
     gl: prefs.readPref('gl_canvas', 'true') === 'true',
-    screen: [],
-    rom: rom,
-    characterRom: characterRom,
+    rom,
+    characterRom,
     e: false,
     enhanced: false,
-    cards: [],
     tick: updateUI
 };
 
-export var apple2 = new Apple2(options);
-var cpu = apple2.getCPU();
-var io = apple2.getIO();
+export const apple2 = new Apple2(options);
+const cpu = apple2.getCPU();
+const io = apple2.getIO();
 
-var printer = new Printer('#printer-modal .paper');
+const printer = new Printer('#printer-modal .paper');
 
-var lc = new LanguageCard(rom);
-var parallel = new Parallel(printer);
-var videoTerm = new VideoTerm();
-var slinky = new RAMFactor(1024 * 1024);
-var disk2 = new DiskII(io, driveLights, sectors);
-var clock = new Thunderclock();
-var smartport = new SmartPort(cpu, { block: true });
-
-initUI(apple2, disk2, smartport, printer, false);
+const lc = new LanguageCard(rom);
+const parallel = new Parallel(printer);
+const videoTerm = new VideoTerm();
+const slinky = new RAMFactor(1024 * 1024);
+const disk2 = new DiskII(io, driveLights, sectors);
+const clock = new Thunderclock();
+const smartport = new SmartPort(cpu, { block: true });
 
 io.setSlot(0, lc);
 io.setSlot(1, parallel);
@@ -93,3 +89,5 @@ io.setSlot(6, disk2);
 io.setSlot(7, smartport);
 
 cpu.addPageHandler(lc);
+
+initUI(apple2, disk2, smartport, printer, false);
