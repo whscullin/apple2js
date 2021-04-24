@@ -18,11 +18,11 @@ import Apple2eEnhancedROM from './roms/apple2enh';
 
 import { Apple2 } from './apple2';
 
-var prefs = new Prefs();
-var romVersion = prefs.readPref('computer_type2e');
-var enhanced = false;
-var rom;
-var characterRom = apple2e_charset;
+const prefs = new Prefs();
+const romVersion = prefs.readPref('computer_type2e');
+let enhanced = false;
+let rom;
+let characterRom = apple2e_charset;
 
 switch (romVersion) {
     case 'apple2e':
@@ -39,30 +39,27 @@ switch (romVersion) {
         enhanced = true;
 }
 
-var options = {
+const options = {
     gl: prefs.readPref('gl_canvas', 'true') === 'true',
-    canvas: document.getElementById('screen'),
-    rom: rom,
-    characterRom: characterRom,
+    canvas: document.querySelector<HTMLCanvasElement>('#screen')!,
+    rom,
+    characterRom,
     e: true,
-    enhanced: enhanced,
-    cards: [],
+    enhanced,
     tick: updateUI
 };
 
-export var apple2 = new Apple2(options);
-var io = apple2.getIO();
-var cpu = apple2.getCPU();
+export const apple2 = new Apple2(options);
+const io = apple2.getIO();
+const cpu = apple2.getCPU();
 
-var printer = new Printer('#printer-modal .paper');
+const printer = new Printer('#printer-modal .paper');
 
-var parallel = new Parallel(printer);
-var slinky = new RAMFactor(1024 * 1024);
-var disk2 = new DiskII(io, driveLights);
-var clock = new Thunderclock();
-var smartport = new SmartPort(cpu, { block: !enhanced });
-
-initUI(apple2, disk2, smartport, printer, options.e);
+const parallel = new Parallel(printer);
+const slinky = new RAMFactor(1024 * 1024);
+const disk2 = new DiskII(io, driveLights);
+const clock = new Thunderclock();
+const smartport = new SmartPort(cpu, { block: !enhanced });
 
 io.setSlot(1, parallel);
 io.setSlot(2, slinky);
@@ -70,4 +67,4 @@ io.setSlot(5, clock);
 io.setSlot(6, disk2);
 io.setSlot(7, smartport);
 
-
+initUI(apple2, disk2, smartport, printer, options.e);
