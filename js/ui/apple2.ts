@@ -537,7 +537,8 @@ export function reset() {
 }
 
 function loadBinary(bin: JSONBinaryImage) {
-    for (let idx = 0; idx < bin.length; idx++) {
+    const maxLen = Math.min(bin.length, 0x10000 - bin.start);
+    for (let idx = 0; idx < maxLen; idx++) {
         const pos = bin.start + idx;
         cpu.write(pos, bin.data[idx]);
     }
