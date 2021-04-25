@@ -275,9 +275,9 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
                         }
                         break;
                     case LOC.TAPEOUT: // C02x
-                        this._phase = -this._phase;
-                        this._didAudio = true;
-                        this._tick();
+                        // this._phase = -this._phase;
+                        // this._didAudio = true;
+                        // this._tick();
                         break;
                     case LOC.SPEAKER: // C03x
                         this._phase = -this._phase;
