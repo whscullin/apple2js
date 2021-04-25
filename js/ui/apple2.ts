@@ -322,7 +322,12 @@ function doLoadLocal(drive: DriveNumber, file: File, options: Partial<LoadOption
         const addressInput = document.querySelector<HTMLInputElement>('#local_file_address');
         const addressStr = addressInput?.value;
         if (addressStr) {
-            doLoadBinary(file, { address: parseInt(addressStr, 16), ...options });
+            const address = parseInt(addressStr, 16);
+            if (isNaN(address)) {
+                openAlert('Invalid address: ' + addressStr);
+                return;
+            }
+            doLoadBinary(file, { address, ...options });
         } else {
             openAlert('Unknown file type: ' + ext);
         }
