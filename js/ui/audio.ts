@@ -86,7 +86,7 @@ export class Audio implements OptionHandler {
     }
 
 
-    autoStart() {
+    autoStart = () => {
         if (this.audioContext && !this.started) {
             this.samples = [];
             this.audioContext.resume();
@@ -94,14 +94,14 @@ export class Audio implements OptionHandler {
         }
     }
 
-    start() {
+    start = () => {
         if (this.audioContext) {
             this.samples = [];
             this.audioContext.resume();
         }
     }
 
-    isEnabled() {
+    isEnabled = () => {
         return this.sound;
     }
 
@@ -121,7 +121,7 @@ export class Audio implements OptionHandler {
         ];
     }
 
-    setOption(name: string, value: boolean) {
+    setOption = (name: string, value: boolean) => {
         switch (name) {
             case SOUND_ENABLED_OPTION:
                 this.sound = value;
