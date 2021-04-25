@@ -240,11 +240,15 @@
           </table>
           <form action="#">
             <input type="file" id="local_file" />
+            <div id="local_file_address_input" style="display: none">
+              $
+              <input id="local_file_address" />
+            </div>
           </form>
         </main>
         <footer class="modal__footer">
           <button class="modal__btn" data-micromodal-close aria-label="Close this dialog window">Cancel</button>
-          <button class="modal__btn" onclick="Apple2.doLoad()" aria-label="Open the selected disk">Open</button>
+          <button class="modal__btn" onclick="Apple2.doLoad(event)" aria-label="Open the selected disk">Open</button>
         </footer>
       </div>
     </div>

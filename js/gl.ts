@@ -517,6 +517,8 @@ export class HiresPageGL implements HiresPage {
                 }
             } else if (bank === 0) {
                 const hbs = val & 0x80;
+                const lastCol = col === 39;
+                const cropLastPixel = hbs && lastCol;
                 const dx = col * 14;
                 let offset = dx * 4 + dy * 560 * 4;
                 if (hbs) {
@@ -530,20 +532,23 @@ export class HiresPageGL implements HiresPage {
                 }
                 let bits = val;
                 for (let idx = 0; idx < 7; idx++, offset += 8) {
+                    const drawPixel = cropLastPixel && idx == 6
+                        ? this._drawHalfPixel
+                        : this._drawPixel;
                     if (bits & 0x01) {
-                        this._drawPixel(data, offset, whiteCol);
+                        drawPixel(data, offset, whiteCol);
                     } else {
-                        this._drawPixel(data, offset, blackCol);
+                        drawPixel(data, offset, blackCol);
                     }
                     bits >>= 1;
                 }
+                if (!this._refreshing) {
+                    this._refreshing = true;
+                    const after = addr + 1;
+                    this._write(after >> 8, after & 0xff, this._buffer[0][after & 0x1fff], 0);
+                    this._refreshing = false;
+                }
             }
-        }
-        if (!this._refreshing && !doubleHiresMode && bank === 0) {
-            this._refreshing = true;
-            const after = addr + 1;
-            this._write(after >> 8, after & 0xff, this._buffer[0][after & 0x1fff], 0);
-            this._refreshing = false;
         }
     }
 

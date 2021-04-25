@@ -49,6 +49,8 @@ type DiskCollection = {
     [name: string]: DiskDescriptor[]
 };
 
+const KNOWN_FILE_TYPES = [...DISK_FORMATS, ...TAPE_TYPES] as readonly string[];
+
 const disk_categories: DiskCollection = { 'Local Saves': [] };
 const disk_sets: DiskCollection = {};
 // Disk names
@@ -239,7 +241,7 @@ export function loadAjax(drive: DriveNumber, url: string) {
     });
 }
 
-export function doLoad() {
+export function doLoad(event: MouseEvent|KeyboardEvent) {
     MicroModal.close('load-modal');
     const select = document.querySelector<HTMLSelectElement>('#disk_select')!;
     const urls = select.value;
@@ -255,7 +257,8 @@ export function doLoad() {
     const localFile = document.querySelector<HTMLInputElement>('#local_file')!;
     const files = localFile.files;
     if (files && files.length == 1) {
-        doLoadLocal(_currentDrive, files[0]);
+        const runOnLoad = event.shiftKey;
+        doLoadLocal(_currentDrive, files[0], { runOnLoad });
     } else if (url) {
         let filename;
         MicroModal.close('load-modal');
@@ -317,7 +320,18 @@ function doLoadLocal(drive: DriveNumber, file: File, options: Partial<LoadOption
     } else if (BIN_TYPES.includes(ext) || type === '06' || options.address) {
         doLoadBinary(file, { address: parseInt(aux || '2000', 16), ...options });
     } else {
-        openAlert('Unknown file type: ' + ext);
+        const addressInput = document.querySelector<HTMLInputElement>('#local_file_address');
+        const addressStr = addressInput?.value;
+        if (addressStr) {
+            const address = parseInt(addressStr, 16);
+            if (isNaN(address)) {
+                openAlert('Invalid address: ' + addressStr);
+                return;
+            }
+            doLoadBinary(file, { address, ...options });
+        } else {
+            openAlert('Unknown file type: ' + ext);
+        }
     }
 }
 
@@ -523,7 +537,8 @@ export function reset() {
 }
 
 function loadBinary(bin: JSONBinaryImage) {
-    for (let idx = 0; idx < bin.length; idx++) {
+    const maxLen = Math.min(bin.length, 0x10000 - bin.start);
+    for (let idx = 0; idx < maxLen; idx++) {
         const pos = bin.start + idx;
         cpu.write(pos, bin.data[idx]);
     }
@@ -559,8 +574,8 @@ export function selectDisk() {
     localFile.value = '';
 }
 
-export function clickDisk() {
-    doLoad();
+export function clickDisk(event: MouseEvent|KeyboardEvent) {
+    doLoad(event);
 }
 
 /** Called to load disks from the local catalog. */
@@ -854,6 +869,22 @@ function onLoaded(apple2: Apple2, disk2: DiskII, smartPort: SmartPort, printer: 
             _apple2.run();
         });
     }
+
+    document.querySelector<HTMLInputElement>('#local_file')?.addEventListener(
+        'change',
+        (event: Event) => {
+            const target = event.target as HTMLInputElement;
+            const address = document.querySelector<HTMLInputElement>('#local_file_address_input')!;
+            const parts = target.value.split('.');
+            const ext = parts[parts.length - 1];
+
+            if (KNOWN_FILE_TYPES.includes(ext)) {
+                address.style.display = 'none';
+            } else {
+                address.style.display = 'inline-block';
+            }
+        }
+    );
 }
 
 export function initUI(apple2: Apple2, disk2: DiskII, smartPort: SmartPort, printer: Printer, e: boolean) {
