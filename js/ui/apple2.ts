@@ -241,7 +241,7 @@ export function loadAjax(drive: DriveNumber, url: string) {
     });
 }
 
-export function doLoad() {
+export function doLoad(event: MouseEvent|KeyboardEvent) {
     MicroModal.close('load-modal');
     const select = document.querySelector<HTMLSelectElement>('#disk_select')!;
     const urls = select.value;
@@ -257,7 +257,8 @@ export function doLoad() {
     const localFile = document.querySelector<HTMLInputElement>('#local_file')!;
     const files = localFile.files;
     if (files && files.length == 1) {
-        doLoadLocal(_currentDrive, files[0]);
+        const runOnLoad = event.shiftKey;
+        doLoadLocal(_currentDrive, files[0], { runOnLoad });
     } else if (url) {
         let filename;
         MicroModal.close('load-modal');
@@ -572,8 +573,8 @@ export function selectDisk() {
     localFile.value = '';
 }
 
-export function clickDisk() {
-    doLoad();
+export function clickDisk(event: MouseEvent|KeyboardEvent) {
+    doLoad(event);
 }
 
 /** Called to load disks from the local catalog. */
