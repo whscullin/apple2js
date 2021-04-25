@@ -516,6 +516,12 @@ export class HiresPageGL implements HiresPage {
                     bits >>= 1;
                 }
             } else if (bank === 0) {
+                if (!this._refreshing) {
+                    this._refreshing = true;
+                    const before = addr - 1;
+                    this._write(before >> 8, before & 0xff, this._buffer[0][before & 0x1fff], 0);
+                    this._refreshing = false;
+                }
                 const hbs = val & 0x80;
                 const dx = col * 14;
                 let offset = dx * 4 + dy * 560 * 4;
@@ -537,13 +543,13 @@ export class HiresPageGL implements HiresPage {
                     }
                     bits >>= 1;
                 }
+                if (!this._refreshing) {
+                    this._refreshing = true;
+                    const after = addr + 1;
+                    this._write(after >> 8, after & 0xff, this._buffer[0][after & 0x1fff], 0);
+                    this._refreshing = false;
+                }
             }
-        }
-        if (!this._refreshing && !doubleHiresMode && bank === 0) {
-            this._refreshing = true;
-            const after = addr + 1;
-            this._write(after >> 8, after & 0xff, this._buffer[0][after & 0x1fff], 0);
-            this._refreshing = false;
         }
     }
 

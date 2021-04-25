@@ -49,6 +49,8 @@ type DiskCollection = {
     [name: string]: DiskDescriptor[]
 };
 
+const KNOWN_FILE_TYPES = [...DISK_FORMATS, ...TAPE_TYPES] as readonly string[];
+
 const disk_categories: DiskCollection = { 'Local Saves': [] };
 const disk_sets: DiskCollection = {};
 // Disk names
@@ -317,7 +319,13 @@ function doLoadLocal(drive: DriveNumber, file: File, options: Partial<LoadOption
     } else if (BIN_TYPES.includes(ext) || type === '06' || options.address) {
         doLoadBinary(file, { address: parseInt(aux || '2000', 16), ...options });
     } else {
-        openAlert('Unknown file type: ' + ext);
+        const addressInput = document.querySelector<HTMLInputElement>('#local_file_address');
+        const addressStr = addressInput?.value;
+        if (addressStr) {
+            doLoadBinary(file, { address: parseInt(addressStr, 16), ...options });
+        } else {
+            openAlert('Unknown file type: ' + ext);
+        }
     }
 }
 
@@ -854,6 +862,22 @@ function onLoaded(apple2: Apple2, disk2: DiskII, smartPort: SmartPort, printer: 
             _apple2.run();
         });
     }
+
+    document.querySelector<HTMLInputElement>('#local_file')?.addEventListener(
+        'change',
+        (event: Event) => {
+            const target = event.target as HTMLInputElement;
+            const address = document.querySelector<HTMLInputElement>('#local_file_address_input')!;
+            const parts = target.value.split('.');
+            const ext = parts[parts.length - 1];
+
+            if (KNOWN_FILE_TYPES.includes(ext)) {
+                address.style.display = 'none';
+            } else {
+                address.style.display = 'inline-block';
+            }
+        }
+    );
 }
 
 export function initUI(apple2: Apple2, disk2: DiskII, smartPort: SmartPort, printer: Printer, e: boolean) {
