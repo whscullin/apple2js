@@ -57,7 +57,6 @@ export interface VideoModes extends Restorable<VideoModesState> {
     _80col(on: boolean): void
     altchar(on: boolean): void
     doubleHires(on: boolean): void
-    enhanced(on: boolean): void
     hires(on: boolean): void
     mixed(on: boolean): void
     text(on: boolean): void
