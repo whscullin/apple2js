@@ -111,7 +111,7 @@ class AuxRom implements Memory {
         private readonly mmu: MMU,
         private readonly rom: ROM) { }
 
-    read(page: byte, off: byte) {
+    _access(page: byte, off: byte) {
         if (page == 0xc3) {
             this.mmu._setIntc8rom(true);
             this.mmu._updateBanks();
@@ -120,11 +120,15 @@ class AuxRom implements Memory {
             this.mmu._setIntc8rom(false);
             this.mmu._updateBanks();
         }
+    }
+
+    read(page: byte, off: byte) {
+        this._access(page, off);
         return this.rom.read(page, off);
     }
 
-    write(_page: byte, _off: byte, _val: byte) {
-        // It's ROM.
+    write(page: byte, off: byte, _val: byte) {
+        this._access(page, off);
     }
 }
 
@@ -477,7 +481,9 @@ export default class MMU implements Memory, Restorable<MMUState> {
 
             case LOC.INTCXROMOFF:
                 this._intcxrom = false;
-                this._intc8rom = false;
+                if (this._slot3rom) {
+                    this._intc8rom = false;
+                }
                 this._debug('Int CX ROM Off');
                 break;
             case LOC.INTCXROMON:

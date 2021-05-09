@@ -22,7 +22,6 @@ import {
     pageNo
 } from './videomodes';
 
-let enhanced = false;
 let textMode = true;
 let mixedMode = false;
 let hiresMode = false;
@@ -272,9 +271,7 @@ export class LoresPage2D implements LoresPage {
                     fore = inverse ? blackCol : whiteCol;
                     back = inverse ? whiteCol : blackCol;
 
-                    if (!enhanced) {
-                        val = (val >= 0x40 && val < 0x60) ? val - 0x40 : val;
-                    } else if (!altCharMode) {
+                    if (!altCharMode) {
                         val = (val >= 0x40 && val < 0x80) ? val - 0x40 : val;
                     }
 
@@ -298,9 +295,7 @@ export class LoresPage2D implements LoresPage {
                     fore = inverse ? blackCol : whiteCol;
                     back = inverse ? whiteCol : blackCol;
 
-                    if (!enhanced) {
-                        val = (val >= 0x40 && val < 0x60) ? val - 0x40 : val;
-                    } else if (!altCharMode) {
+                    if (!altCharMode) {
                         val = (val >= 0x40 && val < 0x80) ? val - 0x40 : val;
                     }
 
@@ -1028,10 +1023,6 @@ export class VideoModes2D implements VideoModes {
         if (old != pageNo) {
             this._refresh();
         }
-    }
-
-    enhanced(on: boolean) {
-        enhanced = on;
     }
 
     isText() {

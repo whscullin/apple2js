@@ -87,7 +87,6 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
         this.hgr = new HiresPage(1);
         this.hgr2 = new HiresPage(2);
         this.vm = new VideoModes(this.gr, this.hgr, this.gr2, this.hgr2, options.canvas, options.e);
-        this.vm.enhanced(options.enhanced);
         this.io = new Apple2IO(this.cpu, this.vm);
         this.tick = options.tick;
 
