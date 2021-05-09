@@ -11,8 +11,8 @@ describe('LoresPage', () => {
     let vm: VideoModes2D;
 
     beforeEach(() => {
-        vm = new VideoModes2D(canvas, true);
         canvas = document.createElement('canvas');
+        vm = new VideoModes2D(canvas, true);
         lores1 = new LoresPage2D(vm, 1, apple2enh_char, true);
         vm.reset();
     });
