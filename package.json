@@ -53,7 +53,7 @@
     "y18n": "^4.0.1"
   },
   "dependencies": {
-    "apple2shader": "0.0.1",
+    "apple2shader": "0.0.2",
     "canvas": "^2.7.0",
     "micromodal": "^0.4.2"
   }
