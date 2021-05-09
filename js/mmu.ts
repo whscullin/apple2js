@@ -519,11 +519,11 @@ export default class MMU implements Memory, Restorable<MMUState> {
                 break;
             case LOC.CLRALTCH:
                 this._debug('Alt Char off');
-                this.vm.altchar(false);
+                this.vm.altChar(false);
                 break;
             case LOC.SETALTCH:
                 this._debug('Alt Char on');
-                this.vm.altchar(true);
+                this.vm.altChar(true);
                 break;
         }
         this._updateBanks();
