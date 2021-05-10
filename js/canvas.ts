@@ -328,24 +328,20 @@ export class LoresPage2D implements LoresPage {
                     }
                 }
             } else {
-                if (!this.vm._80colMode && bank == 1) {
-                    return;
-                }
                 if (this.vm._80colMode && !this.vm.an3State) {
                     let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
                     if (this.vm._monoMode) {
-                        fore = whiteCol;
-                        back = blackCol;
                         for (let jdx = 0; jdx < 8; jdx++) {
-                            let b = (jdx < 8) ? (val & 0x0f) : (val >> 4);
+                            let b = (jdx < 4) ? (val & 0x0f) : (val >> 4);
                             b |= (b << 4);
-                            if (bank & 0x1) {
-                                b <<= 1;
+                            b |= (b << 8);
+                            if (col & 0x1) {
+                                b >>= 2;
                             }
                             for (let idx = 0; idx < 7; idx++) {
-                                const color = (b & 0x80) ? fore : back;
+                                const color = (b & 0x01) ? whiteCol : blackCol;
                                 this._drawHalfPixel(data, offset, color);
-                                b <<= 1;
+                                b >>= 1;
                                 offset += 4;
                             }
                             offset += 553 * 4;
@@ -359,28 +355,26 @@ export class LoresPage2D implements LoresPage {
                                 (val & 0x0f) : (val >> 4)];
                             for (let idx = 0; idx < 7; idx++) {
                                 this._drawHalfPixel(data, offset, color);
-                                off += 4;
+                                offset += 4;
                             }
                             offset += 553 * 4;
                         }
                     }
-                } else {
+                } else if (bank === 0) {
                     let offset = (col * 14 + row * 560 * 8) * 4;
 
                     if (this.vm._monoMode) {
-                        fore = whiteCol;
-                        back = blackCol;
                         for (let jdx = 0; jdx < 8; jdx++) {
                             let b = (jdx < 4) ? (val & 0x0f) : (val >> 4);
                             b |= (b << 4);
                             b |= (b << 8);
                             if (col & 0x1) {
-                                b <<= 2;
+                                b >>= 2;
                             }
                             for (let idx = 0; idx < 14; idx++) {
-                                const color = (b & 0x8000) ? fore : back;
+                                const color = (b & 0x0001) ? whiteCol : blackCol;
                                 this._drawHalfPixel(data, offset, color);
-                                b <<= 1;
+                                b >>= 1;
                                 offset += 4;
                             }
                             offset += 546 * 4;
@@ -906,6 +900,7 @@ export class VideoModes2D implements VideoModes {
     refresh() {
         this._refresh();
     }
+
     reset() {
         this.textMode = true;
         this.mixedMode = false;
@@ -1153,6 +1148,7 @@ export class VideoModes2D implements VideoModes {
         } else {
             this.canvas.classList.remove('mono');
         }
+        this._monoMode = on;
         this._refresh();
     }
 

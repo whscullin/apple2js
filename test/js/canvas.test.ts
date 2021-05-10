@@ -1,90 +1,260 @@
 /** @fileoverview Test for gl.ts. */
 
 import { generateImage } from 'jsdom-screenshot';
-import { LoresPage2D, VideoModes2D } from 'js/canvas';
+import { VideoPage } from 'js/videomodes';
+import { LoresPage2D, HiresPage2D, VideoModes2D } from 'js/canvas';
 import apple2enh_char from 'js/roms/apple2enh_char';
 import { createImageFromImageData } from 'test/util/image';
 
-describe('LoresPage', () => {
-    let canvas: HTMLCanvasElement;
-    let lores1: LoresPage2D;
-    let vm: VideoModes2D;
+async function checkImageData(page: VideoPage) {
+    const img = createImageFromImageData(page.imageData);
+    document.body.appendChild(img);
+    const screen = await generateImage();
+    img.remove();
 
-    beforeEach(() => {
-        canvas = document.createElement('canvas');
-        vm = new VideoModes2D(canvas, true);
-        lores1 = new LoresPage2D(vm, 1, apple2enh_char, true);
-        vm.reset();
-    });
+    expect(screen).toMatchImageSnapshot();
+}
 
-    describe('text mode', () => {
-        describe('40 column', () => {
-            it('renders', async () => {
-                for (let page = 0x4; page < 0x8; page++) {
-                    for (let off = 0; off < 0x100; off++) {
-                        lores1.write(page, off, off);
+describe('canvas', () => {
+    describe('LoresPage', () => {
+        let canvas: HTMLCanvasElement;
+        let lores1: LoresPage2D;
+        let vm: VideoModes2D;
+
+        beforeEach(() => {
+            canvas = document.createElement('canvas');
+            vm = new VideoModes2D(canvas, true);
+            lores1 = new LoresPage2D(vm, 1, apple2enh_char, true);
+            vm.reset();
+            vm.hires(false);
+        });
+
+        describe('text mode', () => {
+            describe('40 column', () => {
+                it('renders', async () => {
+                    for (let page = 0x4; page < 0x8; page++) {
+                        for (let off = 0; off < 0x100; off++) {
+                            lores1.write(page, off, off);
+                        }
                     }
-                }
 
-                const img = createImageFromImageData(lores1.imageData);
-                document.body.appendChild(img);
-                const screen = await generateImage();
-                expect(screen).toMatchImageSnapshot();
-                img.remove();
+                    await checkImageData(lores1);
+                });
+
+                it('renders alt chars', async () => {
+                    vm.altChar(true);
+                    for (let page = 0x4; page < 0x8; page++) {
+                        for (let off = 0; off < 0x100; off++) {
+                            lores1.write(page, off, off);
+                        }
+                    }
+
+                    await checkImageData(lores1);
+                });
             });
 
-            it('renders alt chars', async () => {
-                vm.altChar(true);
-                for (let page = 0x4; page < 0x8; page++) {
-                    for (let off = 0; off < 0x100; off++) {
-                        lores1.write(page, off, off);
+            describe('80 column', () => {
+                it('renders', async () => {
+                    vm._80col(true);
+                    const bank0 = lores1.bank0();
+                    const bank1 = lores1.bank1();
+                    for (let page = 0x4; page < 0x8; page++) {
+                        for (let off = 0; off < 0x100; off++) {
+                            bank0.write(page, off, off);
+                            bank1.write(page, off, 255 - off);
+                        }
                     }
-                }
 
-                const img = createImageFromImageData(lores1.imageData);
-                document.body.appendChild(img);
-                const screen = await generateImage();
-                expect(screen).toMatchImageSnapshot();
-                img.remove();
+                    await checkImageData(lores1);
+                });
+
+                it('renders alt chars', async () => {
+                    vm.altChar(true);
+                    vm._80col(true);
+                    const bank0 = lores1.bank0();
+                    const bank1 = lores1.bank1();
+                    for (let page = 0x4; page < 0x8; page++) {
+                        for (let off = 0; off < 0x100; off++) {
+                            bank0.write(page, off, off);
+                            bank1.write(page, off, 255 - off);
+                        }
+                    }
+
+                    await checkImageData(lores1);
+                });
             });
         });
 
-        describe('80 column', () => {
-            it('renders', async () => {
-                vm._80col(true);
-                const bank0 = lores1.bank0();
-                const bank1 = lores1.bank1();
-                for (let page = 0x4; page < 0x8; page++) {
-                    for (let off = 0; off < 0x100; off++) {
-                        bank0.write(page, off, off);
-                        bank1.write(page, off, 255 - off);
+        describe('graphics mode', () => {
+            describe('lores', () => {
+                it('renders', async () => {
+                    vm.text(false);
+                    for (let page = 0x4; page < 0x8; page++) {
+                        for (let off = 0; off < 0x100; off++) {
+                            lores1.write(page, off, off);
+                        }
                     }
-                }
 
-                const img = createImageFromImageData(lores1.imageData);
-                document.body.appendChild(img);
-                const screen = await generateImage();
-                expect(screen).toMatchImageSnapshot();
-                img.remove();
+                    await checkImageData(lores1);
+                });
+
+                it('renders mixed', async () => {
+                    vm.text(false);
+                    vm.mixed(true);
+
+                    for (let page = 0x4; page < 0x8; page++) {
+                        for (let off = 0; off < 0x100; off++) {
+                            lores1.write(page, off, off);
+                        }
+                    }
+
+                    await checkImageData(lores1);
+                });
+
+                it('renders mono', async () => {
+                    vm.text(false);
+                    vm.mono(true);
+
+                    for (let page = 0x4; page < 0x8; page++) {
+                        for (let off = 0; off < 0x100; off++) {
+                            lores1.write(page, off, off);
+                        }
+                    }
+
+                    await checkImageData(lores1);
+                });
             });
 
-            it('renders alt chars', async () => {
-                vm.altChar(true);
+            describe('double lores', () => {
+                it('renders', async () => {
+                    vm.text(false);
+                    vm._80col(true);
+                    vm.an3(false);
+
+                    const bank0 = lores1.bank0();
+                    const bank1 = lores1.bank1();
+                    for (let page = 0x4; page < 0x8; page++) {
+                        for (let off = 0; off < 0x100; off++) {
+                            bank0.write(page, off, off);
+                            bank1.write(page, off, 255 - off);
+                        }
+                    }
+
+                    await checkImageData(lores1);
+                });
+
+                it('renders mixed', async () => {
+                    vm.text(false);
+                    vm.mixed(true);
+                    vm._80col(true);
+                    vm.an3(false);
+
+                    const bank0 = lores1.bank0();
+                    const bank1 = lores1.bank1();
+                    for (let page = 0x4; page < 0x8; page++) {
+                        for (let off = 0; off < 0x100; off++) {
+                            bank0.write(page, off, off);
+                            bank1.write(page, off, 255 - off);
+                        }
+                    }
+
+                    await checkImageData(lores1);
+                });
+
+                it('renders mono', async () => {
+                    vm.text(false);
+                    vm._80col(true);
+                    vm.an3(false);
+                    vm.mono(true);
+
+                    const bank0 = lores1.bank0();
+                    const bank1 = lores1.bank1();
+                    for (let page = 0x4; page < 0x8; page++) {
+                        for (let off = 0; off < 0x100; off++) {
+                            bank0.write(page, off, off);
+                            bank1.write(page, off, 255 - off);
+                        }
+                    }
+
+                    await checkImageData(lores1);
+                });
+            });
+        });
+    });
+
+    describe('HiresPage', () => {
+        let canvas: HTMLCanvasElement;
+        let hires1: HiresPage2D;
+        let vm: VideoModes2D;
+
+        beforeEach(() => {
+            canvas = document.createElement('canvas');
+            vm = new VideoModes2D(canvas, true);
+            hires1 = new HiresPage2D(vm, 1);
+            vm.reset();
+            vm.hires(true);
+        });
+
+        describe('hires', () => {
+            it('renders', async () => {
+                vm.text(false);
+                for (let page = 0x20; page < 0x40; page++) {
+                    for (let off = 0; off < 0x100; off++) {
+                        hires1.write(page, off, off);
+                    }
+                }
+
+                await checkImageData(hires1);
+            });
+
+            it('renders mono', async () => {
+                vm.text(false);
+                vm.mono(true);
+
+                for (let page = 0x20; page < 0x40; page++) {
+                    for (let off = 0; off < 0x100; off++) {
+                        hires1.write(page, off, off);
+                    }
+                }
+
+                await checkImageData(hires1);
+            });
+        });
+
+        describe('double lores', () => {
+            it('renders', async () => {
+                vm.text(false);
                 vm._80col(true);
-                const bank0 = lores1.bank0();
-                const bank1 = lores1.bank1();
-                for (let page = 0x4; page < 0x8; page++) {
+                vm.an3(false);
+
+                const bank0 = hires1.bank0();
+                const bank1 = hires1.bank1();
+                for (let page = 0x20; page < 0x40; page++) {
                     for (let off = 0; off < 0x100; off++) {
                         bank0.write(page, off, off);
                         bank1.write(page, off, 255 - off);
                     }
                 }
 
-                const img = createImageFromImageData(lores1.imageData);
-                document.body.appendChild(img);
-                const screen = await generateImage();
-                expect(screen).toMatchImageSnapshot();
-                img.remove();
+                await checkImageData(hires1);
+            });
+
+            it('renders mono', async () => {
+                vm.text(false);
+                vm._80col(true);
+                vm.an3(false);
+                vm.mono(true);
+
+                const bank0 = hires1.bank0();
+                const bank1 = hires1.bank1();
+                for (let page = 0x20; page < 0x40; page++) {
+                    for (let off = 0; off < 0x100; off++) {
+                        bank0.write(page, off, off);
+                        bank1.write(page, off, 255 - off);
+                    }
+                }
+
+                await checkImageData(hires1);
             });
         });
     });
