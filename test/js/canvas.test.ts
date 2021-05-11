@@ -1,21 +1,18 @@
-/** @fileoverview Test for gl.ts. */
+/** @fileoverview Test for canvas.ts. */
 
-import { generateImage } from 'jsdom-screenshot';
 import { VideoPage } from 'js/videomodes';
 import { LoresPage2D, HiresPage2D, VideoModes2D } from 'js/canvas';
 import apple2enh_char from 'js/roms/apple2enh_char';
 import { createImageFromImageData } from 'test/util/image';
 
-async function checkImageData(page: VideoPage) {
+function checkImageData(page: VideoPage) {
+    page.refresh();
     const img = createImageFromImageData(page.imageData);
-    document.body.appendChild(img);
-    const screen = await generateImage();
-    img.remove();
-
-    expect(screen).toMatchImageSnapshot();
+    expect(img).toMatchImageSnapshot();
 }
 
 describe('canvas', () => {
+
     describe('LoresPage', () => {
         let canvas: HTMLCanvasElement;
         let lores1: LoresPage2D;
@@ -31,17 +28,17 @@ describe('canvas', () => {
 
         describe('text mode', () => {
             describe('40 column', () => {
-                it('renders', async () => {
+                it('renders', () => {
                     for (let page = 0x4; page < 0x8; page++) {
                         for (let off = 0; off < 0x100; off++) {
                             lores1.write(page, off, off);
                         }
                     }
 
-                    await checkImageData(lores1);
+                    checkImageData(lores1);
                 });
 
-                it('renders alt chars', async () => {
+                it('renders alt chars', () => {
                     vm.altChar(true);
                     for (let page = 0x4; page < 0x8; page++) {
                         for (let off = 0; off < 0x100; off++) {
@@ -49,12 +46,12 @@ describe('canvas', () => {
                         }
                     }
 
-                    await checkImageData(lores1);
+                    checkImageData(lores1);
                 });
             });
 
             describe('80 column', () => {
-                it('renders', async () => {
+                it('renders', () => {
                     vm._80col(true);
                     const bank0 = lores1.bank0();
                     const bank1 = lores1.bank1();
@@ -65,10 +62,10 @@ describe('canvas', () => {
                         }
                     }
 
-                    await checkImageData(lores1);
+                    checkImageData(lores1);
                 });
 
-                it('renders alt chars', async () => {
+                it('renders alt chars', () => {
                     vm.altChar(true);
                     vm._80col(true);
                     const bank0 = lores1.bank0();
@@ -80,14 +77,14 @@ describe('canvas', () => {
                         }
                     }
 
-                    await checkImageData(lores1);
+                    checkImageData(lores1);
                 });
             });
         });
 
         describe('graphics mode', () => {
             describe('lores', () => {
-                it('renders', async () => {
+                it('renders', () => {
                     vm.text(false);
                     for (let page = 0x4; page < 0x8; page++) {
                         for (let off = 0; off < 0x100; off++) {
@@ -95,10 +92,10 @@ describe('canvas', () => {
                         }
                     }
 
-                    await checkImageData(lores1);
+                    checkImageData(lores1);
                 });
 
-                it('renders mixed', async () => {
+                it('renders mixed', () => {
                     vm.text(false);
                     vm.mixed(true);
 
@@ -108,10 +105,10 @@ describe('canvas', () => {
                         }
                     }
 
-                    await checkImageData(lores1);
+                    checkImageData(lores1);
                 });
 
-                it('renders mono', async () => {
+                it('renders mono', () => {
                     vm.text(false);
                     vm.mono(true);
 
@@ -121,12 +118,12 @@ describe('canvas', () => {
                         }
                     }
 
-                    await checkImageData(lores1);
+                    checkImageData(lores1);
                 });
             });
 
             describe('double lores', () => {
-                it('renders', async () => {
+                it('renders', () => {
                     vm.text(false);
                     vm._80col(true);
                     vm.an3(false);
@@ -140,10 +137,10 @@ describe('canvas', () => {
                         }
                     }
 
-                    await checkImageData(lores1);
+                    checkImageData(lores1);
                 });
 
-                it('renders mixed', async () => {
+                it('renders mixed', () => {
                     vm.text(false);
                     vm.mixed(true);
                     vm._80col(true);
@@ -158,10 +155,10 @@ describe('canvas', () => {
                         }
                     }
 
-                    await checkImageData(lores1);
+                    checkImageData(lores1);
                 });
 
-                it('renders mono', async () => {
+                it('renders mono', () => {
                     vm.text(false);
                     vm._80col(true);
                     vm.an3(false);
@@ -176,7 +173,7 @@ describe('canvas', () => {
                         }
                     }
 
-                    await checkImageData(lores1);
+                    checkImageData(lores1);
                 });
             });
         });
@@ -196,7 +193,7 @@ describe('canvas', () => {
         });
 
         describe('hires', () => {
-            it('renders', async () => {
+            it('renders', () => {
                 vm.text(false);
                 for (let page = 0x20; page < 0x40; page++) {
                     for (let off = 0; off < 0x100; off++) {
@@ -204,10 +201,10 @@ describe('canvas', () => {
                     }
                 }
 
-                await checkImageData(hires1);
+                checkImageData(hires1);
             });
 
-            it('renders mono', async () => {
+            it('renders mono', () => {
                 vm.text(false);
                 vm.mono(true);
 
@@ -217,12 +214,12 @@ describe('canvas', () => {
                     }
                 }
 
-                await checkImageData(hires1);
+                checkImageData(hires1);
             });
         });
 
         describe('double lores', () => {
-            it('renders', async () => {
+            it('renders', () => {
                 vm.text(false);
                 vm._80col(true);
                 vm.an3(false);
@@ -236,10 +233,10 @@ describe('canvas', () => {
                     }
                 }
 
-                await checkImageData(hires1);
+                checkImageData(hires1);
             });
 
-            it('renders mono', async () => {
+            it('renders mono', () => {
                 vm.text(false);
                 vm._80col(true);
                 vm.an3(false);
@@ -254,7 +251,7 @@ describe('canvas', () => {
                     }
                 }
 
-                await checkImageData(hires1);
+                checkImageData(hires1);
             });
         });
     });
