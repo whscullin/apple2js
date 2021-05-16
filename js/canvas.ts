@@ -22,9 +22,6 @@ import {
     pageNo
 } from './videomodes';
 
-const tmpCanvas = document.createElement('canvas');
-const tmpContext = tmpCanvas.getContext('2d');
-
 const dim = (c: Color): Color => {
     return [
         c[0] * 0.75 & 0xff,
@@ -136,10 +133,7 @@ export class LoresPage2D implements LoresPage {
         private readonly charset: rom,
         private readonly e: boolean
     ) {
-        if (!tmpContext) {
-            throw new Error('No 2d context');
-        }
-        this.imageData = tmpContext.createImageData(560, 192);
+        this.imageData = this.vm.context.createImageData(560, 192);
         for (let idx = 0; idx < 560 * 192 * 4; idx++) {
             this.imageData.data[idx] = 0xff;
         }
@@ -290,7 +284,7 @@ export class LoresPage2D implements LoresPage {
                             offset += 546 * 4;
                         }
                     } else {
-                        const colorMode = this.vm.mixedMode && !this.vm.textMode && !this.vm._monoMode;
+                        const colorMode = this.vm.mixedMode && !this.vm.textMode && !this.vm.monoMode;
                         // var val0 = col > 0 ? _buffer[0][base - 1] : 0;
                         // var val2 = col < 39 ? _buffer[0][base + 1] : 0;
 
@@ -330,7 +324,7 @@ export class LoresPage2D implements LoresPage {
             } else {
                 if (this.vm._80colMode && !this.vm.an3State) {
                     let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
-                    if (this.vm._monoMode) {
+                    if (this.vm.monoMode) {
                         for (let jdx = 0; jdx < 8; jdx++) {
                             let b = (jdx < 4) ? (val & 0x0f) : (val >> 4);
                             b |= (b << 4);
@@ -363,7 +357,7 @@ export class LoresPage2D implements LoresPage {
                 } else if (bank === 0) {
                     let offset = (col * 14 + row * 560 * 8) * 4;
 
-                    if (this.vm._monoMode) {
+                    if (this.vm.monoMode) {
                         for (let jdx = 0; jdx < 8; jdx++) {
                             let b = (jdx < 4) ? (val & 0x0f) : (val >> 4);
                             b |= (b << 4);
@@ -519,10 +513,7 @@ export class HiresPage2D implements HiresPage {
         private vm: VideoModes,
         private page: pageNo,
     ) {
-        if (!tmpContext) {
-            throw new Error('No 2d context');
-        }
-        this.imageData = tmpContext.createImageData(560, 192);
+        this.imageData = this.vm.context.createImageData(560, 192);
         for (let idx = 0; idx < 560 * 192 * 4; idx++) {
             this.imageData.data[idx] = 0xff;
         }
@@ -629,7 +620,7 @@ export class HiresPage2D implements HiresPage {
 
             dy = rowa << 4 | rowb << 1;
             let bz, b0, b1, b2, b3, b4, c, hb;
-            if (this.oneSixtyMode && !this.vm._monoMode) {
+            if (this.oneSixtyMode && !this.vm.monoMode) {
                 // 1 byte = two pixels, but 3:4 ratio
                 const c3 = val & 0xf;
                 const c4 = val >> 4;
@@ -691,7 +682,7 @@ export class HiresPage2D implements HiresPage {
                 let offset = dx * 4 + dy * 280 * 4;
 
                 let monoColor = null;
-                if (this.vm._monoMode || this.monoDHRMode) {
+                if (this.vm.monoMode || this.monoDHRMode) {
                     monoColor = whiteCol;
                 }
 
@@ -765,7 +756,7 @@ export class HiresPage2D implements HiresPage {
 
                 let offset = dx * 4 + dy * 280 * 4;
 
-                const monoColor = this.vm._monoMode ? whiteCol : null;
+                const monoColor = this.vm.monoMode ? whiteCol : null;
 
                 for (let idx = 0; idx < 9; idx++, offset += 8) {
                     val >>= 1;
@@ -810,9 +801,9 @@ export class HiresPage2D implements HiresPage {
 
     refresh() {
         this.highColorHGRMode = !this.vm.an3State && this.vm.hiresMode && !this.vm._80colMode;
-        this.oneSixtyMode = this.vm._flag == 1 && this.vm.doubleHiresMode;
-        this.mixedDHRMode = this.vm._flag == 2 && this.vm.doubleHiresMode;
-        this.monoDHRMode = this.vm._flag == 3 && this.vm.doubleHiresMode;
+        this.oneSixtyMode = this.vm.flag == 1 && this.vm.doubleHiresMode;
+        this.mixedDHRMode = this.vm.flag == 2 && this.vm.doubleHiresMode;
+        this.monoDHRMode = this.vm.flag == 3 && this.vm.doubleHiresMode;
 
         let addr = 0x2000 * this.page;
         this._refreshing = true;
@@ -863,7 +854,8 @@ export class HiresPage2D implements HiresPage {
 export class VideoModes2D implements VideoModes {
     private _grs: LoresPage[] = [];
     private _hgrs: HiresPage[] = [];
-    private _context: CanvasRenderingContext2D | null;
+    private _screenContext: CanvasRenderingContext2D;
+    private _canvas: HTMLCanvasElement;
     private _left: number;
     private _top: number;
     private _refreshFlag: boolean = true;
@@ -879,16 +871,29 @@ export class VideoModes2D implements VideoModes {
     an3State: boolean;
     doubleHiresMode: boolean;
 
-    _flag = 0;
-    _monoMode = false;
+    flag = 0;
+    monoMode = false;
+
+    context: CanvasRenderingContext2D;
 
     constructor(
-        private canvas: HTMLCanvasElement,
+        private screen: HTMLCanvasElement,
         private e: boolean
     ) {
-        this._context = this.canvas.getContext('2d');
-        this._left = (this.canvas.width - 560) / 2;
-        this._top = (this.canvas.height - 384) / 2;
+        this._canvas = document.createElement('canvas');
+        const context = this._canvas.getContext('2d');
+        if (!context) {
+            throw new Error('No 2d context');
+        }
+        this.context = context;
+
+        const screenContext = this.screen.getContext('2d');
+        if (!screenContext) {
+            throw new Error('No 2d screen context');
+        }
+        this._screenContext = screenContext;
+        this._left = (this.screen.width - 560) / 2;
+        this._top = (this.screen.height - 384) / 2;
     }
 
     _refresh() {
@@ -910,7 +915,7 @@ export class VideoModes2D implements VideoModes {
         this._80colMode = false;
         this.altCharMode = false;
 
-        this._flag = 0;
+        this.flag = 0;
         this.an3State = true;
 
         this._refresh();
@@ -928,7 +933,7 @@ export class VideoModes2D implements VideoModes {
         const old = this.textMode;
         this.textMode = on;
         if (on) {
-            this._flag = 0;
+            this.flag = 0;
         }
         if (old != on) {
             this._refresh();
@@ -960,7 +965,7 @@ export class VideoModes2D implements VideoModes {
         const old = this.hiresMode;
         this.hiresMode = on;
         if (!on) {
-            this._flag = 0;
+            this.flag = 0;
         }
 
         if (old != on) {
@@ -975,7 +980,7 @@ export class VideoModes2D implements VideoModes {
         this.an3State = on;
 
         if (on) {
-            this._flag = ((this._flag << 1) | (this._80colMode ? 0x0 : 0x1)) & 0x3;
+            this.flag = ((this.flag << 1) | (this._80colMode ? 0x0 : 0x1)) & 0x3;
         }
 
         if (old != on) {
@@ -1032,25 +1037,25 @@ export class VideoModes2D implements VideoModes {
     }
 
     buildScreen(mainData: ImageData, mixData?: ImageData | null) {
-        if (!tmpContext) {
+        if (!this.context) {
             throw new Error('No 2d context');
         }
 
         const { width, height } = { width: 560, height: 192 };
         const { x, y } = this._80colMode ? { x: 0, y: 0 } : { x: 0, y: 0 };
 
-        tmpCanvas.width = width;
-        tmpCanvas.height = height;
-        tmpContext.fillStyle = 'rgba(0,0,0,1)';
-        tmpContext.fillRect(0, 0, width, height);
+        this._canvas.width = width;
+        this._canvas.height = height;
+        this.context.fillStyle = 'rgba(0,0,0,1)';
+        this.context.fillRect(0, 0, width, height);
 
         if (mixData) {
-            tmpContext.putImageData(mainData, x, y, 0, 0, 560, 160);
-            tmpContext.putImageData(mixData, x, y, 0, 160, 560, 32);
+            this.context.putImageData(mainData, x, y, 0, 0, 560, 160);
+            this.context.putImageData(mixData, x, y, 0, 160, 560, 32);
         } else {
-            tmpContext.putImageData(mainData, x, y);
+            this.context.putImageData(mainData, x, y);
         }
-        return tmpCanvas;
+        return this._canvas;
     }
 
     updateImage(
@@ -1059,14 +1064,11 @@ export class VideoModes2D implements VideoModes {
         mixData?: ImageData | null,
         mixDirty?: Region | null
     ) {
-        if (!this._context) {
-            throw new Error('No 2D context');
-        }
         let blitted = false;
 
         if (mainDirty.bottom !== -1 || (mixDirty && mixDirty.bottom !== -1)) {
             const imageData = this.buildScreen(mainData, mixData);
-            this._context.drawImage(
+            this._screenContext.drawImage(
                 imageData,
                 0, 0, 560, 192,
                 this._left, this._top, 560, 384
@@ -1121,7 +1123,7 @@ export class VideoModes2D implements VideoModes {
             _80colMode: this._80colMode,
             altCharMode: this.altCharMode,
             an3State: this.an3State,
-            _flag: this._flag
+            flag: this.flag
         };
     }
 
@@ -1133,7 +1135,7 @@ export class VideoModes2D implements VideoModes {
         this._80colMode = state._80colMode;
         this.altCharMode = state.altCharMode;
         this.an3State = state.an3State;
-        this._flag = state._flag;
+        this.flag = state.flag;
 
         this._grs[0].setState(state.grs[0]);
         this._grs[1].setState(state.grs[1]);
@@ -1144,17 +1146,17 @@ export class VideoModes2D implements VideoModes {
 
     mono(on: boolean) {
         if (on) {
-            this.canvas.classList.add('mono');
+            this.screen.classList.add('mono');
         } else {
-            this.canvas.classList.remove('mono');
+            this.screen.classList.remove('mono');
         }
-        this._monoMode = on;
+        this.monoMode = on;
         this._refresh();
     }
 
     scanlines(on: boolean) {
         // Can't apply scanline filter to canvas
-        const parent = this.canvas.parentElement;
+        const parent = this.screen.parentElement;
         if (parent) {
             if (on) {
                 parent.classList.add('scanlines');

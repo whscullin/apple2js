@@ -24,7 +24,7 @@ export interface VideoModesState {
     _80colMode: boolean,
     altCharMode: boolean,
     an3State: boolean,
-    _flag: number,
+    flag: number,
 }
 
 export interface VideoPage extends MemoryPages, Restorable<GraphicsState> {
@@ -55,8 +55,10 @@ export interface VideoModes extends Restorable<VideoModesState> {
     an3State: boolean
     doubleHiresMode: boolean
 
-    _flag: number
-    _monoMode: boolean
+    flag: number
+    monoMode: boolean
+
+    context: CanvasRenderingContext2D;
 
     page(pageNo: number): void
 

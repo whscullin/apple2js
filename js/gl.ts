@@ -25,9 +25,6 @@ import {
     pageNo
 } from './videomodes';
 
-const tmpCanvas = document.createElement('canvas');
-const tmpContext = tmpCanvas.getContext('2d');
-
 // Color constants
 const whiteCol: Color = [255, 255, 255];
 const blackCol: Color = [0, 0, 0];
@@ -63,10 +60,7 @@ export class LoresPageGL implements LoresPage {
         private readonly charset: rom,
         private readonly e: boolean
     ) {
-        if (!tmpContext) {
-            throw new Error('No 2d context');
-        }
-        this.imageData = tmpContext.createImageData(560, 192);
+        this.imageData = this.vm.context.createImageData(560, 192);
         for (let idx = 0; idx < 560 * 192 * 4; idx++) {
             this.imageData.data[idx] = 0xff;
         }
@@ -382,10 +376,7 @@ export class HiresPageGL implements HiresPage {
         private vm: VideoModes,
         private page: pageNo,
     ) {
-        if (!tmpContext) {
-            throw new Error('No 2d context');
-        }
-        this.imageData = tmpContext.createImageData(560, 192);
+        this.imageData = this.vm.context.createImageData(560, 192);
         for (let idx = 0; idx < 560 * 192 * 4; idx++) {
             this.imageData.data[idx] = 0xff;
         }
@@ -574,6 +565,7 @@ export class VideoModesGL implements VideoModes {
     private _displayConfig: screenEmu.DisplayConfiguration;
     private _scanlines: boolean = false;
     private _refreshFlag: boolean = true;
+    private _canvas: HTMLCanvasElement;
 
     public ready: Promise<void>
 
@@ -586,13 +578,22 @@ export class VideoModesGL implements VideoModes {
     an3State: boolean;
     doubleHiresMode: boolean;
 
-    _flag = 0;
-    _monoMode: boolean = false;
+    flag = 0;
+    monoMode: boolean = false;
+
+    context: CanvasRenderingContext2D;
 
     constructor(
-        private canvas: HTMLCanvasElement,
-        private e: boolean) {
-        this._sv = new screenEmu.ScreenView(this.canvas);
+        private screen: HTMLCanvasElement,
+        private e: boolean
+    ) {
+        this._canvas = document.createElement('canvas');
+        const context = this._canvas.getContext('2d');
+        if (!context) {
+            throw new Error('no 2d context');
+        }
+        this.context = context;
+        this._sv = new screenEmu.ScreenView(this.screen);
 
         this.ready = this.init();
     }
@@ -606,7 +607,7 @@ export class VideoModesGL implements VideoModes {
 
     private defaultMonitor(): screenEmu.DisplayConfiguration {
         const config = new screenEmu.DisplayConfiguration();
-        config.displayResolution = new screenEmu.Size(this.canvas.width, this.canvas.height);
+        config.displayResolution = new screenEmu.Size(this.screen.width, this.screen.height);
         config.displayScanlineLevel = 0.5;
         config.videoWhiteOnly = true;
         config.videoSaturation = 0.8;
@@ -619,14 +620,14 @@ export class VideoModesGL implements VideoModes {
     private monitorII(): screenEmu.DisplayConfiguration {
         // Values taken from openemulator/libemulation/res/library/Monitors/Apple Monitor II.xml
         const config = new screenEmu.DisplayConfiguration();
-        config.displayResolution = new screenEmu.Size(this.canvas.width, this.canvas.height);
+        config.displayResolution = new screenEmu.Size(this.screen.width, this.screen.height);
         config.videoDecoder = 'CANVAS_MONOCHROME';
         config.videoBrightness = 0.15;
         config.videoContrast = 0.8;
         config.videoSaturation = 1.45;
         config.videoHue = 0.27;
-        config.videoCenter = new screenEmu.Point(0, 0);
-        config.videoSize = new screenEmu.Size(1.05, 1.05);
+        config.videoCenter = new screenEmu.Point(0.01, 0.02);
+        config.videoSize = new screenEmu.Size(1.25, 1.15);
         config.videoBandwidth = 6000000;
         config.displayBarrel = 0.1;
         config.displayScanlineLevel = 0.5;
@@ -641,7 +642,7 @@ export class VideoModesGL implements VideoModes {
         this._refreshFlag = true;
 
         if (this._displayConfig) {
-            this._displayConfig.videoWhiteOnly = this.textMode || this._monoMode;
+            this._displayConfig.videoWhiteOnly = this.textMode || this.monoMode;
             this._displayConfig.displayScanlineLevel = this._scanlines ? 0.5 : 0;
             this._sv.displayConfiguration = this._displayConfig;
         }
@@ -789,26 +790,22 @@ export class VideoModesGL implements VideoModes {
     }
 
     buildScreen(mainData: ImageData, mixData?: ImageData | null) {
-        if (!tmpContext) {
-            throw new Error('No 2d context');
-        }
-
         const details = screenEmu.C.NTSC_DETAILS;
         const { width, height } = details.imageSize;
         const { x, y } = this._80colMode ? details.topLeft80Col : details.topLeft;
 
-        tmpCanvas.width = width;
-        tmpCanvas.height = height;
-        tmpContext.fillStyle = 'rgba(0,0,0,1)';
-        tmpContext.fillRect(0, 0, width, height);
+        this._canvas.width = width;
+        this._canvas.height = height;
+        this.context.fillStyle = 'rgba(0,0,0,1)';
+        this.context.fillRect(0, 0, width, height);
 
         if (mixData) {
-            tmpContext.putImageData(mainData, x, y, 0, 0, 560, 160);
-            tmpContext.putImageData(mixData, x, y, 0, 160, 560, 32);
+            this.context.putImageData(mainData, x, y, 0, 0, 560, 160);
+            this.context.putImageData(mixData, x, y, 0, 160, 560, 32);
         } else {
-            tmpContext.putImageData(mainData, x, y);
+            this.context.putImageData(mainData, x, y);
         }
-        return tmpContext.getImageData(0, 0, width, height);
+        return this.context.getImageData(0, 0, width, height);
     }
 
     blit(altData?: ImageData) {
@@ -856,7 +853,7 @@ export class VideoModesGL implements VideoModes {
             _80colMode: this._80colMode,
             altCharMode: this.altCharMode,
             an3State: this.an3State,
-            _flag: 0
+            flag: 0
         };
     }
 
@@ -877,7 +874,7 @@ export class VideoModesGL implements VideoModes {
     }
 
     mono(on: boolean) {
-        this._monoMode = on;
+        this.monoMode = on;
         this._displayConfig = on ? this.monitorII() : this.defaultMonitor();
         this._refresh();
     }
