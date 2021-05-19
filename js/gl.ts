@@ -628,7 +628,7 @@ export class VideoModesGL implements VideoModes {
         config.videoHue = 0.27;
         config.videoCenter = new screenEmu.Point(0.01, 0.02);
         config.videoSize = new screenEmu.Size(1.25, 1.15);
-        config.videoBandwidth = 6000000;
+        config.videoBandwidth = 9000000;
         config.displayBarrel = 0.1;
         config.displayScanlineLevel = 0.5;
         config.displayCenterLighting = 0.5;
