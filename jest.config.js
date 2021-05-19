@@ -21,5 +21,6 @@ module.exports = {
     'coveragePathIgnorePatterns': [
         '/node_modules/',
         '/js/roms/',
+        '/test/',
     ]
 };
