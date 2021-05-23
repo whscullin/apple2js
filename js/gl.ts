@@ -61,9 +61,7 @@ export class LoresPageGL implements LoresPage {
         private readonly e: boolean
     ) {
         this.imageData = this.vm.context.createImageData(560, 192);
-        for (let idx = 0; idx < 560 * 192 * 4; idx++) {
-            this.imageData.data[idx] = 0xff;
-        }
+        this.imageData.data.fill(0xff);
         this._buffer[0] = allocMemPages(0x4);
         this._buffer[1] = allocMemPages(0x4);
 
@@ -377,9 +375,7 @@ export class HiresPageGL implements HiresPage {
         private page: pageNo,
     ) {
         this.imageData = this.vm.context.createImageData(560, 192);
-        for (let idx = 0; idx < 560 * 192 * 4; idx++) {
-            this.imageData.data[idx] = 0xff;
-        }
+        this.imageData.data.fill(0xff);
         this._buffer[0] = allocMemPages(0x20);
         this._buffer[1] = allocMemPages(0x20);
 
@@ -569,19 +565,19 @@ export class VideoModesGL implements VideoModes {
 
     public ready: Promise<void>
 
-    textMode: boolean;
-    mixedMode: boolean;
-    hiresMode: boolean;
-    pageMode: pageNo;
-    _80colMode: boolean;
-    altCharMode: boolean;
-    an3State: boolean;
-    doubleHiresMode: boolean;
+    public textMode: boolean;
+    public mixedMode: boolean;
+    public hiresMode: boolean;
+    public pageMode: pageNo;
+    public _80colMode: boolean;
+    public altCharMode: boolean;
+    public an3State: boolean;
+    public doubleHiresMode: boolean;
 
-    flag = 0;
-    monoMode: boolean = false;
+    public flag = 0;
+    public monoMode: boolean = false;
 
-    context: CanvasRenderingContext2D;
+    public context: CanvasRenderingContext2D;
 
     constructor(
         private screen: HTMLCanvasElement,
@@ -592,6 +588,9 @@ export class VideoModesGL implements VideoModes {
         if (!context) {
             throw new Error('no 2d context');
         }
+        const { width, height } = screenEmu.C.NTSC_DETAILS.imageSize;
+        this._canvas.width = width;
+        this._canvas.height = height;
         this.context = context;
         this._sv = new screenEmu.ScreenView(this.screen);
 
@@ -793,11 +792,6 @@ export class VideoModesGL implements VideoModes {
         const details = screenEmu.C.NTSC_DETAILS;
         const { width, height } = details.imageSize;
         const { x, y } = this._80colMode ? details.topLeft80Col : details.topLeft;
-
-        this._canvas.width = width;
-        this._canvas.height = height;
-        this.context.fillStyle = 'rgba(0,0,0,1)';
-        this.context.fillRect(0, 0, width, height);
 
         if (mixData) {
             this.context.putImageData(mainData, x, y, 0, 0, 560, 160);

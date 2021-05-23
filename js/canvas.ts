@@ -134,9 +134,7 @@ export class LoresPage2D implements LoresPage {
         private readonly e: boolean
     ) {
         this.imageData = this.vm.context.createImageData(560, 192);
-        for (let idx = 0; idx < 560 * 192 * 4; idx++) {
-            this.imageData.data[idx] = 0xff;
-        }
+        this.imageData.data.fill(0xff);
         this._buffer[0] = allocMemPages(0x4);
         this._buffer[1] = allocMemPages(0x4);
 
@@ -514,9 +512,7 @@ export class HiresPage2D implements HiresPage {
         private page: pageNo,
     ) {
         this.imageData = this.vm.context.createImageData(560, 192);
-        for (let idx = 0; idx < 560 * 192 * 4; idx++) {
-            this.imageData.data[idx] = 0xff;
-        }
+        this.imageData.data.fill(0xff);
         this._buffer[0] = allocMemPages(0x20);
         this._buffer[1] = allocMemPages(0x20);
 
@@ -882,15 +878,16 @@ export class VideoModes2D implements VideoModes {
     ) {
         this._canvas = document.createElement('canvas');
         const context = this._canvas.getContext('2d');
-        if (!context) {
+        const screenContext = this.screen.getContext('2d');
+        if (!context || !screenContext) {
             throw new Error('No 2d context');
         }
         this.context = context;
 
-        const screenContext = this.screen.getContext('2d');
-        if (!screenContext) {
-            throw new Error('No 2d screen context');
-        }
+        const { width, height } = { width: 560, height: 192 };
+        this._canvas.width = width;
+        this._canvas.height = height;
+
         this._screenContext = screenContext;
         this._left = (this.screen.width - 560) / 2;
         this._top = (this.screen.height - 384) / 2;
@@ -1037,17 +1034,8 @@ export class VideoModes2D implements VideoModes {
     }
 
     buildScreen(mainData: ImageData, mixData?: ImageData | null) {
-        if (!this.context) {
-            throw new Error('No 2d context');
-        }
-
-        const { width, height } = { width: 560, height: 192 };
+        // TODO(whscullin): - figure out 80 column offset
         const { x, y } = this._80colMode ? { x: 0, y: 0 } : { x: 0, y: 0 };
-
-        this._canvas.width = width;
-        this._canvas.height = height;
-        this.context.fillStyle = 'rgba(0,0,0,1)';
-        this.context.fillRect(0, 0, width, height);
 
         if (mixData) {
             this.context.putImageData(mainData, x, y, 0, 0, 560, 160);
