@@ -22,46 +22,6 @@ import {
     pageNo
 } from './videomodes';
 
-let textMode = true;
-let mixedMode = false;
-let hiresMode = false;
-let pageMode: pageNo = 1;
-let _80colMode = false;
-let altCharMode = false;
-let an3 = false;
-let doubleHiresMode = false;
-let monoDHRMode = false;
-const colorDHRMode = false;
-let mixedDHRMode = false;
-let highColorHGRMode = false;
-let highColorTextMode = false;
-let oneSixtyMode = false;
-
-const tmpCanvas = document.createElement('canvas');
-const tmpContext = tmpCanvas.getContext('2d');
-
-const buildScreen = (mainData: ImageData, mixData?: ImageData | null) => {
-    if (!tmpContext) {
-        throw new Error('No 2d context');
-    }
-
-    const { width, height } = { width: 560, height: 192 };
-    const { x, y } = _80colMode ? { x: 0, y: 0 } : { x: 0, y: 0 };
-
-    tmpCanvas.width = width;
-    tmpCanvas.height = height;
-    tmpContext.fillStyle = 'rgba(0,0,0,1)';
-    tmpContext.fillRect(0, 0, width, height);
-
-    if (mixData) {
-        tmpContext.putImageData(mainData, x, y, 0, 0, 560, 160);
-        tmpContext.putImageData(mixData, x, y, 0, 160, 560, 32);
-    } else {
-        tmpContext.putImageData(mainData, x, y);
-    }
-    return tmpCanvas;
-};
-
 const dim = (c: Color): Color => {
     return [
         c[0] * 0.75 & 0xff,
@@ -119,7 +79,7 @@ const r4 = [
     11,   // Light Blue
     13,  // Yellow
     15   // White
-];
+] as const;
 
 const dcolors: Color[] = [
     [0, 0, 0], // 0x0 black
@@ -145,7 +105,7 @@ const notDirty: Region = {
     bottom: -1,
     left: 561,
     right: -1
-};
+} as const;
 
 /****************************************************************************
  *
@@ -160,21 +120,25 @@ export class LoresPage2D implements LoresPage {
 
     private _buffer: memory[] = [];
     private _refreshing = false;
-    private _monoMode = false;
     private _blink = false;
+
+    private highColorTextMode = false
 
     dirty: Region = {...notDirty}
     imageData: ImageData;
 
-    constructor(private page: number,
+    constructor(
+        private vm: VideoModes,
+        private page: pageNo,
         private readonly charset: rom,
-        private readonly e: boolean) {
-        this.imageData = new ImageData(560, 192);
-        for (let idx = 0; idx < 560 * 192 * 4; idx++) {
-            this.imageData.data[idx] = 0xff;
-        }
+        private readonly e: boolean
+    ) {
+        this.imageData = this.vm.context.createImageData(560, 192);
+        this.imageData.data.fill(0xff);
         this._buffer[0] = allocMemPages(0x4);
         this._buffer[1] = allocMemPages(0x4);
+
+        this.vm.setLoresPage(page, this);
     }
 
     private _drawPixel(data: Uint8ClampedArray, off: number, color: Color) {
@@ -194,7 +158,7 @@ export class LoresPage2D implements LoresPage {
     private _checkInverse(val: byte) {
         let inverse = false;
         if (this.e) {
-            if (!_80colMode && !altCharMode) {
+            if (!this.vm._80colMode && !this.vm.altCharMode) {
                 inverse = ((val & 0xc0) == 0x40) && this._blink;
             }
         } else {
@@ -264,14 +228,14 @@ export class LoresPage2D implements LoresPage {
             x += 14;
             if (x > this.dirty.right) { this.dirty.right = x; }
 
-            if (textMode || hiresMode || (mixedMode && row > 19)) {
-                if (_80colMode) {
+            if (this.vm.textMode || this.vm.hiresMode || (this.vm.mixedMode && row > 19)) {
+                if (this.vm._80colMode) {
                     const inverse = this._checkInverse(val);
 
                     fore = inverse ? blackCol : whiteCol;
                     back = inverse ? whiteCol : blackCol;
 
-                    if (!altCharMode) {
+                    if (!this.vm.altCharMode) {
                         val = (val >= 0x40 && val < 0x80) ? val - 0x40 : val;
                     }
 
@@ -295,13 +259,13 @@ export class LoresPage2D implements LoresPage {
                     fore = inverse ? blackCol : whiteCol;
                     back = inverse ? whiteCol : blackCol;
 
-                    if (!altCharMode) {
+                    if (!this.vm.altCharMode) {
                         val = (val >= 0x40 && val < 0x80) ? val - 0x40 : val;
                     }
 
                     let offset = (col * 14 + row * 560 * 8) * 4;
 
-                    if (highColorTextMode) {
+                    if (this.highColorTextMode) {
                         fore = _colors[this._buffer[1][base] >> 4];
                         back = _colors[this._buffer[1][base] & 0x0f];
                     }
@@ -318,7 +282,7 @@ export class LoresPage2D implements LoresPage {
                             offset += 546 * 4;
                         }
                     } else {
-                        const colorMode = mixedMode && !textMode && !this._monoMode;
+                        const colorMode = this.vm.mixedMode && !this.vm.textMode && !this.vm.monoMode;
                         // var val0 = col > 0 ? _buffer[0][base - 1] : 0;
                         // var val2 = col < 39 ? _buffer[0][base + 1] : 0;
 
@@ -356,24 +320,20 @@ export class LoresPage2D implements LoresPage {
                     }
                 }
             } else {
-                if (!_80colMode && bank == 1) {
-                    return;
-                }
-                if (_80colMode && !an3) {
+                if (this.vm._80colMode && !this.vm.an3State) {
                     let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
-                    if (this._monoMode) {
-                        fore = whiteCol;
-                        back = blackCol;
+                    if (this.vm.monoMode) {
                         for (let jdx = 0; jdx < 8; jdx++) {
-                            let b = (jdx < 8) ? (val & 0x0f) : (val >> 4);
+                            let b = (jdx < 4) ? (val & 0x0f) : (val >> 4);
                             b |= (b << 4);
-                            if (bank & 0x1) {
-                                b <<= 1;
+                            b |= (b << 8);
+                            if (col & 0x1) {
+                                b >>= 2;
                             }
                             for (let idx = 0; idx < 7; idx++) {
-                                const color = (b & 0x80) ? fore : back;
+                                const color = (b & 0x01) ? whiteCol : blackCol;
                                 this._drawHalfPixel(data, offset, color);
-                                b <<= 1;
+                                b >>= 1;
                                 offset += 4;
                             }
                             offset += 553 * 4;
@@ -387,28 +347,26 @@ export class LoresPage2D implements LoresPage {
                                 (val & 0x0f) : (val >> 4)];
                             for (let idx = 0; idx < 7; idx++) {
                                 this._drawHalfPixel(data, offset, color);
-                                off += 4;
+                                offset += 4;
                             }
                             offset += 553 * 4;
                         }
                     }
-                } else {
+                } else if (bank === 0) {
                     let offset = (col * 14 + row * 560 * 8) * 4;
 
-                    if (this._monoMode) {
-                        fore = whiteCol;
-                        back = blackCol;
+                    if (this.vm.monoMode) {
                         for (let jdx = 0; jdx < 8; jdx++) {
                             let b = (jdx < 4) ? (val & 0x0f) : (val >> 4);
                             b |= (b << 4);
                             b |= (b << 8);
                             if (col & 0x1) {
-                                b <<= 2;
+                                b >>= 2;
                             }
                             for (let idx = 0; idx < 14; idx++) {
-                                const color = (b & 0x8000) ? fore : back;
+                                const color = (b & 0x0001) ? whiteCol : blackCol;
                                 this._drawHalfPixel(data, offset, color);
-                                b <<= 1;
+                                b >>= 1;
                                 offset += 4;
                             }
                             offset += 546 * 4;
@@ -429,19 +387,17 @@ export class LoresPage2D implements LoresPage {
     }
 
     refresh() {
+        this.highColorTextMode = !this.vm.an3State && this.vm.textMode && !this.vm._80colMode;
+
         let addr = 0x400 * this.page;
         this._refreshing = true;
         for (let idx = 0; idx < 0x400; idx++, addr++) {
             this._write(addr >> 8, addr & 0xff, this._buffer[0][idx], 0);
-            if (_80colMode) {
+            if (this.vm._80colMode) {
                 this._write(addr >> 8, addr & 0xff, this._buffer[1][idx], 1);
             }
         }
         this._refreshing = false;
-    }
-
-    mono(on: boolean) {
-        this._monoMode = on;
     }
 
     blink() {
@@ -476,8 +432,6 @@ export class LoresPage2D implements LoresPage {
 
     getState(): GraphicsState {
         return {
-            page: this.page,
-            mono: this._monoMode,
             buffer: [
                 new Uint8Array(this._buffer[0]),
                 new Uint8Array(this._buffer[1]),
@@ -486,8 +440,6 @@ export class LoresPage2D implements LoresPage {
     }
 
     setState(state: GraphicsState) {
-        this.page = state.page;
-        this._monoMode = state.mono;
         this._buffer[0] = new Uint8Array(state.buffer[0]);
         this._buffer[1] = new Uint8Array(state.buffer[1]);
 
@@ -518,7 +470,7 @@ export class LoresPage2D implements LoresPage {
         for (row = 0; row < 24; row++) {
             base = this.rowToBase(row);
             line = '';
-            if (this.e && _80colMode) {
+            if (this.e && this.vm._80colMode) {
                 for (col = 0; col < 80; col++) {
                     charCode = this.mapCharCode(this._buffer[1 - col % 2][base + Math.floor(col / 2)]);
                     line += String.fromCharCode(charCode);
@@ -548,16 +500,23 @@ export class HiresPage2D implements HiresPage {
 
     private _buffer: memory[] = [];
     private _refreshing = false;
-    private _monoMode = false;
+
+    highColorHGRMode: boolean;
+    oneSixtyMode: boolean;
+    mixedDHRMode: boolean;
+    monoDHRMode: boolean;
+    colorDHRMode: boolean = true;
 
     constructor(
-        private page: number) {
-        this.imageData = new ImageData(560, 192);
-        for (let idx = 0; idx < 560 * 192 * 4; idx++) {
-            this.imageData.data[idx] = 0xff;
-        }
+        private vm: VideoModes,
+        private page: pageNo,
+    ) {
+        this.imageData = this.vm.context.createImageData(560, 192);
+        this.imageData.data.fill(0xff);
         this._buffer[0] = allocMemPages(0x20);
         this._buffer[1] = allocMemPages(0x20);
+
+        this.vm.setHiresPage(page, this);
     }
 
     private _drawPixel(data: Uint8ClampedArray, off: number, color: Color) {
@@ -645,7 +604,7 @@ export class HiresPage2D implements HiresPage {
 
         const data = this.imageData.data;
         let dx, dy;
-        if ((rowa < 24) && (col < 40) && hiresMode) {
+        if ((rowa < 24) && (col < 40) && this.vm.hiresMode) {
             let y = rowa << 4 | rowb << 1;
             if (y < this.dirty.top) { this.dirty.top = y; }
             y += 1;
@@ -657,7 +616,7 @@ export class HiresPage2D implements HiresPage {
 
             dy = rowa << 4 | rowb << 1;
             let bz, b0, b1, b2, b3, b4, c, hb;
-            if (oneSixtyMode && !this._monoMode) {
+            if (this.oneSixtyMode && !this.vm.monoMode) {
                 // 1 byte = two pixels, but 3:4 ratio
                 const c3 = val & 0xf;
                 const c4 = val >> 4;
@@ -667,7 +626,7 @@ export class HiresPage2D implements HiresPage {
 
                 this._draw3Pixel(data, offset, dcolors[c3]);
                 this._draw4Pixel(data, offset + 12, dcolors[c4]);
-            } else if (doubleHiresMode) {
+            } else if (this.vm.doubleHiresMode) {
                 val &= 0x7f;
 
                 // Every 4 bytes is 7 pixels
@@ -719,7 +678,7 @@ export class HiresPage2D implements HiresPage {
                 let offset = dx * 4 + dy * 280 * 4;
 
                 let monoColor = null;
-                if (this._monoMode || monoDHRMode) {
+                if (this.vm.monoMode || this.monoDHRMode) {
                     monoColor = whiteCol;
                 }
 
@@ -734,7 +693,7 @@ export class HiresPage2D implements HiresPage {
                             } else {
                                 this._drawHalfPixel(data, offset, blackCol);
                             }
-                        } else if (mixedDHRMode) {
+                        } else if (this.mixedDHRMode) {
                             if (hbs) {
                                 this._drawHalfPixel(data, offset, dcolor);
                             } else {
@@ -744,7 +703,7 @@ export class HiresPage2D implements HiresPage {
                                     this._drawHalfPixel(data, offset, blackCol);
                                 }
                             }
-                        } else if (colorDHRMode) {
+                        } else if (this.colorDHRMode) {
                             this._drawHalfPixel(data, offset, dcolor);
                         } else if (
                             ((c[idx] != c[idx - 1]) && (c[idx] != c[idx + 1])) &&
@@ -793,7 +752,7 @@ export class HiresPage2D implements HiresPage {
 
                 let offset = dx * 4 + dy * 280 * 4;
 
-                const monoColor = this._monoMode ? whiteCol : null;
+                const monoColor = this.vm.monoMode ? whiteCol : null;
 
                 for (let idx = 0; idx < 9; idx++, offset += 8) {
                     val >>= 1;
@@ -801,7 +760,7 @@ export class HiresPage2D implements HiresPage {
                     if (v1) {
                         if (monoColor) {
                             color = monoColor;
-                        } else if (highColorHGRMode) {
+                        } else if (this.highColorHGRMode) {
                             color = dcolors[this._buffer[1][base] >> 4];
                         } else if (v0 || v2) {
                             color = whiteCol;
@@ -811,7 +770,7 @@ export class HiresPage2D implements HiresPage {
                     } else {
                         if (monoColor) {
                             color = blackCol;
-                        } else if (highColorHGRMode) {
+                        } else if (this.highColorHGRMode) {
                             color = dcolors[this._buffer[1][base] & 0x0f];
                         } else if (odd && v2 && v0) {
                             color = v0 ? dim(evenCol) : evenCol;
@@ -837,21 +796,22 @@ export class HiresPage2D implements HiresPage {
     }
 
     refresh() {
+        this.highColorHGRMode = !this.vm.an3State && this.vm.hiresMode && !this.vm._80colMode;
+        this.oneSixtyMode = this.vm.flag == 1 && this.vm.doubleHiresMode;
+        this.mixedDHRMode = this.vm.flag == 2 && this.vm.doubleHiresMode;
+        this.monoDHRMode = this.vm.flag == 3 && this.vm.doubleHiresMode;
+
         let addr = 0x2000 * this.page;
         this._refreshing = true;
         for (let idx = 0; idx < 0x2000; idx++, addr++) {
             const page = addr >> 8;
             const off = addr & 0xff;
             this._write(page, off, this._buffer[0][idx], 0);
-            if (_80colMode) {
+            if (this.vm._80colMode) {
                 this._write(page, off, this._buffer[1][idx], 1);
             }
         }
         this._refreshing = false;
-    }
-
-    mono(on: boolean) {
-        this._monoMode = on;
     }
 
     start() {
@@ -872,8 +832,6 @@ export class HiresPage2D implements HiresPage {
 
     getState(): GraphicsState {
         return {
-            page: this.page,
-            mono: this._monoMode,
             buffer: [
                 new Uint8Array(this._buffer[0]),
                 new Uint8Array(this._buffer[1]),
@@ -882,8 +840,6 @@ export class HiresPage2D implements HiresPage {
     }
 
     setState(state: GraphicsState) {
-        this.page = state.page;
-        this._monoMode = state.mono;
         this._buffer[0] = new Uint8Array(state.buffer[0]);
         this._buffer[1] = new Uint8Array(state.buffer[1]);
 
@@ -892,37 +848,53 @@ export class HiresPage2D implements HiresPage {
 }
 
 export class VideoModes2D implements VideoModes {
-    private _grs: LoresPage[];
-    private _hgrs: HiresPage[];
-    private _flag = 0;
-    private _context: CanvasRenderingContext2D | null;
+    private _grs: LoresPage[] = [];
+    private _hgrs: HiresPage[] = [];
+    private _screenContext: CanvasRenderingContext2D;
+    private _canvas: HTMLCanvasElement;
     private _left: number;
     private _top: number;
     private _refreshFlag: boolean = true;
 
     public ready = Promise.resolve();
 
+    textMode: boolean;
+    mixedMode: boolean;
+    hiresMode: boolean;
+    pageMode: pageNo;
+    _80colMode: boolean;
+    altCharMode: boolean;
+    an3State: boolean;
+    doubleHiresMode: boolean;
+
+    flag = 0;
+    monoMode = false;
+
+    context: CanvasRenderingContext2D;
+
     constructor(
-        gr: LoresPage,
-        hgr: HiresPage,
-        gr2: LoresPage,
-        hgr2: HiresPage,
-        private canvas: HTMLCanvasElement,
-        private e: boolean) {
-        this._grs = [gr, gr2];
-        this._hgrs = [hgr, hgr2];
-        this._context = this.canvas.getContext('2d');
-        this._left = (this.canvas.width - 560) / 2;
-        this._top = (this.canvas.height - 384) / 2;
+        private screen: HTMLCanvasElement,
+        private e: boolean
+    ) {
+        this._canvas = document.createElement('canvas');
+        const context = this._canvas.getContext('2d');
+        const screenContext = this.screen.getContext('2d');
+        if (!context || !screenContext) {
+            throw new Error('No 2d context');
+        }
+        this.context = context;
+
+        const { width, height } = { width: 560, height: 192 };
+        this._canvas.width = width;
+        this._canvas.height = height;
+
+        this._screenContext = screenContext;
+        this._left = (this.screen.width - 560) / 2;
+        this._top = (this.screen.height - 384) / 2;
     }
 
-    private _refresh() {
-        highColorTextMode = !an3 && textMode && !_80colMode;
-        highColorHGRMode = !an3 && hiresMode && !_80colMode;
-        doubleHiresMode = !an3 && hiresMode && _80colMode;
-        oneSixtyMode = this._flag == 1 && doubleHiresMode;
-        mixedDHRMode = this._flag == 2 && doubleHiresMode;
-        monoDHRMode = this._flag == 3 && doubleHiresMode;
+    _refresh() {
+        this.doubleHiresMode = !this.an3State && this.hiresMode && this._80colMode;
 
         this._refreshFlag = true;
     }
@@ -932,25 +904,33 @@ export class VideoModes2D implements VideoModes {
     }
 
     reset() {
-        textMode = true;
-        mixedMode = false;
-        hiresMode = true;
-        pageMode = 1;
+        this.textMode = true;
+        this.mixedMode = false;
+        this.hiresMode = true;
+        this.pageMode = 1;
 
-        _80colMode = false;
-        altCharMode = false;
+        this._80colMode = false;
+        this.altCharMode = false;
 
-        this._flag = 0;
-        an3 = true;
+        this.flag = 0;
+        this.an3State = true;
 
         this._refresh();
     }
 
+    setLoresPage(page: pageNo, lores: LoresPage) {
+        this._grs[page - 1] = lores;
+    }
+
+    setHiresPage(page: pageNo, hires: HiresPage) {
+        this._hgrs[page - 1] = hires;
+    }
+
     text(on: boolean) {
-        const old = textMode;
-        textMode = on;
+        const old = this.textMode;
+        this.textMode = on;
         if (on) {
-            this._flag = 0;
+            this.flag = 0;
         }
         if (old != on) {
             this._refresh();
@@ -960,29 +940,29 @@ export class VideoModes2D implements VideoModes {
     _80col(on: boolean) {
         if (!this.e) { return; }
 
-        const old = _80colMode;
-        _80colMode = on;
+        const old = this._80colMode;
+        this._80colMode = on;
 
         if (old != on) {
             this._refresh();
         }
     }
 
-    altchar(on: boolean) {
+    altChar(on: boolean) {
         if (!this.e) { return; }
 
-        const old = altCharMode;
-        altCharMode = on;
+        const old = this.altCharMode;
+        this.altCharMode = on;
         if (old != on) {
             this._refresh();
         }
     }
 
     hires(on: boolean) {
-        const old = hiresMode;
-        hiresMode = on;
+        const old = this.hiresMode;
+        this.hiresMode = on;
         if (!on) {
-            this._flag = 0;
+            this.flag = 0;
         }
 
         if (old != on) {
@@ -993,11 +973,11 @@ export class VideoModes2D implements VideoModes {
     an3(on: boolean) {
         if (!this.e) { return; }
 
-        const old = an3;
-        an3 = on;
+        const old = this.an3State;
+        this.an3State = on;
 
         if (on) {
-            this._flag = ((this._flag << 1) | (_80colMode ? 0x0 : 0x1)) & 0x3;
+            this.flag = ((this.flag << 1) | (this._80colMode ? 0x0 : 0x1)) & 0x3;
         }
 
         if (old != on) {
@@ -1010,47 +990,60 @@ export class VideoModes2D implements VideoModes {
     }
 
     mixed(on: boolean) {
-        const old = mixedMode;
-        mixedMode = on;
+        const old = this.mixedMode;
+        this.mixedMode = on;
         if (old != on) {
             this._refresh();
         }
     }
 
     page(pageNo: pageNo) {
-        const old = pageMode;
-        pageMode = pageNo;
+        const old = this.pageMode;
+        this.pageMode = pageNo;
         if (old != pageNo) {
             this._refresh();
         }
     }
 
     isText() {
-        return textMode;
+        return this.textMode;
     }
 
     isMixed() {
-        return mixedMode;
+        return this.mixedMode;
     }
 
     isPage2() {
-        return pageMode == 2;
+        return this.pageMode == 2;
     }
 
     isHires() {
-        return hiresMode;
+        return this.hiresMode;
     }
 
     isDoubleHires() {
-        return doubleHiresMode;
+        return this.doubleHiresMode;
     }
 
     is80Col() {
-        return _80colMode;
+        return this._80colMode;
     }
 
     isAltChar() {
-        return altCharMode;
+        return this.altCharMode;
+    }
+
+    buildScreen(mainData: ImageData, mixData?: ImageData | null) {
+        // TODO(whscullin): - figure out 80 column offset
+        const { x, y } = this._80colMode ? { x: 0, y: 0 } : { x: 0, y: 0 };
+
+        if (mixData) {
+            this.context.putImageData(mainData, x, y, 0, 0, 560, 160);
+            this.context.putImageData(mixData, x, y, 0, 160, 560, 32);
+        } else {
+            this.context.putImageData(mainData, x, y);
+        }
+        return this._canvas;
     }
 
     updateImage(
@@ -1059,14 +1052,11 @@ export class VideoModes2D implements VideoModes {
         mixData?: ImageData | null,
         mixDirty?: Region | null
     ) {
-        if (!this._context) {
-            throw new Error('No 2D context');
-        }
         let blitted = false;
 
         if (mainDirty.bottom !== -1 || (mixDirty && mixDirty.bottom !== -1)) {
-            const imageData = buildScreen(mainData, mixData);
-            this._context.drawImage(
+            const imageData = this.buildScreen(mainData, mixData);
+            this._screenContext.drawImage(
                 imageData,
                 0, 0, 560, 192,
                 this._left, this._top, 560, 384
@@ -1078,8 +1068,8 @@ export class VideoModes2D implements VideoModes {
 
     blit(altData?: ImageData) {
         let blitted = false;
-        const hgr = this._hgrs[pageMode - 1];
-        const gr = this._grs[pageMode - 1];
+        const hgr = this._hgrs[this.pageMode - 1];
+        const gr = this._grs[this.pageMode - 1];
 
         if (this._refreshFlag) {
             hgr.refresh();
@@ -1092,12 +1082,12 @@ export class VideoModes2D implements VideoModes {
                 altData,
                 { top: 0, left: 0, right: 560, bottom: 192 }
             );
-        } else if (hiresMode && !textMode) {
+        } else if (this.hiresMode && !this.textMode) {
             blitted = this.updateImage(
                 hgr.imageData,
                 hgr.dirty,
-                mixedMode ? gr.imageData : null,
-                mixedMode ? gr.dirty : null
+                this.mixedMode ? gr.imageData : null,
+                this.mixedMode ? gr.dirty : null
             );
         } else {
             blitted = this.updateImage(
@@ -1114,24 +1104,26 @@ export class VideoModes2D implements VideoModes {
         return {
             grs: [this._grs[0].getState(), this._grs[1].getState()],
             hgrs: [this._hgrs[0].getState(), this._hgrs[1].getState()],
-            textMode: textMode,
-            mixedMode: mixedMode,
-            hiresMode: hiresMode,
-            pageMode: pageMode,
-            _80colMode: _80colMode,
-            altCharMode: altCharMode,
-            an3: an3
+            textMode: this.textMode,
+            mixedMode: this.mixedMode,
+            hiresMode: this.hiresMode,
+            pageMode: this.pageMode,
+            _80colMode: this._80colMode,
+            altCharMode: this.altCharMode,
+            an3State: this.an3State,
+            flag: this.flag
         };
     }
 
     setState(state: VideoModesState) {
-        textMode = state.textMode;
-        mixedMode = state.mixedMode;
-        hiresMode = state.hiresMode;
-        pageMode = state.pageMode;
-        _80colMode = state._80colMode;
-        altCharMode = state.altCharMode;
-        an3 = state.an3;
+        this.textMode = state.textMode;
+        this.mixedMode = state.mixedMode;
+        this.hiresMode = state.hiresMode;
+        this.pageMode = state.pageMode;
+        this._80colMode = state._80colMode;
+        this.altCharMode = state.altCharMode;
+        this.an3State = state.an3State;
+        this.flag = state.flag;
 
         this._grs[0].setState(state.grs[0]);
         this._grs[1].setState(state.grs[1]);
@@ -1142,20 +1134,17 @@ export class VideoModes2D implements VideoModes {
 
     mono(on: boolean) {
         if (on) {
-            this.canvas.classList.add('mono');
+            this.screen.classList.add('mono');
         } else {
-            this.canvas.classList.remove('mono');
+            this.screen.classList.remove('mono');
         }
-        this._grs[0].mono(on);
-        this._grs[1].mono(on);
-        this._hgrs[0].mono(on);
-        this._hgrs[1].mono(on);
+        this.monoMode = on;
         this._refresh();
     }
 
     scanlines(on: boolean) {
         // Can't apply scanline filter to canvas
-        const parent = this.canvas.parentElement;
+        const parent = this.screen.parentElement;
         if (parent) {
             if (on) {
                 parent.classList.add('scanlines');
@@ -1166,6 +1155,6 @@ export class VideoModes2D implements VideoModes {
     }
 
     getText() {
-        return this._grs[pageMode - 1].getText();
+        return this._grs[this.pageMode - 1].getText();
     }
 }

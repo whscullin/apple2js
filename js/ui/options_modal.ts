@@ -38,10 +38,6 @@ export class OptionsModal {
     private handlers: Record<string, OptionHandler> = {}
     private sections: OptionSection[] = []
 
-    construct() {
-        this.prefs = new Prefs();
-    }
-
     addOptions(handler: OptionHandler) {
         const sections = handler.getOptions();
         for (const section of sections) {

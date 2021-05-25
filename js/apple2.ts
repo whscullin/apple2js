@@ -82,11 +82,11 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
         const VideoModes = options.gl ? VideoModesGL : VideoModes2D;
 
         this.cpu = new CPU6502({ '65C02': options.enhanced });
-        this.gr = new LoresPage(1, options.characterRom, options.e);
-        this.gr2 = new LoresPage(2, options.characterRom, options.e);
-        this.hgr = new HiresPage(1);
-        this.hgr2 = new HiresPage(2);
-        this.vm = new VideoModes(this.gr, this.hgr, this.gr2, this.hgr2, options.canvas, options.e);
+        this.vm = new VideoModes(options.canvas, options.e);
+        this.gr = new LoresPage(this.vm, 1, options.characterRom, options.e);
+        this.gr2 = new LoresPage(this.vm, 2, options.characterRom, options.e);
+        this.hgr = new HiresPage(this.vm, 1);
+        this.hgr2 = new HiresPage(this.vm, 2);
         this.io = new Apple2IO(this.cpu, this.vm);
         this.tick = options.tick;
 

@@ -1,4 +1,4 @@
-import { MemoryPages, Restorable, byte, memory } from './types';
+import { MemoryPages, Restorable, memory } from './types';
 
 export type bank = 0 | 1;
 export type pageNo = 1 | 2;
@@ -11,8 +11,6 @@ export interface Region {
 }
 
 export interface GraphicsState {
-    page: byte;
-    mono: boolean;
     buffer: memory[];
 }
 
@@ -25,7 +23,8 @@ export interface VideoModesState {
     pageMode: pageNo,
     _80colMode: boolean,
     altCharMode: boolean,
-    an3: boolean,
+    an3State: boolean,
+    flag: number,
 }
 
 export interface VideoPage extends MemoryPages, Restorable<GraphicsState> {
@@ -35,7 +34,6 @@ export interface VideoPage extends MemoryPages, Restorable<GraphicsState> {
     bank0(): MemoryPages
     bank1(): MemoryPages
 
-    mono: (on: boolean) => void
     refresh: () => void
 }
 
@@ -48,14 +46,32 @@ export interface HiresPage extends VideoPage {
 }
 
 export interface VideoModes extends Restorable<VideoModesState> {
+    textMode: boolean
+    mixedMode: boolean
+    hiresMode: boolean
+    pageMode: pageNo
+    _80colMode: boolean
+    altCharMode: boolean
+    an3State: boolean
+    doubleHiresMode: boolean
+
+    flag: number
+    monoMode: boolean
+
+    context: CanvasRenderingContext2D;
+
     page(pageNo: number): void
 
     blit(altData?: ImageData): boolean
 
     reset(): void
 
+    setLoresPage(page: pageNo, lores: LoresPage): void
+    setHiresPage(page: pageNo, lores: HiresPage): void
+
     _80col(on: boolean): void
-    altchar(on: boolean): void
+    altChar(on: boolean): void
+    an3(on: boolean): void
     doubleHires(on: boolean): void
     hires(on: boolean): void
     mixed(on: boolean): void
