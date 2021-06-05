@@ -10,6 +10,8 @@ module.exports =
     },
     output: {
         path: path.resolve('dist/'),
+        filename: '[name].bundle.js',
+        chunkFilename: '[name].bundle.js',
         library: {
             name: 'Apple2',
             type: 'umd',
@@ -54,7 +56,7 @@ module.exports =
                     },
                 ],
                 exclude: /node_modules/,
-            }
+            },
         ],
     },
     resolve: {

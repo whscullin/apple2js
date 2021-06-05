@@ -49,7 +49,14 @@ type DiskCollection = {
     [name: string]: DiskDescriptor[]
 };
 
-const KNOWN_FILE_TYPES = [...DISK_FORMATS, ...TAPE_TYPES] as readonly string[];
+const CIDERPRESS_EXTENSION = /#([0-9a-f]{2})([0-9a-f]{4})$/i;
+const BIN_TYPES = ['bin'];
+
+const KNOWN_FILE_TYPES = [
+    ...DISK_FORMATS,
+    ...TAPE_TYPES,
+    ...BIN_TYPES,
+] as readonly string[];
 
 const disk_categories: DiskCollection = { 'Local Saves': [] };
 const disk_sets: DiskCollection = {};
@@ -84,6 +91,7 @@ export function dumpAppleSoftProgram() {
 export function compileAppleSoftProgram(program: string) {
     const compiler = new ApplesoftCompiler(cpu);
     compiler.compile(program);
+    dumpAppleSoftProgram();
 }
 
 export function openLoad(driveString: string, event: MouseEvent) {
@@ -204,7 +212,7 @@ function loadingStop() {
     MicroModal.close('loading-modal');
 
     if (!paused) {
-        vm.ready.then(() => {
+        _apple2.ready.then(() => {
             _apple2.run();
         });
     }
@@ -297,11 +305,8 @@ export function doDelete(name: string) {
     }
 }
 
-const CIDERPRESS_EXTENSION = /#([0-9a-f]{2})([0-9a-f]{4})$/i;
-const BIN_TYPES = ['bin'];
-
 interface LoadOptions {
-    address: word,
+    address?: word,
     runOnLoad?: boolean,
 }
 
@@ -318,7 +323,8 @@ function doLoadLocal(drive: DriveNumber, file: File, options: Partial<LoadOption
     } else if (includes(TAPE_TYPES, ext)) {
         tape.doLoadLocalTape(file);
     } else if (BIN_TYPES.includes(ext) || type === '06' || options.address) {
-        doLoadBinary(file, { address: parseInt(aux || '2000', 16), ...options });
+        const address = aux !== undefined ? parseInt(aux, 16) : undefined;
+        doLoadBinary(file, { address, ...options });
     } else {
         const addressInput = document.querySelector<HTMLInputElement>('#local_file_address');
         const addressStr = addressInput?.value;
@@ -342,6 +348,7 @@ function doLoadBinary(file: File, options: LoadOptions) {
     fileReader.onload = function () {
         const result = this.result as ArrayBuffer;
         let { address } = options;
+        address = address ?? 0x2000;
         const bytes = new Uint8Array(result);
         for (let idx = 0; idx < result.byteLength; idx++) {
             cpu.write(address >> 8, address & 0xff, bytes[idx]);
@@ -349,7 +356,7 @@ function doLoadBinary(file: File, options: LoadOptions) {
         }
         if (options.runOnLoad) {
             cpu.reset();
-            cpu.setPC(options.address);
+            cpu.setPC(address);
         }
         loadingStop();
     };
@@ -437,9 +444,10 @@ export function doLoadHTTP(drive: DriveNumber, url?: string) {
                     initGamepad();
                 }
             } else {
-                if (includes(DISK_FORMATS, ext)
-                    && _disk2.setBinary(drive, name, ext, data)) {
-                    initGamepad();
+                if (includes(DISK_FORMATS, ext)) {
+                    if (_disk2.setBinary(drive, name, ext, data)) {
+                        initGamepad();
+                    }
                 } else {
                     throw new Error(`Extension ${ext} not recognized.`);
                 }
@@ -751,7 +759,7 @@ export function updateUI() {
 export function pauseRun() {
     const label = document.querySelector<HTMLElement>('#pause-run i')!;
     if (paused) {
-        vm.ready.then(() => {
+        _apple2.ready.then(() => {
             _apple2.run();
         });
         label.classList.remove('fa-play');
@@ -865,7 +873,7 @@ function onLoaded(apple2: Apple2, disk2: DiskII, smartPort: SmartPort, printer: 
         _apple2.stop();
         processHash(hash);
     } else {
-        vm.ready.then(() => {
+        _apple2.ready.then(() => {
             _apple2.run();
         });
     }

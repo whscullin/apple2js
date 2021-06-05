@@ -1,10 +1,10 @@
 import type ROM from '../../js/roms/rom';
-import OriginalROM from '../../js/roms/original';
-import IntegerROM from '../../js/roms/intbasic';
-import FPBasicROM from '../../js/roms/fpbasic';
-import Apple2eROM from '../../js/roms/apple2e';
-import Apple2enhROM from '../../js/roms/apple2enh';
-import Apple2jROM from '../../js/roms/apple2j';
+import OriginalROM from '../../js/roms/system/original';
+import IntegerROM from '../../js/roms/system/intbasic';
+import FPBasicROM from '../../js/roms/system/fpbasic';
+import Apple2eROM from '../../js/roms/system/apple2e';
+import Apple2enhROM from '../../js/roms/system/apple2enh';
+import Apple2jROM from '../../js/roms/system/apple2j';
 
 const roms: { [name: string]: { new(): ROM } } = {
     'original': OriginalROM,

@@ -1,5 +1,5 @@
-import { ReadonlyUint8Array } from '../types';
-import ROM from './rom';
+import { ReadonlyUint8Array } from '../../types';
+import ROM from '../rom';
 
 const rom = new Uint8Array([
     0xa9, 0x20, 0x8d, 0x26, 0x03, 0xad, 0x57, 0xc0,
