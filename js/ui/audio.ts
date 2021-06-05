@@ -89,7 +89,7 @@ export class Audio implements OptionHandler {
     autoStart = () => {
         if (this.audioContext && !this.started) {
             this.samples = [];
-            this.audioContext.resume();
+            void this.audioContext.resume();
             this.started = true;
         }
     }
@@ -97,7 +97,7 @@ export class Audio implements OptionHandler {
     start = () => {
         if (this.audioContext) {
             this.samples = [];
-            this.audioContext.resume();
+            void this.audioContext.resume();
         }
     }
 

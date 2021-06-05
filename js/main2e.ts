@@ -63,4 +63,4 @@ apple2.ready.then(() => {
     io.setSlot(7, smartport);
 
     initUI(apple2, disk2, smartport, printer, options.e);
-});
+}).catch(console.error);

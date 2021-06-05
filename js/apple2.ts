@@ -50,8 +50,6 @@ interface State {
     ram?: RAMState[],
 }
 
-type ROMConstructor = { new(): ROM ;}
-
 export class Apple2 implements Restorable<State>, DebuggerContainer {
     private paused = false;
 
@@ -80,56 +78,59 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
         renderedFrames: 0
     };
 
-    public ready: Promise<[{ default: ROMConstructor }, { default: rom }, void]>;
+    public ready: Promise<void>
 
     constructor(options: Apple2Options) {
+        this.ready = this.init(options);
+    }
+
+    async init(options: Apple2Options) {
+        const romImportPromise = import(`./roms/system/${options.rom}`);
+        const characterRomImportPromise = import(`./roms/character/${options.characterRom}`);
+
         const LoresPage = options.gl ? LoresPageGL : LoresPage2D;
         const HiresPage = options.gl ? HiresPageGL : HiresPage2D;
         const VideoModes = options.gl ? VideoModesGL : VideoModes2D;
 
-        const romImportPromise = import(`./roms/system/${options.rom}`);
-        const characterRomImportPromise = import(`./roms/character/${options.characterRom}`);
-
         this.cpu = new CPU6502({ '65C02': options.enhanced });
         this.vm = new VideoModes(options.canvas, options.e);
-        this.ready = Promise.all([
+
+        const [{ default: Apple2ROM }, { default: characterRom }] = await Promise.all([
             romImportPromise,
             characterRomImportPromise,
             this.vm.ready,
         ]);
 
-        this.ready.then(([{ default: Apple2ROM }, { default: characterRom }]) => {
-            this.rom = new Apple2ROM();
-            this.characterRom = characterRom;
+        this.rom = new Apple2ROM();
+        this.characterRom = characterRom;
 
-            this.gr = new LoresPage(this.vm, 1, this.characterRom, options.e);
-            this.gr2 = new LoresPage(this.vm, 2, this.characterRom, options.e);
-            this.hgr = new HiresPage(this.vm, 1);
-            this.hgr2 = new HiresPage(this.vm, 2);
-            this.io = new Apple2IO(this.cpu, this.vm);
-            this.tick = options.tick;
+        this.gr = new LoresPage(this.vm, 1, this.characterRom, options.e);
+        this.gr2 = new LoresPage(this.vm, 2, this.characterRom, options.e);
+        this.hgr = new HiresPage(this.vm, 1);
+        this.hgr2 = new HiresPage(this.vm, 2);
+        this.io = new Apple2IO(this.cpu, this.vm);
+        this.tick = options.tick;
 
-            if (options.e) {
-                this.mmu = new MMU(this.cpu, this.vm, this.gr, this.gr2, this.hgr, this.hgr2, this.io, this.rom);
-                this.cpu.addPageHandler(this.mmu);
-            } else {
-                this.ram = [
-                    new RAM(0x00, 0x03),
-                    new RAM(0x0C, 0x1F),
-                    new RAM(0x60, 0xBF)
-                ];
+        if (options.e) {
+            this.mmu = new MMU(this.cpu, this.vm, this.gr, this.gr2, this.hgr, this.hgr2, this.io, this.rom);
+            this.cpu.addPageHandler(this.mmu);
+        } else {
+            this.ram = [
+                new RAM(0x00, 0x03),
+                new RAM(0x0C, 0x1F),
+                new RAM(0x60, 0xBF)
+            ];
 
-                this.cpu.addPageHandler(this.ram[0]);
-                this.cpu.addPageHandler(this.gr);
-                this.cpu.addPageHandler(this.gr2);
-                this.cpu.addPageHandler(this.ram[1]);
-                this.cpu.addPageHandler(this.hgr);
-                this.cpu.addPageHandler(this.hgr2);
-                this.cpu.addPageHandler(this.ram[2]);
-                this.cpu.addPageHandler(this.io);
-                this.cpu.addPageHandler(this.rom);
-            }
-        });
+            this.cpu.addPageHandler(this.ram[0]);
+            this.cpu.addPageHandler(this.gr);
+            this.cpu.addPageHandler(this.gr2);
+            this.cpu.addPageHandler(this.ram[1]);
+            this.cpu.addPageHandler(this.hgr);
+            this.cpu.addPageHandler(this.hgr2);
+            this.cpu.addPageHandler(this.ram[2]);
+            this.cpu.addPageHandler(this.io);
+            this.cpu.addPageHandler(this.rom);
+        }
     }
 
     /**

@@ -80,6 +80,7 @@ let system: System;
 let keyboard: KeyBoard;
 let io: Apple2IO;
 let _currentDrive: DriveNumber = 1;
+let _e: boolean;
 
 export const driveLights = new DriveLights();
 
@@ -214,7 +215,7 @@ function loadingStop() {
     if (!paused) {
         _apple2.ready.then(() => {
             _apple2.run();
-        });
+        }).catch(console.error);
     }
 }
 
@@ -686,38 +687,40 @@ declare global {
     }
 }
 
-let oldCat = '';
-let option;
-for (let idx = 0; idx < window.disk_index.length; idx++) {
-    const file = window.disk_index[idx];
-    const cat = file.category;
-    const name = file.name;
-    const disk = file.disk;
-    if (file.e && !window.e) {
-        continue;
-    }
-    if (cat != oldCat) {
-        option = document.createElement('option');
-        option.value = cat;
-        option.innerText = cat;
-        categorySelect.append(option);
-
-        disk_categories[cat] = [];
-        oldCat = cat;
-    }
-    disk_categories[cat].push(file);
-    if (disk) {
-        if (!disk_sets[name]) {
-            disk_sets[name] = [];
+function buildDiskIndex() {
+    let oldCat = '';
+    let option;
+    for (let idx = 0; idx < window.disk_index.length; idx++) {
+        const file = window.disk_index[idx];
+        const cat = file.category;
+        const name = file.name;
+        const disk = file.disk;
+        if (file.e && !_e) {
+            continue;
         }
-        disk_sets[name].push(file);
-    }
-}
-option = document.createElement('option');
-option.innerText = 'Local Saves';
-categorySelect.append(option);
+        if (cat != oldCat) {
+            option = document.createElement('option');
+            option.value = cat;
+            option.innerText = cat;
+            categorySelect.append(option);
 
-updateLocalStorage();
+            disk_categories[cat] = [];
+            oldCat = cat;
+        }
+        disk_categories[cat].push(file);
+        if (disk) {
+            if (!disk_sets[name]) {
+                disk_sets[name] = [];
+            }
+            disk_sets[name].push(file);
+        }
+    }
+    option = document.createElement('option');
+    option.innerText = 'Local Saves';
+    categorySelect.append(option);
+
+    updateLocalStorage();
+}
 
 /**
  * Processes the URL fragment. It is expected to be of the form:
@@ -756,12 +759,12 @@ export function updateUI() {
     }
 }
 
-export function pauseRun() {
+export async function pauseRun() {
     const label = document.querySelector<HTMLElement>('#pause-run i')!;
     if (paused) {
         _apple2.ready.then(() => {
             _apple2.run();
-        });
+        }).catch(console.error);
         label.classList.remove('fa-play');
         label.classList.add('fa-pause');
     } else {
@@ -813,6 +816,7 @@ function onLoaded(apple2: Apple2, disk2: DiskII, smartPort: SmartPort, printer: 
     _disk2 = disk2;
     _smartPort = smartPort;
     _printer = printer;
+    _e = e;
 
     system = new System(io, e);
     optionsModal.addOptions(system);
@@ -842,6 +846,8 @@ function onLoaded(apple2: Apple2, disk2: DiskII, smartPort: SmartPort, printer: 
             _apple2.setState(base64_json_parse(window.localStorage.state));
         }
     });
+
+    buildDiskIndex();
 
     /*
      * Input Handling
@@ -875,7 +881,7 @@ function onLoaded(apple2: Apple2, disk2: DiskII, smartPort: SmartPort, printer: 
     } else {
         _apple2.ready.then(() => {
             _apple2.run();
-        });
+        }).catch(console.error);
     }
 
     document.querySelector<HTMLInputElement>('#local_file')?.addEventListener(

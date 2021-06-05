@@ -86,4 +86,4 @@ apple2.ready.then(() => {
     cpu.addPageHandler(lc);
 
     initUI(apple2, disk2, smartport, printer, false);
-});
+}).catch(console.error);

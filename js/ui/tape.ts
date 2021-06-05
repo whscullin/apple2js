@@ -36,7 +36,7 @@ export default class Tape {
         fileReader.onload = (ev: ProgressEvent) => {
             const target: FileReader = ev.target as FileReader;
             const result: ArrayBuffer = target.result as ArrayBuffer;
-            context.decodeAudioData(result, (buffer) => {
+            context.decodeAudioData(result).then((buffer) => {
                 const buf: TapeData = [];
                 const data = buffer.getChannelData(0);
                 let datum = data[0];
