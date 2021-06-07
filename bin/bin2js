@@ -1,0 +1,91 @@
+#!/usr/bin/env node
+
+const { exit } = require('process');
+
+const readFile = require('fs').promises.readFile;
+const argv = require('yargs').argv;
+
+const fileName = argv._[0];
+const name = argv.n || argv.name;
+const start = argv.s !== undefined ? argv.s : argv.start;
+
+function toHex(v, n) {
+    if (!n) {
+        n = 2
+    }
+    let r = v.toString(16);
+    r = r.padStart(n, '0');
+    return r;
+} 
+
+function usage(message) {
+    if (message) {
+        console.error(message);
+    }
+    console.error("bin2js -n name -s start binfile");
+}
+
+if (argv.h || argv.help) {
+    usage();
+    process.exit(0);
+}
+if (!name || !fileName || (typeof name != "string")) {
+    usage("must specify a file name for binfile");
+    process.exit(1);
+}
+
+if (start === "" || start === undefined) {
+    usage("must specify a start page");
+    process.exit(2);
+}
+
+if (typeof start === "string") {
+    if (start.startsWith("0x")) {
+        start = parseInt(start.slice(2), 16);
+    } else {
+        start = parseInt(start, 10);
+    }
+}
+
+readFile(fileName, { flag: 'r' }).then((fileData => {
+    if (fileData.length % 256 != 0) {
+        console.error(`${filename} length is not a multiple of 256`);
+        process.exit(2);
+    }
+    let end = start + fileData.length / 256 - 1;
+    console.log('const MEMORY = [');
+    const step = 0x08;
+    for (let i = 0; i < fileData.length; i += step) {
+        let line = '    ';
+        for (let j = i; j < fileData.length && j < i + step; j++) {
+            line += '0x' + toHex(fileData[j]) + ', ';
+        }
+        line += '// ' + toHex(i, 4);
+        console.log(line);
+    }
+    console.log('];');
+    console.log();
+    console.log(`export default function ${name}() {`);
+    console.log('    let mem = [...MEMORY];');
+    console.log('    return {');
+    console.log('        start: function() {');
+    console.log(`            return 0x${toHex(start)};`);
+    console.log('        },');
+    console.log('        end: function() {');
+    console.log(`            return 0x${toHex(end)};`);
+    console.log('        },');
+    console.log('        read: function(page, off) {');
+    console.log(`            return mem[(page - 0x${toHex(start)}) << 8 | off];`);
+    console.log('        },');
+    console.log('        write: function(page, off, val) {');
+    console.log(`            mem[(page - 0x${toHex(start)}) << 8 | off] = val;`);
+    console.log('        },');
+    console.log('        reset: function() {');
+    console.log('            mem = [...MEMORY];');
+    console.log('        },');
+    console.log('    };');
+    console.log('}');
+})).catch((reason) => {
+    console.error('Unable to read binary file:', reason);
+    process.exit(1);
+});

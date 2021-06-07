@@ -6,7 +6,8 @@ module.exports =
     mode: 'development',
     entry: {
         main2: path.resolve('js/entry2.js'),
-        main2e: path.resolve('js/entry2e.js')
+        main2e: path.resolve('js/entry2e.js'),
+        cpu_benchmark: path.resolve('test/perf/cpu_benchmark.js')
     },
     output: {
         path: path.resolve('dist/'),
