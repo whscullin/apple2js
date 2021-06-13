@@ -759,7 +759,7 @@ export function updateUI() {
     }
 }
 
-export async function pauseRun() {
+export function pauseRun() {
     const label = document.querySelector<HTMLElement>('#pause-run i')!;
     if (paused) {
         _apple2.ready.then(() => {

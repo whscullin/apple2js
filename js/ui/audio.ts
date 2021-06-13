@@ -89,15 +89,20 @@ export class Audio implements OptionHandler {
     autoStart = () => {
         if (this.audioContext && !this.started) {
             this.samples = [];
-            void this.audioContext.resume();
-            this.started = true;
+            this.audioContext.resume().then(() => {
+                this.started = true;
+            }).catch((error) => {
+                console.warn('audio not started', error);
+            });
         }
     }
 
     start = () => {
         if (this.audioContext) {
             this.samples = [];
-            void this.audioContext.resume();
+            this.audioContext.resume().catch((error) => {
+                console.warn('audio not resumed', error);
+            });
         }
     }
 
