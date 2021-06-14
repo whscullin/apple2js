@@ -2,7 +2,7 @@
 
 import { VideoPage } from 'js/videomodes';
 import { LoresPage2D, HiresPage2D, VideoModes2D } from 'js/canvas';
-import apple2enh_char from 'js/roms/apple2enh_char';
+import apple2enh_char from 'js/roms/character/apple2enh_char';
 import { createImageFromImageData } from 'test/util/image';
 
 function checkImageData(page: VideoPage) {

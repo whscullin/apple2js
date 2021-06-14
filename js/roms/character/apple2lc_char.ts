@@ -1,4 +1,4 @@
-import { ReadonlyUint8Array } from '../types';
+import { ReadonlyUint8Array } from '../../types';
 
 const apple2lc_charset = new Uint8Array([
     0x1c,0x22,0x2a,0x2a,0x2c,0x20,0x1e,0x00,

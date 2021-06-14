@@ -25,6 +25,7 @@
             "always"
         ],
         "no-use-before-define": "off",
+        "@typescript-eslint/no-floating-promises": "error",
         "@typescript-eslint/no-use-before-define": [
             "error",
             {
@@ -59,7 +60,8 @@
         "es6": true
     },
     "parserOptions": {
-        "sourceType": "module"
+        "sourceType": "module",
+        "project": "./tsconfig.json"
     },
     "extends": "eslint:recommended",
     "overrides": [
@@ -109,5 +111,6 @@
                 "commonjs": true
             }
         }
-    ]
+    ],
+    "ignorePatterns": ["coverage/**/*"]
 }

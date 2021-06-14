@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-      "module": "commonjs",
+      "module": "esnext",
       "esModuleInterop": true,
       "allowSyntheticDefaultImports": true,
       "target": "es6",
@@ -30,5 +30,6 @@
   "include": [
       "js/**/*",
       "test/**/*",
+      "*.config.js"
   ]
 }

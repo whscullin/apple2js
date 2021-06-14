@@ -49,7 +49,14 @@ type DiskCollection = {
     [name: string]: DiskDescriptor[]
 };
 
-const KNOWN_FILE_TYPES = [...DISK_FORMATS, ...TAPE_TYPES] as readonly string[];
+const CIDERPRESS_EXTENSION = /#([0-9a-f]{2})([0-9a-f]{4})$/i;
+const BIN_TYPES = ['bin'];
+
+const KNOWN_FILE_TYPES = [
+    ...DISK_FORMATS,
+    ...TAPE_TYPES,
+    ...BIN_TYPES,
+] as readonly string[];
 
 const disk_categories: DiskCollection = { 'Local Saves': [] };
 const disk_sets: DiskCollection = {};
@@ -73,6 +80,7 @@ let system: System;
 let keyboard: KeyBoard;
 let io: Apple2IO;
 let _currentDrive: DriveNumber = 1;
+let _e: boolean;
 
 export const driveLights = new DriveLights();
 
@@ -84,6 +92,7 @@ export function dumpAppleSoftProgram() {
 export function compileAppleSoftProgram(program: string) {
     const compiler = new ApplesoftCompiler(cpu);
     compiler.compile(program);
+    dumpAppleSoftProgram();
 }
 
 export function openLoad(driveString: string, event: MouseEvent) {
@@ -204,9 +213,9 @@ function loadingStop() {
     MicroModal.close('loading-modal');
 
     if (!paused) {
-        vm.ready.then(() => {
+        _apple2.ready.then(() => {
             _apple2.run();
-        });
+        }).catch(console.error);
     }
 }
 
@@ -297,11 +306,8 @@ export function doDelete(name: string) {
     }
 }
 
-const CIDERPRESS_EXTENSION = /#([0-9a-f]{2})([0-9a-f]{4})$/i;
-const BIN_TYPES = ['bin'];
-
 interface LoadOptions {
-    address: word,
+    address?: word,
     runOnLoad?: boolean,
 }
 
@@ -318,7 +324,8 @@ function doLoadLocal(drive: DriveNumber, file: File, options: Partial<LoadOption
     } else if (includes(TAPE_TYPES, ext)) {
         tape.doLoadLocalTape(file);
     } else if (BIN_TYPES.includes(ext) || type === '06' || options.address) {
-        doLoadBinary(file, { address: parseInt(aux || '2000', 16), ...options });
+        const address = aux !== undefined ? parseInt(aux, 16) : undefined;
+        doLoadBinary(file, { address, ...options });
     } else {
         const addressInput = document.querySelector<HTMLInputElement>('#local_file_address');
         const addressStr = addressInput?.value;
@@ -342,6 +349,7 @@ function doLoadBinary(file: File, options: LoadOptions) {
     fileReader.onload = function () {
         const result = this.result as ArrayBuffer;
         let { address } = options;
+        address = address ?? 0x2000;
         const bytes = new Uint8Array(result);
         for (let idx = 0; idx < result.byteLength; idx++) {
             cpu.write(address >> 8, address & 0xff, bytes[idx]);
@@ -349,7 +357,7 @@ function doLoadBinary(file: File, options: LoadOptions) {
         }
         if (options.runOnLoad) {
             cpu.reset();
-            cpu.setPC(options.address);
+            cpu.setPC(address);
         }
         loadingStop();
     };
@@ -437,9 +445,10 @@ export function doLoadHTTP(drive: DriveNumber, url?: string) {
                     initGamepad();
                 }
             } else {
-                if (includes(DISK_FORMATS, ext)
-                    && _disk2.setBinary(drive, name, ext, data)) {
-                    initGamepad();
+                if (includes(DISK_FORMATS, ext)) {
+                    if (_disk2.setBinary(drive, name, ext, data)) {
+                        initGamepad();
+                    }
                 } else {
                     throw new Error(`Extension ${ext} not recognized.`);
                 }
@@ -678,38 +687,40 @@ declare global {
     }
 }
 
-let oldCat = '';
-let option;
-for (let idx = 0; idx < window.disk_index.length; idx++) {
-    const file = window.disk_index[idx];
-    const cat = file.category;
-    const name = file.name;
-    const disk = file.disk;
-    if (file.e && !window.e) {
-        continue;
-    }
-    if (cat != oldCat) {
-        option = document.createElement('option');
-        option.value = cat;
-        option.innerText = cat;
-        categorySelect.append(option);
-
-        disk_categories[cat] = [];
-        oldCat = cat;
-    }
-    disk_categories[cat].push(file);
-    if (disk) {
-        if (!disk_sets[name]) {
-            disk_sets[name] = [];
+function buildDiskIndex() {
+    let oldCat = '';
+    let option;
+    for (let idx = 0; idx < window.disk_index.length; idx++) {
+        const file = window.disk_index[idx];
+        const cat = file.category;
+        const name = file.name;
+        const disk = file.disk;
+        if (file.e && !_e) {
+            continue;
         }
-        disk_sets[name].push(file);
-    }
-}
-option = document.createElement('option');
-option.innerText = 'Local Saves';
-categorySelect.append(option);
+        if (cat != oldCat) {
+            option = document.createElement('option');
+            option.value = cat;
+            option.innerText = cat;
+            categorySelect.append(option);
 
-updateLocalStorage();
+            disk_categories[cat] = [];
+            oldCat = cat;
+        }
+        disk_categories[cat].push(file);
+        if (disk) {
+            if (!disk_sets[name]) {
+                disk_sets[name] = [];
+            }
+            disk_sets[name].push(file);
+        }
+    }
+    option = document.createElement('option');
+    option.innerText = 'Local Saves';
+    categorySelect.append(option);
+
+    updateLocalStorage();
+}
 
 /**
  * Processes the URL fragment. It is expected to be of the form:
@@ -751,9 +762,9 @@ export function updateUI() {
 export function pauseRun() {
     const label = document.querySelector<HTMLElement>('#pause-run i')!;
     if (paused) {
-        vm.ready.then(() => {
+        _apple2.ready.then(() => {
             _apple2.run();
-        });
+        }).catch(console.error);
         label.classList.remove('fa-play');
         label.classList.add('fa-pause');
     } else {
@@ -805,6 +816,7 @@ function onLoaded(apple2: Apple2, disk2: DiskII, smartPort: SmartPort, printer: 
     _disk2 = disk2;
     _smartPort = smartPort;
     _printer = printer;
+    _e = e;
 
     system = new System(io, e);
     optionsModal.addOptions(system);
@@ -834,6 +846,8 @@ function onLoaded(apple2: Apple2, disk2: DiskII, smartPort: SmartPort, printer: 
             _apple2.setState(base64_json_parse(window.localStorage.state));
         }
     });
+
+    buildDiskIndex();
 
     /*
      * Input Handling
@@ -865,9 +879,9 @@ function onLoaded(apple2: Apple2, disk2: DiskII, smartPort: SmartPort, printer: 
         _apple2.stop();
         processHash(hash);
     } else {
-        vm.ready.then(() => {
+        _apple2.ready.then(() => {
             _apple2.run();
-        });
+        }).catch(console.error);
     }
 
     document.querySelector<HTMLInputElement>('#local_file')?.addEventListener(

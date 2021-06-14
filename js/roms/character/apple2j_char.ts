@@ -1,4 +1,4 @@
-import { ReadonlyUint8Array } from '../types';
+import { ReadonlyUint8Array } from '../../types';
 
 const apple2j_charset = new Uint8Array([
     0xff,0xef,0xe1,0xed,0xd5,0xfb,0xf7,0xef,

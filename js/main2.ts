@@ -11,49 +11,43 @@ import SmartPort from './cards/smartport';
 import Thunderclock from './cards/thunderclock';
 import VideoTerm from './cards/videoterm';
 
-import apple2_charset from './roms/apple2_char';
-import apple2j_charset from './roms/apple2j_char';
-import apple2lc_charset from './roms/apple2lc_char';
-import pigfont_charset from './roms/pigfont_char';
-
-import Apple2ROM from './roms/fpbasic';
-import Apple2jROM from './roms/apple2j';
-import IntBASIC from './roms/intbasic';
-import OriginalROM from './roms/original';
-
 import { Apple2 } from './apple2';
 
 const prefs = new Prefs();
 const romVersion = prefs.readPref('computer_type2');
-let rom;
-let characterRom = apple2_charset;
+let rom: string;
+let characterRom: string;
 let sectors = 16;
 
 switch (romVersion) {
     case 'apple2':
-        rom = new IntBASIC();
+        rom = 'intbasic';
+        characterRom = 'apple2_char';
         break;
     case 'apple213':
-        rom = new IntBASIC();
+        rom = 'intbasic';
+        characterRom = 'apple2_char';
         sectors = 13;
         break;
     case 'original':
-        rom = new OriginalROM();
+        rom = 'original';
+        characterRom = 'apple2_char';
         break;
     case 'apple2jplus':
-        rom = new Apple2jROM();
-        characterRom = apple2j_charset;
+        rom = 'apple2j';
+        characterRom = 'apple2j_char';
         break;
     case 'apple2pig':
-        rom = new Apple2ROM();
-        characterRom = pigfont_charset;
+        rom = 'fpbasic';
+        characterRom = 'pigfont_char';
         break;
     case 'apple2lc':
-        rom = new Apple2ROM();
-        characterRom = apple2lc_charset;
+        rom = 'fpbasic';
+        characterRom = 'apple2lc_char';
         break;
     default:
-        rom = new Apple2ROM();
+        rom = 'fpbasic';
+        characterRom = 'apple2_char';
 }
 
 const options = {
@@ -67,27 +61,29 @@ const options = {
 };
 
 export const apple2 = new Apple2(options);
-const cpu = apple2.getCPU();
-const io = apple2.getIO();
+apple2.ready.then(() => {
+    const cpu = apple2.getCPU();
+    const io = apple2.getIO();
 
-const printer = new Printer('#printer-modal .paper');
+    const printer = new Printer('#printer-modal .paper');
 
-const lc = new LanguageCard(rom);
-const parallel = new Parallel(printer);
-const videoTerm = new VideoTerm();
-const slinky = new RAMFactor(1024 * 1024);
-const disk2 = new DiskII(io, driveLights, sectors);
-const clock = new Thunderclock();
-const smartport = new SmartPort(cpu, { block: true });
+    const lc = new LanguageCard(apple2.getROM());
+    const parallel = new Parallel(printer);
+    const videoTerm = new VideoTerm();
+    const slinky = new RAMFactor(1024 * 1024);
+    const disk2 = new DiskII(io, driveLights, sectors);
+    const clock = new Thunderclock();
+    const smartport = new SmartPort(cpu, { block: true });
 
-io.setSlot(0, lc);
-io.setSlot(1, parallel);
-io.setSlot(2, slinky);
-io.setSlot(4, clock);
-io.setSlot(3, videoTerm);
-io.setSlot(6, disk2);
-io.setSlot(7, smartport);
+    io.setSlot(0, lc);
+    io.setSlot(1, parallel);
+    io.setSlot(2, slinky);
+    io.setSlot(4, clock);
+    io.setSlot(3, videoTerm);
+    io.setSlot(6, disk2);
+    io.setSlot(7, smartport);
 
-cpu.addPageHandler(lc);
+    cpu.addPageHandler(lc);
 
-initUI(apple2, disk2, smartport, printer, false);
+    initUI(apple2, disk2, smartport, printer, false);
+}).catch(console.error);
