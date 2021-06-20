@@ -9,64 +9,10 @@
  * implied warranty.
  */
 
-import { byte, DiskFormat, memory } from '../types';
+import { byte, memory } from '../types';
 import { base64_decode, base64_encode } from '../base64';
 import { bytify, debug, toHex } from '../util';
-import { GamepadConfiguration } from '../ui/gamepad';
-
-export interface Disk {
-    format: DiskFormat
-    name: string
-    volume: byte
-    tracks: memory[]
-    readOnly: boolean
-}
-
-/**
- * Base format for JSON defined disks
- */
-export class JSONDiskBase {
-    type: DiskFormat
-    name: string
-    disk?: number
-    category?: string
-    writeProtected?: boolean
-    volume: byte
-    readOnly: boolean
-    gamepad?: GamepadConfiguration
-}
-
-/**
- * JSON Disk format with base64 encoded tracks
- */
-
-export interface Base64JSONDisk extends JSONDiskBase {
-    encoding: 'base64'
-    data: string[]
-}
-
-/**
- * JSON Disk format with byte array tracks
- */
-
-export interface BinaryJSONDisk extends JSONDiskBase {
-    encoding: 'binary'
-    data: memory[][]
-}
-
-/**
- * General JSON Disk format
- */
-
-export type JSONDisk = Base64JSONDisk | BinaryJSONDisk;
-
-export interface Drive {
-    format: DiskFormat
-    volume: byte
-    tracks: memory[]
-    readOnly: boolean
-    dirty: boolean
-}
+import { NibbleDisk } from './types';
 
 /**
  * DOS 3.3 Physical sector order (index is physical sector, value is DOS sector).
@@ -255,7 +201,7 @@ export function explodeSector16(volume: byte, track: byte, sector: byte, data: m
     return buf;
 }
 
-export function explodeSector13(volume: byte, track: byte, sector: byte, data: byte[]) {
+export function explodeSector13(volume: byte, track: byte, sector: byte, data: memory) {
     let buf = [];
     let gap;
 
@@ -355,7 +301,7 @@ export function explodeSector13(volume: byte, track: byte, sector: byte, data: b
 }
 
 // TODO(flan): Does not work on WOZ disks
-export function readSector(drive: Drive, track: byte, sector: byte) {
+export function readSector(drive: NibbleDisk, track: byte, sector: byte) {
     const _sector = drive.format == 'po' ? _PO[sector] : _DO[sector];
     let val, state = 0;
     let idx = 0;
@@ -450,7 +396,7 @@ export function readSector(drive: Drive, track: byte, sector: byte) {
     return new Uint8Array();
 }
 
-export function jsonEncode(cur: Drive, pretty: boolean) {
+export function jsonEncode(cur: NibbleDisk, pretty: boolean) {
     // For 'nib', tracks are encoded as strings. For all other formats,
     // tracks are arrays of sectors which are encoded as strings.
     const data: string[] | string[][] = [];
@@ -490,12 +436,13 @@ export function jsonDecode(data: string) {
         }
         tracks[t] = bytify(track);
     }
-    const cur: Drive = {
+    const cur: NibbleDisk = {
         volume: v,
         format: json.type,
+        encoding: 'nibble',
+        name: json.name,
         tracks,
         readOnly,
-        dirty: false,
     };
 
     return cur;

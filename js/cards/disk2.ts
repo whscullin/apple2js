@@ -9,21 +9,39 @@
  * implied warranty.
  */
 
-import { base64_decode, base64_encode} from '../base64';
-import { bit, byte, Card, DiskFormat, MemberOf, memory, nibble, rom } from '../types';
+import { base64_encode} from '../base64';
+import type {
+    bit,
+    byte,
+    Card,
+    memory,
+    nibble,
+    rom,
+} from '../types';
+
+import {
+    FormatWorkerMessage,
+    FormatWorkerResponse,
+    DiskFormat,
+    DiskProcessedType,
+    DRIVE_NUMBERS,
+    DriveNumber,
+    JSONDisk,
+    ProcessBinaryType,
+    ProcessJsonDiskType,
+    ProcessJsonType,
+} from '../formats/types';
+
+import {
+    createDisk,
+    createDiskFromJsonDisk
+} from '../formats/create_disk';
+
 import { debug, toHex } from '../util';
-import { Disk, JSONDisk, jsonDecode, jsonEncode, readSector } from '../formats/format_utils';
+import { jsonDecode, jsonEncode, readSector } from '../formats/format_utils';
 
 import { BOOTSTRAP_ROM_16, BOOTSTRAP_ROM_13 } from '../roms/cards/disk2';
-
-import _2MG from '../formats/2mg';
-import D13 from '../formats/d13';
-import DOS from '../formats/do';
-import ProDOS from '../formats/po';
-import Woz from '../formats/woz';
-import Nibble from '../formats/nib';
 import Apple2IO from '../apple2io';
-
 
 /** Softswitch locations */
 const LOC = {
@@ -144,10 +162,6 @@ const PHASE_DELTA = [
     [-2, -1, 0, 1],
     [1, -2, -1, 0]
 ] as const;
-
-export const DRIVE_NUMBERS = [1, 2] as const;
-export type DriveNumber = MemberOf<typeof DRIVE_NUMBERS>;
-
 export interface Callbacks {
     driveLight: (drive: DriveNumber, on: boolean) => void;
     dirty: (drive: DriveNumber, dirty: boolean) => void;
@@ -155,6 +169,7 @@ export interface Callbacks {
 }
 
 /** Common information for Nibble and WOZ disks. */
+
 interface BaseDrive {
     /** Current disk format. */
     format: DiskFormat,
@@ -176,6 +191,8 @@ interface BaseDrive {
 
 /** WOZ format track data from https://applesaucefdc.com/woz/reference2/. */
 interface WozDrive extends BaseDrive {
+    /** Woz encoding */
+    encoding: 'woz'
     /** Maps quarter tracks to data in rawTracks; `0xFF` = random garbage. */
     trackMap: byte[];
     /** Unique track bitstreams. The index is arbitrary; it is NOT the track number. */
@@ -184,19 +201,25 @@ interface WozDrive extends BaseDrive {
 
 /** Nibble format track data. */
 interface NibbleDrive extends BaseDrive {
+    /** Nibble encoding */
+    encoding: 'nibble'
     /** Nibble data. The index is the track number. */
     tracks: memory[];
 }
 
 type Drive = WozDrive | NibbleDrive;
 
-function isNibbleDrive(drive: Drive): drive is NibbleDrive {
-    return 'tracks' in drive;
+function isNibbleDrive(drive: Drive): drive is NibbleDrive  {
+    return drive.encoding === 'nibble';
 }
 
-// Does not support WOZ disks
+function isWozDrive(drive: Drive): drive is WozDrive {
+    return drive.encoding === 'woz';
+}
+
 interface DriveState {
     format: DiskFormat,
+    encoding: 'nibble' | 'woz'
     volume: byte,
     name: string,
     tracks: memory[],
@@ -205,6 +228,8 @@ interface DriveState {
     phase: Phase,
     readOnly: boolean,
     dirty: boolean,
+    trackMap: number[],
+    rawTracks: bit[][],
 }
 
 interface State {
@@ -216,10 +241,10 @@ interface State {
     drive: DriveNumber;
 }
 
-// TODO(flan): Does not work for WOZ disks
 function getDriveState(drive: Drive): DriveState {
     const result: DriveState = {
         format: drive.format,
+        encoding: drive.encoding,
         volume: drive.volume,
         name: drive.name,
         tracks: [],
@@ -227,34 +252,61 @@ function getDriveState(drive: Drive): DriveState {
         head: drive.head,
         phase: drive.phase,
         readOnly: drive.readOnly,
-        dirty: drive.dirty
+        dirty: drive.dirty,
+        trackMap: [],
+        rawTracks: [],
     };
-    if (!isNibbleDrive(drive)) {
-        throw Error('No tracks.');
+
+    if (isNibbleDrive(drive)) {
+        for (let idx = 0; idx < drive.tracks.length; idx++) {
+            result.tracks.push(new Uint8Array(drive.tracks[idx]));
+        }
     }
-    for (let idx = 0; idx < drive.tracks.length; idx++) {
-        result.tracks.push(new Uint8Array(drive.tracks[idx]));
+    if (isWozDrive(drive)) {
+        result.trackMap = [...drive.trackMap];
+        for (let idx = 0; idx < drive.rawTracks.length; idx++) {
+            result.rawTracks.push([...drive.rawTracks[idx]]);
+        }
     }
     return result;
 }
 
-// TODO(flan): Does not work for WOZ disks
 function setDriveState(state: DriveState) {
-    const result: Drive = {
-        format: state.format,
-        volume: state.volume,
-        name: state.name,
-        tracks: [] as memory[],
-        track: state.track,
-        head: state.head,
-        phase: state.phase,
-        readOnly: state.readOnly,
-        dirty: state.dirty
-    };
-    for (let idx = 0; idx < state.tracks.length; idx++) {
-        result.tracks!.push(new Uint8Array(state.tracks[idx]));
+    let result: Drive;
+    if (state.encoding === 'nibble') {
+        result = {
+            format: state.format,
+            encoding: 'nibble',
+            volume: state.volume,
+            name: state.name,
+            tracks: [],
+            track: state.track,
+            head: state.head,
+            phase: state.phase,
+            readOnly: state.readOnly,
+            dirty: state.dirty,
+        };
+        for (let idx = 0; idx < state.tracks.length; idx++) {
+            result.tracks.push(new Uint8Array(state.tracks[idx]));
+        }
+    } else {
+        result = {
+            format: state.format,
+            encoding: 'woz',
+            volume: state.volume,
+            name: state.name,
+            track: state.track,
+            head: state.head,
+            phase: state.phase,
+            readOnly: state.readOnly,
+            dirty: state.dirty,
+            trackMap: [...state.trackMap],
+            rawTracks: [],
+        };
+        for (let idx = 0; idx < state.rawTracks.length; idx++) {
+            result.rawTracks.push([...state.rawTracks[idx]]);
+        }
     }
-
     return result;
 }
 
@@ -266,6 +318,7 @@ export default class DiskII implements Card {
     private drives: Drive[] = [
         {   // Drive 1
             format: 'dsk',
+            encoding: 'nibble',
             volume: 254,
             name: 'Disk 1',
             tracks: [],
@@ -273,10 +326,11 @@ export default class DiskII implements Card {
             head: 0,
             phase: 0,
             readOnly: false,
-            dirty: false
+            dirty: false,
         },
         {   // Drive 2
             format: 'dsk',
+            encoding: 'nibble',
             volume: 254,
             name: 'Disk 2',
             tracks: [],
@@ -284,7 +338,7 @@ export default class DiskII implements Card {
             head: 0,
             phase: 0,
             readOnly: false,
-            dirty: false
+            dirty: false,
         }];
 
     private skip = 0;
@@ -328,26 +382,26 @@ export default class DiskII implements Card {
     /** Contents of the P6 ROM. */
     private sequencerRom: typeof SEQUENCER_ROM_16 | typeof SEQUENCER_ROM_13;
 
+    private worker: Worker;
+
     /** Builds a new Disk ][ card. */
     constructor(private io: Apple2IO, private callbacks: Callbacks, private sectors = 16) {
+        this.debug('Disk ][');
+
         this.lastCycles = this.io.cycles();
         this.bootstrapRom = this.sectors == 16 ? BOOTSTRAP_ROM_16 : BOOTSTRAP_ROM_13;
         this.sequencerRom = this.sectors == 16 ? SEQUENCER_ROM_16 : SEQUENCER_ROM_13;
 
-        this.init();
+        this.initWorker();
     }
 
     private debug(..._args: any[]) {
         // debug.apply(this, arguments);
     }
 
-    private init() {
-        this.debug('Disk ][');
-    }
-
     // Only used for WOZ disks
     private moveHead() {
-        if (isNibbleDrive(this.cur)) {
+        if (!isWozDrive(this.cur)) {
             return;
         }
         const track: bit[] =
@@ -665,7 +719,6 @@ export default class DiskII implements Card {
         this.moveHead();
     }
 
-    // TODO(flan): Does not work for WOZ disks
     getState() {
         const result = {
             drives: [] as DriveState[],
@@ -682,7 +735,6 @@ export default class DiskII implements Card {
         return result;
     }
 
-    // TODO(flan): Does not work for WOZ disks
     setState(state: State) {
         this.skip = state.skip;
         this.latch = state.latch;
@@ -699,22 +751,17 @@ export default class DiskII implements Card {
         this.cur = this.drives[this.drive - 1];
     }
 
-    // TODO(flan): Does not work for WOZ disks
     getMetadata(driveNo: DriveNumber) {
         const drive = this.drives[driveNo - 1];
-        if (isNibbleDrive(drive)) {
-            return {
-                format: drive.format,
-                volume: drive.volume,
-                track: drive.track,
-                head: drive.head,
-                phase: drive.phase,
-                readOnly: drive.readOnly,
-                dirty: drive.dirty
-            };
-        } else {
-            return null;
-        }
+        return {
+            format: drive.format,
+            volume: drive.volume,
+            track: drive.track,
+            head: drive.head,
+            phase: drive.phase,
+            readOnly: drive.readOnly,
+            dirty: drive.dirty
+        };
     }
 
     // TODO(flan): Does not work on WOZ disks
@@ -728,63 +775,28 @@ export default class DiskII implements Card {
 
     /** Sets the data for `drive` from `disk`, which is expected to be JSON. */
     // TODO(flan): This implementation is not very safe.
-    setDisk(drive: DriveNumber, disk: JSONDisk) {
-        const fmt = disk.type;
-        const readOnly = disk.readOnly;
-        const name = disk.name;
-
-        let data: memory[] | memory[][];
-        if (disk.encoding == 'base64') {
-            data = [];
-            for (let t = 0; t < disk.data.length; t++) {
-                if (fmt == 'nib') {
-                    data[t] = base64_decode(disk.data[t] as string);
-                } else {
-                    data[t] = [];
-                    for (let s = 0; s < disk.data[t].length; s++) {
-                        data[t][s] = base64_decode(disk.data[t][s] as string);
-                    }
-                }
-            }
+    setDisk(drive: DriveNumber, jsonDisk: JSONDisk) {
+        if (this.worker) {
+            const message: FormatWorkerMessage = {
+                type: ProcessJsonDiskType,
+                payload: {
+                    drive,
+                    jsonDisk
+                },
+            };
+            this.worker.postMessage(message);
+            return true;
         } else {
-            data = disk.data;
+            const disk = createDiskFromJsonDisk(jsonDisk);
+            if (disk) {
+                const cur = this.drives[drive - 1];
+                Object.assign(cur, disk);
+                this.updateDirty(drive, false);
+                this.callbacks.label(drive, disk.name);
+                return true;
+            }
         }
-        const cur = this.drives[drive - 1];
-
-        // var v = (fmt === 'dsk' ? data[0x11][0x00][0x06] : 0xfe);
-        // if (v == 0x00) {
-        const volume = disk.volume || 0xfe;
-        // }
-
-        const options = {
-            volume,
-            readOnly,
-            name,
-            data
-        };
-
-        let newDisk: Disk;
-        switch (fmt) {
-            case 'd13':
-                newDisk = D13(options);
-                break;
-            case 'do':
-            case 'dsk':
-                newDisk = DOS(options);
-                break;
-            case 'nib':
-                newDisk = Nibble(options);
-                break;
-            case 'po':
-                newDisk = ProDOS(options);
-                break;
-            default:
-                return false;
-        }
-
-        Object.assign(cur, newDisk);
-        this.updateDirty(drive, false);
-        this.callbacks.label(drive, name);
+        return false;
     }
 
     getJSON(drive: DriveNumber, pretty: boolean = false) {
@@ -795,52 +807,77 @@ export default class DiskII implements Card {
         return jsonEncode(cur, pretty);
     }
 
-    setJSON(drive: DriveNumber, data: string) {
-        const cur = this.drives[drive - 1];
-        Object.assign(cur, jsonDecode(data));
+    setJSON(drive: DriveNumber, json: string) {
+        if (this.worker) {
+            const message: FormatWorkerMessage = {
+                type: ProcessJsonType,
+                payload: {
+                    drive,
+                    json
+                },
+            };
+            this.worker.postMessage(message);
+        } else {
+            const cur = this.drives[drive - 1];
+            Object.assign(cur, jsonDecode(json));
+        }
         return true;
     }
 
     setBinary(drive: DriveNumber, name: string, fmt: DiskFormat, rawData: ArrayBuffer) {
-        let disk;
-        const cur = this.drives[drive - 1];
         const readOnly = false;
         const volume = 254;
         const options = {
             name,
             rawData,
             readOnly,
-            volume
+            volume,
         };
 
-        switch (fmt) {
-            case '2mg':
-                disk = _2MG(options);
-                break;
-            case 'd13':
-                disk = D13(options);
-                break;
-            case 'do':
-            case 'dsk':
-                disk = DOS(options);
-                break;
-            case 'nib':
-                disk = Nibble(options);
-                break;
-            case 'po':
-                disk = ProDOS(options);
-                break;
-            case 'woz':
-                disk = Woz(options);
-                break;
-            default:
-                return false;
-        }
+        if (this.worker) {
+            const message: FormatWorkerMessage = {
+                type: ProcessBinaryType,
+                payload: {
+                    drive,
+                    fmt,
+                    options,
+                }
+            };
+            this.worker.postMessage(message);
 
-        Object.assign(cur, disk);
-        this.updateDirty(drive, true);
-        this.callbacks.label(this.drive, name);
-        return true;
+            return true;
+        } else {
+            const disk = createDisk(fmt, options);
+            if (disk) {
+                const cur = this.drives[drive - 1];
+                Object.assign(cur, disk);
+                this.updateDirty(drive, true);
+                this.callbacks.label(this.drive, name);
+
+                return true;
+            }
+        }
+        return false;
+    }
+
+    initWorker() {
+        this.worker = new Worker('dist/format_worker.bundle.js');
+
+        this.worker.addEventListener('message', (message: MessageEvent<FormatWorkerResponse>) => {
+            const { data } = message;
+            switch (data.type) {
+                case DiskProcessedType: {
+                    const { drive, disk } = data.payload;
+                    if (disk) {
+                        const cur = this.drives[drive - 1];
+                        Object.assign(cur, disk);
+                        this.updateDirty(drive, true);
+                        this.callbacks.label(this.drive, disk.name);
+                    }
+                }
+                    break;
+            }
+        });
     }
 
     // TODO(flan): Does not work with WOZ disks

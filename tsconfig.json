@@ -4,6 +4,7 @@
       "esModuleInterop": true,
       "allowSyntheticDefaultImports": true,
       "target": "es6",
+      "lib": ["DOM", "ES2017", "WebWorker"],
       "noImplicitAny": true,
       "noImplicitThis": true,
       "noUnusedLocals": true,

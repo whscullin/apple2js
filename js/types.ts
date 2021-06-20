@@ -1,4 +1,3 @@
-
 /**
  * Extracts the members of a constant array as a type. Used as:
  *
@@ -11,7 +10,7 @@ export type MemberOf<T extends ReadonlyArray<unknown>> =
 
 /**
  * Recursively extracts all members of a constant array as a type. Used as:
- * 
+ *
  * @example
  * const SOME_ARRAYS = [['a'],['b', 2], 3] as const;
  * type SomeArrayValues = DeepMemberOf<typeof SOME_ARRAYS>; // 'a' | 'b' | 2 | 3
@@ -23,7 +22,7 @@ export type DeepMemberOf<T extends ReadonlyArray<unknown>> =
 
 /**
  * Extracts the declared keys of a type by removing `string` and `number`.
- * 
+ *
  * Cribbed from the interwebs:
  * https://github.com/microsoft/TypeScript/issues/25987#issuecomment-408339599
  */
@@ -39,7 +38,7 @@ export type KnownValues<T> = T extends {
 
 /**
  * Replacement for `includes` on constant types that is also a type assertion.
- * 
+ *
  * @example
  * const SOME_VALUES = [1, 2, 'a'] as const;
  * let n: number = 1;
@@ -99,35 +98,6 @@ export interface Card extends Memory, Restorable {
 
     /* Read or Write an I/O switch */
     ioSwitch(off: byte, val?: byte): byte | undefined;
-}
-
-export const DISK_FORMATS = [
-    '2mg',
-    'd13',
-    'do',
-    'dsk',
-    'hdv',
-    'po',
-    'nib',
-    'woz'
-] as const;
-
-export type DiskFormat = MemberOf<typeof DISK_FORMATS>;
-
-export interface Drive {
-    format: DiskFormat,
-    volume: number,
-    tracks: Array<byte[] | Uint8Array>,
-    trackMap: unknown,
-}
-
-export interface DiskIIDrive extends Drive {
-    rawTracks: unknown,
-    track: number,
-    head: number,
-    phase: number,
-    readOnly: boolean,
-    dirty: boolean,
 }
 
 export type TapeData = Array<[duration: number, high: boolean]>;

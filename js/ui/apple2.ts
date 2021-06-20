@@ -3,7 +3,14 @@ import MicroModal from 'micromodal';
 import { base64_json_parse, base64_json_stringify } from '../base64';
 import { Audio, SOUND_ENABLED_OPTION } from './audio';
 import DriveLights from './drive_lights';
-import { byte, DISK_FORMATS, includes, word } from '../types';
+import { byte, includes, word } from '../types';
+import { MassStorage } from '../formats/types';
+import {
+    DISK_FORMATS,
+    DriveNumber,
+    DRIVE_NUMBERS,
+    JSONDisk
+} from '../formats/types';
 import { initGamepad, GamepadConfiguration } from './gamepad';
 import KeyBoard from './keyboard';
 import Tape, { TAPE_TYPES } from './tape';
@@ -13,12 +20,11 @@ import ApplesoftCompiler from '../applesoft/compiler';
 
 import { debug, gup, hup } from '../util';
 import { Apple2, Stats } from '../apple2';
-import DiskII, { DriveNumber, DRIVE_NUMBERS } from '../cards/disk2';
-import SmartPort from '../cards/smartport';
+import DiskII from '../cards/disk2';
 import CPU6502 from '../cpu6502';
 import { VideoModes } from '../videomodes';
 import Apple2IO from '../apple2io';
-import { JSONDisk } from '../formats/format_utils';
+import {  } from '../formats/format_utils';
 import Printer from './printer';
 
 import { OptionsModal } from './options_modal';
@@ -71,7 +77,7 @@ let stats: Stats;
 let vm: VideoModes;
 let tape: Tape;
 let _disk2: DiskII;
-let _smartPort: SmartPort;
+let _massStorage: MassStorage;
 let _printer: Printer;
 let audio: Audio;
 let screen: Screen;
@@ -381,8 +387,12 @@ function doLoadLocalDisk(drive: DriveNumber, file: File) {
         document.location.hash = files.join('|');
 
         if (result.byteLength >= 800 * 1024) {
-            if (_smartPort.setBinary(drive, name, ext, result)) {
-                initGamepad();
+            if (includes(DISK_FORMATS, ext)) {
+                if (_massStorage.setBinary(drive, name, ext, result)) {
+                    initGamepad();
+                } else {
+                    openAlert(`Unable to load ${name}`);
+                }
             }
         } else {
             if (includes(DISK_FORMATS, ext)
@@ -442,18 +452,18 @@ export function doLoadHTTP(drive: DriveNumber, url?: string) {
             const fileParts = file.split('.');
             const ext = fileParts.pop()!.toLowerCase();
             const name = decodeURIComponent(fileParts.join('.'));
-            if (data.byteLength >= 800 * 1024) {
-                if (_smartPort.setBinary(drive, name, ext, data)) {
-                    initGamepad();
-                }
-            } else {
-                if (includes(DISK_FORMATS, ext)) {
-                    if (_disk2.setBinary(drive, name, ext, data)) {
+            if (includes(DISK_FORMATS, ext)) {
+                if (data.byteLength >= 800 * 1024) {
+                    if (_massStorage.setBinary(drive, name, ext, data)) {
                         initGamepad();
                     }
                 } else {
-                    throw new Error(`Extension ${ext} not recognized.`);
+                    if (_disk2.setBinary(drive, name, ext, data)) {
+                        initGamepad();
+                    }
                 }
+            } else {
+                throw new Error(`Extension ${ext} not recognized.`);
             }
             loadingStop();
         }).catch(function (error) {
@@ -685,7 +695,6 @@ const categorySelect = document.querySelector<HTMLSelectElement>('#category_sele
 declare global {
     interface Window {
         disk_index: DiskDescriptor[];
-        e: boolean;
     }
 }
 
@@ -808,7 +817,7 @@ declare global {
     }
 }
 
-function onLoaded(apple2: Apple2, disk2: DiskII, smartPort: SmartPort, printer: Printer, e: boolean) {
+function onLoaded(apple2: Apple2, disk2: DiskII, massStorage: MassStorage, printer: Printer, e: boolean) {
     _apple2 = apple2;
     cpu = _apple2.getCPU();
     io = _apple2.getIO();
@@ -816,7 +825,7 @@ function onLoaded(apple2: Apple2, disk2: DiskII, smartPort: SmartPort, printer: 
     vm = apple2.getVideoModes();
     tape = new Tape(io);
     _disk2 = disk2;
-    _smartPort = smartPort;
+    _massStorage = massStorage;
     _printer = printer;
     _e = e;
 
@@ -905,8 +914,8 @@ function onLoaded(apple2: Apple2, disk2: DiskII, smartPort: SmartPort, printer: 
     );
 }
 
-export function initUI(apple2: Apple2, disk2: DiskII, smartPort: SmartPort, printer: Printer, e: boolean) {
+export function initUI(apple2: Apple2, disk2: DiskII, massStorage: MassStorage, printer: Printer, e: boolean) {
     window.addEventListener('load', () => {
-        onLoaded(apple2, disk2, smartPort, printer, e);
+        onLoaded(apple2, disk2, massStorage, printer, e);
     });
 }

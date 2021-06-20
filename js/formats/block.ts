@@ -9,33 +9,33 @@
  * implied warranty.
  */
 
+import { DiskOptions } from './types';
+
 /**
- * Returns a `Disk` object from raw nibble image data.
+ * Returns a `Disk` object for a block volume with block-ordered data.
  * @param {*} options the disk image and options
  * @returns {import('./format_utils').Disk}
  */
-export default function Nibble(options) {
-    var { data, name, rawData, volume, readOnly } = options;
-    var disk = {
-        format: 'nib',
-        name,
-        volume: volume || 254,
-        readOnly: readOnly || false,
-        tracks: [],
-        trackMap: null,
-        rawTracks: null
-    };
+export default function BlockVolume(options: DiskOptions) {
+    const { rawData, readOnly, name } = options;
 
-    for (var t = 0; t < 35; t++) {
-        var track;
-        if (rawData) {
-            var off = t * 0x1a00;
-            track = new Uint8Array(data.slice(off, off + 0x1a00));
-        } else {
-            track = data[t];
-        }
-        disk.tracks[t] = track;
+    if (!rawData) {
+        throw new Error('Requires rawData');
     }
+
+    let blocks = [];
+    blocks = [];
+    let offset = 0;
+    while (offset  < rawData.byteLength) {
+        blocks.push(new Uint8Array(rawData.slice(offset, offset + 0x200)));
+        offset += 0x200;
+    }
+
+    const disk: { blocks: Uint8Array[], name: string, readOnly: boolean } = {
+        blocks,
+        name,
+        readOnly,
+    };
 
     return disk;
 }

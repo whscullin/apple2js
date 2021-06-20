@@ -55,7 +55,8 @@ module.exports = [
         ...baseConfig,
         target: false,
         entry: {
-            audio_worker: path.resolve('js/ui/audio_worker.ts')
+            audio_worker: path.resolve('js/ui/audio_worker.ts'),
+            format_worker: path.resolve('js/formats/worker.ts')
         },
         output: {
             publicPath: '/dist/',

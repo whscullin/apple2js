@@ -12,7 +12,9 @@
 import { debug, toHex } from '../util';
 import { rom as smartPortRom } from '../roms/cards/smartport';
 import { Card, Restorable, byte, word, rom } from '../types';
+import { MassStorage } from '../formats/types';
 import CPU6502, { CpuState, flags } from '../cpu6502';
+import { read2MGHeader } from '../formats/2mg';
 
 type SmartDisk = Uint8Array[];
 
@@ -100,7 +102,7 @@ const ADDRESS_LO = 0x44;
 const BLOCK_LO = 0x46;
 // const BLOCK_HI = 0x47;
 
-export default class SmartPort implements Card, Restorable<SmartPortState> {
+export default class SmartPort implements Card, MassStorage, Restorable<SmartPortState> {
 
     private rom: rom;
     private disks: SmartDisk[] = [];
@@ -451,7 +453,8 @@ export default class SmartPort implements Card, Restorable<SmartPortState> {
     setBinary(drive: number, _name: string, fmt: string, data: ArrayBuffer) {
         this.disks[drive] = [];
         if (fmt == '2mg') {
-            data = data.slice(64);
+            const { bytes, offset } = read2MGHeader(data);
+            data = data.slice(offset, offset + bytes);
         }
         for (let idx = 0; idx < data.byteLength; idx += 512) {
             this.disks[drive].push(new Uint8Array(data.slice(idx, idx + 512)));

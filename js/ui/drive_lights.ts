@@ -1,4 +1,5 @@
-import { Callbacks, DriveNumber } from '../cards/disk2';
+import { Callbacks } from '../cards/disk2';
+import type { DriveNumber } from '../formats/types';
 
 export default class DriveLights implements Callbacks {
     public driveLight(drive: DriveNumber, on: boolean) {
