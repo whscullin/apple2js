@@ -82,6 +82,8 @@ let io: Apple2IO;
 let _currentDrive: DriveNumber = 1;
 let _e: boolean;
 
+let ready: Promise<[void, void]>;
+
 export const driveLights = new DriveLights();
 
 export function dumpAppleSoftProgram() {
@@ -213,7 +215,7 @@ function loadingStop() {
     MicroModal.close('loading-modal');
 
     if (!paused) {
-        _apple2.ready.then(() => {
+        ready.then(() => {
             _apple2.run();
         }).catch(console.error);
     }
@@ -762,7 +764,7 @@ export function updateUI() {
 export function pauseRun() {
     const label = document.querySelector<HTMLElement>('#pause-run i')!;
     if (paused) {
-        _apple2.ready.then(() => {
+        ready.then(() => {
             _apple2.run();
         }).catch(console.error);
         label.classList.remove('fa-play');
@@ -831,6 +833,8 @@ function onLoaded(apple2: Apple2, disk2: DiskII, smartPort: SmartPort, printer: 
     optionsModal.addOptions(audio);
     initSoundToggle();
 
+    ready = Promise.all([audio.ready, apple2.ready]);
+
     MicroModal.init();
 
     keyboard = new KeyBoard(cpu, io, e);
@@ -859,7 +863,7 @@ function onLoaded(apple2: Apple2, disk2: DiskII, smartPort: SmartPort, printer: 
         event.preventDefault();
     });
 
-    window.addEventListener('copy', (event) => {
+    window.addEventListener('copy', (event: Event) => {
         event.clipboardData!.setData('text/plain', vm.getText());
         event.preventDefault();
     });
@@ -879,7 +883,7 @@ function onLoaded(apple2: Apple2, disk2: DiskII, smartPort: SmartPort, printer: 
         _apple2.stop();
         processHash(hash);
     } else {
-        _apple2.ready.then(() => {
+        ready.then(() => {
             _apple2.run();
         }).catch(console.error);
     }

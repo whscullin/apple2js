@@ -17,6 +17,7 @@ import { debug } from '../util';
  * Audio Handling
  */
 
+const QUANTUM_SIZE = 128;
 const SAMPLE_SIZE = 1024;
 const SAMPLE_RATE = 44000;
 
@@ -36,45 +37,66 @@ export class Audio implements OptionHandler {
 
     private audioContext;
     private audioNode;
+    private workletNode: AudioWorkletNode;
     private started = false;
+
+    ready: Promise<void>;
 
     constructor(io: Apple2IO) {
         this.audioContext = new AudioContext({
             sampleRate: SAMPLE_RATE
         });
 
-        // TODO(flan): MDN says that createScriptProcessor is deprecated and
-        // replaced by AudioWorklet. FF and Chrome support AudioWorklet, but
-        // Safari does not (yet).
-        this.audioNode = this.audioContext.createScriptProcessor(SAMPLE_SIZE, 1, 1);
+        if (window.AudioWorklet) {
+            this.ready = this.audioContext.audioWorklet.addModule('./dist/audio_worker.bundle.js');
+            this.ready
+                .then(() => {
+                    this.workletNode = new AudioWorkletNode(this.audioContext, 'audio_worker');
 
-        this.audioNode.onaudioprocess = (event) => {
-            const data = event.outputBuffer.getChannelData(0);
-            const sample = this.samples.shift();
-            let idx = 0;
-            let len = data.length;
+                    io.sampleRate(this.audioContext.sampleRate, QUANTUM_SIZE);
+                    io.addSampleListener((sample: number[]) => {
+                        if (this.sound) {
+                            this.workletNode.port.postMessage(sample);
+                        }
+                    });
+                    this.workletNode.connect(this.audioContext.destination);
+                })
+                .catch(console.error);
+        } else {
+            // TODO(flan): MDN says that createScriptProcessor is deprecated and
+            // replaced by AudioWorklet. FF and Chrome support AudioWorklet, but
+            // Safari does not (yet).
+            this.audioNode = this.audioContext.createScriptProcessor(SAMPLE_SIZE, 1, 1);
 
-            if (sample) {
-                len = Math.min(sample.length, len);
-                for (; idx < len; idx++) {
-                    data[idx] = sample[idx];
+            this.audioNode.onaudioprocess = (event) => {
+                const data = event.outputBuffer.getChannelData(0);
+                const sample = this.samples.shift();
+                let idx = 0;
+                let len = data.length;
+
+                if (sample) {
+                    len = Math.min(sample.length, len);
+                    for (; idx < len; idx++) {
+                        data[idx] = sample[idx];
+                    }
                 }
-            }
 
-            for (; idx < data.length; idx++) {
-                data[idx] = 0.0;
-            }
-        };
-
-        this.audioNode.connect(this.audioContext.destination);
-        io.sampleRate(this.audioContext.sampleRate, SAMPLE_SIZE);
-        io.addSampleListener((sample: number[]) => {
-            if (this.sound) {
-                if (this.samples.length < 5) {
-                    this.samples.push(sample);
+                for (; idx < data.length; idx++) {
+                    data[idx] = 0.0;
                 }
-            }
-        });
+            };
+
+            this.audioNode.connect(this.audioContext.destination);
+            io.sampleRate(this.audioContext.sampleRate, SAMPLE_SIZE);
+            io.addSampleListener((sample: number[]) => {
+                if (this.sound) {
+                    if (this.samples.length < 5) {
+                        this.samples.push(sample);
+                    }
+                }
+            });
+            this.ready = Promise.resolve();
+        }
 
         window.addEventListener('keydown', this.autoStart);
         if (window.ontouchstart !== undefined) {
