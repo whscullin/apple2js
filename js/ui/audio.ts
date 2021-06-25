@@ -54,8 +54,8 @@ export class Audio implements OptionHandler {
                     this.workletNode = new AudioWorkletNode(this.audioContext, 'audio_worker');
 
                     io.sampleRate(this.audioContext.sampleRate, QUANTUM_SIZE);
-                    io.addSampleListener((sample: number[]) => {
-                        if (this.sound) {
+                    io.addSampleListener((sample) => {
+                        if (this.sound && this.audioContext.state === 'running') {
                             this.workletNode.port.postMessage(sample);
                         }
                     });
@@ -88,8 +88,8 @@ export class Audio implements OptionHandler {
 
             this.audioNode.connect(this.audioContext.destination);
             io.sampleRate(this.audioContext.sampleRate, SAMPLE_SIZE);
-            io.addSampleListener((sample: number[]) => {
-                if (this.sound) {
+            io.addSampleListener((sample) => {
+                if (this.sound && this.audioContext.state === 'running') {
                     if (this.samples.length < 5) {
                         this.samples.push(sample);
                     }
@@ -106,7 +106,6 @@ export class Audio implements OptionHandler {
 
         debug('Sound initialized');
     }
-
 
     autoStart = () => {
         if (this.audioContext && !this.started) {
