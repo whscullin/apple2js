@@ -31,7 +31,7 @@ import {
     PROCESS_BINARY,
     PROCESS_JSON_DISK,
     PROCESS_JSON,
-    ENCODING_WOZ,
+    ENCODING_BITSTREAM,
 } from '../formats/types';
 
 import {
@@ -194,7 +194,7 @@ interface BaseDrive {
 /** WOZ format track data from https://applesaucefdc.com/woz/reference2/. */
 interface WozDrive extends BaseDrive {
     /** Woz encoding */
-    encoding: typeof ENCODING_WOZ
+    encoding: typeof ENCODING_BITSTREAM
     /** Maps quarter tracks to data in rawTracks; `0xFF` = random garbage. */
     trackMap: byte[];
     /** Unique track bitstreams. The index is arbitrary; it is NOT the track number. */
@@ -221,7 +221,7 @@ function isWozDrive(drive: Drive): drive is WozDrive {
 
 interface DriveState {
     format: DiskFormat,
-    encoding: typeof ENCODING_WOZ | typeof ENCODING_NIBBLE
+    encoding: typeof ENCODING_BITSTREAM | typeof ENCODING_NIBBLE
     volume: byte,
     name: string,
     tracks: memory[],
@@ -294,7 +294,7 @@ function setDriveState(state: DriveState) {
     } else {
         result = {
             format: state.format,
-            encoding: ENCODING_WOZ,
+            encoding: ENCODING_BITSTREAM,
             volume: state.volume,
             name: state.name,
             track: state.track,

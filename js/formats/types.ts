@@ -39,7 +39,7 @@ export interface Disk {
 }
 
 export const ENCODING_NIBBLE = 'nibble';
-export const ENCODING_WOZ = 'woz';
+export const ENCODING_BITSTREAM = 'bitstream';
 export const ENCODING_BLOCK = 'block';
 
 export interface NibbleDisk extends Disk {
@@ -50,7 +50,7 @@ export interface NibbleDisk extends Disk {
 }
 
 export interface WozDisk extends Disk {
-    encoding: typeof ENCODING_WOZ
+    encoding: typeof ENCODING_BITSTREAM
     trackMap: number[]
     rawTracks: bit[][]
 }

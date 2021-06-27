@@ -10,7 +10,7 @@
  */
 
 import { debug, toHex } from '../util';
-import { ENCODING_WOZ } from './types';
+import { ENCODING_BITSTREAM } from './types';
 
 const WOZ_HEADER_START = 0;
 const WOZ_HEADER_SIZE = 12;
@@ -195,7 +195,7 @@ export default function Woz(options) {
     let dvOffset = 0;
     const disk = {
         format: 'woz',
-        encoding: ENCODING_WOZ,
+        encoding: ENCODING_BITSTREAM,
     };
 
     let wozVersion;
