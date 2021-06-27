@@ -34,21 +34,30 @@ export interface DiskOptions {
  */
 
 export interface Disk {
-    format: DiskFormat
     name: string
-    volume: byte
     readOnly: boolean
 }
 
+export const ENCODING_NIBBLE = 'nibble';
+export const ENCODING_WOZ = 'woz';
+export const ENCODING_BLOCK = 'block';
+
 export interface NibbleDisk extends Disk {
-    encoding: 'nibble'
+    encoding: typeof ENCODING_NIBBLE
+    format: DiskFormat
+    volume: byte
     tracks: memory[]
 }
 
 export interface WozDisk extends Disk {
-    encoding: 'woz'
+    encoding: typeof ENCODING_WOZ
     trackMap: number[]
     rawTracks: bit[][]
+}
+
+export interface BlockDisk extends Disk {
+    encoding: typeof ENCODING_BLOCK
+    blocks: Uint8Array[]
 }
 
 /**
@@ -112,13 +121,13 @@ export type JSONDisk = Base64JSONDisk | BinaryJSONDisk;
  * Process Disk message payloads for worker
  */
 
-export const ProcessBinaryType = 'processBinary';
-export const ProcessJsonDiskType = 'processJsonDisk';
-export const ProcessJsonType = 'processJson';
+export const PROCESS_BINARY = 'PROCESS_BINARY';
+export const PROCESS_JSON_DISK = 'PROCESS_JSON_DISK';
+export const PROCESS_JSON = 'PROCESS_JSON';
 
 /** Binary disk file message */
 export interface ProcessBinaryMessage {
-    type: typeof ProcessBinaryType
+    type: typeof PROCESS_BINARY
     payload: {
         drive: DriveNumber
         fmt: DiskFormat
@@ -128,7 +137,7 @@ export interface ProcessBinaryMessage {
 
 /** Processed JSON file message (used for localStorage) */
 export interface ProcessJsonDiskMessage {
-    type: typeof ProcessJsonDiskType
+    type: typeof PROCESS_JSON_DISK
     payload: {
         drive: DriveNumber
         jsonDisk: JSONDisk
@@ -137,7 +146,7 @@ export interface ProcessJsonDiskMessage {
 
 /** Raw JSON file message */
 export interface ProcessJsonMessage {
-    type: typeof ProcessJsonType
+    type: typeof PROCESS_JSON
     payload: {
         drive: DriveNumber
         json: string
@@ -153,10 +162,10 @@ export type FormatWorkerMessage =
  * Format work result message type
  */
 
-export const DiskProcessedType = 'diskProcessed';
+export const DISK_PROCESSED = 'DISK_PROCESSED';
 
 export interface DiskProcessedResponse {
-    type: typeof DiskProcessedType
+    type: typeof DISK_PROCESSED
     payload: {
         drive: DriveNumber
         disk: Disk | null

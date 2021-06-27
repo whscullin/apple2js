@@ -12,7 +12,7 @@
 import { byte, memory } from '../types';
 import { base64_decode, base64_encode } from '../base64';
 import { bytify, debug, toHex } from '../util';
-import { NibbleDisk } from './types';
+import { NibbleDisk, ENCODING_NIBBLE } from './types';
 
 /**
  * DOS 3.3 Physical sector order (index is physical sector, value is DOS sector).
@@ -436,10 +436,10 @@ export function jsonDecode(data: string) {
         }
         tracks[t] = bytify(track);
     }
-    const cur: NibbleDisk = {
+    const cur = {
         volume: v,
         format: json.type,
-        encoding: 'nibble',
+        encoding: ENCODING_NIBBLE,
         name: json.name,
         tracks,
         readOnly,

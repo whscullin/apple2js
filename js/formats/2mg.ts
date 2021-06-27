@@ -16,13 +16,6 @@ import { DiskOptions } from './types';
 
 import { numToString, debug } from '../util';
 
-export interface _2MGOptions {
-    blockVolume?: boolean
-    rawData: ArrayBuffer
-    readOnly: boolean
-    arrayConstructor: any
-}
-
 const OFFSETS = {
     CREATOR: 0x04,
     FLAGS: 0x0A,
@@ -56,10 +49,10 @@ export function read2MGHeader(rawData: ArrayBuffer) {
     }
 
     debug('created by', creator);
-    rawData = rawData.slice(offset, offset + bytes);
 
     return {
         bytes,
+        creator,
         format,
         offset,
         readOnly,

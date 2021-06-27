@@ -9,7 +9,7 @@
  * implied warranty.
  */
 
-import { NibbleDisk, DiskOptions } from './types';
+import { NibbleDisk, DiskOptions, ENCODING_NIBBLE } from './types';
 import { memory } from '../types';
 
 /**
@@ -17,11 +17,11 @@ import { memory } from '../types';
  * @param {*} options the disk image and options
  * @returns {import('./format_utils').Disk}
  */
-export default function Nibble(options: DiskOptions) {
+export default function Nibble(options: DiskOptions): NibbleDisk {
     const { data, name, rawData, volume, readOnly } = options;
     const disk: NibbleDisk = {
         format: 'nib',
-        encoding: 'nibble',
+        encoding: ENCODING_NIBBLE,
         name,
         volume: volume || 254,
         readOnly: readOnly || false,

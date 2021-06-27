@@ -36,7 +36,7 @@ export function createDisk(fmt: DiskFormat, options: DiskOptions) {
     return disk;
 }
 
-export function createDiskFromJsonDisk(disk: JSONDisk) {
+export function createDiskFromJsonDisk(disk: JSONDisk): Disk | null {
     const fmt = disk.type;
     const readOnly = disk.readOnly;
     const name = disk.name;

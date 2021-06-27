@@ -12,18 +12,18 @@
 import { explodeSector16, DO } from './format_utils';
 import { bytify } from '../util';
 import { byte } from '../types';
-import { NibbleDisk, DiskOptions } from './types';
+import { NibbleDisk, DiskOptions, ENCODING_NIBBLE } from './types';
 
 /**
  * Returns a `Disk` object from DOS-ordered image data.
  * @param {*} options the disk image and options
  * @returns {import('./format_utils').Disk}
  */
-export default function DOS(options: DiskOptions) {
+export default function DOS(options: DiskOptions): NibbleDisk {
     const { data, name, rawData, volume, readOnly } = options;
     const disk: NibbleDisk = {
         format: 'dsk',
-        encoding: 'nibble',
+        encoding: ENCODING_NIBBLE,
         name,
         volume,
         readOnly,

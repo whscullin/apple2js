@@ -12,7 +12,7 @@
 import { explodeSector16, PO } from './format_utils';
 import { bytify } from '../util';
 import type { byte } from '../types';
-import type { NibbleDisk, DiskOptions } from './types';
+import { NibbleDisk, DiskOptions, ENCODING_NIBBLE } from './types';
 
 /**
  * Returns a `Disk` object from ProDOS-ordered image data.
@@ -23,7 +23,7 @@ export default function ProDOS(options: DiskOptions) {
     const { data, name, rawData, volume, readOnly } = options;
     const disk: NibbleDisk = {
         format: 'nib',
-        encoding: 'nibble',
+        encoding: ENCODING_NIBBLE,
         name,
         volume: volume || 254,
         tracks: [],

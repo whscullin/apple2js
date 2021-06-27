@@ -23,13 +23,15 @@ import {
     FormatWorkerMessage,
     FormatWorkerResponse,
     DiskFormat,
-    DiskProcessedType,
+    DISK_PROCESSED,
     DRIVE_NUMBERS,
     DriveNumber,
     JSONDisk,
-    ProcessBinaryType,
-    ProcessJsonDiskType,
-    ProcessJsonType,
+    ENCODING_NIBBLE,
+    PROCESS_BINARY,
+    PROCESS_JSON_DISK,
+    PROCESS_JSON,
+    ENCODING_WOZ,
 } from '../formats/types';
 
 import {
@@ -192,7 +194,7 @@ interface BaseDrive {
 /** WOZ format track data from https://applesaucefdc.com/woz/reference2/. */
 interface WozDrive extends BaseDrive {
     /** Woz encoding */
-    encoding: 'woz'
+    encoding: typeof ENCODING_WOZ
     /** Maps quarter tracks to data in rawTracks; `0xFF` = random garbage. */
     trackMap: byte[];
     /** Unique track bitstreams. The index is arbitrary; it is NOT the track number. */
@@ -202,7 +204,7 @@ interface WozDrive extends BaseDrive {
 /** Nibble format track data. */
 interface NibbleDrive extends BaseDrive {
     /** Nibble encoding */
-    encoding: 'nibble'
+    encoding: typeof ENCODING_NIBBLE
     /** Nibble data. The index is the track number. */
     tracks: memory[];
 }
@@ -219,7 +221,7 @@ function isWozDrive(drive: Drive): drive is WozDrive {
 
 interface DriveState {
     format: DiskFormat,
-    encoding: 'nibble' | 'woz'
+    encoding: typeof ENCODING_WOZ | typeof ENCODING_NIBBLE
     volume: byte,
     name: string,
     tracks: memory[],
@@ -273,10 +275,10 @@ function getDriveState(drive: Drive): DriveState {
 
 function setDriveState(state: DriveState) {
     let result: Drive;
-    if (state.encoding === 'nibble') {
+    if (state.encoding === ENCODING_NIBBLE) {
         result = {
             format: state.format,
-            encoding: 'nibble',
+            encoding: ENCODING_NIBBLE,
             volume: state.volume,
             name: state.name,
             tracks: [],
@@ -292,7 +294,7 @@ function setDriveState(state: DriveState) {
     } else {
         result = {
             format: state.format,
-            encoding: 'woz',
+            encoding: ENCODING_WOZ,
             volume: state.volume,
             name: state.name,
             track: state.track,
@@ -318,7 +320,7 @@ export default class DiskII implements Card {
     private drives: Drive[] = [
         {   // Drive 1
             format: 'dsk',
-            encoding: 'nibble',
+            encoding: ENCODING_NIBBLE,
             volume: 254,
             name: 'Disk 1',
             tracks: [],
@@ -330,7 +332,7 @@ export default class DiskII implements Card {
         },
         {   // Drive 2
             format: 'dsk',
-            encoding: 'nibble',
+            encoding: ENCODING_NIBBLE,
             volume: 254,
             name: 'Disk 2',
             tracks: [],
@@ -778,7 +780,7 @@ export default class DiskII implements Card {
     setDisk(drive: DriveNumber, jsonDisk: JSONDisk) {
         if (this.worker) {
             const message: FormatWorkerMessage = {
-                type: ProcessJsonDiskType,
+                type: PROCESS_JSON_DISK,
                 payload: {
                     drive,
                     jsonDisk
@@ -810,7 +812,7 @@ export default class DiskII implements Card {
     setJSON(drive: DriveNumber, json: string) {
         if (this.worker) {
             const message: FormatWorkerMessage = {
-                type: ProcessJsonType,
+                type: PROCESS_JSON,
                 payload: {
                     drive,
                     json
@@ -836,7 +838,7 @@ export default class DiskII implements Card {
 
         if (this.worker) {
             const message: FormatWorkerMessage = {
-                type: ProcessBinaryType,
+                type: PROCESS_BINARY,
                 payload: {
                     drive,
                     fmt,
@@ -866,7 +868,7 @@ export default class DiskII implements Card {
         this.worker.addEventListener('message', (message: MessageEvent<FormatWorkerResponse>) => {
             const { data } = message;
             switch (data.type) {
-                case DiskProcessedType: {
+                case DISK_PROCESSED: {
                     const { drive, disk } = data.payload;
                     if (disk) {
                         const cur = this.drives[drive - 1];

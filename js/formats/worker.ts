@@ -1,3 +1,14 @@
+/* Copyright 2021 Will Scullin <scullin@scullinsteel.com>
+ *
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both that
+ * copyright notice and this permission notice appear in supporting
+ * documentation.  No representations are made about the suitability of this
+ * software for any purpose.  It is provided "as is" without express or
+ * implied warranty.
+ */
+
 import { debug } from '../util';
 import { jsonDecode } from './format_utils';
 import {
@@ -8,10 +19,10 @@ import {
     FormatWorkerMessage,
     Disk,
     DiskProcessedResponse,
-    DiskProcessedType,
-    ProcessBinaryType,
-    ProcessJsonDiskType,
-    ProcessJsonType,
+    DISK_PROCESSED,
+    PROCESS_BINARY,
+    PROCESS_JSON_DISK,
+    PROCESS_JSON,
 } from './types';
 
 debug('Worker loaded');
@@ -23,19 +34,19 @@ addEventListener('message', (message: MessageEvent<FormatWorkerMessage>) => {
     let disk: Disk | null = null;
 
     switch (data.type) {
-        case ProcessBinaryType: {
+        case PROCESS_BINARY: {
             const { fmt, options } = data.payload;
             disk = createDisk(fmt, options);
         }
             break;
 
-        case ProcessJsonDiskType: {
+        case PROCESS_JSON_DISK: {
             const { jsonDisk } = data.payload;
             disk = createDiskFromJsonDisk(jsonDisk);
         }
             break;
 
-        case ProcessJsonType: {
+        case PROCESS_JSON: {
             const { json } = data.payload;
             disk = jsonDecode(json);
         }
@@ -43,7 +54,7 @@ addEventListener('message', (message: MessageEvent<FormatWorkerMessage>) => {
     }
 
     const response: DiskProcessedResponse = {
-        type: DiskProcessedType,
+        type: DISK_PROCESSED,
         payload: {
             drive,
             disk

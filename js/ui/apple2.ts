@@ -386,20 +386,19 @@ function doLoadLocalDisk(drive: DriveNumber, file: File) {
         files[drive - 1] = '';
         document.location.hash = files.join('|');
 
-        if (result.byteLength >= 800 * 1024) {
-            if (includes(DISK_FORMATS, ext)) {
+        if (includes(DISK_FORMATS, ext)) {
+            if (result.byteLength >= 800 * 1024) {
                 if (_massStorage.setBinary(drive, name, ext, result)) {
                     initGamepad();
                 } else {
                     openAlert(`Unable to load ${name}`);
                 }
-            }
-        } else {
-            if (includes(DISK_FORMATS, ext)
-                && _disk2.setBinary(drive, name, ext, result)) {
-                initGamepad();
             } else {
-                openAlert(`Unable to load ${name}`);
+                if (_disk2.setBinary(drive, name, ext, result)) {
+                    initGamepad();
+                } else {
+                    openAlert(`Unable to load ${name}`);
+                }
             }
         }
         loadingStop();

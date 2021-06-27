@@ -10,7 +10,7 @@
  */
 
 import { explodeSector13, D13O } from './format_utils';
-import type { NibbleDisk, DiskOptions } from './types';
+import { NibbleDisk, DiskOptions, ENCODING_NIBBLE } from './types';
 
 /**
  * Returns a `Disk` object from DOS 3.2-ordered image data.
@@ -21,7 +21,7 @@ export default function DOS13(options: DiskOptions) {
     const { data, name, rawData, volume, readOnly } = options;
     const disk: NibbleDisk = {
         format: 'd13',
-        encoding: 'nibble',
+        encoding: ENCODING_NIBBLE,
         name,
         volume,
         readOnly,
