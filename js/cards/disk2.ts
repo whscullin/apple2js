@@ -212,11 +212,11 @@ interface NibbleDrive extends BaseDrive {
 type Drive = WozDrive | NibbleDrive;
 
 function isNibbleDrive(drive: Drive): drive is NibbleDrive  {
-    return drive.encoding === 'nibble';
+    return drive.encoding === ENCODING_NIBBLE;
 }
 
 function isWozDrive(drive: Drive): drive is WozDrive {
-    return drive.encoding === 'woz';
+    return drive.encoding === ENCODING_BITSTREAM;
 }
 
 interface DriveState {
