@@ -403,17 +403,17 @@ export default class DiskII implements Card {
 
     // Only used for WOZ disks
     private moveHead() {
-        if (!isWozDrive(this.cur)) {
-            return;
-        }
-        const track: bit[] =
-            this.cur.rawTracks[this.cur.trackMap[this.cur.track]] || [0];
-
         const cycles = this.io.cycles();
 
         // Spin the disk the number of elapsed cycles since last call
         let workCycles = (cycles - this.lastCycles) * 2;
         this.lastCycles = cycles;
+
+        if (!isWozDrive(this.cur)) {
+            return;
+        }
+        const track: bit[] =
+            this.cur.rawTracks[this.cur.trackMap[this.cur.track]] || [0];
 
         while (workCycles-- > 0) {
             let pulse: bit = 0;
