@@ -20,7 +20,7 @@ import { NibbleDisk, ENCODING_NIBBLE } from './types';
 export const DO = [
     0x0, 0x7, 0xE, 0x6, 0xD, 0x5, 0xC, 0x4,
     0xB, 0x3, 0xA, 0x2, 0x9, 0x1, 0x8, 0xF
-];
+] as const;
 
 /**
  * DOS 3.3 Logical sector order (index is DOS sector, value is physical sector).
@@ -28,7 +28,7 @@ export const DO = [
 export const _DO = [
     0x0, 0xD, 0xB, 0x9, 0x7, 0x5, 0x3, 0x1,
     0xE, 0xC, 0xA, 0x8, 0x6, 0x4, 0x2, 0xF
-];
+] as const;
 
 /**
  * ProDOS Physical sector order (index is physical sector, value is ProDOS sector).
@@ -36,7 +36,7 @@ export const _DO = [
 export const PO = [
     0x0, 0x8, 0x1, 0x9, 0x2, 0xa, 0x3, 0xb,
     0x4, 0xc, 0x5, 0xd, 0x6, 0xe, 0x7, 0xf
-];
+] as const;
 
 /**
  * ProDOS Logical sector order (index is ProDOS sector, value is physical sector).
@@ -44,7 +44,7 @@ export const PO = [
 export const _PO = [
     0x0, 0x2, 0x4, 0x6, 0x8, 0xa, 0xc, 0xe,
     0x1, 0x3, 0x5, 0x7, 0x9, 0xb, 0xd, 0xf
-];
+] as const;
 
 /**
  * DOS 13-sector disk physical sector order (index is disk sector, value is
@@ -52,18 +52,18 @@ export const _PO = [
  */
 export const D13O = [
     0x0, 0xa, 0x7, 0x4, 0x1, 0xb, 0x8, 0x5, 0x2, 0xc, 0x9, 0x6, 0x3
-];
+] as const;
 
 export const _D13O = [
     0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc
-];
+] as const;
 
 const _trans53 = [
     0xab, 0xad, 0xae, 0xaf, 0xb5, 0xb6, 0xb7, 0xba,
     0xbb, 0xbd, 0xbe, 0xbf, 0xd6, 0xd7, 0xda, 0xdb,
     0xdd, 0xde, 0xdf, 0xea, 0xeb, 0xed, 0xee, 0xef,
     0xf5, 0xf6, 0xf7, 0xfa, 0xfb, 0xfd, 0xfe, 0xff
-];
+] as const;
 
 const _trans62 = [
     0x96, 0x97, 0x9a, 0x9b, 0x9d, 0x9e, 0x9f, 0xa6,
@@ -74,7 +74,7 @@ const _trans62 = [
     0xdf, 0xe5, 0xe6, 0xe7, 0xe9, 0xea, 0xeb, 0xec,
     0xed, 0xee, 0xef, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6,
     0xf7, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff
-];
+] as const;
 
 export const detrans62 = [
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -93,10 +93,13 @@ export const detrans62 = [
     0x00, 0x2C, 0x2D, 0x2E, 0x2F, 0x30, 0x31, 0x32,
     0x00, 0x00, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38,
     0x00, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F
-];
+] as const;
 
 /**
- * From Beneath Apple DOS
+ * Converts a byte into its 4x4 encoded representation
+ *
+ * @param val byte to encode.
+ * @returns A two byte array of representing the 4x4 encoding.
  */
 export function fourXfour(val: byte): [xx: byte, yy: byte] {
     let xx = val & 0xaa;
@@ -109,11 +112,28 @@ export function fourXfour(val: byte): [xx: byte, yy: byte] {
     return [xx, yy];
 }
 
+/**
+ * Converts 2 4x4 encoded bytes into a byte value
+ *
+ * @param xx First encoded byte.
+ * @param yy Second encoded byte.
+ * @returns The decoded value.
+ */
 export function defourXfour(xx: byte, yy: byte): byte {
     return ((xx << 1) | 0x01) & yy;
 }
 
-export function explodeSector16(volume: byte, track: byte, sector: byte, data: memory) {
+/**
+ * Converts a raw sector into a nibblized representation to be combined into a
+ * nibblized 16 sector track.
+ *
+ * @param volume volume number
+ * @param track track number
+ * @param sector sector number
+ * @param data sector data
+ * @returns a nibblized representation of the sector data
+ */
+export function explodeSector16(volume: byte, track: byte, sector: byte, data: memory): byte[] {
     let buf = [];
     let gap;
 
@@ -201,7 +221,17 @@ export function explodeSector16(volume: byte, track: byte, sector: byte, data: m
     return buf;
 }
 
-export function explodeSector13(volume: byte, track: byte, sector: byte, data: memory) {
+/**
+ * Converts a raw sector into a nibblized representation to be combined into
+ * a nibblized 13 sector track.
+ *
+ * @param volume volume number
+ * @param track track number
+ * @param sector sector number
+ * @param data sector data
+ * @returns a nibblized representation of the sector data
+ */
+export function explodeSector13(volume: byte, track: byte, sector: byte, data: memory): byte[] {
     let buf = [];
     let gap;
 
@@ -300,13 +330,22 @@ export function explodeSector13(volume: byte, track: byte, sector: byte, data: m
     return buf;
 }
 
-// TODO(flan): Does not work on WOZ disks
-export function readSector(drive: NibbleDisk, track: byte, sector: byte) {
-    const _sector = drive.format == 'po' ? _PO[sector] : _DO[sector];
+/**
+ * Reads a sector of data from a nibblized disk
+ *
+ * TODO(flan): Does not work on WOZ disks
+ *
+ * @param disk Nibble disk
+ * @param track track number to read
+ * @param sector sector number to read
+ * @returns An array of sector data bytes.
+ */
+export function readSector(disk: NibbleDisk, track: byte, sector: byte): memory {
+    const _sector = disk.format == 'po' ? _PO[sector] : _DO[sector];
     let val, state = 0;
     let idx = 0;
     let retry = 0;
-    const cur = drive.tracks[track];
+    const cur = disk.tracks[track];
 
     function _readNext() {
         const result = cur[idx++];
@@ -396,32 +435,47 @@ export function readSector(drive: NibbleDisk, track: byte, sector: byte) {
     return new Uint8Array();
 }
 
-export function jsonEncode(cur: NibbleDisk, pretty: boolean) {
+/**
+ * Convert a nibblized disk into a JSON string for storage.
+ *
+ * @param disk Nibblized disk
+ * @param pretty Whether to format the output string
+ * @returns A JSON string representing the disk
+ */
+export function jsonEncode(disk: NibbleDisk, pretty: boolean): string {
     // For 'nib', tracks are encoded as strings. For all other formats,
     // tracks are arrays of sectors which are encoded as strings.
     const data: string[] | string[][] = [];
     let format = 'dsk';
-    for (let t = 0; t < cur.tracks.length; t++) {
+    for (let t = 0; t < disk.tracks.length; t++) {
         data[t] = [];
-        if (cur.format === 'nib') {
+        if (disk.format === 'nib') {
             format = 'nib';
-            data[t] = base64_encode(cur.tracks[t]);
+            data[t] = base64_encode(disk.tracks[t]);
         } else {
             for (let s = 0; s < 0x10; s++) {
-                (data[t] as string[])[s] = base64_encode(readSector(cur, t, s));
+                (data[t] as string[])[s] = base64_encode(readSector(disk, t, s));
             }
         }
     }
     return JSON.stringify({
         'type': format,
         'encoding': 'base64',
-        'volume': cur.volume,
+        'volume': disk.volume,
         'data': data,
-        'readOnly': cur.readOnly,
+        'readOnly': disk.readOnly,
     }, undefined, pretty ? '    ' : undefined);
 }
 
-export function jsonDecode(data: string) {
+/**
+ * Convert a JSON string into a nibblized disk.
+ *
+ * @param data JSON string representing a disk image, created by disk2json or
+ *   [jsonEncode].
+ * @returns A nibblized disk
+ */
+
+export function jsonDecode(data: string): NibbleDisk {
     const tracks: memory[] = [];
     const json = JSON.parse(data);
     const v = json.volume;
@@ -436,7 +490,7 @@ export function jsonDecode(data: string) {
         }
         tracks[t] = bytify(track);
     }
-    const cur = {
+    const cur: NibbleDisk = {
         volume: v,
         format: json.type,
         encoding: ENCODING_NIBBLE,
