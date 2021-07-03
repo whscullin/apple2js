@@ -7,7 +7,7 @@
     "dev": "webpack serve --mode=development",
     "index": "bin/index > json/disks/index.js",
     "lint": "eslint '**/*.js' '**/*.ts'",
-    "start": "webpack serve --mode=development",
+    "start": "webpack serve --mode=development --progress",
     "test": "jest"
   },
   "engines": {

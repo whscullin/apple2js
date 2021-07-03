@@ -4,7 +4,7 @@ import { base64_json_parse, base64_json_stringify } from '../base64';
 import { Audio, SOUND_ENABLED_OPTION } from './audio';
 import DriveLights from './drive_lights';
 import { byte, includes, word } from '../types';
-import { MassStorage } from '../formats/types';
+import { BLOCK_FORMATS, MassStorage, NIBBLE_FORMATS } from '../formats/types';
 import {
     DISK_FORMATS,
     DriveNumber,
@@ -388,13 +388,19 @@ function doLoadLocalDisk(drive: DriveNumber, file: File) {
 
         if (includes(DISK_FORMATS, ext)) {
             if (result.byteLength >= 800 * 1024) {
-                if (_massStorage.setBinary(drive, name, ext, result)) {
+                if (
+                    includes(BLOCK_FORMATS, ext) &&
+                    _massStorage.setBinary(drive, name, ext, result)
+                ) {
                     initGamepad();
                 } else {
                     openAlert(`Unable to load ${name}`);
                 }
             } else {
-                if (_disk2.setBinary(drive, name, ext, result)) {
+                if (
+                    includes(NIBBLE_FORMATS, ext) &&
+                    _disk2.setBinary(drive, name, ext, result)
+                ) {
                     initGamepad();
                 } else {
                     openAlert(`Unable to load ${name}`);
@@ -453,11 +459,17 @@ export function doLoadHTTP(drive: DriveNumber, url?: string) {
             const name = decodeURIComponent(fileParts.join('.'));
             if (includes(DISK_FORMATS, ext)) {
                 if (data.byteLength >= 800 * 1024) {
-                    if (_massStorage.setBinary(drive, name, ext, data)) {
+                    if (
+                        includes(BLOCK_FORMATS, ext) &&
+                        _massStorage.setBinary(drive, name, ext, data)
+                    ) {
                         initGamepad();
                     }
                 } else {
-                    if (_disk2.setBinary(drive, name, ext, data)) {
+                    if (
+                        includes(NIBBLE_FORMATS, ext) &&
+                        _disk2.setBinary(drive, name, ext, data)
+                    ) {
                         initGamepad();
                     }
                 }

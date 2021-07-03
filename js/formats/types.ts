@@ -66,17 +66,26 @@ export interface BlockDisk extends Disk {
  * block devices.
  */
 
-export const DISK_FORMATS = [
+export const NIBBLE_FORMATS = [
     '2mg',
     'd13',
     'do',
     'dsk',
-    'hdv',
     'po',
     'nib',
     'woz'
 ] as const;
 
+export const BLOCK_FORMATS = [
+    '2mg',
+    'hdv',
+    'po',
+] as const;
+
+export const DISK_FORMATS = [...NIBBLE_FORMATS, ...BLOCK_FORMATS ] as const;
+
+export type NibbleFormat = MemberOf<typeof NIBBLE_FORMATS>;
+export type BlockFormat = MemberOf<typeof BLOCK_FORMATS>;
 export type DiskFormat = MemberOf<typeof DISK_FORMATS>;
 
 /**
@@ -131,7 +140,7 @@ export interface ProcessBinaryMessage {
     type: typeof PROCESS_BINARY
     payload: {
         drive: DriveNumber
-        fmt: DiskFormat
+        fmt: NibbleFormat
         options: DiskOptions
     }
 }
@@ -180,5 +189,5 @@ export type FormatWorkerResponse =
  * Block device common interface
  */
 export interface MassStorage {
-    setBinary(drive: number, name: string, ext: DiskFormat, data: ArrayBuffer): boolean
+    setBinary(drive: number, name: string, ext: BlockFormat, data: ArrayBuffer): boolean
 }

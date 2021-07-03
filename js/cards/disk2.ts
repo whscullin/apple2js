@@ -22,7 +22,7 @@ import type {
 import {
     FormatWorkerMessage,
     FormatWorkerResponse,
-    DiskFormat,
+    NibbleFormat,
     DISK_PROCESSED,
     DRIVE_NUMBERS,
     DriveNumber,
@@ -174,7 +174,7 @@ export interface Callbacks {
 
 interface BaseDrive {
     /** Current disk format. */
-    format: DiskFormat,
+    format: NibbleFormat,
     /** Current disk volume number. */
     volume: byte,
     /** Displayed disk name */
@@ -220,7 +220,7 @@ function isWozDrive(drive: Drive): drive is WozDrive {
 }
 
 interface DriveState {
-    format: DiskFormat,
+    format: NibbleFormat,
     encoding: typeof ENCODING_BITSTREAM | typeof ENCODING_NIBBLE
     volume: byte,
     name: string,
@@ -826,7 +826,7 @@ export default class DiskII implements Card {
         return true;
     }
 
-    setBinary(drive: DriveNumber, name: string, fmt: DiskFormat, rawData: ArrayBuffer) {
+    setBinary(drive: DriveNumber, name: string, fmt: NibbleFormat, rawData: ArrayBuffer) {
         const readOnly = false;
         const volume = 254;
         const options = {
