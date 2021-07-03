@@ -18,7 +18,7 @@ import BlockVolume from '../formats/block';
 import { dump } from '../formats/prodos/utils';
 import {
     BlockDisk,
-    DiskFormat,
+    BlockFormat,
     ENCODING_BLOCK,
     MassStorage,
 } from 'js/formats/types';
@@ -461,7 +461,7 @@ export default class CFFA implements Card, MassStorage, Restorable<CFFAState> {
 
     // Assign a raw disk image to a drive. Must be 2mg or raw PO image.
 
-    setBinary(drive: number, name: string, ext: DiskFormat, rawData: ArrayBuffer) {
+    setBinary(drive: number, name: string, ext: BlockFormat, rawData: ArrayBuffer) {
         const volume = 254;
         const readOnly = false;
 
