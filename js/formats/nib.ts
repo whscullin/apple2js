@@ -16,7 +16,7 @@ import { memory } from '../types';
  * Returns a `Disk` object from raw nibble image data.
  * @param options the disk image and options
  */
-export default function Nibble(options: DiskOptions): NibbleDisk {
+export default function createDiskFromNibble(options: DiskOptions): NibbleDisk {
     const { data, name, rawData, volume, readOnly } = options;
     const disk: NibbleDisk = {
         format: 'nib',

@@ -15,7 +15,7 @@ import { Card, Restorable, byte, word, rom } from '../types';
 import { MassStorage, BlockDisk, ENCODING_BLOCK } from '../formats/types';
 import CPU6502, { CpuState, flags } from '../cpu6502';
 import { read2MGHeader } from '../formats/2mg';
-import BlockVolume from '../formats/block';
+import createBlockDisk from '../formats/block';
 
 export interface SmartPortState {
     disks: BlockDisk[]
@@ -468,7 +468,7 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
             readOnly,
             volume,
         };
-        const disk = BlockVolume(options);
+        const disk = createBlockDisk(options);
         this.disks[drive] = disk;
 
         return true;

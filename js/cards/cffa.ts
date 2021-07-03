@@ -14,7 +14,7 @@ import { debug, toHex } from '../util';
 import { rom as readOnlyRom } from '../roms/cards/cffa';
 import { read2MGHeader } from '../formats/2mg';
 import { ProDOSVolume } from '../formats/prodos';
-import BlockVolume from '../formats/block';
+import createBlockDisk from '../formats/block';
 import { dump } from '../formats/prodos/utils';
 import {
     BlockDisk,
@@ -475,7 +475,7 @@ export default class CFFA implements Card, MassStorage, Restorable<CFFAState> {
             volume,
             readOnly
         };
-        const disk = BlockVolume(options);
+        const disk = createBlockDisk(options);
 
         return this.setBlockVolume(drive, disk);
     }

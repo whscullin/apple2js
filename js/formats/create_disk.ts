@@ -1,35 +1,35 @@
 import { includes, memory } from '../types';
 import { base64_decode } from '../base64';
 import { Disk, NibbleFormat, DiskOptions, JSONDisk, NIBBLE_FORMATS } from './types';
-import _2MG from './2mg';
-import D13 from './d13';
-import DOS from './do';
-import ProDOS from './po';
-import Woz from './woz';
-import Nibble from './nib';
+import createDiskFrom2MG from './2mg';
+import createDiskFromD13 from './d13';
+import createDiskFromDOS from './do';
+import createDiskFromProDOS from './po';
+import createDiskFromWoz from './woz';
+import createDiskFromNibble from './nib';
 
 export function createDisk(fmt: NibbleFormat, options: DiskOptions) {
     let disk: Disk | null = null;
 
     switch (fmt) {
         case '2mg':
-            disk = _2MG(options) as Disk;
+            disk = createDiskFrom2MG(options) as Disk;
             break;
         case 'd13':
-            disk = D13(options);
+            disk = createDiskFromD13(options);
             break;
         case 'do':
         case 'dsk':
-            disk = DOS(options);
+            disk = createDiskFromDOS(options);
             break;
         case 'nib':
-            disk = Nibble(options);
+            disk = createDiskFromNibble(options);
             break;
         case 'po':
-            disk = ProDOS(options);
+            disk = createDiskFromProDOS(options);
             break;
         case 'woz':
-            disk = Woz(options);
+            disk = createDiskFromWoz(options);
             break;
     }
 

@@ -189,7 +189,7 @@ function MetaChunk(data) {
  * @param {*} options the disk image and options
  * @returns {import('./format_utils').Disk}
  */
-export default function Woz(options) {
+export default function createDiskFromWoz(options) {
     const { rawData } = options;
     const dv = new DataView(rawData, 0);
     let dvOffset = 0;
