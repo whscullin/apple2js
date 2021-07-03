@@ -9,14 +9,19 @@
  * implied warranty.
  */
 
-import type { byte, Card } from '../types';
+import type { byte, Card, Restorable } from '../types';
 import { debug, toHex } from '../util';
 import { rom as readOnlyRom } from '../roms/cards/cffa';
 import { read2MGHeader } from '../formats/2mg';
 import { ProDOSVolume } from '../formats/prodos';
 import BlockVolume from '../formats/block';
 import { dump } from '../formats/prodos/utils';
-import { DiskFormat, MassStorage } from 'js/formats/types';
+import {
+    BlockDisk,
+    DiskFormat,
+    ENCODING_BLOCK,
+    MassStorage,
+} from 'js/formats/types';
 
 const rom = new Uint8Array(readOnlyRom);
 
@@ -87,7 +92,12 @@ const IDENTITY = {
     SectorCountHigh: 57
 };
 
-export default class CFFA implements Card, MassStorage {
+export interface CFFAState {
+    disks: Array<BlockDisk | null>
+}
+
+type Partition = ReturnType<typeof ProDOSVolume>
+export default class CFFA implements Card, MassStorage, Restorable<CFFAState> {
 
     // CFFA internal Flags
 
@@ -124,11 +134,11 @@ export default class CFFA implements Card, MassStorage {
 
     // Disk data
 
-    private _partitions: any[] = [
+    private _partitions: Array<Partition|null> = [
         // Drive 1
-        [],
+        null,
         // Drive 2
-        []
+        null
     ];
 
     private _sectors: Uint16Array[][] = [
@@ -377,30 +387,56 @@ export default class CFFA implements Card, MassStorage {
     }
 
     getState() {
-        // TODO CFFA State
-        return {};
+        return {
+            disks: this._partitions.map(
+                (partition) => {
+                    let result: BlockDisk | null = null;
+                    if (partition) {
+                        const disk: BlockDisk = partition.disk();
+                        result = {
+                            blocks: disk.blocks.map(
+                                (block) => new Uint8Array(block)
+                            ),
+                            encoding: ENCODING_BLOCK,
+                            readOnly: disk.readOnly,
+                            name: disk.name,
+                        };
+                    }
+                    return result;
+                }
+            )
+        };
     }
 
-    setState(_: any) {}
+    setState(state: CFFAState) {
+        state.disks.forEach(
+            (disk, idx) => {
+                if (disk) {
+                    this.setBlockVolume(idx + 1, disk);
+                } else {
+                    this.resetBlockVolume(idx + 1);
+                }
+            }
+        );
+    }
 
-    // Assign a raw disk image to a drive. Must be 2mg or raw PO image.
-
-    setBinary(drive: number, name: string, ext: DiskFormat, rawData: ArrayBuffer) {
+    resetBlockVolume(drive: number) {
         drive = drive - 1;
-        const volume = 254;
-        const readOnly = false;
 
-        if (ext === '2mg') {
-            const { bytes, offset } = read2MGHeader(rawData);
-            rawData = rawData.slice(offset, offset + bytes);
+        this._sectors[drive] = [];
+
+        this._identity[drive][IDENTITY.SectorCountHigh] = 0;
+        this._identity[drive][IDENTITY.SectorCountLow] = 0;
+
+        if (drive) {
+            rom[SETTINGS.Max32MBPartitionsDev1] = 0x0;
+        } else {
+            rom[SETTINGS.Max32MBPartitionsDev0] = 0x0;
         }
-        const options = {
-            rawData,
-            name,
-            volume,
-            readOnly
-        };
-        const disk = BlockVolume(options);
+    }
+
+    setBlockVolume(drive: number, disk: BlockDisk) {
+        drive = drive - 1;
 
         // Convert 512 byte blocks into 256 word sectors
         this._sectors[drive] = disk.blocks.map(function(block) {
@@ -421,5 +457,26 @@ export default class CFFA implements Card, MassStorage {
             rom[SETTINGS.Max32MBPartitionsDev0] = 0x1;
         }
         return true;
+    }
+
+    // Assign a raw disk image to a drive. Must be 2mg or raw PO image.
+
+    setBinary(drive: number, name: string, ext: DiskFormat, rawData: ArrayBuffer) {
+        const volume = 254;
+        const readOnly = false;
+
+        if (ext === '2mg') {
+            const { bytes, offset } = read2MGHeader(rawData);
+            rawData = rawData.slice(offset, offset + bytes);
+        }
+        const options = {
+            rawData,
+            name,
+            volume,
+            readOnly
+        };
+        const disk = BlockVolume(options);
+
+        return this.setBlockVolume(drive, disk);
     }
 }

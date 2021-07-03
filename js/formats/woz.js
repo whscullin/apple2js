@@ -163,8 +163,8 @@ function TrksChunk2(data) {
             offset = result.offset + 1;
         }
 
-        this.tracks[trackNo] = track;
-        this.rawTracks[trackNo] = rawTrack;
+        this.tracks[trackNo] = new Uint8Array(track);
+        this.rawTracks[trackNo] = new Uint8Array(rawTrack);
     }
 
     return this;

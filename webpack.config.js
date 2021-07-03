@@ -63,6 +63,7 @@ module.exports = [
             path: path.resolve('dist/'),
             filename: '[name].bundle.js',
             globalObject: 'globalThis',
+            clean: true,
         },
     },
 ];

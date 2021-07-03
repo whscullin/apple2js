@@ -16,8 +16,7 @@ import { NibbleDisk, DiskOptions, ENCODING_NIBBLE } from './types';
 
 /**
  * Returns a `Disk` object from ProDOS-ordered image data.
- * @param {*} options the disk image and options
- * @returns {import('./format_utils').Disk}
+ * @param options the disk image and options
  */
 export default function ProDOS(options: DiskOptions) {
     const { data, name, rawData, volume, readOnly } = options;

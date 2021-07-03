@@ -13,8 +13,7 @@ import { DiskOptions, BlockDisk, ENCODING_BLOCK } from './types';
 
 /**
  * Returns a `Disk` object for a block volume with block-ordered data.
- * @param {*} options the disk image and options
- * @returns {import('./format_utils').Disk}
+ * @param options the disk image and options
  */
 export default function BlockVolume(options: DiskOptions): BlockDisk {
     const { rawData, readOnly, name } = options;

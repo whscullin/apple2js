@@ -53,6 +53,7 @@ export interface WozDisk extends Disk {
     encoding: typeof ENCODING_BITSTREAM
     trackMap: number[]
     rawTracks: bit[][]
+    tracks: memory[]
 }
 
 export interface BlockDisk extends Disk {

@@ -62,8 +62,7 @@ export function read2MGHeader(rawData: ArrayBuffer) {
 
 /**
  * Returns a `Disk` object from a 2mg image.
- * @param {*} options the disk image and options
- * @returns {import('./format_utils').Disk}
+ * @param options the disk image and options
  */
 export default function _2MG(options: DiskOptions) {
     let { rawData } = options;

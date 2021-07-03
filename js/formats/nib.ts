@@ -14,8 +14,7 @@ import { memory } from '../types';
 
 /**
  * Returns a `Disk` object from raw nibble image data.
- * @param {*} options the disk image and options
- * @returns {import('./format_utils').Disk}
+ * @param options the disk image and options
  */
 export default function Nibble(options: DiskOptions): NibbleDisk {
     const { data, name, rawData, volume, readOnly } = options;
