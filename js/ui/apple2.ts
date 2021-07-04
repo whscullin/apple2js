@@ -11,14 +11,15 @@ import {
     DRIVE_NUMBERS,
     JSONDisk
 } from '../formats/types';
-import { initGamepad, GamepadConfiguration } from './gamepad';
+import { initGamepad } from './gamepad';
 import KeyBoard from './keyboard';
 import Tape, { TAPE_TYPES } from './tape';
+import type { GamepadConfiguration } from './types';
 
 import ApplesoftDump from '../applesoft/decompiler';
 import ApplesoftCompiler from '../applesoft/compiler';
 
-import { debug, gup, hup } from '../util';
+import { debug } from '../util';
 import { Apple2, Stats } from '../apple2';
 import DiskII from '../cards/disk2';
 import CPU6502 from '../cpu6502';
@@ -826,6 +827,28 @@ declare global {
     interface Navigator {
         standalone?: boolean;
     }
+}
+
+/**
+ * Returns the value of a query parameter or the empty string if it does not
+ * exist.
+ * @param name the parameter name. Note that `name` must not have any RegExp
+ *     meta-characters except '[' and ']' or it will fail.
+ */
+
+function gup(name: string) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name);
+}
+
+/** Returns the URL fragment. */
+function hup() {
+    const regex = new RegExp('#(.*)');
+    const results = regex.exec(window.location.hash);
+    if (!results)
+        return '';
+    else
+        return results[1];
 }
 
 function onLoaded(apple2: Apple2, disk2: DiskII, massStorage: MassStorage, printer: Printer, e: boolean) {

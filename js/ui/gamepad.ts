@@ -10,49 +10,9 @@
  */
 
 import Apple2IO from '../apple2io';
-import { KnownKeys } from '../types';
+import { BUTTON, ButtonType, GamepadConfiguration } from './types';
 
 export let gamepad: Gamepad | null = null;
-
-const BUTTON = {
-    // Buttons
-    'A': 0,
-    'B': 1,
-    'X': 2,
-    'Y': 3,
-
-    // Triggers
-    'L1': 4,
-    'R1': 5,
-
-    // Analog stick buttons
-    'L3': 6,
-    'R3': 7,
-
-    // Special
-    'START': 8,
-    'SELECT': 9,
-    'LOGO': 10,
-
-    // D pad
-    'UP': 11,
-    'DOWN': 12,
-    'LEFT': 13,
-    'RIGHT': 14
-} as const;
-
-type ButtonType = KnownKeys<typeof BUTTON>;
-
-/**
- * A `GamepadConfiguration` maps buttons on the controller to Apple Paddle
- * buttons or keys on the keyboard. If the value is a number, it must be
- * 0 | 1 | 2 and will map to the corresponding paddle button. If the value
- * is a string, the _first_ character of the string is used as a key to
- * press on the keyboard.
- */
-export type GamepadConfiguration = {
-    [K in ButtonType]?: 0 | 1 | 2 | string;
-};
 
 const DEFAULT_GAMEPAD: GamepadConfiguration = {
     'A': 0,
@@ -64,7 +24,7 @@ const DEFAULT_GAMEPAD: GamepadConfiguration = {
 
 /**
  * An array with 16 entries. For each entry _e_:
- * 
+ *
  * *   if _e_ <= 0, then _-e_ is 0 | 1 | 2 and represents a joystick button;
  * *   if _e_ > 0, then _e_ is a key on the keyboard that is pressed;
  * *   if _e_ is undefined, nothing happens.

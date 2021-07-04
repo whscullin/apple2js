@@ -91,27 +91,6 @@ export function toBinary(v: byte) {
     return result;
 }
 
-/**
- * Returns the value of a query parameter or the empty string if it does not
- * exist.
- * @param name the parameter name. Note that `name` must not have any RegExp
- *     meta-characters except '[' and ']' or it will fail.
- */
-export function gup(name: string) {
-    const params = new URLSearchParams(window.location.search);
-    return params.get(name);
-}
-
-/** Returns the URL fragment. */
-export function hup() {
-    const regex = new RegExp('#(.*)');
-    const results = regex.exec(window.location.hash);
-    if (!results)
-        return '';
-    else
-        return results[1];
-}
-
 /** Packs a 32-bit integer into a string in little-endian order. */
 export function numToString(num: number) {
     let result = '';

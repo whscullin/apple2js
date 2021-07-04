@@ -9,12 +9,12 @@
  * implied warranty.
  */
 
-import { debug } from '../util';
-import { jsonDecode } from './format_utils';
+import { debug } from '../js/util';
+import { jsonDecode } from '../js/formats/format_utils';
 import {
     createDisk,
     createDiskFromJsonDisk,
-} from './create_disk';
+} from '../js/formats/create_disk';
 import {
     FormatWorkerMessage,
     Disk,
@@ -23,7 +23,7 @@ import {
     PROCESS_BINARY,
     PROCESS_JSON_DISK,
     PROCESS_JSON,
-} from './types';
+} from '../js/formats/types';
 
 debug('Worker loaded');
 

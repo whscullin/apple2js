@@ -10,7 +10,7 @@
  */
 
 import type { bit, byte, memory, MemberOf } from '../types';
-import type { GamepadConfiguration } from '../ui/gamepad';
+import type { GamepadConfiguration } from '../ui/types';
 
 export const DRIVE_NUMBERS = [1, 2] as const;
 export type DriveNumber = MemberOf<typeof DRIVE_NUMBERS>;

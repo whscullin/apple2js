@@ -110,6 +110,14 @@
             "env": {
                 "commonjs": true
             }
+        },
+        {
+            "files": [
+                "workers/*"
+            ],
+            "parserOptions": {
+                "project": "workers/tsconfig.json"
+            }
         }
     ],
     "ignorePatterns": ["coverage/**/*"]
