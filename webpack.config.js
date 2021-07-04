@@ -46,7 +46,7 @@ module.exports = [
                 },
                 directory: __dirname,
             },
-            dev: {
+            devMiddleware: {
                 publicPath: '/dist/',
             },
         },
