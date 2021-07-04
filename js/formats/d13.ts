@@ -15,6 +15,7 @@ import { NibbleDisk, DiskOptions, ENCODING_NIBBLE } from './types';
 /**
  * Returns a `Disk` object from DOS 3.2-ordered image data.
  * @param options the disk image and options
+ * @returns A nibblized disk
  */
 export default function createDiskFromDOS13(options: DiskOptions) {
     const { data, name, rawData, volume, readOnly } = options;
