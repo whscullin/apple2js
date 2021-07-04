@@ -105,9 +105,10 @@ export function compileAppleSoftProgram(program: string) {
 }
 
 export function openLoad(driveString: string, event: MouseEvent) {
-    const drive = parseInt(driveString, 10);
+    const drive = parseInt(driveString, 10) as DriveNumber;
+    _currentDrive = drive;
     if (event.metaKey && includes(DRIVE_NUMBERS, drive)) {
-        openLoadHTTP(drive);
+        openLoadHTTP();
     } else {
         if (disk_cur_cat[drive]) {
             const element = document.querySelector<HTMLSelectElement>('#category_select')!;
@@ -485,8 +486,7 @@ export function doLoadHTTP(drive: DriveNumber, url?: string) {
     }
 }
 
-function openLoadHTTP(drive: DriveNumber) {
-    _currentDrive = drive;
+function openLoadHTTP() {
     MicroModal.show('http-modal');
 }
 

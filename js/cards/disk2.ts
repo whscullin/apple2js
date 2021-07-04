@@ -363,6 +363,9 @@ export default class DiskII implements Card {
     /** Current drive object. */
     private cur = this.drives[this.drive - 1];
 
+    /** Nibbles read this on cycle */
+    private nibbleCount = 0;
+
     /** Q0-Q3: Coil states. */
     private q = [false, false, false, false];
 
@@ -587,6 +590,7 @@ export default class DiskII implements Card {
                             this.debug('Drive Off');
                             this.on = false;
                             this.callbacks.driveLight(this.drive, false);
+                            this.debug('nibbles read', this.nibbleCount);
                         }, 1000);
                     }
                 }
@@ -599,6 +603,7 @@ export default class DiskII implements Card {
                 }
                 if (!this.on) {
                     this.debug('Drive On');
+                    this.nibbleCount = 0;
                     this.on = true;
                     this.lastCycles = this.io.cycles();
                     this.callbacks.driveLight(this.drive, true);
@@ -675,6 +680,9 @@ export default class DiskII implements Card {
             // also cause conflicts with the disk controller commands.
             if ((off & 0x01) === 0) {
                 result = this.latch;
+                if (result & 0x80) {
+                    this.nibbleCount++;
+                }
             } else {
                 result = 0;
             }
@@ -868,15 +876,16 @@ export default class DiskII implements Card {
         this.worker.addEventListener('message', (message: MessageEvent<FormatWorkerResponse>) => {
             const { data } = message;
             switch (data.type) {
-                case DISK_PROCESSED: {
-                    const { drive, disk } = data.payload;
-                    if (disk) {
-                        const cur = this.drives[drive - 1];
-                        Object.assign(cur, disk);
-                        this.updateDirty(drive, true);
-                        this.callbacks.label(this.drive, disk.name);
+                case DISK_PROCESSED:
+                    {
+                        const { drive, disk } = data.payload;
+                        if (disk) {
+                            const cur = this.drives[drive - 1];
+                            Object.assign(cur, disk);
+                            this.updateDirty(drive, true);
+                            this.callbacks.label(drive, disk.name);
+                        }
                     }
-                }
                     break;
             }
         });

@@ -470,8 +470,7 @@ export function jsonEncode(disk: NibbleDisk, pretty: boolean): string {
 /**
  * Convert a JSON string into a nibblized disk.
  *
- * @param data JSON string representing a disk image, created by disk2json or
- *   [jsonEncode].
+ * @param data JSON string representing a disk image, created by [jsonEncode].
  * @returns A nibblized disk
  */
 
@@ -483,14 +482,14 @@ export function jsonDecode(data: string): NibbleDisk {
     for (let t = 0; t < json.data.length; t++) {
         let track: byte[] = [];
         for (let s = 0; s < json.data[t].length; s++) {
-            const _s = 15 - s;
+            const _s = json.type == 'po' ? PO[s] : DO[s];
             const sector: string = json.data[t][_s];
             const d = base64_decode(sector);
             track = track.concat(explodeSector16(v, t, s, d));
         }
         tracks[t] = bytify(track);
     }
-    const cur: NibbleDisk = {
+    const disk: NibbleDisk = {
         volume: v,
         format: json.type,
         encoding: ENCODING_NIBBLE,
@@ -499,5 +498,62 @@ export function jsonDecode(data: string): NibbleDisk {
         readOnly,
     };
 
-    return cur;
+    return disk;
+}
+
+export function analyseDisk(disk: NibbleDisk) {
+    for (let track = 0; track < 35; track++) {
+        let outStr = `${toHex(track)}: `;
+        let val, state = 0;
+        let idx = 0;
+        const cur = disk.tracks[track];
+
+        const _readNext = () => {
+            const result = cur[idx++];
+            return result;
+        };
+
+        const _skipBytes = (count: number) => {
+            idx += count;
+        };
+
+        let t = 0, s = 0, v = 0, checkSum;
+        while (idx < cur.length) {
+            switch (state) {
+                case 0:
+                    val = _readNext();
+                    state = (val === 0xd5) ? 1 : 0;
+                    break;
+                case 1:
+                    val = _readNext();
+                    state = (val === 0xaa) ? 2 : 0;
+                    break;
+                case 2:
+                    val = _readNext();
+                    state = (val === 0x96) ? 3 : (val === 0xad ? 4 : 0);
+                    break;
+                case 3: // Address
+                    v = defourXfour(_readNext(), _readNext()); // Volume
+                    t = defourXfour(_readNext(), _readNext());
+                    s = defourXfour(_readNext(), _readNext());
+                    checkSum = defourXfour(_readNext(), _readNext());
+                    if (checkSum != (v ^ t ^ s)) {
+                        debug('Invalid header checksum:', toHex(v), toHex(t), toHex(s), toHex(checkSum));
+                    } else {
+                        outStr += toHex(s, 1);
+                    }
+                    _skipBytes(3); // Skip footer
+                    state = 0;
+                    break;
+                case 4: // Valid header
+                    _skipBytes(0x159); // Skip data, checksum and footer
+                    state = 0;
+                    break;
+                default:
+                    break;
+            }
+        }
+        debug(outStr);
+    }
+    return new Uint8Array();
 }
