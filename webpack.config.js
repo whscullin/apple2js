@@ -76,7 +76,6 @@ const workerConfig = merge(baseConfig,
         },
         output: {
             globalObject: 'globalThis',
-            clean: true,
         },
     },
 );
