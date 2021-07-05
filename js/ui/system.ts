@@ -85,7 +85,7 @@ export class System implements OptionHandler {
         ];
     }
 
-    setOption(value: string, name: string | boolean ) {
+    setOption(name: string, value: boolean ) {
         switch (name) {
             case SYSTEM_CPU_ACCELERATED:
                 {
