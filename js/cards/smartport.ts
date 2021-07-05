@@ -121,16 +121,16 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
     /*
      * dumpBlock
      */
-    /*
-    dumpBlock(drive, block) {
-        const result = '';
-        const b;
-        const jdx;
 
-        for (const idx = 0; idx < 32; idx++) {
+    dumpBlock(drive: number, block: number) {
+        let result = '';
+        let b;
+        let jdx;
+
+        for (let idx = 0; idx < 32; idx++) {
             result += toHex(idx << 4, 4) + ': ';
             for (jdx = 0; jdx < 16; jdx++) {
-                b = disks[drive][block][idx * 16 + jdx];
+                b = this.disks[drive].blocks[block][idx * 16 + jdx];
                 if (jdx == 8) {
                     result += ' ';
                 }
@@ -138,7 +138,7 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
             }
             result += '        ';
             for (jdx = 0; jdx < 16; jdx++) {
-                b = disks[drive][block][idx * 16 + jdx] & 0x7f;
+                b = this.disks[drive].blocks[block][idx * 16 + jdx] & 0x7f;
                 if (jdx == 8) {
                     result += ' ';
                 }
@@ -152,7 +152,7 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
         }
         return result;
     }
-*/
+
     /*
      * getDeviceInfo
      */
@@ -457,7 +457,6 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
     setBinary(drive: number, name: string, fmt: string, rawData: ArrayBuffer) {
         const volume = 254;
         const readOnly = false;
-        this.disks[drive].blocks = [];
         if (fmt == '2mg') {
             const { bytes, offset } = read2MGHeader(rawData);
             rawData = rawData.slice(offset, offset + bytes);
@@ -468,8 +467,8 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
             readOnly,
             volume,
         };
-        const disk = createBlockDisk(options);
-        this.disks[drive] = disk;
+
+        this.disks[drive] = createBlockDisk(options);
 
         return true;
     }
