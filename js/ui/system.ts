@@ -78,7 +78,7 @@ export class System implements OptionHandler {
                         name: SYSTEM_CPU_ACCELERATED,
                         label: 'Accelerated',
                         type: BOOLEAN_OPTION,
-                        defaultVal: true,
+                        defaultVal: false,
                     },
                 ]
             }
