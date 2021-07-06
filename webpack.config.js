@@ -18,7 +18,7 @@ const baseConfig = {
         ],
     },
     output: {
-        publicPath: '/dist/',
+        publicPath: 'dist/',
         path: path.resolve('dist/'),
         filename: '[name].bundle.js',
         chunkFilename: '[name].bundle.js',
@@ -50,7 +50,7 @@ const appConfig = merge(baseConfig,
                 directory: __dirname,
             },
             devMiddleware: {
-                publicPath: '/dist/',
+                publicPath: 'dist/',
             },
         },
     }
