@@ -18,6 +18,10 @@ export function ProDOSVolume(disk) {
     var _bitMap;
 
     return {
+        disk() {
+            return _disk;
+        },
+
         blocks() {
             return _disk.blocks;
         },

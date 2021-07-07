@@ -1,4 +1,5 @@
 const path = require('path');
+const { merge } = require('webpack-merge');
 
 const baseConfig = {
     devtool: 'source-map',
@@ -16,22 +17,24 @@ const baseConfig = {
             },
         ],
     },
+    output: {
+        publicPath: 'dist/',
+        path: path.resolve('dist/'),
+        filename: '[name].bundle.js',
+        chunkFilename: '[name].bundle.js',
+    },
     resolve: {
         extensions: ['.ts', '.js'],
     },
 };
 
-module.exports = [
+const appConfig = merge(baseConfig,
     {
-        ...baseConfig,
         entry: {
             main2: path.resolve('js/entry2.js'),
             main2e: path.resolve('js/entry2e.js')
         },
         output: {
-            path: path.resolve('dist/'),
-            filename: '[name].bundle.js',
-            chunkFilename: '[name].bundle.js',
             library: {
                 name: 'Apple2',
                 type: 'umd',
@@ -47,21 +50,34 @@ module.exports = [
                 directory: __dirname,
             },
             devMiddleware: {
-                publicPath: '/dist/',
+                publicPath: 'dist/',
             },
         },
-    },
+    }
+);
+
+const workletConfig = merge(baseConfig,
     {
-        ...baseConfig,
         target: false,
         entry: {
             audio_worker: path.resolve('js/ui/audio_worker.ts')
         },
         output: {
-            publicPath: '/dist/',
-            path: path.resolve('dist/'),
-            filename: '[name].bundle.js',
+            globalObject: 'globalThis',
+        },
+    }
+);
+
+const workerConfig = merge(baseConfig,
+    {
+        target: false,
+        entry: {
+            format_worker: path.resolve('workers/format.worker.ts')
+        },
+        output: {
             globalObject: 'globalThis',
         },
     },
-];
+);
+
+exports.default = [appConfig, workletConfig, workerConfig];

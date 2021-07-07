@@ -10,13 +10,14 @@
  */
 
 import { debug, toHex } from '../util';
+import { ENCODING_BITSTREAM } from './types';
 
-var WOZ_HEADER_START = 0;
-var WOZ_HEADER_SIZE = 12;
+const WOZ_HEADER_START = 0;
+const WOZ_HEADER_SIZE = 12;
 
-var WOZ1_SIGNATURE = 0x315A4F57;
-var WOZ2_SIGNATURE = 0x325A4F57;
-var WOZ_INTEGRITY_CHECK = 0x0a0d0aff;
+const WOZ1_SIGNATURE = 0x315A4F57;
+const WOZ2_SIGNATURE = 0x325A4F57;
+const WOZ_INTEGRITY_CHECK = 0x0a0d0aff;
 
 function stringFromBytes(data, start, end) {
     return String.fromCharCode.apply(
@@ -26,11 +27,11 @@ function stringFromBytes(data, start, end) {
 }
 
 function grabNibble(bits, offset) {
-    var nibble = 0;
-    var waitForOne = true;
+    let nibble = 0;
+    let waitForOne = true;
 
     while (offset < bits.length) {
-        var bit = bits[offset];
+        const bit = bits[offset];
         if (bit) {
             nibble = (nibble << 1) | 0x01;
             waitForOne = false;
@@ -79,7 +80,7 @@ function InfoChunk(data) {
 function TMapChunk(data) {
     this.trackMap = [];
 
-    for (var idx = 0; idx < 160; idx++) {
+    for (let idx = 0; idx < 160; idx++) {
         this.trackMap.push(data.getUint8(idx));
     }
 
@@ -87,29 +88,28 @@ function TMapChunk(data) {
 }
 
 function TrksChunk(data) {
-    var WOZ_TRACK_SIZE = 6656;
-    var WOZ_TRACK_INFO_BITS = 6648;
+    const WOZ_TRACK_SIZE = 6656;
+    const WOZ_TRACK_INFO_BITS = 6648;
 
     this.rawTracks = [];
     this.tracks = [];
-    for (var trackNo = 0, idx = 0; idx < data.byteLength; idx += WOZ_TRACK_SIZE, trackNo++) {
-        var jdx;
-        var track = [];
-        var rawTrack = [];
-        var slice = data.buffer.slice(data.byteOffset + idx, data.byteOffset + idx + WOZ_TRACK_SIZE);
-        var trackData = new Uint8Array(slice);
-        var trackInfo = new DataView(slice);
-        var trackBitCount = trackInfo.getUint16(WOZ_TRACK_INFO_BITS, true);
-        for (jdx = 0; jdx < trackBitCount; jdx++) {
-            var byteIndex = jdx >> 3;
-            var bitIndex = 7 - (jdx & 0x07);
+    for (let trackNo = 0, idx = 0; idx < data.byteLength; idx += WOZ_TRACK_SIZE, trackNo++) {
+        let track = [];
+        const rawTrack = [];
+        const slice = data.buffer.slice(data.byteOffset + idx, data.byteOffset + idx + WOZ_TRACK_SIZE);
+        const trackData = new Uint8Array(slice);
+        const trackInfo = new DataView(slice);
+        const trackBitCount = trackInfo.getUint16(WOZ_TRACK_INFO_BITS, true);
+        for (let jdx = 0; jdx < trackBitCount; jdx++) {
+            const byteIndex = jdx >> 3;
+            const bitIndex = 7 - (jdx & 0x07);
             rawTrack[jdx] = (trackData[byteIndex] >> bitIndex) & 0x1;
         }
 
         track = [];
-        var offset = 0;
+        let offset = 0;
         while (offset < rawTrack.length) {
-            var result = grabNibble(rawTrack, offset);
+            const result = grabNibble(rawTrack, offset);
             if (!result.nibble) { break; }
             track.push(result.nibble);
             offset = result.offset + 1;
@@ -123,12 +123,12 @@ function TrksChunk(data) {
 }
 
 function TrksChunk2(data) {
-    var trackNo;
+    let trackNo;
     this.trks = [];
     for (trackNo = 0; trackNo < 160; trackNo++) {
-        var startBlock = data.getUint16(trackNo * 8, true);
-        var blockCount = data.getUint16(trackNo * 8 + 2, true);
-        var bitCount = data.getUint32(trackNo * 8 + 4, true);
+        const startBlock = data.getUint16(trackNo * 8, true);
+        const blockCount = data.getUint16(trackNo * 8 + 2, true);
+        const bitCount = data.getUint32(trackNo * 8 + 4, true);
         if (bitCount === 0) { break; }
         this.trks.push({
             startBlock: startBlock,
@@ -139,42 +139,42 @@ function TrksChunk2(data) {
     this.tracks = [];
     this.rawTracks = [];
 
-    var bits = data.buffer;
+    const bits = data.buffer;
     for (trackNo = 0; trackNo < this.trks.length; trackNo++) {
-        var trk = this.trks[trackNo];
-        var track = [];
-        var rawTrack = [];
-        var start = trk.startBlock * 512;
-        var end = start + trk.blockCount * 512;
-        var slice = bits.slice(start, end);
-        var trackData = new Uint8Array(slice);
-        for (var jdx = 0; jdx < trk.bitCount; jdx++) {
-            var byteIndex = jdx >> 3;
-            var bitIndex = 7 - (jdx & 0x07);
+        const trk = this.trks[trackNo];
+        let track = [];
+        const rawTrack = [];
+        const start = trk.startBlock * 512;
+        const end = start + trk.blockCount * 512;
+        const slice = bits.slice(start, end);
+        const trackData = new Uint8Array(slice);
+        for (let jdx = 0; jdx < trk.bitCount; jdx++) {
+            const byteIndex = jdx >> 3;
+            const bitIndex = 7 - (jdx & 0x07);
             rawTrack[jdx] = (trackData[byteIndex] >> bitIndex) & 0x1;
         }
 
         track = [];
-        var offset = 0;
+        let offset = 0;
         while (offset < rawTrack.length) {
-            var result = grabNibble(rawTrack, offset);
+            const result = grabNibble(rawTrack, offset);
             if (!result.nibble) { break; }
             track.push(result.nibble);
             offset = result.offset + 1;
         }
 
-        this.tracks[trackNo] = track;
-        this.rawTracks[trackNo] = rawTrack;
+        this.tracks[trackNo] = new Uint8Array(track);
+        this.rawTracks[trackNo] = new Uint8Array(rawTrack);
     }
 
     return this;
 }
 
 function MetaChunk(data) {
-    var infoStr = stringFromBytes(data, 0, data.byteLength);
-    var parts = infoStr.split('\n');
-    var info = parts.reduce(function(acc, part) {
-        var subParts = part.split('\t');
+    const infoStr = stringFromBytes(data, 0, data.byteLength);
+    const parts = infoStr.split('\n');
+    const info = parts.reduce(function(acc, part) {
+        const subParts = part.split('\t');
         acc[subParts[0]] = subParts[1];
         return acc;
     }, {});
@@ -189,19 +189,20 @@ function MetaChunk(data) {
  * @param {*} options the disk image and options
  * @returns {import('./format_utils').Disk}
  */
-export default function Woz(options) {
-    var { rawData } = options;
-    var dv = new DataView(rawData, 0);
-    var dvOffset = 0;
-    var disk = {
-        format: 'woz'
+export default function createDiskFromWoz(options) {
+    const { rawData } = options;
+    const dv = new DataView(rawData, 0);
+    let dvOffset = 0;
+    const disk = {
+        format: 'woz',
+        encoding: ENCODING_BITSTREAM,
     };
 
-    var wozVersion;
-    var chunks = {};
+    let wozVersion;
+    const chunks = {};
 
     function readHeader() {
-        var wozSignature = dv.getUint32(WOZ_HEADER_START + 0, true);
+        const wozSignature = dv.getUint32(WOZ_HEADER_START + 0, true);
 
         switch (wozSignature) {
             case WOZ1_SIGNATURE:
@@ -226,9 +227,9 @@ export default function Woz(options) {
             return null;
         }
 
-        var type = dv.getUint32(dvOffset, true);
-        var size = dv.getUint32(dvOffset + 4, true);
-        var data = new DataView(dv.buffer, dvOffset + 8, size);
+        const type = dv.getUint32(dvOffset, true);
+        const size = dv.getUint32(dvOffset + 4, true);
+        const data = new DataView(dv.buffer, dvOffset + 8, size);
         dvOffset += size + 8;
 
         return {
@@ -240,7 +241,7 @@ export default function Woz(options) {
 
     if (readHeader()) {
         dvOffset = WOZ_HEADER_SIZE;
-        var chunk = readChunk();
+        let chunk = readChunk();
         while (chunk) {
             switch (chunk.type) {
                 case 0x4F464E49: // INFO
@@ -275,7 +276,7 @@ export default function Woz(options) {
     disk.tracks = chunks.trks.tracks;
     disk.rawTracks = chunks.trks.rawTracks;
     disk.readOnly = true; //chunks.info.writeProtected === 1;
-    disk.name = chunks.info.title;
+    disk.name = chunks.meta?.title || options.name;
 
     return disk;
 }

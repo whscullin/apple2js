@@ -12,16 +12,13 @@
 import { debug, toHex } from '../util';
 import { rom as smartPortRom } from '../roms/cards/smartport';
 import { Card, Restorable, byte, word, rom } from '../types';
+import { MassStorage, BlockDisk, ENCODING_BLOCK } from '../formats/types';
 import CPU6502, { CpuState, flags } from '../cpu6502';
-
-type SmartDisk = Uint8Array[];
-
-interface BlockDevice {
-    blocks: Uint8Array
-}
+import { read2MGHeader } from '../formats/2mg';
+import createBlockDisk from '../formats/block';
 
 export interface SmartPortState {
-    disks: SmartDisk[]
+    disks: BlockDisk[]
 }
 
 export interface SmartPortOptions {
@@ -100,10 +97,10 @@ const ADDRESS_LO = 0x44;
 const BLOCK_LO = 0x46;
 // const BLOCK_HI = 0x47;
 
-export default class SmartPort implements Card, Restorable<SmartPortState> {
+export default class SmartPort implements Card, MassStorage, Restorable<SmartPortState> {
 
     private rom: rom;
-    private disks: SmartDisk[] = [];
+    private disks: BlockDisk[] = [];
 
     constructor(private cpu: CPU6502, options: SmartPortOptions) {
         if (options?.block) {
@@ -117,13 +114,6 @@ export default class SmartPort implements Card, Restorable<SmartPortState> {
         }
     }
 
-    private decodeDisk(unit: number, disk: BlockDevice) {
-        this.disks[unit] = [];
-        for (let idx = 0; idx < disk.blocks.length; idx++) {
-            this.disks[unit][idx] = new Uint8Array(disk.blocks[idx]);
-        }
-    }
-
     private debug(..._args: any[]) {
         // debug.apply(this, arguments);
     }
@@ -131,16 +121,16 @@ export default class SmartPort implements Card, Restorable<SmartPortState> {
     /*
      * dumpBlock
      */
-    /*
-    dumpBlock(drive, block) {
-        const result = '';
-        const b;
-        const jdx;
 
-        for (const idx = 0; idx < 32; idx++) {
+    dumpBlock(drive: number, block: number) {
+        let result = '';
+        let b;
+        let jdx;
+
+        for (let idx = 0; idx < 32; idx++) {
             result += toHex(idx << 4, 4) + ': ';
             for (jdx = 0; jdx < 16; jdx++) {
-                b = disks[drive][block][idx * 16 + jdx];
+                b = this.disks[drive].blocks[block][idx * 16 + jdx];
                 if (jdx == 8) {
                     result += ' ';
                 }
@@ -148,7 +138,7 @@ export default class SmartPort implements Card, Restorable<SmartPortState> {
             }
             result += '        ';
             for (jdx = 0; jdx < 16; jdx++) {
-                b = disks[drive][block][idx * 16 + jdx] & 0x7f;
+                b = this.disks[drive].blocks[block][idx * 16 + jdx] & 0x7f;
                 if (jdx == 8) {
                     result += ' ';
                 }
@@ -162,14 +152,14 @@ export default class SmartPort implements Card, Restorable<SmartPortState> {
         }
         return result;
     }
-*/
+
     /*
      * getDeviceInfo
      */
 
     getDeviceInfo(state: CpuState, drive: number) {
         if (this.disks[drive]) {
-            const blocks = this.disks[drive].length;
+            const blocks = this.disks[drive].blocks.length;
             state.x = blocks & 0xff;
             state.y = blocks >> 8;
 
@@ -190,7 +180,7 @@ export default class SmartPort implements Card, Restorable<SmartPortState> {
         this.debug('read buffer=' + buffer);
         this.debug('read block=$' + toHex(block));
 
-        if (!this.disks[drive] || !this.disks[drive].length) {
+        if (!this.disks[drive]?.blocks.length) {
             debug('Drive', drive, 'is empty');
             return;
         }
@@ -198,7 +188,7 @@ export default class SmartPort implements Card, Restorable<SmartPortState> {
         // debug('read', '\n' + dumpBlock(drive, block));
 
         for (let idx = 0; idx < 512; idx++) {
-            buffer.writeByte(this.disks[drive][block][idx]);
+            buffer.writeByte(this.disks[drive].blocks[block][idx]);
             buffer = buffer.inc(1);
         }
 
@@ -215,7 +205,7 @@ export default class SmartPort implements Card, Restorable<SmartPortState> {
         this.debug('write buffer=' + buffer);
         this.debug('write block=$' + toHex(block));
 
-        if (!this.disks[drive] || !this.disks[drive].length) {
+        if (!this.disks[drive]?.blocks.length) {
             debug('Drive', drive, 'is empty');
             return;
         }
@@ -223,7 +213,7 @@ export default class SmartPort implements Card, Restorable<SmartPortState> {
         // debug('write', '\n' + dumpBlock(drive, block));
 
         for (let idx = 0; idx < 512; idx++) {
-            this.disks[drive][block][idx] = buffer.readByte();
+            this.disks[drive].blocks[block][idx] = buffer.readByte();
             buffer = buffer.inc(1);
         }
         state.a = 0;
@@ -235,10 +225,10 @@ export default class SmartPort implements Card, Restorable<SmartPortState> {
      */
 
     formatDevice(state: CpuState, drive: number) {
-        for (let idx = 0; idx < this.disks[drive].length; idx++) {
-            this.disks[drive][idx] = new Uint8Array();
+        for (let idx = 0; idx < this.disks[drive].blocks.length; idx++) {
+            this.disks[drive].blocks[idx] = new Uint8Array();
             for (let jdx = 0; jdx < 512; jdx++) {
-                this.disks[drive][idx][jdx] = 0;
+                this.disks[drive].blocks[idx][jdx] = 0;
             }
         }
 
@@ -371,7 +361,7 @@ export default class SmartPort implements Card, Restorable<SmartPortState> {
                         default: // Unit 1
                             switch (status) {
                                 case 0:
-                                    blocks = this.disks[unit].length;
+                                    blocks = this.disks[unit].blocks.length;
                                     buffer.writeByte(0xf0); // W/R Block device in drive
                                     buffer.inc(1).writeByte(blocks & 0xff); // 1600 blocks
                                     buffer.inc(2).writeByte((blocks & 0xff00) >> 8);
@@ -433,33 +423,53 @@ export default class SmartPort implements Card, Restorable<SmartPortState> {
     getState() {
         return {
             disks: this.disks.map(
-                (disk) => disk.map(
-                    (block) => new Uint8Array(block)
-                )
+                (disk) => {
+                    const result: BlockDisk = {
+                        blocks: disk.blocks.map(
+                            (block) => new Uint8Array(block)
+                        ),
+                        encoding: ENCODING_BLOCK,
+                        readOnly: disk.readOnly,
+                        name: disk.name,
+                    };
+                    return result;
+                }
             )
         };
     }
 
     setState(state: SmartPortState) {
         this.disks = state.disks.map(
-            (disk) => disk.map(
-                (block) => new Uint8Array(block)
-            )
+            (disk) => {
+                const result: BlockDisk = {
+                    blocks: disk.blocks.map(
+                        (block) => new Uint8Array(block)
+                    ),
+                    encoding: ENCODING_BLOCK,
+                    readOnly: disk.readOnly,
+                    name: disk.name,
+                };
+                return result;
+            }
         );
     }
 
-    setBinary(drive: number, _name: string, fmt: string, data: ArrayBuffer) {
-        this.disks[drive] = [];
+    setBinary(drive: number, name: string, fmt: string, rawData: ArrayBuffer) {
+        const volume = 254;
+        const readOnly = false;
         if (fmt == '2mg') {
-            data = data.slice(64);
+            const { bytes, offset } = read2MGHeader(rawData);
+            rawData = rawData.slice(offset, offset + bytes);
         }
-        for (let idx = 0; idx < data.byteLength; idx += 512) {
-            this.disks[drive].push(new Uint8Array(data.slice(idx, idx + 512)));
-        }
-        return true;
-    }
+        const options = {
+            rawData,
+            name,
+            readOnly,
+            volume,
+        };
 
-    setDisk(drive: number, json: BlockDevice) {
-        this.decodeDisk(drive, json);
+        this.disks[drive] = createBlockDisk(options);
+
+        return true;
     }
 }

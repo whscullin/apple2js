@@ -9,30 +9,34 @@
  * implied warranty.
  */
 
+import { NibbleDisk, DiskOptions, ENCODING_NIBBLE } from './types';
+import { memory } from '../types';
+
 /**
  * Returns a `Disk` object from raw nibble image data.
- * @param {*} options the disk image and options
- * @returns {import('./format_utils').Disk}
+ * @param options the disk image and options
+ * @returns A nibblized disk
  */
-export default function Nibble(options) {
-    var { data, name, rawData, volume, readOnly } = options;
-    var disk = {
+export default function createDiskFromNibble(options: DiskOptions): NibbleDisk {
+    const { data, name, rawData, volume, readOnly } = options;
+    const disk: NibbleDisk = {
         format: 'nib',
+        encoding: ENCODING_NIBBLE,
         name,
         volume: volume || 254,
         readOnly: readOnly || false,
-        tracks: [],
-        trackMap: null,
-        rawTracks: null
+        tracks: []
     };
 
-    for (var t = 0; t < 35; t++) {
-        var track;
+    for (let t = 0; t < 35; t++) {
+        let track: memory;
         if (rawData) {
-            var off = t * 0x1a00;
-            track = new Uint8Array(data.slice(off, off + 0x1a00));
+            const off = t * 0x1a00;
+            track = new Uint8Array(rawData.slice(off, off + 0x1a00));
+        } else if (data) {
+            track = data[t][0];
         } else {
-            track = data[t];
+            throw new Error('Requires data or rawData');
         }
         disk.tracks[t] = track;
     }
