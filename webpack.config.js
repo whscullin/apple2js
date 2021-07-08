@@ -50,7 +50,7 @@ const appConfig = merge(baseConfig,
                 directory: __dirname,
             },
             devMiddleware: {
-                publicPath: 'dist/',
+                publicPath: '/dist/',
             },
         },
     }
