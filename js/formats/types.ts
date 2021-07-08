@@ -9,7 +9,7 @@
  * implied warranty.
  */
 
-import type { bit, byte, memory, MemberOf } from '../types';
+import type { byte, memory, MemberOf } from '../types';
 import type { GamepadConfiguration } from '../ui/types';
 
 export const DRIVE_NUMBERS = [1, 2] as const;
@@ -52,7 +52,7 @@ export interface NibbleDisk extends Disk {
 export interface WozDisk extends Disk {
     encoding: typeof ENCODING_BITSTREAM
     trackMap: number[]
-    rawTracks: bit[][]
+    rawTracks: Uint8Array[]
     tracks: memory[]
 }
 

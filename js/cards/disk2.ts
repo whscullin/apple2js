@@ -11,7 +11,6 @@
 
 import { base64_encode} from '../base64';
 import type {
-    bit,
     byte,
     Card,
     memory,
@@ -198,7 +197,7 @@ interface WozDrive extends BaseDrive {
     /** Maps quarter tracks to data in rawTracks; `0xFF` = random garbage. */
     trackMap: byte[];
     /** Unique track bitstreams. The index is arbitrary; it is NOT the track number. */
-    rawTracks: bit[][];
+    rawTracks: Uint8Array[];
 }
 
 /** Nibble format track data. */
@@ -231,7 +230,7 @@ interface DriveState {
     readOnly: boolean,
     dirty: boolean,
     trackMap: number[],
-    rawTracks: bit[][],
+    rawTracks: Uint8Array[],
 }
 
 interface State {
@@ -267,7 +266,7 @@ function getDriveState(drive: Drive): DriveState {
     if (isWozDrive(drive)) {
         result.trackMap = [...drive.trackMap];
         for (let idx = 0; idx < drive.rawTracks.length; idx++) {
-            result.rawTracks.push([...drive.rawTracks[idx]]);
+            result.rawTracks.push(new Uint8Array(drive.rawTracks[idx]));
         }
     }
     return result;
@@ -306,7 +305,7 @@ function setDriveState(state: DriveState) {
             rawTracks: [],
         };
         for (let idx = 0; idx < state.rawTracks.length; idx++) {
-            result.rawTracks.push([...state.rawTracks[idx]]);
+            result.rawTracks.push(new Uint8Array(state.rawTracks[idx]));
         }
     }
     return result;
@@ -415,11 +414,11 @@ export default class DiskII implements Card {
         if (!isWozDrive(this.cur)) {
             return;
         }
-        const track: bit[] =
+        const track =
             this.cur.rawTracks[this.cur.trackMap[this.cur.track]] || [0];
 
         while (workCycles-- > 0) {
-            let pulse: bit = 0;
+            let pulse: number = 0;
             if (this.clock == 4) {
                 pulse = track[this.cur.head];
                 if (!pulse) {
