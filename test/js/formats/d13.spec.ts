@@ -1,6 +1,6 @@
-import DOS13 from '../../../js/formats/d13';
-import { D13O } from '../../../js/formats/format_utils';
-import { memory } from '../../../js/types';
+import DOS13 from 'js/formats/d13';
+import { D13O } from 'js/formats/format_utils';
+import { memory } from 'js/types';
 import { BYTES_BY_SECTOR, BYTES_BY_TRACK } from './testdata/13sector';
 import { expectSequence, findBytes, skipGap } from './util';
 

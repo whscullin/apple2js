@@ -1,4 +1,4 @@
-import { memory } from '../../../../js/types';
+import { memory } from 'js/types';
 
 function generateBytesInOrder() {
     const data: memory[][] = [];

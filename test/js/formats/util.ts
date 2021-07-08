@@ -1,4 +1,4 @@
-import { memory } from '../../../js/types';
+import { memory } from 'js/types';
 
 export function skipGap(track: memory, start: number = 0): number {
     const end = start + 0x100; // no gap is this big
@@ -40,3 +40,27 @@ export function findBytes(track: memory, bytes: number[], start: number = 0): nu
     }
     return -1;
 }
+
+export const stringToBytes = (val: string, pad: string = '\0', padLength: number = 0) => {
+    const result = [];
+    let idx = 0;
+    while (idx < val.length) {
+        result.push(val.charCodeAt(idx) & 0xff);
+        idx++;
+    }
+    while (idx++ < padLength) {
+        result.push(pad.charCodeAt(0));
+    }
+    return result;
+};
+
+export const numberToBytes = (val: number, count: number) => {
+    const result = [];
+    let idx = 0;
+    while (idx < count) {
+        result.push(val & 0xff);
+        val >>= 8;
+        idx++;
+    }
+    return result;
+};

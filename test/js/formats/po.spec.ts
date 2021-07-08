@@ -1,5 +1,5 @@
-import ProDOS from '../../../js/formats/po';
-import { memory } from '../../../js/types';
+import ProDOS from 'js/formats/po';
+import { memory } from 'js/types';
 import { BYTES_BY_SECTOR, BYTES_BY_TRACK } from './testdata/16sector';
 import { expectSequence, findBytes, skipGap } from './util';
 

@@ -63,7 +63,7 @@ function InfoChunk(data) {
         creator: stringFromBytes(data, 5, 37)
     });
 
-    if (this.version === 2) {
+    if (this.version > 1) {
         Object.assign(this, {
             sides: data.getUint8(37),
             bootSector: data.getUint8(38),
@@ -115,8 +115,8 @@ function TrksChunk(data) {
             offset = result.offset + 1;
         }
 
-        this.tracks[trackNo] = track;
-        this.rawTracks[trackNo] = rawTrack;
+        this.tracks[trackNo] = new Uint8Array(track);
+        this.rawTracks[trackNo] = new Uint8Array(rawTrack);
     }
 
     return this;
@@ -142,6 +142,7 @@ function TrksChunk2(data) {
     const bits = data.buffer;
     for (trackNo = 0; trackNo < this.trks.length; trackNo++) {
         const trk = this.trks[trackNo];
+
         let track = [];
         const rawTrack = [];
         const start = trk.startBlock * 512;
@@ -268,13 +269,15 @@ export default function createDiskFromWoz(options) {
             }
             chunk = readChunk();
         }
+    } else {
+        debug('Invalid woz header');
     }
 
     debug(chunks);
 
-    disk.trackMap = chunks.tmap.trackMap;
-    disk.tracks = chunks.trks.tracks;
-    disk.rawTracks = chunks.trks.rawTracks;
+    disk.trackMap = chunks.tmap?.trackMap || [];
+    disk.tracks = chunks.trks?.tracks || [];
+    disk.rawTracks = chunks.trks?.rawTracks || [];
     disk.readOnly = true; //chunks.info.writeProtected === 1;
     disk.name = chunks.meta?.title || options.name;
 
