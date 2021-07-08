@@ -326,5 +326,5 @@ export default function createDiskFromWoz(options: DiskOptions) {
     disk.readOnly = true; //chunks.info.writeProtected === 1;
     disk.name = chunks.meta?.values['title'] || options.name;
 
-    return disk;
+    return disk as WozDisk;
 }

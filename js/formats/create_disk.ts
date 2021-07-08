@@ -1,6 +1,6 @@
 import { includes, memory } from '../types';
 import { base64_decode } from '../base64';
-import { Disk, NibbleFormat, DiskOptions, JSONDisk, NIBBLE_FORMATS, NibbleDisk } from './types';
+import { DiskOptions, FloppyDisk, JSONDisk, NibbleFormat, NIBBLE_FORMATS } from './types';
 import createDiskFrom2MG from './2mg';
 import createDiskFromD13 from './d13';
 import createDiskFromDOS from './do';
@@ -14,8 +14,8 @@ import createDiskFromNibble from './nib';
  * @param options
  * @returns A nibblized disk
  */
-export function createDisk(fmt: NibbleFormat, options: DiskOptions): NibbleDisk | null {
-    let disk: NibbleDisk | null = null;
+export function createDisk(fmt: NibbleFormat, options: DiskOptions): FloppyDisk | null {
+    let disk: FloppyDisk | null = null;
 
     switch (fmt) {
         case '2mg':
@@ -42,7 +42,7 @@ export function createDisk(fmt: NibbleFormat, options: DiskOptions): NibbleDisk 
     return disk;
 }
 
-export function createDiskFromJsonDisk(disk: JSONDisk): Disk | null {
+export function createDiskFromJsonDisk(disk: JSONDisk): FloppyDisk | null {
     const fmt = disk.type;
     const readOnly = disk.readOnly;
     const name = disk.name;
