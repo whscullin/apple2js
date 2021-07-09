@@ -51,7 +51,7 @@ export class AppleAudioProcessor extends AudioWorkletProcessor {
         }
 
         // Keep alive indefinitely.
-        return false;
+        return true;
     }
 }
 

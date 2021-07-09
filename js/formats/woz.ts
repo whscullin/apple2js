@@ -1,4 +1,4 @@
-/* Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
+/* Copyright 2010-2021 Will Scullin <scullin@scullinsteel.com>
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided that
@@ -11,7 +11,7 @@
 
 import { debug, toHex } from '../util';
 import { DiskOptions, ENCODING_BITSTREAM, WozDisk } from './types';
-import { byte, word } from '../types';
+import { bit, byte, word } from '../types';
 
 const WOZ_HEADER_START = 0;
 const WOZ_HEADER_SIZE = 12;
@@ -27,7 +27,7 @@ function stringFromBytes(data: DataView, start: number, end: number): string {
     );
 }
 
-function grabNibble(bits: number[], offset: number) {
+function grabNibble(bits: bit[], offset: number) {
     let nibble = 0;
     let waitForOne = true;
 
@@ -120,7 +120,7 @@ export class TrksChunk1 extends TrksChunk {
 
         for (let trackNo = 0, idx = 0; idx < data.byteLength; idx += WOZ_TRACK_SIZE, trackNo++) {
             let track = [];
-            const rawTrack = [];
+            const rawTrack: bit[] = [];
             const slice = data.buffer.slice(data.byteOffset + idx, data.byteOffset + idx + WOZ_TRACK_SIZE);
             const trackData = new Uint8Array(slice);
             const trackInfo = new DataView(slice);
@@ -128,7 +128,7 @@ export class TrksChunk1 extends TrksChunk {
             for (let jdx = 0; jdx < trackBitCount; jdx++) {
                 const byteIndex = jdx >> 3;
                 const bitIndex = 7 - (jdx & 0x07);
-                rawTrack[jdx] = (trackData[byteIndex] >> bitIndex) & 0x1;
+                rawTrack[jdx] = (trackData[byteIndex] >> bitIndex) ? 1 : 0;
             }
 
             track = [];
@@ -179,7 +179,7 @@ export class TrksChunk2 extends TrksChunk {
             const trk = this.trks[trackNo];
 
             let track = [];
-            const rawTrack = [];
+            const rawTrack: bit[] = [];
             const start = trk.startBlock * 512;
             const end = start + trk.blockCount * 512;
             const slice = bits.slice(start, end);
@@ -187,7 +187,7 @@ export class TrksChunk2 extends TrksChunk {
             for (let jdx = 0; jdx < trk.bitCount; jdx++) {
                 const byteIndex = jdx >> 3;
                 const bitIndex = 7 - (jdx & 0x07);
-                rawTrack[jdx] = (trackData[byteIndex] >> bitIndex) & 0x1;
+                rawTrack[jdx] = (trackData[byteIndex] >> bitIndex) ? 1 : 0;
             }
 
             track = [];
