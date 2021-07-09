@@ -10,8 +10,9 @@
  */
 
 import { debug, toHex } from '../util';
-import { DiskOptions, ENCODING_BITSTREAM, WozDisk } from './types';
 import { bit, byte, word } from '../types';
+import { grabNibble } from './format_utils';
+import { DiskOptions, ENCODING_BITSTREAM, WozDisk } from './types';
 
 const WOZ_HEADER_START = 0;
 const WOZ_HEADER_SIZE = 12;
@@ -20,38 +21,20 @@ const WOZ1_SIGNATURE = 0x315A4F57;
 const WOZ2_SIGNATURE = 0x325A4F57;
 const WOZ_INTEGRITY_CHECK = 0x0a0d0aff;
 
+/**
+ * Converts a range of bytes from a DataView into an ASCII string
+ *
+ * @param data DataView containing string
+ * @param start start index of string
+ * @param end end index of string
+ * @returns ASCII string
+ */
+
 function stringFromBytes(data: DataView, start: number, end: number): string {
     return String.fromCharCode.apply(
         null,
         new Uint8Array(data.buffer.slice(data.byteOffset + start, data.byteOffset + end))
     );
-}
-
-function grabNibble(bits: bit[], offset: number) {
-    let nibble = 0;
-    let waitForOne = true;
-
-    while (offset < bits.length) {
-        const bit = bits[offset];
-        if (bit) {
-            nibble = (nibble << 1) | 0x01;
-            waitForOne = false;
-        } else {
-            if (!waitForOne) {
-                nibble = nibble << 1;
-            }
-        }
-        if (nibble & 0x80) {
-            // nibble complete return it
-            break;
-        }
-        offset += 1;
-    }
-
-    return {
-        nibble: nibble,
-        offset: offset
-    };
 }
 
 export class InfoChunk {
@@ -128,7 +111,7 @@ export class TrksChunk1 extends TrksChunk {
             for (let jdx = 0; jdx < trackBitCount; jdx++) {
                 const byteIndex = jdx >> 3;
                 const bitIndex = 7 - (jdx & 0x07);
-                rawTrack[jdx] = (trackData[byteIndex] >> bitIndex) ? 1 : 0;
+                rawTrack[jdx] = (trackData[byteIndex] >> bitIndex) & 0x01 ? 1 : 0;
             }
 
             track = [];
@@ -187,7 +170,7 @@ export class TrksChunk2 extends TrksChunk {
             for (let jdx = 0; jdx < trk.bitCount; jdx++) {
                 const byteIndex = jdx >> 3;
                 const bitIndex = 7 - (jdx & 0x07);
-                rawTrack[jdx] = (trackData[byteIndex] >> bitIndex) ? 1 : 0;
+                rawTrack[jdx] = (trackData[byteIndex] >> bitIndex) & 0x01 ? 1 : 0;
             }
 
             track = [];

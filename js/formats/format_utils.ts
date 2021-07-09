@@ -9,7 +9,7 @@
  * implied warranty.
  */
 
-import { byte, memory } from '../types';
+import { bit, byte, memory } from '../types';
 import { base64_decode, base64_encode } from '../base64';
 import { bytify, debug, toHex } from '../util';
 import { NibbleDisk, ENCODING_NIBBLE } from './types';
@@ -501,6 +501,12 @@ export function jsonDecode(data: string): NibbleDisk {
     return disk;
 }
 
+/**
+ * Debugging method that displays the logical sector ordering of a nibblized disk
+ *
+ * @param disk
+ */
+
 export function analyseDisk(disk: NibbleDisk) {
     for (let track = 0; track < 35; track++) {
         let outStr = `${toHex(track)}: `;
@@ -555,5 +561,38 @@ export function analyseDisk(disk: NibbleDisk) {
         }
         debug(outStr);
     }
-    return new Uint8Array();
+}
+
+/**
+ *
+ * @param bits Bitstream containing nibbles
+ * @param offset Offset into bitstream to start nibblizing
+ * @returns The next nibble in the bitstream
+ */
+
+export function grabNibble(bits: bit[], offset: number) {
+    let nibble = 0;
+    let waitForOne = true;
+
+    while (offset < bits.length) {
+        const bit = bits[offset];
+        if (bit) {
+            nibble = (nibble << 1) | 0x01;
+            waitForOne = false;
+        } else {
+            if (!waitForOne) {
+                nibble = nibble << 1;
+            }
+        }
+        if (nibble & 0x80) {
+            // nibble complete return it
+            break;
+        }
+        offset += 1;
+    }
+
+    return {
+        nibble: nibble,
+        offset: offset
+    };
 }
