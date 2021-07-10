@@ -9,7 +9,7 @@
  * implied warranty.
  */
 
-import type { bit, byte, memory, MemberOf } from '../types';
+import type { byte, memory, MemberOf } from '../types';
 import type { GamepadConfiguration } from '../ui/types';
 
 export const DRIVE_NUMBERS = [1, 2] as const;
@@ -42,18 +42,20 @@ export const ENCODING_NIBBLE = 'nibble';
 export const ENCODING_BITSTREAM = 'bitstream';
 export const ENCODING_BLOCK = 'block';
 
-export interface NibbleDisk extends Disk {
-    encoding: typeof ENCODING_NIBBLE
-    format: DiskFormat
-    volume: byte
+export interface FloppyDisk extends Disk {
     tracks: memory[]
 }
 
-export interface WozDisk extends Disk {
+export interface NibbleDisk extends FloppyDisk {
+    encoding: typeof ENCODING_NIBBLE
+    format: DiskFormat
+    volume: byte
+}
+
+export interface WozDisk extends FloppyDisk {
     encoding: typeof ENCODING_BITSTREAM
     trackMap: number[]
-    rawTracks: bit[][]
-    tracks: memory[]
+    rawTracks: Uint8Array[]
 }
 
 export interface BlockDisk extends Disk {
