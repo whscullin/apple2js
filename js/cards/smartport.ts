@@ -97,6 +97,16 @@ const ADDRESS_LO = 0x44;
 const BLOCK_LO = 0x46;
 // const BLOCK_HI = 0x47;
 
+// const IO_ERROR = 0x27;
+const NO_DEVICE_CONNECTED = 0x28;
+const WRITE_PROTECTED = 0x2B;
+const DEVICE_OFFLINE = 0x2F;
+// const VOLUME_DIRECTORY_NOT_FOUND = 0x45;
+// const NOT_A_PRODOS_DISK = 0x52;
+// const VOLUME_CONTROL_BLOCK_FULL = 0x55;
+// const BAD_BUFFER_ADDRESS = 0x56;
+// const DUPLICATE_VOLUME_ONLINE = 0x57;
+
 export default class SmartPort implements Card, MassStorage, Restorable<SmartPortState> {
 
     private rom: rom;
@@ -166,7 +176,7 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
             state.a = 0;
             state.s &= ~flags.C;
         } else {
-            state.a = 0x28;
+            state.a = NO_DEVICE_CONNECTED;
             state.s |= flags.C;
         }
     }
@@ -182,6 +192,8 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
 
         if (!this.disks[drive]?.blocks.length) {
             debug('Drive', drive, 'is empty');
+            state.a = DEVICE_OFFLINE;
+            state.s |= flags.C;
             return;
         }
 
@@ -193,7 +205,7 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
         }
 
         state.a = 0;
-        state.s &= 0xfe;
+        state.s &= ~flags.C;
     }
 
     /*
@@ -207,6 +219,15 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
 
         if (!this.disks[drive]?.blocks.length) {
             debug('Drive', drive, 'is empty');
+            state.a = DEVICE_OFFLINE;
+            state.s |= flags.C;
+            return;
+        }
+
+        if (this.disks[drive].readOnly) {
+            debug('Drive', drive, 'is write protected');
+            state.a = WRITE_PROTECTED;
+            state.s |= flags.C;
             return;
         }
 
@@ -217,7 +238,7 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
             buffer = buffer.inc(1);
         }
         state.a = 0;
-        state.s &= 0xfe;
+        state.s &= flags.C;
     }
 
     /*
@@ -225,6 +246,20 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
      */
 
     formatDevice(state: CpuState, drive: number) {
+        if (!this.disks[drive]?.blocks.length) {
+            debug('Drive', drive, 'is empty');
+            state.a = DEVICE_OFFLINE;
+            state.s |= flags.C;
+            return;
+        }
+
+        if (this.disks[drive].readOnly) {
+            debug('Drive', drive, 'is write protected');
+            state.a = WRITE_PROTECTED;
+            state.s |= flags.C;
+            return;
+        }
+
         for (let idx = 0; idx < this.disks[drive].blocks.length; idx++) {
             this.disks[drive].blocks[idx] = new Uint8Array();
             for (let jdx = 0; jdx < 512; jdx++) {
@@ -233,7 +268,7 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
         }
 
         state.a = 0;
-        state.s &= 0xfe;
+        state.s &= flags.C;
     }
 
     private access(off: byte, val: byte) {
@@ -343,7 +378,7 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
                         case 0:
                             switch (status) {
                                 case 0:
-                                    buffer.writeByte(1); // one device
+                                    buffer.writeByte(2); // two devices
                                     buffer.inc(1).writeByte(1 << 6); // no interrupts
                                     buffer.inc(2).writeByte(0); // reserved
                                     buffer.inc(3).writeByte(0); // reserved
@@ -354,7 +389,7 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
                                     state.x = 8;
                                     state.y = 0;
                                     state.a = 0;
-                                    state.s &= 0xfe;
+                                    state.s &= ~flags.C;
                                     break;
                             }
                             break;
@@ -369,13 +404,13 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
                                     state.x = 4;
                                     state.y = 0;
                                     state.a = 0;
-                                    state.s &= 0xfe;
+                                    state.s &= ~flags.C;
                                     break;
                             }
                             break;
                     }
                     state.a = 0;
-                    state.s &= 0xfe;
+                    state.s &= ~flags.C;
                     break;
 
                 case 0x01: // READ BLOCK
