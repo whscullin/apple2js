@@ -29,7 +29,6 @@ const WOZ_INTEGRITY_CHECK = 0x0a0d0aff;
  * @param end end index of string
  * @returns ASCII string
  */
-
 function stringFromBytes(data: DataView, start: number, end: number): string {
     return String.fromCharCode.apply(
         null,
@@ -188,7 +187,6 @@ export class TrksChunk2 extends TrksChunk {
     }
 }
 
-
 export class MetaChunk  {
     values: Record<string, string>
 
@@ -213,20 +211,16 @@ interface Chunks {
 
 /**
  * Returns a `Disk` object from Woz image data.
- * @param {*} options the disk image and options
- * @returns {import('./format_utils').Disk}
+ * @param options the disk image and options
+ * @returns A bitstream disk
  */
-export default function createDiskFromWoz(options: DiskOptions) {
+export default function createDiskFromWoz(options: DiskOptions): WozDisk {
     const { rawData } = options;
     if (!rawData) {
         throw new Error('Requires rawData');
     }
     const dv = new DataView(rawData, 0);
     let dvOffset = 0;
-    const disk: Partial<WozDisk> = {
-        encoding: ENCODING_BITSTREAM,
-    };
-
     let wozVersion;
     const chunks: Chunks = {};
 
@@ -303,11 +297,14 @@ export default function createDiskFromWoz(options: DiskOptions) {
 
     debug(chunks);
 
-    disk.trackMap = chunks.tmap?.trackMap || [];
-    disk.tracks = chunks.trks?.tracks || [];
-    disk.rawTracks = chunks.trks?.rawTracks || [];
-    disk.readOnly = true; //chunks.info.writeProtected === 1;
-    disk.name = chunks.meta?.values['title'] || options.name;
+    const disk: WozDisk = {
+        encoding: ENCODING_BITSTREAM,
+        trackMap: chunks.tmap?.trackMap || [],
+        tracks: chunks.trks?.tracks || [],
+        rawTracks: chunks.trks?.rawTracks || [],
+        readOnly: true, //chunks.info.writeProtected === 1;
+        name: chunks.meta?.values['title'] || options.name
+    };
 
-    return disk as WozDisk;
+    return disk;
 }

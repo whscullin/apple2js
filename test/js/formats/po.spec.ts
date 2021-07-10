@@ -246,7 +246,6 @@ describe('ProDOS format', () => {
         i = expectSequence(track, i, [0xDE, 0xAA, 0xEB]);
     });
 
-
     it('has correct Address Fields for all tracks', () => {
         // _Beneath Apple DOS_, TRACK FORMATTING, p. 3-12
         const disk = ProDOS({

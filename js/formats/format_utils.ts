@@ -564,10 +564,12 @@ export function analyseDisk(disk: NibbleDisk) {
 }
 
 /**
+ * Debugging utility to convert a bitstream into a nibble. Does not wrap.
  *
  * @param bits Bitstream containing nibbles
  * @param offset Offset into bitstream to start nibblizing
- * @returns The next nibble in the bitstream
+ * @returns nibble, the next nibble in the bitstream,
+ *      and offset, the end of that nibble in the bitstream
  */
 
 export function grabNibble(bits: bit[], offset: number) {

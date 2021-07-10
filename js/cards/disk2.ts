@@ -67,7 +67,6 @@ const LOC = {
     DRIVEWRITEMODE: 0x8F // Q7H: Write
 } as const;
 
-
 /** Logic state sequencer ROM */
 // See Understanding the Apple IIe, Table 9.3 Logic State Sequencer Commands
 //       CODE  OPERATION              BEFORE    AFTER
