@@ -861,7 +861,7 @@ export default class DiskII implements Card {
                 const cur = this.drives[drive - 1];
                 Object.assign(cur, disk);
                 this.updateDirty(drive, true);
-                this.callbacks.label(this.drive, name);
+                this.callbacks.label(drive, name);
 
                 return true;
             }
