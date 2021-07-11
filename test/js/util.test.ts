@@ -71,14 +71,6 @@ describe('toBinary', () => {
     });
 });
 
-describe('gup', () => {
-    // untestable due to direct reference to window.location
-});
-
-describe('hup', () => {
-    // untestable due to direct reference to window.location
-});
-
 describe('numToString', () => {
     it('packs a zero byte into a string of all zeros', () => {
         expect(numToString(0x00)).toEqual('\0\0\0\0');

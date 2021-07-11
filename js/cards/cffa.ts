@@ -4,12 +4,13 @@ import { rom as readOnlyRom } from '../roms/cards/cffa';
 import { read2MGHeader } from '../formats/2mg';
 import { ProDOSVolume } from '../formats/prodos';
 import createBlockDisk from '../formats/block';
+import type { DriveNumber } from 'js/formats/types';
 import { dump } from '../formats/prodos/utils';
 import {
     BlockDisk,
     BlockFormat,
     ENCODING_BLOCK,
-    MassStorage,
+    BlockStorage,
 } from 'js/formats/types';
 
 const rom = new Uint8Array(readOnlyRom);
@@ -85,7 +86,7 @@ export interface CFFAState {
     disks: Array<BlockDisk | null>
 }
 
-export default class CFFA implements Card, MassStorage, Restorable<CFFAState> {
+export default class CFFA implements Card, BlockStorage, Restorable<CFFAState> {
 
     // CFFA internal Flags
 
@@ -399,45 +400,47 @@ export default class CFFA implements Card, MassStorage, Restorable<CFFAState> {
     setState(state: CFFAState) {
         state.disks.forEach(
             (disk, idx) => {
+                const drive = idx + 1 as DriveNumber;
+
                 if (disk) {
-                    this.setBlockVolume(idx + 1, disk);
+                    this.setBlockVolume(drive, disk);
                 } else {
-                    this.resetBlockVolume(idx + 1);
+                    this.resetBlockVolume(drive);
                 }
             }
         );
     }
 
-    resetBlockVolume(drive: number) {
-        drive = drive - 1;
+    resetBlockVolume(drive: DriveNumber) {
+        const driveIdx = drive - 1;
 
-        this._sectors[drive] = [];
+        this._sectors[driveIdx] = [];
 
-        this._identity[drive][IDENTITY.SectorCountHigh] = 0;
-        this._identity[drive][IDENTITY.SectorCountLow] = 0;
+        this._identity[driveIdx][IDENTITY.SectorCountHigh] = 0;
+        this._identity[driveIdx][IDENTITY.SectorCountLow] = 0;
 
-        if (drive) {
+        if (driveIdx) {
             rom[SETTINGS.Max32MBPartitionsDev1] = 0x0;
         } else {
             rom[SETTINGS.Max32MBPartitionsDev0] = 0x0;
         }
     }
 
-    setBlockVolume(drive: number, disk: BlockDisk) {
-        drive = drive - 1;
+    setBlockVolume(drive: DriveNumber, disk: BlockDisk) {
+        const driveIdx = drive - 1;
 
         // Convert 512 byte blocks into 256 word sectors
-        this._sectors[drive] = disk.blocks.map(function(block) {
+        this._sectors[driveIdx] = disk.blocks.map(function(block) {
             return new Uint16Array(block.buffer);
         });
 
-        this._identity[drive][IDENTITY.SectorCountHigh] = this._sectors[0].length & 0xffff;
-        this._identity[drive][IDENTITY.SectorCountLow] = this._sectors[0].length >> 16;
+        this._identity[driveIdx][IDENTITY.SectorCountHigh] = this._sectors[0].length & 0xffff;
+        this._identity[driveIdx][IDENTITY.SectorCountLow] = this._sectors[0].length >> 16;
 
         const prodos = new ProDOSVolume(disk);
         dump(prodos);
 
-        this._partitions[drive] = prodos;
+        this._partitions[driveIdx] = prodos;
 
         if (drive) {
             rom[SETTINGS.Max32MBPartitionsDev1] = 0x1;
@@ -449,7 +452,7 @@ export default class CFFA implements Card, MassStorage, Restorable<CFFAState> {
 
     // Assign a raw disk image to a drive. Must be 2mg or raw PO image.
 
-    setBinary(drive: number, name: string, ext: BlockFormat, rawData: ArrayBuffer) {
+    setBinary(drive: DriveNumber, name: string, ext: BlockFormat, rawData: ArrayBuffer) {
         const volume = 254;
         const readOnly = false;
 
@@ -466,5 +469,12 @@ export default class CFFA implements Card, MassStorage, Restorable<CFFAState> {
         const disk = createBlockDisk(options);
 
         return this.setBlockVolume(drive, disk);
+    }
+
+    getMetadata(driveNo: number): Record<string, any> {
+        const drive = this._partitions[driveNo - 1];
+        return {
+            name: drive?.vdh.name,
+        };
     }
 }

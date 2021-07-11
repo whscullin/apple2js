@@ -1,6 +1,11 @@
 import Prefs from './prefs';
 
-import { driveLights, initUI, updateUI } from './ui/apple2';
+import {
+    diskLights,
+    initUI,
+    BlockStorageLights,
+    updateUI
+} from './ui/apple2';
 import Printer from './ui/printer';
 
 import DiskII from './cards/disk2';
@@ -71,9 +76,12 @@ apple2.ready.then(() => {
     const parallel = new Parallel(printer);
     const videoTerm = new VideoTerm();
     const slinky = new RAMFactor(1024 * 1024);
-    const disk2 = new DiskII(io, driveLights, sectors);
+    const disk2 = new DiskII(io, diskLights, sectors);
     const clock = new Thunderclock();
-    const smartport = new SmartPort(cpu, { block: true });
+    const smartport = new SmartPort(cpu, {
+        block: true,
+        callbacks: BlockStorageLights,
+    });
 
     io.setSlot(0, lc);
     io.setSlot(1, parallel);

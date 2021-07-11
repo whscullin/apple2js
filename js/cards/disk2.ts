@@ -13,6 +13,7 @@ import {
     NibbleFormat,
     DISK_PROCESSED,
     DRIVE_NUMBERS,
+    DriveCallbacks,
     DriveNumber,
     JSONDisk,
     ENCODING_NIBBLE,
@@ -151,11 +152,6 @@ const PHASE_DELTA = [
     [-2, -1, 0, 1],
     [1, -2, -1, 0]
 ] as const;
-export interface Callbacks {
-    driveLight: (drive: DriveNumber, on: boolean) => void;
-    dirty: (drive: DriveNumber, dirty: boolean) => void;
-    label: (drive: DriveNumber, name?: string, side?: string) => void;
-}
 
 /** Common information for Nibble and WOZ disks. */
 
@@ -383,7 +379,7 @@ export default class DiskII implements Card {
     private worker: Worker;
 
     /** Builds a new Disk ][ card. */
-    constructor(private io: Apple2IO, private callbacks: Callbacks, private sectors = 16) {
+    constructor(private io: Apple2IO, private callbacks: DriveCallbacks, private sectors = 16) {
         this.debug('Disk ][');
 
         this.lastCycles = this.io.cycles();
@@ -755,11 +751,12 @@ export default class DiskII implements Card {
         this.cur = this.drives[this.drive - 1];
     }
 
-    getMetadata(driveNo: DriveNumber) {
+    getMetadata(driveNo: DriveNumber): Record<string, any> {
         const drive = this.drives[driveNo - 1];
         return {
             format: drive.format,
             volume: drive.volume,
+            name: drive.name,
             track: drive.track,
             head: drive.head,
             phase: drive.phase,

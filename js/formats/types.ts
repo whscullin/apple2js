@@ -192,6 +192,26 @@ export type FormatWorkerResponse =
 /**
  * Block device common interface
  */
-export interface MassStorage {
-    setBinary(drive: number, name: string, ext: BlockFormat, data: ArrayBuffer): boolean
+export interface BlockStorage {
+    setBinary(drive: DriveNumber, name: string, ext: BlockFormat, data: ArrayBuffer): boolean
+    getMetadata(drive: DriveNumber): Record<string, any>
+}
+
+export interface FloppyStorage {
+    setBinary(drive: DriveNumber, name: string, ext: NibbleFormat, data: ArrayBuffer): boolean
+    getMetadata(drive: DriveNumber): Record<string, any>
+}
+
+export interface DiskStorage<T> {
+    setBinary(drive: DriveNumber, name: string, ext: T, data: ArrayBuffer): boolean
+    getMetadata(drive: DriveNumber): Record<string, any>
+}
+
+/**
+ *
+ */
+export interface DriveCallbacks {
+    driveLight: (drive: DriveNumber, on: boolean) => void;
+    dirty: (drive: DriveNumber, dirty: boolean) => void;
+    label: (drive: DriveNumber, name: string, side?: string) => void;
 }

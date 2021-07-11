@@ -107,11 +107,37 @@ body {
     border: 1px inset #888;
 }
 
+.storage {
+    display: flex;
+    flex-direction: row;
+    margin-right: -5px;
+}
+
+.apple2e .storage .inset  {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin: 5px 5px 0 0;
+}
+
 .disk {
     align-items: center;
     display: flex;
     flex-grow: 1;
-    max-width: 50%;
+    max-width: 100%;
+    width: 50%;
+}
+
+.mass .disk {
+    width: 100%;
+}
+
+.storage .inset.block-storage {
+    display: none;
+}
+
+.storage.mass .inset.block-storage {
+    display: flex;
 }
 
 .disk-light {
@@ -152,9 +178,10 @@ th {
 
 .inset {
     border-radius: 6px;
+    background-color: #c4c1a0;
     border: 3px inset #f0edd0;
     padding: 6px;
-    margin: 10px 0;
+    margin: 5px 0;
     display: flex;
 }
 

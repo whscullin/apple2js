@@ -1,4 +1,5 @@
 import { byte } from '../types';
+import MicroModal from 'micromodal';
 
 /**
   * Printer UI. The "paper" is bound to the element selected by the input.
@@ -77,5 +78,16 @@ export default class Printer {
 
     getRawOutput() {
         return this._raw.slice(0, this._rawLen);
+    }
+
+    openPrinterModal() {
+        const mimeType = 'application/octet-stream';
+        const data = this.getRawOutput();
+        const a = document.querySelector<HTMLAnchorElement>('#raw_printer_output')!;
+
+        const blob = new Blob([data], { 'type': mimeType });
+        a.href = window.URL.createObjectURL(blob);
+        a.download = 'raw_printer_output.bin';
+        MicroModal.show('printer-modal');
     }
 }

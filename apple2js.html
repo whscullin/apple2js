@@ -34,9 +34,9 @@
 
 </head>
 <body class="apple2"
-      ondragover="Apple2.handleDragOver(0, event)"
-      ondrop="Apple2.handleDrop(0, event)"
-      ondragend="Apple2.handleDragEnd(0, event)">
+      ondragover="Disk2UI.handleDragOver(0, event)"
+      ondrop="Disk2UI.handleDrop(0, event)"
+      ondragend="Disk2UI.handleDragEnd(0, event)">
   <div class="outer">
     <div id="header">
       <a href="https://github.com/whscullin/apple2js#readme" target="_blank">
@@ -51,31 +51,31 @@
     </div>
     <div class="inset">
       <div class="disk"
-           ondragover="Apple2.handleDragOver(1, event)"
-           ondrop="Apple2.handleDrop(1, event)"
-           ondragend="Apple2.handleDragEnd(1, event)">
+           ondragover="Disk2UI.handleDragOver(event)"
+           ondrop="Disk2UI.handleDrop(1, event)"
+           ondragend="Disk2UI.handleDragEnd(event)">
         <div class="disk-light" id="disk1"></div>
         <button title="Load Disk"
-                onclick="Apple2.openLoad(1, event);">
+                onclick="Disk2UI.openLoad(1, event);">
           <i class="fas fa-folder-open"></i>
         </button>
         <button title="Save Disk"
-                onclick="Apple2.openSave(1, event);">
+                onclick="Disk2UI.openSave(1, event);">
           <i class="fas fa-save"></i>
         </button>
         <div id="disk-label1" class="disk-label">Disk 1</div>
       </div>
       <div class="disk"
-           ondragover="Apple2.handleDragOver(2, event)"
-           ondrop="Apple2.handleDrop(2, event)"
-           ondragend="Apple2.handleDragEnd(2, event)">
+           ondragover="Disk2UI.handleDragOver(event)"
+           ondrop="Disk2UI.handleDrop(2, event)"
+           ondragend="Disk2UI.handleDragEnd(event)">
         <div class="disk-light" id="disk2"></div>
         <button title="Load Disk"
-                onclick="Apple2.openLoad(2, event);">
+                onclick="Disk2UI.openLoad(2, event);">
           <i class="fas fa-folder-open"></i>
         </button>
         <button title="Save Disk"
-                onclick="Apple2.openSave(2, event);">
+                onclick="Disk2UI.openSave(2, event);">
           <i class="fas fa-save"></i>
         </button>
         <div id="disk-label2" class="disk-label">Disk 2</div>
@@ -89,14 +89,14 @@
       <button id="toggle-sound" onclick="Apple2.toggleSound()" title="Toggle Sound">
         <i class="fas fa-volume-off"></i>
       </button>
-      <button id="toggle-printer" onclick="Apple2.openPrinterModal()" title="Toggle Printer">
+      <button id="toggle-printer" onclick="Printer.openPrinterModal()" title="Toggle Printer">
         <i class="fas fa-print"></i>
       </button>
       <div class="spacer"></div>
       <button onclick="window.open('https://github.com/whscullin/apple2js#readme', 'blank')" title="About">
         <i class="fas fa-info"></i>
       </button>
-      <button onclick="Apple2.openOptions()" title="Options (F4)">
+      <button onclick="OptionsModal.openModal()" title="Options (F4)">
         <i class="fas fa-cog"></i>
       </button>
     </div>
@@ -165,7 +165,7 @@
           </div>
         </main>
         <footer class="modal__footer">
-          <button class="modal__btn" onclick="Apple2.doSave()" aria-label="Save disk locally">Save</button>
+          <button class="modal__btn" onclick="Disk2UI.doSave()" aria-label="Save disk locally">Save</button>
         </footer>
       </div>
     </div>
@@ -227,13 +227,13 @@
             <tr>
               <td>
                 <select id="category_select" multiple="multiple"
-                        onchange="Apple2.selectCategory(event)" >
+                        onchange="Disk2UI.selectCategory(event)" >
                 </select>
               </td>
               <td>
                 <select id="disk_select" multiple="multiple"
-                        onchange="Apple2.selectDisk(event)"
-                        ondblclick="Apple2.clickDisk(event)">
+                        onchange="Disk2UI.selectDisk(event)"
+                        ondblclick="Disk2UI.clickDisk(event)">
                 </select>
               </td>
             </tr>
@@ -248,7 +248,7 @@
         </main>
         <footer class="modal__footer">
           <button class="modal__btn" data-micromodal-close aria-label="Close this dialog window">Cancel</button>
-          <button class="modal__btn" onclick="Apple2.doLoad(event)" aria-label="Open the selected disk">Open</button>
+          <button class="modal__btn" onclick="Disk2UI.doLoad(event)" aria-label="Open the selected disk">Open</button>
         </footer>
       </div>
     </div>
@@ -269,7 +269,7 @@
         </main>
         <footer class="modal__footer">
           <a id="raw_printer_output" class="button">Download Raw Output</a>
-          <button class="modal__btn" onclick="Apple2.clearPrinterPaper()" aria-label="Clear the paper">Clear</button>
+          <button class="modal__btn" onclick="Printer.clear()" aria-label="Clear the paper">Clear</button>
           <button class="modal__btn" data-micromodal-close aria-label="Close this dialog window">Close</button>
         </footer>
       </div>
