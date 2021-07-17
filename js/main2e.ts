@@ -27,6 +27,11 @@ switch (romVersion) {
         characterRom = 'rmfont_char';
         enhanced = true;
         break;
+    case 'apple2ex':
+        rom = 'apple2ex';
+        characterRom = 'apple2enh_char';
+        enhanced = true;
+        break;
     default:
         rom = 'apple2enh';
         characterRom = 'apple2enh_char';

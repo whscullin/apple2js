@@ -31,6 +31,10 @@ export class System implements OptionHandler {
                                 value: 'apple2rm',
                                 name: 'Enhanced Apple //e (Reactive Micro)'
                             },
+                            {
+                                value: 'apple2ex',
+                                name: 'Apple //e Extended Debugging'
+                            },
                         ]
                     }
                 ] : [
