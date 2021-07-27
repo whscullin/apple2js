@@ -81,25 +81,6 @@ const r4 = [
     15   // White
 ] as const;
 
-const dcolors: Color[] = [
-    [0, 0, 0], // 0x0 black
-    [227, 30, 96], // 0x1 deep red
-    [96, 78, 189], // 0x2 dark blue
-    [255, 68, 253], // 0x3 purple
-    [0, 163, 96], // 0x4 dark green
-    [156, 156, 156], // 0x5 dark gray
-    [20, 207, 253], // 0x6 medium blue
-    [208, 195, 255], // 0x7 light blue
-    [96, 114, 3], // 0x8 brown
-    [255, 106, 60], // 0x9 orange
-    [156, 156, 156], // 0xa light gray
-    [255, 160, 208], // 0xb pink
-    [20, 245, 60], // 0xc green
-    [208, 221, 141], // 0xd yellow
-    [114, 255, 208], // 0xe aquamarine
-    [255, 255, 255], // 0xf white
-];
-
 const notDirty: Region = {
     top: 193,
     bottom: -1,
@@ -505,7 +486,7 @@ export class HiresPage2D implements HiresPage {
     oneSixtyMode: boolean;
     mixedDHRMode: boolean;
     monoDHRMode: boolean;
-    colorDHRMode: boolean = true;
+    rgbDHRMode: boolean = false;
 
     constructor(
         private vm: VideoModes,
@@ -599,13 +580,13 @@ export class HiresPage2D implements HiresPage {
         const cd = (page & 0x03) << 1;
         const e = adj >> 7;
 
-        const rowa = ab | cd | e,
-            rowb = base >> 10;
+        const rowA = ab | cd | e;
+        const rowB = base >> 10;
 
         const data = this.imageData.data;
         let dx, dy;
-        if ((rowa < 24) && (col < 40) && this.vm.hiresMode) {
-            let y = rowa << 4 | rowb << 1;
+        if ((rowA < 24) && (col < 40) && this.vm.hiresMode) {
+            let y = rowA << 4 | rowB << 1;
             if (y < this.dirty.top) { this.dirty.top = y; }
             y += 1;
             if (y > this.dirty.bottom) { this.dirty.bottom = y; }
@@ -614,38 +595,40 @@ export class HiresPage2D implements HiresPage {
             x += 18;
             if (x > this.dirty.right) { this.dirty.right = x; }
 
-            dy = rowa << 4 | rowb << 1;
-            let bz, b0, b1, b2, b3, b4, c, hb;
+            dy = rowA << 3 | rowB;
             if (this.oneSixtyMode && !this.vm.monoMode) {
                 // 1 byte = two pixels, but 3:4 ratio
                 const c3 = val & 0xf;
                 const c4 = val >> 4;
 
                 dx = col * 2 + (bank ^ 1);
-                const offset = dx * 28 + dy * 280 * 4;
+                const offset = dx * 28 + dy * 560 * 4;
 
-                this._draw3Pixel(data, offset, dcolors[c3]);
-                this._draw4Pixel(data, offset + 12, dcolors[c4]);
+                this._draw3Pixel(data, offset, _colors[c3]);
+                this._draw4Pixel(data, offset + 12, _colors[c4]);
             } else if (this.vm.doubleHiresMode) {
-                val &= 0x7f;
-
                 // Every 4 bytes is 7 pixels
                 // 2 bytes per bank
 
                 // b0       b1       b2       b3
                 //  c0  c1    c2  c3    c4  c5    c6
                 // 76543210 76543210 76543210 76543210
-                //  1111222  2333344  4455556  6667777
+                //  0000111  1222233  3344445  5556666
 
-                const mod = col % 2, mcol = col - mod, baseOff = base - mod;
-                bz = this._buffer[0][baseOff - 1];
-                b0 = this._buffer[1][baseOff];
-                b1 = this._buffer[0][baseOff];
-                b2 = this._buffer[1][baseOff + 1];
-                b3 = this._buffer[0][baseOff + 1];
-                b4 = this._buffer[1][baseOff + 2];
-                c = [
-                    0,
+                const mod = col % 2;
+                const modCol = col - mod;
+                const baseOff = base - mod;
+
+                // 4 consecutive bytes starting at baseOff
+                const b0 = this._buffer[1][baseOff];
+                const b1 = this._buffer[0][baseOff];
+                const b2 = this._buffer[1][baseOff + 1];
+                const b3 = this._buffer[0][baseOff + 1];
+                // 4 bit lookahead for sliding window mode
+                const b4 = this._buffer[1][baseOff + 2];
+
+                // Colors normalized
+                const c = [
                     ((b0 & 0x0f) >> 0), // 0
                     ((b0 & 0x70) >> 4) | ((b1 & 0x01) << 3), // 1
                     ((b1 & 0x1e) >> 1), // 2
@@ -653,10 +636,11 @@ export class HiresPage2D implements HiresPage {
                     ((b2 & 0x3c) >> 2), // 4
                     ((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1), // 5
                     ((b3 & 0x78) >> 3), // 6
-                    0
-                ], // 7
-                hb = [
-                    0,
+                    col < 38 ? ((b4 & 0x0f) >> 0) : 0, // 7
+                ];
+
+                // High bits
+                const hb = [
                     b0 & 0x80, // 0
                     b0 & 0x80, // 1
                     b1 & 0x80, // 2
@@ -664,76 +648,62 @@ export class HiresPage2D implements HiresPage {
                     b2 & 0x80, // 4
                     b3 & 0x80, // 5
                     b3 & 0x80, // 6
-                    0
-                ]; // 7
-                if (col > 0) {
-                    c[0] = (bz & 0x78) >> 3;
-                    hb[0] = bz & 0x80;
-                }
-                if (col < 39) {
-                    c[8] = b4 & 0x0f;
-                    hb[8] = b4 & 0x80;
-                }
-                dx = mcol * 14;
-                let offset = dx * 4 + dy * 280 * 4;
+                    b4 & 0x80, // 7
+                ];
+
+                dx = modCol * 14;
+                let offset = dx * 4 + dy * 560 * 4;
 
                 let monoColor = null;
                 if (this.vm.monoMode || this.monoDHRMode) {
                     monoColor = whiteCol;
                 }
 
-                for (let idx = 1; idx < 8; idx++) {
+                // Reassemble 4 bit chunks into 32 bit value
+                let bits =
+                    c[0] |
+                    (c[1] << 4) |
+                    (c[2] << 8) |
+                    (c[3] << 12) |
+                    (c[4] << 16) |
+                    (c[5] << 20) |
+                    (c[6] << 24) |
+                    (c[7] << 28);
+
+                for (let idx = 0; idx < 7; idx++) {
                     const hbs = hb[idx];
-                    const dcolor = dcolors[r4[c[idx]]];
-                    let bits = c[idx - 1] | (c[idx] << 4) | (c[idx + 1] << 8);
+                    // Color for mixed and RGB mode
+                    const dcolor = _colors[r4[bits & 0xf]];
                     for (let jdx = 0; jdx < 4; jdx++, offset += 4) {
                         if (monoColor) {
-                            if (bits & 0x10) {
-                                this._drawHalfPixel(data, offset, monoColor);
-                            } else {
-                                this._drawHalfPixel(data, offset, blackCol);
-                            }
+                            this._drawHalfPixel(data, offset, bits & 0x01 ? monoColor : blackCol);
                         } else if (this.mixedDHRMode) {
                             if (hbs) {
                                 this._drawHalfPixel(data, offset, dcolor);
                             } else {
-                                if (bits & 0x10) {
-                                    this._drawHalfPixel(data, offset, whiteCol);
-                                } else {
-                                    this._drawHalfPixel(data, offset, blackCol);
-                                }
+                                this._drawHalfPixel(data, offset, bits & 0x01 ? whiteCol : blackCol);
                             }
-                        } else if (this.colorDHRMode) {
+                        } else if (this.rgbDHRMode) {
                             this._drawHalfPixel(data, offset, dcolor);
-                        } else if (
-                            ((c[idx] != c[idx - 1]) && (c[idx] != c[idx + 1])) &&
-                            (((bits & 0x1c) == 0x1c) ||
-                                ((bits & 0x70) == 0x70) ||
-                                ((bits & 0x38) == 0x38))
-                        ) {
-                            this._drawHalfPixel(data, offset, whiteCol);
-                        } else if (
-                            (bits & 0x38) ||
-                            (c[idx] == c[idx + 1]) ||
-                            (c[idx] == c[idx - 1])
-                        ) {
-                            this._drawHalfPixel(data, offset, dcolor);
-                        } else if (bits & 0x28) {
-                            this._drawHalfPixel(data, offset, dim(dcolor));
-                        } else {
-                            this._drawHalfPixel(data, offset, blackCol);
+                        } else { // sliding window
+                            let slide = bits & 0x0f;
+                            slide = ((slide >> (4 -jdx)) | (slide << jdx)) & 0x0f;
+                            this._drawHalfPixel(data, offset, _colors[r4[slide]]);
                         }
                         bits >>= 1;
                     }
                 }
 
-                if (!this._refreshing) {
+                // If we're doing sliding window and updated the first byte refresh the prior 7 pixels
+                // TODO(whscullin) - only refresh the last pixel
+                const slidingMode = !monoColor && !this.mixedDHRMode && !this.rgbDHRMode;
+                if (!this._refreshing && bank === 1 && col === modCol && slidingMode) {
                     this._refreshing = true;
-                    const bb: bank = bank ? 0 : 1;
-                    for (let rr = addr - 1; rr <= addr + 1; rr++) {
-                        const vv = this._read(rr >> 8, rr & 0xff, bb);
-                        this._write(rr >> 8, rr & 0xff, vv, bb);
-                    }
+                    const refreshAddr = addr - 1;
+                    const refreshOff = refreshAddr >> 8;
+                    const refreshPage = refreshAddr & 0xff;
+                    const refreshVal = this._read(refreshOff, refreshPage, 0);
+                    this._write(refreshOff, refreshPage, refreshVal, 0);
                     this._refreshing = false;
                 }
             } else {
@@ -741,8 +711,8 @@ export class HiresPage2D implements HiresPage {
                 const hbs = val & 0x80;
                 val &= 0x7f;
                 dx = col * 14 - 2;
-                b0 = col > 0 ? this._buffer[0][base - 1] : 0;
-                b2 = col < 39 ? this._buffer[0][base + 1] : 0;
+                const b0 = col > 0 ? this._buffer[0][base - 1] : 0;
+                const b2 = col < 39 ? this._buffer[0][base + 1] : 0;
                 val |= (b2 & 0x3) << 7;
                 let v0 = b0 & 0x20, v1 = b0 & 0x40, v2 = val & 0x1,
                     odd = !(col & 0x1),
@@ -750,7 +720,7 @@ export class HiresPage2D implements HiresPage {
                 const oddCol = (hbs ? orangeCol : greenCol);
                 const evenCol = (hbs ? blueCol : violetCol);
 
-                let offset = dx * 4 + dy * 280 * 4;
+                let offset = dx * 4 + dy * 560 * 4;
 
                 const monoColor = this.vm.monoMode ? whiteCol : null;
 
@@ -761,7 +731,7 @@ export class HiresPage2D implements HiresPage {
                         if (monoColor) {
                             color = monoColor;
                         } else if (this.highColorHGRMode) {
-                            color = dcolors[this._buffer[1][base] >> 4];
+                            color = _colors[this._buffer[1][base] >> 4];
                         } else if (v0 || v2) {
                             color = whiteCol;
                         } else {
@@ -771,7 +741,7 @@ export class HiresPage2D implements HiresPage {
                         if (monoColor) {
                             color = blackCol;
                         } else if (this.highColorHGRMode) {
-                            color = dcolors[this._buffer[1][base] & 0x0f];
+                            color = _colors[this._buffer[1][base] & 0x0f];
                         } else if (odd && v2 && v0) {
                             color = v0 ? dim(evenCol) : evenCol;
                         } else if (!odd && v0 && v2) {
@@ -929,10 +899,9 @@ export class VideoModes2D implements VideoModes {
     text(on: boolean) {
         const old = this.textMode;
         this.textMode = on;
-        if (on) {
-            this.flag = 0;
-        }
+
         if (old != on) {
+            this.flag = 0;
             this._refresh();
         }
     }
@@ -961,11 +930,9 @@ export class VideoModes2D implements VideoModes {
     hires(on: boolean) {
         const old = this.hiresMode;
         this.hiresMode = on;
-        if (!on) {
-            this.flag = 0;
-        }
 
         if (old != on) {
+            this.flag = 0;
             this._refresh();
         }
     }
