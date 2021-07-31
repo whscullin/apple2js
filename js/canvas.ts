@@ -81,10 +81,14 @@ const r4 = [
     15   // White
 ] as const;
 
+const videoWidth = 568;
+const videoHeight = 192;
+const videoPad = 16;
+
 const notDirty: Region = {
-    top: 193,
+    top: videoHeight + 1,
     bottom: -1,
-    left: 561,
+    left: videoWidth + 1,
     right: -1
 } as const;
 
@@ -114,8 +118,10 @@ export class LoresPage2D implements LoresPage {
         private readonly charset: rom,
         private readonly e: boolean
     ) {
-        this.imageData = this.vm.context.createImageData(560, 192);
-        this.imageData.data.fill(0xff);
+        this.imageData = this.vm.context.createImageData(videoWidth, videoHeight);
+        for (let idx = 0; idx < this.imageData.data.length; idx++) {
+            this.imageData.data[idx] = (idx % 4) == 3 ? 0xff : 0x00;
+        }
         this._buffer[0] = allocMemPages(0x4);
         this._buffer[1] = allocMemPages(0x4);
 
@@ -220,7 +226,7 @@ export class LoresPage2D implements LoresPage {
                         val = (val >= 0x40 && val < 0x80) ? val - 0x40 : val;
                     }
 
-                    let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
+                    let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * videoWidth * 8) * 4 + videoPad;
 
                     for (let jdx = 0; jdx < 8; jdx++) {
                         let b = this.charset[val * 8 + jdx];
@@ -230,7 +236,7 @@ export class LoresPage2D implements LoresPage {
                             b >>= 1;
                             offset += 4;
                         }
-                        offset += 553 * 4;
+                        offset += (videoWidth - 7) * 4;
                     }
                 } else {
                     val = this._buffer[0][base];
@@ -244,7 +250,7 @@ export class LoresPage2D implements LoresPage {
                         val = (val >= 0x40 && val < 0x80) ? val - 0x40 : val;
                     }
 
-                    let offset = (col * 14 + row * 560 * 8) * 4;
+                    let offset = (col * 14 + row * videoWidth * 8) * 4 + videoPad;
 
                     if (this.highColorTextMode) {
                         fore = _colors[this._buffer[1][base] >> 4];
@@ -260,7 +266,7 @@ export class LoresPage2D implements LoresPage {
                                 b >>= 1;
                                 offset += 8;
                             }
-                            offset += 546 * 4;
+                            offset += (videoWidth - 14) * 4;
                         }
                     } else {
                         const colorMode = this.vm.mixedMode && !this.vm.textMode && !this.vm.monoMode;
@@ -296,13 +302,13 @@ export class LoresPage2D implements LoresPage {
                                 b <<= 1;
                                 offset += 8;
                             }
-                            offset += 546 * 4;
+                            offset += (videoWidth - 14) * 4;
                         }
                     }
                 }
             } else {
                 if (this.vm._80colMode && !this.vm.an3State) {
-                    let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
+                    let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * videoWidth * 8) * 4 + videoPad;
                     if (this.vm.monoMode) {
                         for (let jdx = 0; jdx < 8; jdx++) {
                             let b = (jdx < 4) ? (val & 0x0f) : (val >> 4);
@@ -317,7 +323,7 @@ export class LoresPage2D implements LoresPage {
                                 b >>= 1;
                                 offset += 4;
                             }
-                            offset += 553 * 4;
+                            offset += (videoWidth - 7) * 4;
                         }
                     } else {
                         if (bank & 0x1) {
@@ -330,11 +336,11 @@ export class LoresPage2D implements LoresPage {
                                 this._drawHalfPixel(data, offset, color);
                                 offset += 4;
                             }
-                            offset += 553 * 4;
+                            offset += (videoWidth - 7) * 4;
                         }
                     }
                 } else if (bank === 0) {
-                    let offset = (col * 14 + row * 560 * 8) * 4;
+                    let offset = (col * 14 + row * videoWidth * 8) * 4 + videoPad;
 
                     if (this.vm.monoMode) {
                         for (let jdx = 0; jdx < 8; jdx++) {
@@ -350,7 +356,7 @@ export class LoresPage2D implements LoresPage {
                                 b >>= 1;
                                 offset += 4;
                             }
-                            offset += 546 * 4;
+                            offset += (videoWidth - 14) * 4;
                         }
                     } else {
                         for (let jdx = 0; jdx < 8; jdx++) {
@@ -359,7 +365,7 @@ export class LoresPage2D implements LoresPage {
                                 this._drawPixel(data, offset, color);
                                 offset += 8;
                             }
-                            offset += 546 * 4;
+                            offset += (videoWidth - 14) * 4;
                         }
                     }
                 }
@@ -492,8 +498,10 @@ export class HiresPage2D implements HiresPage {
         private vm: VideoModes,
         private page: pageNo,
     ) {
-        this.imageData = this.vm.context.createImageData(560, 192);
-        this.imageData.data.fill(0xff);
+        this.imageData = this.vm.context.createImageData(videoWidth, videoHeight);
+        for (let idx = 0; idx < this.imageData.data.length; idx++) {
+            this.imageData.data[idx] = (idx % 4) == 3 ? 0xff : 0x00;
+        }
         this._buffer[0] = allocMemPages(0x20);
         this._buffer[1] = allocMemPages(0x20);
 
@@ -602,7 +610,7 @@ export class HiresPage2D implements HiresPage {
                 const c4 = val >> 4;
 
                 dx = col * 2 + (bank ^ 1);
-                const offset = dx * 28 + dy * 560 * 4;
+                const offset = dx * 28 + dy * videoWidth * 4 + videoPad;
 
                 this._draw3Pixel(data, offset, _colors[c3]);
                 this._draw4Pixel(data, offset + 12, _colors[c4]);
@@ -621,14 +629,14 @@ export class HiresPage2D implements HiresPage {
                 const baseOff = base - mod;
 
                 // 4 bit look behind for sliding window mode
-                const bz = this._buffer[0][baseOff - 1];
+                const bz = modCol > 0 ? this._buffer[0][baseOff - 1] : 0;
                 // 4 bytes for 7 pixels
                 const b0 = this._buffer[1][baseOff];
                 const b1 = this._buffer[0][baseOff];
                 const b2 = this._buffer[1][baseOff + 1];
                 const b3 = this._buffer[0][baseOff + 1];
                 // 4 bit lookahead for sliding window mode
-                const b4 = this._buffer[1][baseOff + 2];
+                const b4 = modCol < 38 ? this._buffer[1][baseOff + 2] : 0;
 
                 // Colors normalized
                 const c = [
@@ -640,7 +648,7 @@ export class HiresPage2D implements HiresPage {
                     ((b2 & 0x3c) >> 2), // 4
                     ((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1), // 5
                     ((b3 & 0x78) >> 3), // 6
-                    col < 38 ? ((b4 & 0x0f) >> 0) : 0,       // 7
+                    ((b4 & 0x0f) >> 0), // 7
                 ];
 
                 // High bits
@@ -657,23 +665,15 @@ export class HiresPage2D implements HiresPage {
                 ];
 
                 dx = modCol * 14;
-                let offset = dx * 4 + dy * 560 * 4;
+                let offset = dx * 4 + dy * videoWidth * 4 + videoPad;
 
                 let monoColor = null;
                 if (this.vm.monoMode || this.monoDHRMode) {
                     monoColor = whiteCol;
                 }
 
-
-                let idx = 1;
-                // If we're past the first 7 pixels use look-behind
-                if (modCol) {
-                    idx = 0;
-                    offset -= 16;
-                }
-
-                let bits = c[idx];
-                for (; idx < 8; idx++) {
+                let bits = c[0];
+                for (let idx = 0; idx < 8; idx++) {
                     const hbs = hb[idx];
                     bits |= c[idx + 1] << 4;
                     // Color for mixed and RGB mode
@@ -707,19 +707,19 @@ export class HiresPage2D implements HiresPage {
                 const b0 = col > 0 ? this._buffer[0][base - 1] : 0;
                 const b2 = col < 39 ? this._buffer[0][base + 1] : 0;
                 val |= (b2 & 0x3) << 7;
-                let v0 = b0 & 0x20, v1 = b0 & 0x40, v2 = val & 0x1,
-                    odd = !(col & 0x1),
-                    color;
+                let v0 = b0 & 0x20;
+                let v1 = b0 & 0x40;
+                let v2 = val & 0x1;
+                let odd = !(col & 0x1);
+                let color;
                 const oddCol = (hbs ? orangeCol : greenCol);
                 const evenCol = (hbs ? blueCol : violetCol);
 
-                let offset = dx * 4 + dy * 560 * 4;
+                let offset = dx * 4 + dy * videoWidth * 4 + videoPad;
 
                 const monoColor = this.vm.monoMode ? whiteCol : null;
 
-                for (let idx = 0; idx < 9; idx++, offset += 8) {
-                    val >>= 1;
-
+                for (let idx = 0; idx < 10; idx++, offset += 8) {
                     if (v1) {
                         if (monoColor) {
                             color = monoColor;
@@ -744,11 +744,12 @@ export class HiresPage2D implements HiresPage {
                         }
                     }
 
-                    if (dx > -1 && dx < 560) {
+                    if (dx > -1 && dx < videoWidth) {
                         this._drawPixel(data, offset, color);
                     }
                     dx += 2;
 
+                    val >>= 1;
                     v0 = v1;
                     v1 = v2;
                     v2 = val & 0x01;
@@ -847,12 +848,12 @@ export class VideoModes2D implements VideoModes {
         }
         this.context = context;
 
-        const { width, height } = { width: 560, height: 192 };
+        const { width, height } = { width: videoWidth, height: videoHeight };
         this._canvas.width = width;
         this._canvas.height = height;
 
         this._screenContext = screenContext;
-        this._left = (this.screen.width - 560) / 2;
+        this._left = (this.screen.width - videoWidth) / 2;
         this._top = (this.screen.height - 384) / 2;
     }
 
@@ -925,7 +926,9 @@ export class VideoModes2D implements VideoModes {
         this.hiresMode = on;
 
         if (old != on) {
-            this.flag = 0;
+            if (on) {
+                this.flag = 0;
+            }
             this._refresh();
         }
     }
@@ -998,8 +1001,8 @@ export class VideoModes2D implements VideoModes {
         const { x, y } = this._80colMode ? { x: 0, y: 0 } : { x: 0, y: 0 };
 
         if (mixData) {
-            this.context.putImageData(mainData, x, y, 0, 0, 560, 160);
-            this.context.putImageData(mixData, x, y, 0, 160, 560, 32);
+            this.context.putImageData(mainData, x, y, 0, 0, videoWidth, 160);
+            this.context.putImageData(mixData, x, y, 0, 160, videoWidth, 32);
         } else {
             this.context.putImageData(mainData, x, y);
         }
@@ -1018,8 +1021,8 @@ export class VideoModes2D implements VideoModes {
             const imageData = this.buildScreen(mainData, mixData);
             this._screenContext.drawImage(
                 imageData,
-                0, 0, 560, 192,
-                this._left, this._top, 560, 384
+                0, 0, videoWidth, videoHeight,
+                this._left, this._top, videoWidth, 384
             );
             blitted = true;
         }
@@ -1040,7 +1043,7 @@ export class VideoModes2D implements VideoModes {
         if (altData) {
             blitted = this.updateImage(
                 altData,
-                { top: 0, left: 0, right: 560, bottom: 192 }
+                { top: 0, left: 0, right: videoWidth, bottom: videoHeight }
             );
         } else if (this.hiresMode && !this.textMode) {
             blitted = this.updateImage(
