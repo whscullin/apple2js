@@ -615,11 +615,14 @@ export class HiresPage2D implements HiresPage {
                 // 76543210 76543210 76543210 76543210
                 //  0000111  1222233  3344445  5556666
 
+                // Find the beginning of the current 4 byte/7 pixel window
                 const mod = col % 2;
                 const modCol = col - mod;
                 const baseOff = base - mod;
 
-                // 4 consecutive bytes starting at baseOff
+                // 4 bit look behind for sliding window mode
+                const bz = this._buffer[0][baseOff - 1];
+                // 4 bytes for 7 pixels
                 const b0 = this._buffer[1][baseOff];
                 const b1 = this._buffer[0][baseOff];
                 const b2 = this._buffer[1][baseOff + 1];
@@ -629,6 +632,7 @@ export class HiresPage2D implements HiresPage {
 
                 // Colors normalized
                 const c = [
+                    ((bz & 0x78) >> 3), // -1
                     ((b0 & 0x0f) >> 0), // 0
                     ((b0 & 0x70) >> 4) | ((b1 & 0x01) << 3), // 1
                     ((b1 & 0x1e) >> 1), // 2
@@ -636,11 +640,12 @@ export class HiresPage2D implements HiresPage {
                     ((b2 & 0x3c) >> 2), // 4
                     ((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1), // 5
                     ((b3 & 0x78) >> 3), // 6
-                    col < 38 ? ((b4 & 0x0f) >> 0) : 0, // 7
+                    col < 38 ? ((b4 & 0x0f) >> 0) : 0,       // 7
                 ];
 
                 // High bits
                 const hb = [
+                    bz & 0x80, // -1
                     b0 & 0x80, // 0
                     b0 & 0x80, // 1
                     b1 & 0x80, // 2
@@ -659,19 +664,18 @@ export class HiresPage2D implements HiresPage {
                     monoColor = whiteCol;
                 }
 
-                // Reassemble 4 bit chunks into 32 bit value
-                let bits =
-                    c[0] |
-                    (c[1] << 4) |
-                    (c[2] << 8) |
-                    (c[3] << 12) |
-                    (c[4] << 16) |
-                    (c[5] << 20) |
-                    (c[6] << 24) |
-                    (c[7] << 28);
 
-                for (let idx = 0; idx < 7; idx++) {
+                let idx = 1;
+                // If we're past the first 7 pixels use look-behind
+                if (modCol) {
+                    idx = 0;
+                    offset -= 16;
+                }
+
+                let bits = c[idx];
+                for (; idx < 8; idx++) {
                     const hbs = hb[idx];
+                    bits |= c[idx + 1] << 4;
                     // Color for mixed and RGB mode
                     const dcolor = _colors[r4[bits & 0xf]];
                     for (let jdx = 0; jdx < 4; jdx++, offset += 4) {
@@ -686,25 +690,14 @@ export class HiresPage2D implements HiresPage {
                         } else if (this.rgbDHRMode) {
                             this._drawHalfPixel(data, offset, dcolor);
                         } else { // sliding window
+                            // use 4 bit window to select color
                             let slide = bits & 0x0f;
+                            // adjust for window position
                             slide = ((slide >> (4 -jdx)) | (slide << jdx)) & 0x0f;
                             this._drawHalfPixel(data, offset, _colors[r4[slide]]);
                         }
                         bits >>= 1;
                     }
-                }
-
-                // If we're doing sliding window and updated the first byte refresh the prior 7 pixels
-                // TODO(whscullin) - only refresh the last pixel
-                const slidingMode = !monoColor && !this.mixedDHRMode && !this.rgbDHRMode;
-                if (!this._refreshing && bank === 1 && col === modCol && slidingMode) {
-                    this._refreshing = true;
-                    const refreshAddr = addr - 1;
-                    const refreshOff = refreshAddr >> 8;
-                    const refreshPage = refreshAddr & 0xff;
-                    const refreshVal = this._read(refreshOff, refreshPage, 0);
-                    this._write(refreshOff, refreshPage, refreshVal, 0);
-                    this._refreshing = false;
                 }
             } else {
                 val = this._buffer[0][base];
