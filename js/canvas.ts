@@ -30,16 +30,27 @@ const dim = (c: Color): Color => {
     ];
 };
 
-// hires colors
-const orangeCol: Color = [255, 106, 60];
-const greenCol: Color = [20, 245, 60];
-const blueCol: Color = [20, 207, 253];
-const violetCol: Color = [255, 68, 253];
-const whiteCol: Color = [255, 255, 255];
-const blackCol: Color = [0, 0, 0];
+const whiteCol: Color = [255, 255, 255] as const;
+const blackCol: Color = [0, 0, 0] as const;
 
-// lores colors
-const _colors: Color[] = [
+// hires colors
+const hcolors: readonly Color[][] = [
+    [
+        [0, 0, 0],       // Black
+        [255, 68, 253],  // Violet
+        [20, 245, 60],   // Green
+        [255, 255, 255], // White
+    ],
+    [
+        [0, 0, 0],       // Black
+        [20, 207, 253],  // Blue
+        [255, 106, 60],  // Orange
+        [255, 255, 255], // White
+    ]
+];
+
+// lores/dhires colors
+const dcolors: Color[] = [
     [0, 0, 0], // 0x0 black
     [227, 30, 96], // 0x1 deep red
     [96, 78, 189], // 0x2 dark blue
@@ -58,7 +69,7 @@ const _colors: Color[] = [
     [255, 255, 255], // 0xf white
 ];
 
-//
+// Map lores color order to dhires colors
 const r4 = [
     0,   // Black
     2,   // Dark Blue
@@ -81,6 +92,7 @@ const r4 = [
     15   // White
 ] as const;
 
+//
 const videoWidth = 568;
 const videoHeight = 192;
 const videoPad = 16;
@@ -253,8 +265,8 @@ export class LoresPage2D implements LoresPage {
                     let offset = (col * 14 + row * videoWidth * 8) * 4 + videoPad;
 
                     if (this.highColorTextMode) {
-                        fore = _colors[this._buffer[1][base] >> 4];
-                        back = _colors[this._buffer[1][base] & 0x0f];
+                        fore = dcolors[this._buffer[1][base] >> 4];
+                        back = dcolors[this._buffer[1][base] & 0x0f];
                     }
 
                     if (this.e) {
@@ -289,7 +301,7 @@ export class LoresPage2D implements LoresPage {
                                         if ((b & 0x1c0) != 0x80) {
                                             color = whiteCol;
                                         } else {
-                                            color = odd ? violetCol : greenCol;
+                                            color = odd ? hcolors[0][1] : hcolors[0][2];
                                         }
                                     } else {
                                         color = blackCol;
@@ -330,7 +342,7 @@ export class LoresPage2D implements LoresPage {
                             val = ((val & 0x77) << 1) | ((val & 0x88) >> 3);
                         }
                         for (let jdx = 0; jdx < 8; jdx++) {
-                            const color = _colors[(jdx < 4) ?
+                            const color = dcolors[(jdx < 4) ?
                                 (val & 0x0f) : (val >> 4)];
                             for (let idx = 0; idx < 7; idx++) {
                                 this._drawHalfPixel(data, offset, color);
@@ -360,7 +372,7 @@ export class LoresPage2D implements LoresPage {
                         }
                     } else {
                         for (let jdx = 0; jdx < 8; jdx++) {
-                            const color = _colors[(jdx < 4) ? (val & 0x0f) : (val >> 4)];
+                            const color = dcolors[(jdx < 4) ? (val & 0x0f) : (val >> 4)];
                             for (let idx = 0; idx < 7; idx++) {
                                 this._drawPixel(data, offset, color);
                                 offset += 8;
@@ -388,6 +400,9 @@ export class LoresPage2D implements LoresPage {
     }
 
     blink() {
+        if (!this.vm.textMode || !this.vm.mixedMode) {
+            return;
+        }
         let addr = 0x400 * this.page;
         this._refreshing = true;
         this._blink = !this._blink;
@@ -612,8 +627,8 @@ export class HiresPage2D implements HiresPage {
                 dx = col * 2 + (bank ^ 1);
                 const offset = dx * 28 + dy * videoWidth * 4 + videoPad;
 
-                this._draw3Pixel(data, offset, _colors[c3]);
-                this._draw4Pixel(data, offset + 12, _colors[c4]);
+                this._draw3Pixel(data, offset, dcolors[c3]);
+                this._draw4Pixel(data, offset + 12, dcolors[c4]);
             } else if (this.vm.doubleHiresMode) {
                 // Every 4 bytes is 7 pixels
                 // 2 bytes per bank
@@ -636,7 +651,7 @@ export class HiresPage2D implements HiresPage {
                 const b2 = this._buffer[1][baseOff + 1];
                 const b3 = this._buffer[0][baseOff + 1];
                 // 4 bit lookahead for sliding window mode
-                const b4 = modCol < 38 ? this._buffer[1][baseOff + 2] : 0;
+                const b4 = modCol < 37 ? this._buffer[1][baseOff + 2] : 0;
 
                 // Colors normalized
                 const c = [
@@ -652,7 +667,7 @@ export class HiresPage2D implements HiresPage {
                 ];
 
                 // High bits
-                const hb = [
+                const hbs = [
                     bz & 0x80, // -1
                     b0 & 0x80, // 0
                     b0 & 0x80, // 1
@@ -673,87 +688,85 @@ export class HiresPage2D implements HiresPage {
                 }
 
                 let bits = c[0];
-                for (let idx = 0; idx < 8; idx++) {
-                    const hbs = hb[idx];
+                for (let idx = 0; idx < 8 && dx < (videoWidth - 4); idx++) {
+                    const hb = hbs[idx];
                     bits |= c[idx + 1] << 4;
                     // Color for mixed and RGB mode
-                    const dcolor = _colors[r4[bits & 0xf]];
+                    let dcolor;
                     for (let jdx = 0; jdx < 4; jdx++, offset += 4) {
                         if (monoColor) {
-                            this._drawHalfPixel(data, offset, bits & 0x01 ? monoColor : blackCol);
+                            dcolor = bits & 0x01 ? monoColor : blackCol;
                         } else if (this.mixedDHRMode) {
-                            if (hbs) {
-                                this._drawHalfPixel(data, offset, dcolor);
+                            if (hb) {
+                                dcolor = dcolors[r4[bits & 0xf]];
                             } else {
-                                this._drawHalfPixel(data, offset, bits & 0x01 ? whiteCol : blackCol);
+                                dcolor = bits & 0x01 ? whiteCol : blackCol;
                             }
                         } else if (this.rgbDHRMode) {
-                            this._drawHalfPixel(data, offset, dcolor);
+                            dcolor = dcolors[r4[bits & 0xf]];
                         } else { // sliding window
                             // use 4 bit window to select color
                             let slide = bits & 0x0f;
                             // adjust for window position
-                            slide = ((slide >> (4 -jdx)) | (slide << jdx)) & 0x0f;
-                            this._drawHalfPixel(data, offset, _colors[r4[slide]]);
+                            slide = ((slide >> (4 - jdx)) | (slide << jdx)) & 0x0f;
+                            dcolor = dcolors[r4[slide]];
                         }
+                        this._drawHalfPixel(data, offset, dcolor);
+                        dx += 1;
                         bits >>= 1;
                     }
                 }
             } else {
-                val = this._buffer[0][base];
-                const hbs = val & 0x80;
-                val &= 0x7f;
-                dx = col * 14 - 2;
-                const b0 = col > 0 ? this._buffer[0][base - 1] : 0;
-                const b2 = col < 39 ? this._buffer[0][base + 1] : 0;
-                val |= (b2 & 0x3) << 7;
-                let v0 = b0 & 0x20;
-                let v1 = b0 & 0x40;
-                let v2 = val & 0x1;
-                let odd = !(col & 0x1);
-                let color;
-                const oddCol = (hbs ? orangeCol : greenCol);
-                const evenCol = (hbs ? blueCol : violetCol);
+                const bz = col > 0 ? this._buffer[0][base - 1] : 0;
+                const b0 = this._buffer[0][base];
+                const b1 = col < 39 ? this._buffer[0][base + 1] : 0;
 
-                let offset = dx * 4 + dy * videoWidth * 4 + videoPad;
+                const c = [
+                    bz & 0x7f, // -1
+                    b0 & 0x7f, // 0
+                    b1 & 0x7f, // 1
+                ];
+                const hbs = [
+                    (bz & 0x80) >> 7,
+                    (b0 & 0x80) >> 7,
+                    (b1 & 0x80) >> 7,
+                ];
+
+                let dx = col * 14;
+                let offset = dx * 4 + dy * videoWidth * 4 - 7 * 4;
+                let odd = !(col & 0x1);
 
                 const monoColor = this.vm.monoMode ? whiteCol : null;
 
-                for (let idx = 0; idx < 10; idx++, offset += 8) {
-                    if (v1) {
+                let color;
+                let bits = c[0];
+                for (let idx = 0; idx < 2; idx++) {
+                    const hb = hbs[idx];
+                    bits |= c[idx + 1] << 7;
+                    for (let jdx = 0; jdx < 7; jdx++) {
                         if (monoColor) {
-                            color = monoColor;
+                            color = bits & 0x1 ? monoColor : blackCol;
                         } else if (this.highColorHGRMode) {
-                            color = _colors[this._buffer[1][base] >> 4];
-                        } else if (v0 || v2) {
-                            color = whiteCol;
+                            const ba = this._buffer[1][base];
+                            color = bits & 0x1 ? dcolors[ba >> 4] : dcolors[ba & 0x0f];
                         } else {
-                            color = odd ? oddCol : evenCol;
+                            let slide = bits & 0x03;
+                            if (odd) {
+                                slide = ((slide >> 1) | (slide << 1)) & 0x03;
+                            }
+                            color = hcolors[hb][slide];
+                            color = (bits & 0x1) ? color : dim(color);
                         }
-                    } else {
-                        if (monoColor) {
-                            color = blackCol;
-                        } else if (this.highColorHGRMode) {
-                            color = _colors[this._buffer[1][base] & 0x0f];
-                        } else if (odd && v2 && v0) {
-                            color = v0 ? dim(evenCol) : evenCol;
-                        } else if (!odd && v0 && v2) {
-                            color = v2 ? dim(oddCol) : oddCol;
-                        } else {
-                            color = blackCol;
+
+                        if (dx >= videoPad && dx < videoWidth) {
+                            this._drawPixel(data, offset, color);
                         }
-                    }
 
-                    if (dx > -1 && dx < videoWidth) {
-                        this._drawPixel(data, offset, color);
+                        bits >>= 1;
+                        dx += 2;
+                        offset += 8;
+                        odd = !odd;
                     }
-                    dx += 2;
-
-                    val >>= 1;
-                    v0 = v1;
-                    v1 = v2;
-                    v2 = val & 0x01;
-                    odd = !odd;
                 }
             }
         }

@@ -270,6 +270,9 @@ export class LoresPageGL implements LoresPage {
     }
 
     blink() {
+        if (!this.vm.textMode || !this.vm.mixedMode) {
+            return;
+        }
         let addr = 0x400 * this.page;
         this._refreshing = true;
         this._blink = !this._blink;
