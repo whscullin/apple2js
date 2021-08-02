@@ -386,7 +386,7 @@ export class LoresPage2D implements LoresPage {
     }
 
     refresh() {
-        this.highColorTextMode = !this.vm.an3State && this.vm.textMode && !this.vm._80colMode;
+        this.highColorTextMode = !this.vm.an3State && !this.vm._80colMode;
 
         let addr = 0x400 * this.page;
         this._refreshing = true;
