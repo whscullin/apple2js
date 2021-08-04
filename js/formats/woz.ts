@@ -202,7 +202,6 @@ export class MetaChunk  {
 }
 
 interface Chunks {
-    [key: string]: any
     info?: InfoChunk
     tmap?: TMapChunk
     trks?: TrksChunk

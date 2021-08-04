@@ -9,7 +9,7 @@
  * implied warranty.
  */
 
-import { byte, Color, memory, MemoryPages, rom } from './types';
+import { bit, byte, Color, memory, MemoryPages, rom } from './types';
 import { allocMemPages } from './util';
 import {
     GraphicsState,
@@ -200,7 +200,8 @@ export class LoresPage2D implements LoresPage {
     private _write(page: byte, off: byte, val: byte, bank: bank) {
         const addr = (page << 8) | off;
         const base = addr & 0x3FF;
-        let fore, back;
+        let fore: Color;
+        let back: Color;
 
         if (this._buffer[bank][base] == val && !this._refreshing) {
             return;
@@ -295,7 +296,7 @@ export class LoresPage2D implements LoresPage {
                             }
 
                             for (let idx = 0; idx < 7; idx++) {
-                                let color;
+                                let color: Color;
                                 if (colorMode) {
                                     if (b & 0x80) {
                                         if ((b & 0x1c0) != 0x80) {
@@ -644,14 +645,14 @@ export class HiresPage2D implements HiresPage {
                 const baseOff = base - mod;
 
                 // 4 bit look behind for sliding window mode
-                const bz = modCol > 0 ? this._buffer[0][baseOff - 1] : 0;
+                const bz: byte = modCol > 0 ? this._buffer[0][baseOff - 1] : 0;
                 // 4 bytes for 7 pixels
-                const b0 = this._buffer[1][baseOff];
-                const b1 = this._buffer[0][baseOff];
-                const b2 = this._buffer[1][baseOff + 1];
-                const b3 = this._buffer[0][baseOff + 1];
+                const b0: byte = this._buffer[1][baseOff];
+                const b1: byte = this._buffer[0][baseOff];
+                const b2: byte = this._buffer[1][baseOff + 1];
+                const b3: byte = this._buffer[0][baseOff + 1];
                 // 4 bit lookahead for sliding window mode
-                const b4 = modCol < 37 ? this._buffer[1][baseOff + 2] : 0;
+                const b4: byte = modCol < 37 ? this._buffer[1][baseOff + 2] : 0;
 
                 // Colors normalized
                 const c = [
@@ -682,7 +683,7 @@ export class HiresPage2D implements HiresPage {
                 dx = modCol * 14;
                 let offset = dx * 4 + dy * videoWidth * 4 + videoPad;
 
-                let monoColor = null;
+                let monoColor: Color | null = null;
                 if (this.vm.monoMode || this.monoDHRMode) {
                     monoColor = whiteCol;
                 }
@@ -717,28 +718,39 @@ export class HiresPage2D implements HiresPage {
                     }
                 }
             } else {
-                const bz = col > 0 ? this._buffer[0][base - 1] : 0;
-                const b0 = this._buffer[0][base];
-                const b1 = col < 39 ? this._buffer[0][base + 1] : 0;
+                // Every byte is 3.5 pixels + high bit
 
-                const c = [
+                // b0       b1
+                //  3c2c1c0  c6c5c4c
+                // 76543210 76543210
+                // H3221100 H6655443
+
+                // 1 byte look behind
+                const bz: byte = col > 0 ? this._buffer[0][base - 1] : 0;
+                // 1 byte for 3.5 pixels
+                const b0: byte = this._buffer[0][base];
+                // 1 byte look ahead
+                const b1: byte = col < 39 ? this._buffer[0][base + 1] : 0;
+
+                const lookBehind = 7;
+                const c: byte[] = [
                     bz & 0x7f, // -1
                     b0 & 0x7f, // 0
                     b1 & 0x7f, // 1
                 ];
-                const hbs = [
-                    (bz & 0x80) >> 7,
-                    (b0 & 0x80) >> 7,
-                    (b1 & 0x80) >> 7,
+                const hbs: bit[] = [
+                    (bz & 0x80) ? 1 : 0,
+                    (b0 & 0x80) ? 1 : 0,
+                    (b1 & 0x80) ? 1 : 0,
                 ];
 
                 let dx = col * 14;
-                let offset = dx * 4 + dy * videoWidth * 4 - 7 * 4;
+                let offset = dx * 4 + dy * videoWidth * 4 - (lookBehind * 4);
                 let odd = !(col & 0x1);
 
                 const monoColor = this.vm.monoMode ? whiteCol : null;
 
-                let color;
+                let color: Color;
                 let bits = c[0];
                 for (let idx = 0; idx < 2; idx++) {
                     const hb = hbs[idx];
@@ -749,16 +761,18 @@ export class HiresPage2D implements HiresPage {
                         } else if (this.highColorHGRMode) {
                             const ba = this._buffer[1][base];
                             color = bits & 0x1 ? dcolors[ba >> 4] : dcolors[ba & 0x0f];
-                        } else {
+                        } else { // Sliding window
+                            // use 2 bit window to select color
                             let slide = bits & 0x03;
                             if (odd) {
                                 slide = ((slide >> 1) | (slide << 1)) & 0x03;
                             }
+                            // adjust for window position
                             color = hcolors[hb][slide];
                             color = (bits & 0x1) ? color : dim(color);
                         }
 
-                        if (dx >= videoPad && dx < videoWidth) {
+                        if (dx >= lookBehind && dx < videoWidth) {
                             this._drawPixel(data, offset, color);
                         }
 
