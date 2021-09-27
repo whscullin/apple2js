@@ -889,6 +889,7 @@ export class VideoModes2D implements VideoModes {
         this._canvas.height = height;
 
         this._screenContext = screenContext;
+        this._screenContext.imageSmoothingEnabled = false;
         this._left = (this.screen.width - 560) / 2;
         this._top = (this.screen.height - 384) / 2;
     }
