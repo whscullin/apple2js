@@ -1,9 +1,10 @@
 import { VideoModes } from '../videomodes';
 import { BOOLEAN_OPTION, OptionHandler } from './options_modal';
 
-const SCREEN_MONO = 'mono_screen';
-const SCREEN_SCANLINE = 'show_scanlines';
-const SCREEN_GL = 'gl_canvas';
+export const SCREEN_MONO = 'mono_screen';
+export const SCREEN_FULL_PAGE = 'full_page';
+export const SCREEN_SCANLINE = 'show_scanlines';
+export const SCREEN_GL = 'gl_canvas';
 
 declare global {
     interface Document {
@@ -23,7 +24,7 @@ export class Screen implements OptionHandler {
     enterFullScreen = (evt: KeyboardEvent) => {
         const elem = document.getElementById('screen')!;
         if (evt.shiftKey) { // Full window, but not full screen
-            document.body.classList.toggle('full-page');
+            this.setFullPage(!document.body.classList.contains('full-page'));
         } else if (document.webkitCancelFullScreen) {
             if (document.webkitIsFullScreen) {
                 document.webkitCancelFullScreen();
@@ -44,6 +45,14 @@ export class Screen implements OptionHandler {
         }
     };
 
+    setFullPage(on: boolean) {
+        if (on) {
+            document.body.classList.add('full-page');
+        } else {
+            document.body.classList.remove('full-page');
+        }
+    }
+
     getOptions() {
         return [
             {
@@ -62,6 +71,12 @@ export class Screen implements OptionHandler {
                         defaultVal: false,
                     },
                     {
+                        name: SCREEN_FULL_PAGE,
+                        label: 'Full Page',
+                        type: BOOLEAN_OPTION,
+                        defaultVal: false,
+                    },
+                    {
                         name: SCREEN_GL,
                         label: 'GL Renderer *',
                         type: BOOLEAN_OPTION,
@@ -76,6 +91,9 @@ export class Screen implements OptionHandler {
         switch (name) {
             case SCREEN_MONO:
                 this.vm.mono(value);
+                break;
+            case SCREEN_FULL_PAGE:
+                this.setFullPage(value);
                 break;
             case SCREEN_SCANLINE:
                 this.vm.scanlines(value);

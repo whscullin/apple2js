@@ -25,7 +25,6 @@ import DiskII from '../cards/disk2';
 import CPU6502 from '../cpu6502';
 import { VideoModes } from '../videomodes';
 import Apple2IO from '../apple2io';
-import {  } from '../formats/format_utils';
 import Printer from './printer';
 
 import { OptionsModal } from './options_modal';
@@ -886,6 +885,7 @@ function onLoaded(apple2: Apple2, disk2: DiskII, massStorage: MassStorage, print
     keyboard.setFunction('F1', () => cpu.reset());
     keyboard.setFunction('F2', screen.enterFullScreen);
     keyboard.setFunction('F3', () => io.keyDown(0x1b)); // Escape
+    keyboard.setFunction('F4', optionsModal.openModal);
     keyboard.setFunction('F6', () => {
         window.localStorage.state = base64_json_stringify(_apple2.getState());
     });

@@ -186,6 +186,7 @@ th {
 canvas {
   display: block;
   float: left;
+  image-rendering: pixelated;
 }
 
 .mono {
@@ -194,13 +195,17 @@ canvas {
 
 .scanlines:after {
     display: block;
-    background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 1px, #000 1px, #000 2px);
+    background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 1px, rgba(0,0,0,0.5) 1px, rgba(0,0,0,0.5) 2px);
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     bottom: 0;
     right: 0;
+}
+
+.full-page .scanlines:after {
+    background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 0.25vh, rgba(0,0,0,0.5) 0.25vh, rgba(0,0,0,0.5) 0.5vh);
 }
 
 #screen {
