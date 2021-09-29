@@ -306,7 +306,7 @@ export default function createDiskFromWoz(options: DiskOptions): WozDisk {
         rawTracks: trks?.rawTracks || [],
         readOnly: true, //chunks.info.writeProtected === 1;
         name: meta?.values['title'] || options.name,
-        side: meta?.values['side_label'] || meta?.values['side'],
+        side: meta?.values['side_name'] || meta?.values['side'],
     };
 
     return disk;
