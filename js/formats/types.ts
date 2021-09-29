@@ -21,6 +21,7 @@ export type DriveNumber = MemberOf<typeof DRIVE_NUMBERS>;
 
 export interface DiskOptions {
     name: string
+    side?: string
     volume: byte
     readOnly: boolean
     data?: memory[][]
@@ -35,6 +36,7 @@ export interface DiskOptions {
 
 export interface Disk {
     name: string
+    side?: string
     readOnly: boolean
 }
 
@@ -97,7 +99,7 @@ export type DiskFormat = MemberOf<typeof DISK_FORMATS>;
 export class JSONDiskBase {
     type: DiskFormat
     name: string
-    disk?: number
+    disk?: string
     category?: string
     writeProtected?: boolean
     volume: byte

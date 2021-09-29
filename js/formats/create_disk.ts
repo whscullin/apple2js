@@ -46,6 +46,7 @@ export function createDiskFromJsonDisk(disk: JSONDisk): FloppyDisk | null {
     const fmt = disk.type;
     const readOnly = disk.readOnly;
     const name = disk.name;
+    const side = disk.disk;
 
     if (includes(NIBBLE_FORMATS, fmt)) {
         let trackData: memory[][];
@@ -71,6 +72,7 @@ export function createDiskFromJsonDisk(disk: JSONDisk): FloppyDisk | null {
             volume,
             readOnly,
             name,
+            side,
             data: trackData
         } as DiskOptions;
 

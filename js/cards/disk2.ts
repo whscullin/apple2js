@@ -165,7 +165,7 @@ const PHASE_DELTA = [
 export interface Callbacks {
     driveLight: (drive: DriveNumber, on: boolean) => void;
     dirty: (drive: DriveNumber, dirty: boolean) => void;
-    label: (drive: DriveNumber, name: string) => void;
+    label: (drive: DriveNumber, name?: string, side?: string) => void;
 }
 
 /** Common information for Nibble and WOZ disks. */
@@ -177,6 +177,8 @@ interface BaseDrive {
     volume: byte,
     /** Displayed disk name */
     name: string,
+    /** (Optional) Disk side (Front/Back, A/B) */
+    side?: string,
     /** Quarter track position of read/write head. */
     track: byte,
     /** Position of the head on the track. */
@@ -222,6 +224,7 @@ interface DriveState {
     encoding: typeof ENCODING_BITSTREAM | typeof ENCODING_NIBBLE
     volume: byte,
     name: string,
+    side?: string,
     tracks: memory[],
     track: byte,
     head: byte,
@@ -247,6 +250,7 @@ function getDriveState(drive: Drive): DriveState {
         encoding: drive.encoding,
         volume: drive.volume,
         name: drive.name,
+        side: drive.side,
         tracks: [],
         track: drive.track,
         head: drive.head,
@@ -279,6 +283,7 @@ function setDriveState(state: DriveState) {
             encoding: ENCODING_NIBBLE,
             volume: state.volume,
             name: state.name,
+            side: state.side,
             tracks: [],
             track: state.track,
             head: state.head,
@@ -295,6 +300,7 @@ function setDriveState(state: DriveState) {
             encoding: ENCODING_BITSTREAM,
             volume: state.volume,
             name: state.name,
+            side: state.side,
             track: state.track,
             head: state.head,
             phase: state.phase,
@@ -752,9 +758,10 @@ export default class DiskII implements Card {
         for (const d of DRIVE_NUMBERS) {
             const idx = d - 1;
             this.drives[idx] = setDriveState(state.drives[idx]);
-            this.callbacks.label(d, state.drives[idx].name);
+            const { name, side, dirty } = state.drives[idx];
+            this.callbacks.label(d, name, side);
             this.callbacks.driveLight(d, this.on);
-            this.callbacks.dirty(d, this.drives[idx].dirty);
+            this.callbacks.dirty(d, dirty);
         }
         this.cur = this.drives[this.drive - 1];
     }
@@ -800,7 +807,7 @@ export default class DiskII implements Card {
                 const cur = this.drives[drive - 1];
                 Object.assign(cur, disk);
                 this.updateDirty(drive, false);
-                this.callbacks.label(drive, disk.name);
+                this.callbacks.label(drive, disk.name, disk.side);
                 return true;
             }
         }
@@ -858,9 +865,10 @@ export default class DiskII implements Card {
             const disk = createDisk(fmt, options);
             if (disk) {
                 const cur = this.drives[drive - 1];
+                const { name, side } = cur;
                 Object.assign(cur, disk);
                 this.updateDirty(drive, true);
-                this.callbacks.label(drive, name);
+                this.callbacks.label(drive, name, side);
 
                 return true;
             }
@@ -880,8 +888,9 @@ export default class DiskII implements Card {
                         if (disk) {
                             const cur = this.drives[drive - 1];
                             Object.assign(cur, disk);
+                            const { name, side } = cur;
                             this.updateDirty(drive, true);
-                            this.callbacks.label(drive, disk.name);
+                            this.callbacks.label(drive, name, side);
                         }
                     }
                     break;

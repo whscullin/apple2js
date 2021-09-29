@@ -14,11 +14,11 @@ export default class DriveLights implements Callbacks {
         // document.querySelector('#disksave' + drive).disabled = !dirty;
     }
 
-    public label(drive: DriveNumber, label?: string) {
+    public label(drive: DriveNumber, label?: string, side?: string) {
         const labelElement =
             document.querySelector('#disk-label' + drive)! as HTMLElement;
         if (label) {
-            labelElement.innerText = label;
+            labelElement.innerText = label + (side ? ` - ${side}` : '');
         }
         return labelElement.innerText;
     }
