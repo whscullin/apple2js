@@ -101,9 +101,8 @@ export class JSONDiskBase {
     name: string
     disk?: string
     category?: string
-    writeProtected?: boolean
-    volume: byte
-    readOnly: boolean
+    volume?: byte
+    readOnly?: boolean
     gamepad?: GamepadConfiguration
 }
 
@@ -113,7 +112,7 @@ export class JSONDiskBase {
 
 export interface Base64JSONDisk extends JSONDiskBase {
     encoding: 'base64'
-    data: string[]
+    data: string[][]
 }
 
 /**

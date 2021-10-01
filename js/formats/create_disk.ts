@@ -55,10 +55,10 @@ export function createDiskFromJsonDisk(disk: JSONDisk): FloppyDisk | null {
             for (let t = 0; t < disk.data.length; t++) {
                 trackData[t] = [];
                 if (fmt == 'nib') {
-                    trackData[t][0] = base64_decode(disk.data[t] as string);
+                    trackData[t][0] = base64_decode(disk.data[t] as unknown as string);
                 } else {
                     for (let s = 0; s < disk.data[t].length; s++) {
-                        trackData[t][s] = base64_decode(disk.data[t][s] as string);
+                        trackData[t][s] = base64_decode(disk.data[t][s]);
                     }
                 }
             }

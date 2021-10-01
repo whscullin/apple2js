@@ -108,8 +108,8 @@ const mockTRKS2 = [
  * META structures
  */
 
-const mockMETA1 = 'title\tMock Woz 1';
-const mockMETA2 = 'title\tMock Woz 2';
+const mockMETA1 = 'title\tMock Woz 1\t';
+const mockMETA2 = 'title\tMock Woz 2\nside_name\tB';
 
 /**
  * Woz Version 1
