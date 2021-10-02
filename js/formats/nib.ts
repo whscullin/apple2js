@@ -18,11 +18,12 @@ import { memory } from '../types';
  * @returns A nibblized disk
  */
 export default function createDiskFromNibble(options: DiskOptions): NibbleDisk {
-    const { data, name, rawData, volume, readOnly } = options;
+    const { data, name, side, rawData, volume, readOnly } = options;
     const disk: NibbleDisk = {
         format: 'nib',
         encoding: ENCODING_NIBBLE,
         name,
+        side,
         volume: volume || 254,
         readOnly: readOnly || false,
         tracks: []

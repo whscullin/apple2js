@@ -46,6 +46,7 @@ export function createDiskFromJsonDisk(disk: JSONDisk): FloppyDisk | null {
     const fmt = disk.type;
     const readOnly = disk.readOnly;
     const name = disk.name;
+    const side = disk.disk;
 
     if (includes(NIBBLE_FORMATS, fmt)) {
         let trackData: memory[][];
@@ -53,11 +54,11 @@ export function createDiskFromJsonDisk(disk: JSONDisk): FloppyDisk | null {
             trackData = [];
             for (let t = 0; t < disk.data.length; t++) {
                 trackData[t] = [];
-                if (fmt == 'nib') {
-                    trackData[t][0] = base64_decode(disk.data[t] as string);
+                if (disk.type === 'nib') {
+                    trackData[t][0] = base64_decode(disk.data[t]);
                 } else {
                     for (let s = 0; s < disk.data[t].length; s++) {
-                        trackData[t][s] = base64_decode(disk.data[t][s] as string);
+                        trackData[t][s] = base64_decode(disk.data[t][s]);
                     }
                 }
             }
@@ -71,6 +72,7 @@ export function createDiskFromJsonDisk(disk: JSONDisk): FloppyDisk | null {
             volume,
             readOnly,
             name,
+            side,
             data: trackData
         } as DiskOptions;
 

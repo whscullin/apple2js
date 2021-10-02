@@ -844,7 +844,8 @@ function gup(name: string) {
 /** Returns the URL fragment. */
 function hup() {
     const regex = new RegExp('#(.*)');
-    const results = regex.exec(window.location.hash);
+    const hash = decodeURIComponent(window.location.hash);
+    const results = regex.exec(hash);
     if (!results)
         return '';
     else

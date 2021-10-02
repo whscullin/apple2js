@@ -21,6 +21,7 @@ export type DriveNumber = MemberOf<typeof DRIVE_NUMBERS>;
 
 export interface DiskOptions {
     name: string
+    side?: string
     volume: byte
     readOnly: boolean
     data?: memory[][]
@@ -35,6 +36,7 @@ export interface DiskOptions {
 
 export interface Disk {
     name: string
+    side?: string
     readOnly: boolean
 }
 
@@ -97,19 +99,29 @@ export type DiskFormat = MemberOf<typeof DISK_FORMATS>;
 export class JSONDiskBase {
     type: DiskFormat
     name: string
-    disk?: number
+    disk?: string
     category?: string
-    writeProtected?: boolean
-    volume: byte
-    readOnly: boolean
+    volume?: byte
+    readOnly?: boolean
     gamepad?: GamepadConfiguration
 }
 
 /**
- * JSON Disk format with base64 encoded tracks
+ * JSON Disk format with base64 encoded tracks with sectors
  */
 
 export interface Base64JSONDisk extends JSONDiskBase {
+    type: Exclude<DiskFormat, 'nib'>
+    encoding: 'base64'
+    data: string[][]
+}
+
+/**
+ * JSON Disk format with base64 encoded nibblized tracks
+ */
+
+export interface Base64JSONNibbleDisk extends JSONDiskBase {
+    type: 'nib'
     encoding: 'base64'
     data: string[]
 }
@@ -119,6 +131,7 @@ export interface Base64JSONDisk extends JSONDiskBase {
  */
 
 export interface BinaryJSONDisk extends JSONDiskBase {
+    type: DiskFormat
     encoding: 'binary'
     data: memory[][]
 }
@@ -127,7 +140,7 @@ export interface BinaryJSONDisk extends JSONDiskBase {
  * General JSON Disk format
  */
 
-export type JSONDisk = Base64JSONDisk | BinaryJSONDisk;
+export type JSONDisk = Base64JSONDisk | Base64JSONNibbleDisk | BinaryJSONDisk;
 
 /**
  * Process Disk message payloads for worker

@@ -20,11 +20,12 @@ import { NibbleDisk, DiskOptions, ENCODING_NIBBLE } from './types';
  * @returns A nibblized disk
  */
 export default function createDiskFromDOS(options: DiskOptions): NibbleDisk {
-    const { data, name, rawData, volume, readOnly } = options;
+    const { data, name, side, rawData, volume, readOnly } = options;
     const disk: NibbleDisk = {
         format: 'dsk',
         encoding: ENCODING_NIBBLE,
         name,
+        side,
         volume,
         readOnly,
         tracks: [],

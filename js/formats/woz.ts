@@ -297,13 +297,16 @@ export default function createDiskFromWoz(options: DiskOptions): WozDisk {
 
     debug(chunks);
 
+    const { meta, tmap, trks } = chunks;
+
     const disk: WozDisk = {
         encoding: ENCODING_BITSTREAM,
-        trackMap: chunks.tmap?.trackMap || [],
-        tracks: chunks.trks?.tracks || [],
-        rawTracks: chunks.trks?.rawTracks || [],
+        trackMap: tmap?.trackMap || [],
+        tracks: trks?.tracks || [],
+        rawTracks: trks?.rawTracks || [],
         readOnly: true, //chunks.info.writeProtected === 1;
-        name: chunks.meta?.values['title'] || options.name
+        name: meta?.values['title'] || options.name,
+        side: meta?.values['side_name'] || meta?.values['side'],
     };
 
     return disk;

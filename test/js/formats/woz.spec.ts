@@ -61,6 +61,7 @@ describe('woz', () => {
         const disk = createDiskFromWoz(options) as WozDisk;
         expect(disk).toEqual({
             name: 'Mock Woz 2',
+            side: 'B',
             readOnly: true,
             encoding: ENCODING_BITSTREAM,
             trackMap: mockTMAP,
