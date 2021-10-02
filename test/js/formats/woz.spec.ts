@@ -8,7 +8,7 @@ import {
 
 describe('woz', () => {
     beforeEach(() => {
-        spyOn(console, 'log');
+        jest.spyOn(console, 'log').mockImplementation();
     });
 
     it('can parse Woz version 1', () => {

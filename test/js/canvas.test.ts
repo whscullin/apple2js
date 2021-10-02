@@ -1,3 +1,4 @@
+/** @jest-environment jsdom */
 /** @fileoverview Test for canvas.ts. */
 
 import { VideoPage } from 'js/videomodes';
