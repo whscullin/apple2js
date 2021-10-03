@@ -195,7 +195,7 @@ export function handleDrop(drive: number, event: DragEvent) {
         for (let idx = 0; idx < dt.items.length; idx++) {
             if (dt.items[idx].type === 'text/uri-list') {
                 dt.items[idx].getAsString(function (url) {
-                    const parts = document.location.hash.split('|');
+                    const parts = hup().split('|');
                     parts[drive - 1] = url;
                     document.location.hash = parts.join('|');
                 });
@@ -295,7 +295,7 @@ export function doLoad(event: MouseEvent|KeyboardEvent) {
             } else {
                 filename = url;
             }
-            const parts = document.location.hash.split('|');
+            const parts = hup().split('|');
             parts[_currentDrive - 1] = filename;
             document.location.hash = parts.join('|');
         }
@@ -384,7 +384,7 @@ function doLoadLocalDisk(drive: DriveNumber, file: File) {
         const name = parts.join('.');
 
         // Remove any json file reference
-        const files = document.location.hash.split('|');
+        const files = hup().split('|');
         files[drive - 1] = '';
         document.location.hash = files.join('|');
 
