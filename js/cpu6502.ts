@@ -18,12 +18,19 @@ export interface CpuOptions {
 }
 
 export interface CpuState {
+    /** Accumulator */
     a: byte,
+    /** X index */
     x: byte,
+    /** Y index */
     y: byte,
+    /** Status register */
     s: byte,
+    /** Program counter */
     pc: word,
+    /** Stack pointer */
     sp: byte,
+    /** Elapsed cycles */
     cycles: number
 }
 
@@ -74,13 +81,23 @@ export const sizes: Modes = {
 /** Status register flag numbers. */
 export type flag = 0x80 | 0x40 | 0x20 | 0x10 | 0x08 | 0x04 | 0x02 | 0x01;
 
+/**
+ *
+ */
 export type DebugInfo = {
+    /** Program counter */
     pc: word,
+    /** Accumulator */
     ar: byte,
+    /** X index */
     xr: byte,
+    /** Y index */
     yr: byte,
+    /** Status register */
     sr: byte,
+    /** Stack pointer */
     sp: byte,
+    /** Current command */
     cmd: byte[],
 };
 
@@ -150,7 +167,7 @@ export default class CPU6502 {
     private readonly is65C02: boolean;
 
     /* Registers */
-    private pc: word = 0; // Program Counter
+    private pc: word = 0; //
     private sr: byte = flags.X // Process Status Register
     private ar: byte = 0; // Accumulator
     private xr: byte = 0; // X Register

@@ -14,6 +14,18 @@ type breakpointFn = (info: DebugInfo) => boolean
 
 const alwaysBreak = (_info: DebugInfo) => { return true; };
 
+export const dumpStatusRegister = (sr: byte) =>
+    [
+        (sr & flags.N) ? 'N' : '-',
+        (sr & flags.V) ? 'V' : '-',
+        (sr & flags.X) ? 'X' : '-',
+        (sr & flags.B) ? 'B' : '-',
+        (sr & flags.D) ? 'D' : '-',
+        (sr & flags.I) ? 'I' : '-',
+        (sr & flags.Z) ? 'Z' : '-',
+        (sr & flags.C) ? 'C' : '-',
+    ].join('');
+
 export default class Debugger {
     private cpu: CPU6502;
     private verbose = false;
@@ -138,14 +150,7 @@ export default class Debugger {
             ' P=' + toHex(sr),
             ' S=' + toHex(sp),
             ' ',
-            ((sr & flags.N) ? 'N' : '-'),
-            ((sr & flags.V) ? 'V' : '-'),
-            '-',
-            ((sr & flags.B) ? 'B' : '-'),
-            ((sr & flags.D) ? 'D' : '-'),
-            ((sr & flags.I) ? 'I' : '-'),
-            ((sr & flags.Z) ? 'Z' : '-'),
-            ((sr & flags.C) ? 'C' : '-')
+            dumpStatusRegister(sr),
         ].join('');
     }
 

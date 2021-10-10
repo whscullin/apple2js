@@ -1,6 +1,8 @@
 /**
+ * Tom Harte test data based test suite
+ *
  * Uses test files from https://github.com/TomHarte/ProcessorTests
- * To use set TOM_HARTE_TEST_PATH to local copy of that repository
+ * To use, set TOM_HARTE_TEST_PATH to local copy of that repository
  */
 
 import fs from 'fs';
@@ -10,7 +12,6 @@ import { toHex } from 'js/util';
 import type { byte, word } from 'js/types';
 
 import { toReadableState } from './util/cpu';
-import Debugger from 'js/debugger';
 import { TestMemory } from './util/memory';
 
 // JEST_DETAIL=true converts decimal values to hex before testing
@@ -20,52 +21,74 @@ const detail = !!process.env.JEST_DETAIL;
 /**
  * Types for JSON tests
  */
-interface TestState {
+
+/**
+ * Memory address and value
+ */
+type MemoryValue = [address: word, value: byte]
+
+/**
+ * Represents initial and final CPU and memory states
+ */
+ interface TestState {
+    /** Program counter */
     pc: word
+    /** Stack register */
     s: byte
+    /** Accumulator */
     a: byte
+    /** X index */
     x: byte
+    /** Y index */
     y: byte
+    /** Processor status register */
     p: byte
-    ram: [word, byte][]
+    /** M */
+    ram: MemoryValue[]
 }
 
+/**
+ * CPU cycle memory operation
+ */
+type Cycle = [address: word, value: byte, type: 'read'|'write']
+
+/**
+ * One test record
+ */
 interface Test {
+    /** Test name */
     name: string
+    /** Initial CPU register and memory state */
     initial: TestState
+    /**  Final CPU register and memory state */
     final: TestState
-    cycles: [word, byte, string][]
+    /** Detailed CPU cycles */
+    cycles: Cycle[]
 }
-
-let memory: TestMemory;
-let debug: Debugger | null;
-let cpu: CPU6502;
 
 /**
  * Initialize cpu and memory before test
  *
+ * @param cpu Target cpu instance
  * @param state Initial test state
  */
-
-function initState(state: TestState) {
+function initState(cpu: CPU6502, state: TestState) {
     const { pc, s, a, x, y, p, ram } = state;
     cpu.setState({ cycles: 0, pc, sp: s, a, x, y, s: p });
 
     for (let idx = 0; idx < ram.length; idx++) {
         const [address, mem] = ram[idx];
-        const off = address & 0xff;
-        const page = address >> 8;
-        cpu.write(page, off, mem);
+        cpu.write(address, mem);
     }
 }
 
 /**
- * Pretty print 'address: val' if detail is turned on
+ * Pretty print 'address: val' if detail is turned on,
+ * or passes through raw test data if not.
  *
- * @returns
+ * @returns string or raw test data
  */
-
-function toAddrValHex([address, val]: [word, byte]) {
+function toAddrValHex([address, val]: MemoryValue) {
     if (detail) {
         return `${toHex(address, 4)}: ${toHex(val)}`;
     } else {
@@ -74,12 +97,12 @@ function toAddrValHex([address, val]: [word, byte]) {
 }
 
 /**
- * Pretty print 'address: val (read|write)' if detail is turned on
+ * Pretty print 'address: val (read|write)' if detail is turned on,
+ * or passes through raw test data if not.
  *
- * @returns
+ * @returns string or raw test data
  */
-
-function toAddrValHexType([address, val, type]: [word, byte, string]) {
+function toAddrValHexType([address, val, type]: Cycle) {
     if (detail) {
         return `${toHex(address, 4)}: ${toHex(val)} ${type}`;
     } else {
@@ -90,23 +113,35 @@ function toAddrValHexType([address, val, type]: [word, byte, string]) {
 /**
  * Compare end state and read write behavior of test run
  *
- * @param state Expected state
- * @param cycles Detailed read and write logging by cycle
+ * @param cpu Test CPU
+ * @param memory Test memory
+ * @param test Test data to compare against
  */
-function expectState(state: TestState, cycles: [word, byte, string][]) {
-    const { pc, s, a, x, y, p, ram } = state;
-    expect(toReadableState(cpu.getState())).toEqual(
-        toReadableState({cycles: cycles.length, pc, sp: s, a, x, y, s: p }));
+function expectState(cpu: CPU6502, memory: TestMemory, test: Test) {
+    const { pc, s, a, x, y, p, ram } = test.final;
+    expect(
+        toReadableState(cpu.getState())
+    ).toEqual(
+        toReadableState({cycles: test.cycles.length, pc, sp: s, a, x, y, s: p })
+    );
 
+    // Retrieve relevant memory locations and values
     const result = [];
     for (let idx = 0; idx < ram.length; idx++) {
         const [address] = ram[idx];
-        const off = address & 0xff;
-        const page = address >> 8;
-        result.push([address, cpu.read(page, off), '']);
+        result.push([address, cpu.read(address)]);
     }
-    expect(result.map(toAddrValHex)).toEqual(ram.map(toAddrValHex));
-    expect(memory.getLog().map(toAddrValHexType)).toEqual(cycles.map(toAddrValHexType));
+    expect(
+        result.map(toAddrValHex)
+    ).toEqual(
+        ram.map(toAddrValHex)
+    );
+
+    expect(
+        memory.getLog().map(toAddrValHexType)
+    ).toEqual(
+        test.cycles.map(toAddrValHexType)
+    );
 }
 
 interface OpTest {
@@ -115,36 +150,44 @@ interface OpTest {
     mode: string
 }
 
-const opAry6502: OpTest[] = [];
-const opAry65C02: OpTest[] = [];
-
-cpu = new CPU6502();
-
-// Grab the implemented op codes
-// TODO: Decide whether which undocumented opcodes are worthwhile.
-for (const op in cpu.OPS_6502) {
-    const { name, mode } = cpu.OPS_6502[op];
-    const test = { op: toHex(+op), name, mode };
-    opAry6502.push(test);
-    opAry65C02.push(test);
-}
-
-for (const op in cpu.OPS_65C02) {
-    const { name, mode } = cpu.OPS_65C02[op];
-    const test = { op: toHex(+op), name, mode };
-    opAry65C02.push(test);
-}
 const testPath = process.env.TOM_HARTE_TEST_PATH;
-
-const testPath6502 = `${testPath}/6502/v1/`;
-const testPath65C02 = `${testPath}/wdc65c02/v1/`;
 
 // There are 10,0000 tests per test file, which would take several hours
 // in jest. 16 is a manageable quantity that still gets good coverage.
 const maxTests = 16;
 
 if (testPath) {
+    const testPath6502 = `${testPath}/6502/v1/`;
+    const testPath65C02 = `${testPath}/wdc65c02/v1/`;
+
+    const opAry6502: OpTest[] = [];
+    const opAry65C02: OpTest[] = [];
+
+    const buildOpArrays = () => {
+        const cpu = new CPU6502();
+
+        // Grab the implemented op codes
+        // TODO: Decide which undocumented opcodes are worthwhile.
+        for (const op in cpu.OPS_6502) {
+            const { name, mode } = cpu.OPS_6502[op];
+            const test = { op: toHex(+op), name, mode };
+            opAry6502.push(test);
+            opAry65C02.push(test);
+        }
+
+        for (const op in cpu.OPS_65C02) {
+            const { name, mode } = cpu.OPS_65C02[op];
+            const test = { op: toHex(+op), name, mode };
+            opAry65C02.push(test);
+        }
+    };
+
+    buildOpArrays();
+
     describe('Tom Harte', function() {
+        let cpu: CPU6502;
+        let memory: TestMemory;
+
         describe('6502', function() {
             beforeAll(function() {
                 cpu = new CPU6502();
@@ -156,12 +199,12 @@ if (testPath) {
                 const data = fs.readFileSync(`${testPath6502}${op}.json`, 'utf-8');
                 const tests = JSON.parse(data) as Test[];
 
-                it.each(tests.slice(0, maxTests))('Test $name', ({ initial, final, cycles }) => {
-                    initState(initial);
+                it.each(tests.slice(0, maxTests))('Test $name', (test) => {
+                    initState(cpu, test.initial);
                     memory.logStart();
                     cpu.step();
                     memory.logStop();
-                    expectState(final, cycles);
+                    expectState(cpu, memory, test);
                 });
             });
         });
@@ -169,15 +212,6 @@ if (testPath) {
         describe('WDC 65C02', function() {
             beforeAll(function() {
                 cpu = new CPU6502({ '65C02': true });
-                debug = new Debugger({
-                    getCPU: () => (cpu),
-                    run: () => {},
-                    stop: () => {},
-                });
-
-                // To get really verbose test logging comment out this line.
-                debug = null;
-
                 memory = new TestMemory(256);
                 cpu.addPageHandler(memory);
             });
@@ -186,15 +220,12 @@ if (testPath) {
                 const data = fs.readFileSync(`${testPath65C02}${op}.json`, 'utf-8');
                 const tests = JSON.parse(data) as Test[];
 
-                it.each(tests.slice(0, maxTests))('Test $name', ({ initial, final, cycles }) => {
-                    initState(initial);
-                    if (debug) {
-                        console.info(initial, debug.dumpRegisters(), debug.dumpPC(initial.pc));
-                    }
+                it.each(tests.slice(0, maxTests))('Test $name', (test) => {
+                    initState(cpu, test.initial);
                     memory.logStart();
                     cpu.step();
                     memory.logStop();
-                    expectState(final, cycles);
+                    expectState(cpu, memory, test);
                 });
             });
         });
