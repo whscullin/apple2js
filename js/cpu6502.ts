@@ -326,14 +326,6 @@ export default class CPU6502 {
         this.cycles++;
     }
 
-    private workCycle(addr: word, val: byte) {
-        if (this.is65C02) {
-            this.readByte(addr);
-        } else {
-            this.writeByte(addr, val);
-        }
-    }
-
     private readWord(addr: word): word {
         return this.readByte(addr) | (this.readByte(addr + 1) << 8);
     }
@@ -371,6 +363,40 @@ export default class CPU6502 {
         return (msb << 8) | lsb;
     }
 
+    // Helpers that replicate false reads and writes during work cycles that
+    // vary between CPU versions
+
+    private workCycle(addr: word, val: byte) {
+        if (this.is65C02) {
+            this.readByte(addr);
+        } else {
+            this.writeByte(addr, val);
+        }
+    }
+
+    private writePageCross(pc: word, addr: word, addrIdx: word): void {
+        const oldPage = addr & 0xff00;
+        if (this.is65C02) {
+            this.readByte(pc);
+        } else {
+            const off = addrIdx & 0xff;
+            this.readByte(oldPage | off);
+        }
+    }
+
+    private readPageCross(pc: word, addr: word, addrIdx: word): void {
+        const oldPage = addr & 0xff00;
+        const newPage = addrIdx & 0xff00;
+        if (newPage !== oldPage) {
+            if (this.is65C02) {
+                this.readByte(pc);
+            } else {
+                const off = addrIdx & 0xff;
+                this.readByte(oldPage | off);
+            }
+        }
+    }
+
     /*
      * Implied function
      */
@@ -400,38 +426,20 @@ export default class CPU6502 {
 
     // $0000,X
     readAbsoluteX = (): byte => {
-        let addr = this.readWordPC();
+        const addr = this.readWordPC();
         const pc = this.addr;
-        const oldPage = addr >> 8;
-        addr = (addr + this.xr) & 0xffff;
-        const newPage = addr >> 8;
-        if (newPage != oldPage) {
-            const off = addr & 0xff;
-            if (this.is65C02) {
-                this.readByte(pc);
-            } else {
-                this.readByte(oldPage << 8 | off);
-            }
-        }
-        return this.readByte(addr);
+        const addrIdx = (addr + this.xr) & 0xffff;
+        this.readPageCross(pc, addr, addrIdx);
+        return this.readByte(addrIdx);
     }
 
     // $0000,Y
     readAbsoluteY = (): byte => {
-        let addr = this.readWordPC();
+        const addr = this.readWordPC();
         const pc = this.addr;
-        const oldPage = addr >> 8;
-        addr = (addr + this.yr) & 0xffff;
-        const newPage = addr >> 8;
-        if (newPage != oldPage) {
-            const off = addr & 0xff;
-            if (this.is65C02) {
-                this.readByte(pc);
-            } else {
-                this.readByte(oldPage << 8 | off);
-            }
-        }
-        return this.readByte(addr);
+        const addrIdx = (addr + this.yr) & 0xffff;
+        this.readPageCross(pc, addr, addrIdx);
+        return this.readByte(addrIdx);
     }
 
     // $00,X
@@ -459,26 +467,16 @@ export default class CPU6502 {
     // ($00),Y
     readZeroPageIndirectY = (): byte => {
         const zpAddr = this.readBytePC();
-        const oldPC = this.addr;
-        let addr = this.readZPWord(zpAddr);
-        const oldPage = addr >> 8;
-        addr = (addr + this.yr) & 0xffff;
-        const newPage = addr >> 8;
-        if (newPage != oldPage) {
-            const off = addr & 0xff;
-            if (this.is65C02) {
-                this.readByte(oldPC);
-            } else {
-                this.readByte(oldPage << 8 | off);
-            }
-        }
-        return this.readByte(addr);
+        const pc = this.addr;
+        const addr = this.readZPWord(zpAddr);
+        const addrIdx = (addr + this.yr) & 0xffff;
+        this.readPageCross(pc, addr, addrIdx);
+        return this.readByte(addrIdx);
     }
 
     // ($00) (65C02)
     readZeroPageIndirect = (): byte => {
-        const addr = this.readZPWord(this.readBytePC());
-        return this.readByte(addr);
+        return this.readByte(this.readZPWord(this.readBytePC()));
     }
 
     /*
@@ -497,32 +495,20 @@ export default class CPU6502 {
 
     // $0000,X
     writeAbsoluteX = (val: byte) => {
-        let addr = this.readWordPC();
+        const addr = this.readWordPC();
         const pc = this.addr;
-        const oldPage = addr >> 8;
-        addr = (addr + this.xr) & 0xffff;
-        const off = addr & 0xff;
-        if (this.is65C02) {
-            this.readByte(pc);
-        } else {
-            this.readByte(oldPage << 8 | off);
-        }
-        this.writeByte(addr, val);
+        const addrIdx = (addr + this.xr) & 0xffff;
+        this.writePageCross(pc, addr, addrIdx);
+        this.writeByte(addrIdx, val);
     }
 
     // $0000,Y
     writeAbsoluteY = (val: byte) => {
-        let addr = this.readWordPC();
+        const addr = this.readWordPC();
         const pc = this.addr;
-        const oldPage = addr >> 8;
-        addr = (addr + this.yr) & 0xffff;
-        const off = addr & 0xff;
-        if (this.is65C02) {
-            this.readByte(pc);
-        } else {
-            this.readByte(oldPage << 8 | off);
-        }
-        this.writeByte(addr, val);
+        const addrIdx = (addr + this.yr) & 0xffff;
+        this.writePageCross(pc, addr, addrIdx);
+        this.writeByte(addrIdx, val);
     }
 
     // $00,X
@@ -551,16 +537,10 @@ export default class CPU6502 {
     writeZeroPageIndirectY = (val: byte) => {
         const zpAddr = this.readBytePC();
         const pc = this.addr;
-        let addr = this.readZPWord(zpAddr);
-        const oldPage = addr >> 8;
-        addr = (addr + this.yr) & 0xffff;
-        const off = addr & 0xff;
-        if (this.is65C02) {
-            this.readByte(pc);
-        } else {
-            this.readByte(oldPage << 8 | off);
-        }
-        this.writeByte(addr, val);
+        const addr = this.readZPWord(zpAddr);
+        const addrIdx = (addr + this.yr) & 0xffff;
+        this.writePageCross(pc, addr, addrIdx);
+        this.writeByte(addrIdx, val);
     }
 
     // ($00) (65C02)
@@ -919,12 +899,12 @@ export default class CPU6502 {
         const off = this.readBytePC(); // changes pc
         if ((f & this.sr) !== 0) {
             this.readByte(this.pc);
-            const oldPage = this.pc >> 8;
+            const oldPage = this.pc & 0xff00;
             this.pc += off > 127 ? off - 256 : off;
             this.pc &= 0xffff;
-            const newPage = this.pc >> 8;
+            const newPage = this.pc & 0xff00;
             const newOff = this.pc & 0xff;
-            if (newPage != oldPage) this.readByte(oldPage << 8 | newOff);
+            if (newPage !== oldPage) this.readByte(oldPage | newOff);
         }
     }
 
@@ -932,12 +912,12 @@ export default class CPU6502 {
         const off = this.readBytePC(); // changes pc
         if ((f & this.sr) === 0) {
             this.readByte(this.pc);
-            const oldPage = this.pc >> 8;
+            const oldPage = this.pc & 0xff00;
             this.pc += off > 127 ? off - 256 : off;
             this.pc &= 0xffff;
-            const newPage = this.pc >> 8;
+            const newPage = this.pc & 0xff00;
             const newOff = this.pc & 0xff;
-            if (newPage != oldPage) this.readByte(oldPage << 8 | newOff);
+            if (newPage !== oldPage) this.readByte(oldPage | newOff);
         }
     }
 
@@ -949,12 +929,12 @@ export default class CPU6502 {
         this.writeByte(zpAddr, val);
         const off = this.readBytePC(); // changes pc
         const oldPc = this.pc;
-        const oldPage = oldPc >> 8;
+        const oldPage = oldPc & 0xff00;
 
         let newPC = this.pc + (off > 127 ? off - 256 : off);
         newPC &= 0xffff;
         const newOff = newPC & 0xff;
-        this.readByte((oldPage << 8) | newOff);
+        this.readByte(oldPage | newOff);
         if (((1 << b) & val) === 0) {
             this.pc = newPC;
         }
@@ -966,12 +946,12 @@ export default class CPU6502 {
         this.writeByte(zpAddr, val);
         const off = this.readBytePC(); // changes pc
         const oldPc = this.pc;
-        const oldPage = oldPc >> 8;
+        const oldPage = oldPc & 0xff00;
 
         let newPC = this.pc + (off > 127 ? off - 256 : off);
         newPC &= 0xffff;
         const newOff = newPC & 0xff;
-        this.readByte((oldPage << 8) | newOff);
+        this.readByte(oldPage | newOff);
         if (((1 << b) & val) !== 0) {
             this.pc = newPC;
         }
