@@ -1,21 +1,11 @@
-import CPU6502 from '../js/cpu6502';
+import CPU6502, { CpuState, flags } from '../js/cpu6502';
 import { TestMemory } from './util/memory';
 import { bios, Program } from './util/bios';
+import { toReadableState } from './util/cpu';
 
-var FLAGS = {
-    N: 0x80,       // Negative
-    V: 0x40,       // oVerflow
-    DEFAULT: 0x20, // Default
-    B: 0x10,       // Break
-    D: 0x08,       // Decimal
-    I: 0x04,       // Interrupt
-    Z: 0x02,       // Zero
-    C: 0x01        // Carry
-};
-
-var DEFAULT_STATE = {
+const DEFAULT_STATE: CpuState = {
     cycles: 0,
-    s: FLAGS.DEFAULT,
+    s: flags.X,
     sp: 0xff,
     a: 0x00,
     x: 0x00,
@@ -23,27 +13,27 @@ var DEFAULT_STATE = {
     pc: 0x0400
 };
 
-var memory;
-var cpu;
-var program;
+let memory;
+let cpu: CPU6502;
+let program;
 
-function initState(initialState) {
-    var state = Object.assign({}, DEFAULT_STATE, initialState);
+function initState(initialState: Partial<CpuState>) {
+    const state = {...DEFAULT_STATE, ...initialState};
     cpu.setState(state);
 }
 
-function expectState(initialState, expectedState) {
-    var state = Object.assign({}, initialState, expectedState);
-    expect(cpu.getState()).toEqual(state);
+function expectState(initialState: CpuState, expectedState: Partial<CpuState>) {
+    const state  = {...initialState, ...expectedState};
+    expect(toReadableState(cpu.getState())).toEqual(toReadableState(state));
 }
 
-function initMemory(memAry) {
-    for (var idx = 0; idx < memAry.length; idx++) {
-        var mem = memAry[idx];
-        var page = mem[0];
-        var off = mem[1];
-        var data = mem[2];
-        for (var jdx = 0; jdx < data.length; jdx++) {
+function initMemory(memAry: [page: number, off: number, data: number[]][]) {
+    for (let idx = 0; idx < memAry.length; idx++) {
+        const mem = memAry[idx];
+        let page = mem[0];
+        let off = mem[1];
+        const data = mem[2];
+        for (let jdx = 0; jdx < data.length; jdx++) {
             cpu.write(page, off++, data[jdx]);
             if (off > 0xff) {
                 page++;
@@ -53,15 +43,15 @@ function initMemory(memAry) {
     }
 }
 
-function expectMemory(expectAry) {
-    var memAry = [];
-    for (var idx = 0; idx < expectAry.length; idx++) {
-        var mem = expectAry[idx];
-        var page = mem[0];
-        var off = mem[1];
-        var expectData = mem[2];
-        var data = [];
-        for (var jdx = 0; jdx < expectData.length; jdx++) {
+function expectMemory(expectAry: [page: number, off: number, data: number[]][]) {
+    const memAry = [];
+    for (let idx = 0; idx < expectAry.length; idx++) {
+        const mem = expectAry[idx];
+        let page = mem[0];
+        let off = mem[1];
+        const expectData = mem[2];
+        const data = [];
+        for (let jdx = 0; jdx < expectData.length; jdx++) {
             data.push(cpu.read(page, off++));
             if (off > 0xff) {
                 page++;
@@ -73,16 +63,14 @@ function expectMemory(expectAry) {
     expect(memAry).toEqual(expectAry);
 }
 
-function expectStack(expectAry) {
-    var state = cpu.getState();
+function expectStack(expectAry: number[]) {
+    const state = cpu.getState();
     expectMemory([[0x01, state.sp + 1, expectAry]]);
 }
 
-function testCode(code, steps, setupState, expectedState) {
-    var initialState = Object.assign({}, DEFAULT_STATE, setupState);
-    var finalState = Object.assign({
-        pc: initialState.pc + code.length
-    }, expectedState);
+function testCode(code: number[], steps: number, setupState: Partial<CpuState>, expectedState: Partial<CpuState>) {
+    const initialState = {...DEFAULT_STATE, ...setupState};
+    const finalState =  { pc: initialState.pc + code.length, ...expectedState };
 
     program = new Program(0x04, code);
     cpu.addPageHandler(program);
@@ -101,6 +89,122 @@ describe('CPU6502', function() {
         cpu.addPageHandler(bios);
     });
 
+    describe('#step functions', function() {
+        const code = [0xEA, 0xEA, 0xEA, 0xEA, 0xEA, 0xEA, 0xEA, 0xEA];
+        const initialState = {...DEFAULT_STATE};
+
+        it('step', function() {
+            cpu.setState(initialState);
+            program = new Program(0x04, code);
+            cpu.addPageHandler(program);
+            cpu.step();
+            expect(cpu.getState()).toEqual(
+                { ...DEFAULT_STATE, pc: 0x401, cycles: 2 }
+            );
+            expect(cpu.getCycles()).toEqual(2);
+        });
+
+        it('step with callback', function() {
+            const callback = jest.fn();
+            cpu.setState(initialState);
+            program = new Program(0x04, code);
+            cpu.addPageHandler(program);
+            cpu.step(callback);
+            expect(cpu.getState()).toEqual({
+                ...DEFAULT_STATE, pc: 0x401, cycles: 2,
+            });
+            expect(cpu.getCycles()).toEqual(2);
+            expect(callback).toHaveBeenCalledTimes(1);
+        });
+
+        it('stepN', function() {
+            cpu.setState(initialState);
+            program = new Program(0x04, code);
+            cpu.addPageHandler(program);
+            cpu.stepN(4);
+            expect(cpu.getState()).toEqual({
+                ...DEFAULT_STATE, pc: 0x404, cycles: 8,
+            });
+            expect(cpu.getCycles()).toEqual(8);
+        });
+
+        it('stepN with callback', function() {
+            const callback = jest.fn();
+            cpu.setState(initialState);
+            program = new Program(0x04, code);
+            cpu.addPageHandler(program);
+            cpu.stepN(4, callback);
+            expect(cpu.getState()).toEqual({
+                ...DEFAULT_STATE, pc: 0x404, cycles: 8,
+            });
+            expect(cpu.getCycles()).toEqual(8);
+            expect(callback).toHaveBeenCalledTimes(4);
+        });
+
+        it('stepN with breakpoint', function() {
+            const callback = jest.fn().mockReturnValue(true);
+            cpu.setState(initialState);
+            program = new Program(0x04, code);
+            cpu.addPageHandler(program);
+            cpu.stepN(4, callback);
+            expect(cpu.getState()).toEqual({
+                ...DEFAULT_STATE, pc: 0x401, cycles: 2,
+            });
+            expect(cpu.getCycles()).toEqual(2);
+            expect(callback).toHaveBeenCalledTimes(1);
+        });
+
+        it('stepCycles', function() {
+            cpu.setState(initialState);
+            program = new Program(0x04, code);
+            cpu.addPageHandler(program);
+            cpu.stepCycles(4);
+            expect(cpu.getState()).toEqual({
+                ...DEFAULT_STATE, pc: 0x402, cycles: 4,
+            });
+            expect(cpu.getCycles()).toEqual(4);
+        });
+
+        it('stepCyclesDebug', function() {
+            cpu.setState(initialState);
+            program = new Program(0x04, code);
+            cpu.addPageHandler(program);
+            cpu.stepCyclesDebug(4);
+            expect(cpu.getState()).toEqual({
+                ...DEFAULT_STATE, pc: 0x402, cycles: 4,
+            });
+            expect(cpu.getCycles()).toEqual(4);
+        });
+
+        it('stepCyclesDebug with callback', function() {
+            const callback = jest.fn();
+
+            cpu.setState(initialState);
+            program = new Program(0x04, code);
+            cpu.addPageHandler(program);
+            cpu.stepCyclesDebug(4, callback);
+            expect(cpu.getState()).toEqual({
+                ...DEFAULT_STATE, pc: 0x402, cycles: 4,
+            });
+            expect(cpu.getCycles()).toEqual(4);
+            expect(callback).toHaveBeenCalledTimes(2);
+        });
+
+        it('stepCyclesDebug with breakpoint', function() {
+            const callback = jest.fn().mockReturnValue(true);
+
+            cpu.setState(initialState);
+            program = new Program(0x04, code);
+            cpu.addPageHandler(program);
+            cpu.stepCyclesDebug(4, callback);
+            expect(cpu.getState()).toEqual({
+                ...DEFAULT_STATE, pc: 0x401, cycles: 2,
+            });
+            expect(cpu.getCycles()).toEqual(2);
+            expect(callback).toHaveBeenCalledTimes(1);
+        });
+    });
+
     describe('#signals', function () {
         it('should reset', function () {
             cpu.reset();
@@ -115,7 +219,7 @@ describe('CPU6502', function() {
 
             expectState(DEFAULT_STATE, {
                 cycles: 5,
-                s: FLAGS.DEFAULT | FLAGS.I,
+                s: flags.X | flags.I,
                 sp: 0xfc,
                 pc: 0xff00
             });
@@ -123,13 +227,13 @@ describe('CPU6502', function() {
 
         it('should not irq if I set', function () {
             initState({
-                s: FLAGS.DEFAULT | FLAGS.I
+                s: flags.X | flags.I
             });
 
             cpu.irq();
 
             expectState(DEFAULT_STATE, {
-                s: FLAGS.DEFAULT | FLAGS.I,
+                s: flags.X | flags.I,
                 pc: 0x400
             });
         });
@@ -139,7 +243,7 @@ describe('CPU6502', function() {
 
             expectState(DEFAULT_STATE, {
                 cycles: 5,
-                s: FLAGS.DEFAULT | FLAGS.I,
+                s: flags.X | flags.I,
                 sp: 0xfc,
                 pc: 0xff00
             });
@@ -156,7 +260,7 @@ describe('CPU6502', function() {
         it('should BRK', function () {
             testCode([0x00, 0x00], 1, {}, {
                 cycles: 7,
-                s: FLAGS.DEFAULT | FLAGS.I,
+                s: flags.X | flags.I,
                 sp: 0xfc,
                 pc: 0xff00
             });
@@ -168,10 +272,18 @@ describe('CPU6502', function() {
                 sp: 0xFC
             }, {
                 cycles: 6,
-                s: FLAGS.DEFAULT | FLAGS.N,
+                s: flags.X | flags.N,
                 sp: 0xFF,
                 pc: 0x1234
             });
+        });
+
+        it('should log unimplemented opcodes', () => {
+            jest.spyOn(console, 'log').mockImplementation();
+            testCode([0xFF], 1, {}, {
+                cycles: 1
+            });
+            expect(console.log).toHaveBeenLastCalledWith('Unknown OpCode: FF at 0400');
         });
     });
 
@@ -274,57 +386,57 @@ describe('CPU6502', function() {
         it('should SEC', function () {
             testCode([0x38], 1, {}, {
                 cycles: 2,
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             });
         });
 
         it('should CLC', function () {
             testCode([0x18], 1, {
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             }, {
                 cycles: 2,
-                s: FLAGS.DEFAULT
+                s: flags.X
             });
         });
 
         it('should SEI', function () {
             testCode([0x78], 1, {}, {
                 cycles: 2,
-                s: FLAGS.DEFAULT | FLAGS.I
+                s: flags.X | flags.I
             });
         });
 
         it('should CLI', function () {
             testCode([0x58], 1, {
-                s: FLAGS.DEFAULT | FLAGS.I
+                s: flags.X | flags.I
             }, {
                 cycles: 2,
-                s: FLAGS.DEFAULT
+                s: flags.X
             });
         });
 
         it('should CLV', function () {
             testCode([0xB8], 1, {
-                s: FLAGS.DEFAULT | FLAGS.V
+                s: flags.X | flags.V
             }, {
                 cycles: 2,
-                s: FLAGS.DEFAULT
+                s: flags.X
             });
         });
 
         it('should SED', function () {
             testCode([0xF8], 1, {}, {
                 cycles: 2,
-                s: FLAGS.DEFAULT | FLAGS.D
+                s: flags.X | flags.D
             });
         });
 
         it('should CLD', function () {
             testCode([0xD8], 1, {
-                s: FLAGS.DEFAULT | FLAGS.D
+                s: flags.X | flags.D
             }, {
                 cycles: 2,
-                s: FLAGS.DEFAULT
+                s: flags.X
             });
         });
     });
@@ -371,21 +483,21 @@ describe('CPU6502', function() {
 
         it('should PHP', function() {
             testCode([0x08], 1, {
-                s: FLAGS.DEFAULT | FLAGS.N | FLAGS.C
+                s: flags.X | flags.N | flags.C
             }, {
                 cycles: 3,
                 sp: 0xfe
             });
-            expectStack([FLAGS.DEFAULT | FLAGS.B | FLAGS.N | FLAGS.C]);
+            expectStack([flags.X | flags.B | flags.N | flags.C]);
         });
 
         it('should PLP', function() {
-            initMemory([[0x01, 0xff, [FLAGS.N | FLAGS.C]]]);
+            initMemory([[0x01, 0xff, [flags.N | flags.C]]]);
             testCode([0x28], 1, {
                 sp: 0xfe
             }, {
                 cycles: 4,
-                s: FLAGS.DEFAULT | FLAGS.N | FLAGS.C,
+                s: flags.X | flags.N | flags.C,
                 sp: 0xff
             });
         });
@@ -407,7 +519,7 @@ describe('CPU6502', function() {
             });
         });
 
-        it('should JMP (abs) across page boundries with bugs', function () {
+        it('should JMP (abs) across page boundaries with bugs', function () {
             initMemory([[0x02, 0xFF, [0x34, 0x12]],
                 [0x02, 0x00, [0xff]]]);
             testCode([0x6C, 0xFF, 0x02], 1, {}, {
@@ -441,7 +553,7 @@ describe('CPU6502', function() {
         // ********** bcs
         it('should BCS forward', function () {
             testCode([0xB0, 0x7F], 1, {
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             }, {
                 cycles: 3,
                 pc: 0x0481
@@ -450,7 +562,7 @@ describe('CPU6502', function() {
 
         it('should BCS backward', function () {
             testCode([0xB0, 0xff], 1, {
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             }, {
                 cycles: 3,
                 pc: 0x0401
@@ -459,7 +571,7 @@ describe('CPU6502', function() {
 
         it('should BCS across pages with an extra cycle', function () {
             testCode([0xB0, 0xfd], 1, {
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             }, {
                 cycles: 4,
                 pc: 0x03FF
@@ -496,7 +608,7 @@ describe('CPU6502', function() {
 
         it('should not BCC if carry set', function () {
             testCode([0x90, 0xfd], 1, {
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             }, {
                 cycles: 2,
                 pc: 0x0402
@@ -857,7 +969,7 @@ describe('CPU6502', function() {
             }, {
                 cycles: 2,
                 a: 0xAA,
-                s: FLAGS.DEFAULT | FLAGS.N
+                s: flags.X | flags.N
             });
         });
 
@@ -867,7 +979,7 @@ describe('CPU6502', function() {
             }, {
                 cycles: 2,
                 a: 0x54,
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             });
         });
 
@@ -876,7 +988,7 @@ describe('CPU6502', function() {
             testCode([0x0E, 0x33, 0x03], 1, {
             }, {
                 cycles: 6,
-                s: FLAGS.DEFAULT | FLAGS.N
+                s: flags.X | flags.N
             });
             expectMemory([[0x03, 0x33, [0xAA]]]);
         });
@@ -886,7 +998,7 @@ describe('CPU6502', function() {
             testCode([0x0E, 0x33, 0x03], 1, {
             }, {
                 cycles: 6,
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             });
             expectMemory([[0x03, 0x33, [0x54]]]);
         });
@@ -898,7 +1010,7 @@ describe('CPU6502', function() {
             }, {
                 cycles: 2,
                 a: 0xAA,
-                s: FLAGS.DEFAULT | FLAGS.N
+                s: flags.X | flags.N
             });
         });
 
@@ -908,18 +1020,18 @@ describe('CPU6502', function() {
             }, {
                 cycles: 2,
                 a: 0x54,
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             });
         });
 
         it('should ROL A with carry in', function () {
             testCode([0x2A], 1, {
-                s: FLAGS.DEFAULT | FLAGS.C,
+                s: flags.X | flags.C,
                 a: 0xAA
             }, {
                 cycles: 2,
                 a: 0x55,
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             });
         });
 
@@ -928,7 +1040,7 @@ describe('CPU6502', function() {
             testCode([0x2E, 0x33, 0x03], 1, {
             }, {
                 cycles: 6,
-                s: FLAGS.DEFAULT | FLAGS.N
+                s: flags.X | flags.N
             });
             expectMemory([[0x03, 0x33, [0xAA]]]);
         });
@@ -938,7 +1050,7 @@ describe('CPU6502', function() {
             testCode([0x2E, 0x33, 0x03], 1, {
             }, {
                 cycles: 6,
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             });
             expectMemory([[0x03, 0x33, [0x54]]]);
         });
@@ -946,10 +1058,10 @@ describe('CPU6502', function() {
         it('should ROL abs with carry in', function () {
             initMemory([[0x03, 0x33, [0xAA]]]);
             testCode([0x2E, 0x33, 0x03], 1, {
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             }, {
                 cycles: 6,
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             });
             expectMemory([[0x03, 0x33, [0x55]]]);
         });
@@ -970,7 +1082,7 @@ describe('CPU6502', function() {
             }, {
                 cycles: 2,
                 a: 0x2A,
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             });
         });
 
@@ -988,7 +1100,7 @@ describe('CPU6502', function() {
             testCode([0x4E, 0x33, 0x03], 1, {
             }, {
                 cycles: 6,
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             });
             expectMemory([[0x03, 0x33, [0x2A]]]);
         });
@@ -1008,18 +1120,18 @@ describe('CPU6502', function() {
                 a: 0x55
             }, {
                 cycles: 2,
-                s: FLAGS.DEFAULT | FLAGS.C,
+                s: flags.X | flags.C,
                 a: 0x2A
             });
         });
 
         it('should ROR A with carry in', function () {
             testCode([0x6A], 1, {
-                s: FLAGS.DEFAULT | FLAGS.C,
+                s: flags.X | flags.C,
                 a: 0x55
             }, {
                 cycles: 2,
-                s: FLAGS.DEFAULT | FLAGS.C | FLAGS.N,
+                s: flags.X | flags.C | flags.N,
                 a: 0xAA
             });
         });
@@ -1038,7 +1150,7 @@ describe('CPU6502', function() {
             testCode([0x6E, 0x33, 0x03], 1, {
             }, {
                 cycles: 6,
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             });
             expectMemory([[0x03, 0x33, [0x2A]]]);
         });
@@ -1046,10 +1158,10 @@ describe('CPU6502', function() {
         it('should ROR abs with carry in', function () {
             initMemory([[0x03, 0x33, [0x55]]]);
             testCode([0x6E, 0x33, 0x03], 1, {
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             }, {
                 cycles: 6,
-                s: FLAGS.DEFAULT | FLAGS.C | FLAGS.N
+                s: flags.X | flags.C | flags.N
             });
             expectMemory([[0x03, 0x33, [0xAA]]]);
         });
@@ -1070,7 +1182,7 @@ describe('CPU6502', function() {
                 a: 0xA0
             }, {
                 cycles: 4,
-                s: FLAGS.DEFAULT | FLAGS.N,
+                s: flags.X | flags.N,
                 a: 0xF5
             });
         });
@@ -1081,7 +1193,7 @@ describe('CPU6502', function() {
                 a: 0xA5
             }, {
                 cycles: 4,
-                s: FLAGS.DEFAULT | FLAGS.N,
+                s: flags.X | flags.N,
                 a: 0xF0
             });
         });
@@ -1092,7 +1204,7 @@ describe('CPU6502', function() {
                 a: 0x55
             }, {
                 cycles: 3,
-                s: FLAGS.DEFAULT | FLAGS.V
+                s: flags.X | flags.V
             });
         });
 
@@ -1101,7 +1213,7 @@ describe('CPU6502', function() {
             testCode([0x2C, 0x33, 0x03], 1, {
             }, {
                 cycles: 4,
-                s: FLAGS.DEFAULT | FLAGS.N | FLAGS.Z
+                s: flags.X | flags.N | flags.Z
             });
         });
     });
@@ -1114,18 +1226,18 @@ describe('CPU6502', function() {
             }, {
                 cycles: 2,
                 a: 0x78,
-                s: FLAGS.DEFAULT
+                s: flags.X
             });
         });
 
         it('should ADC with carry in', function () {
             testCode([0x69, 0x55], 1, {
                 a: 0x23,
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             }, {
                 cycles: 2,
                 a: 0x79,
-                s: FLAGS.DEFAULT
+                s: flags.X
             });
         });
 
@@ -1135,7 +1247,7 @@ describe('CPU6502', function() {
             }, {
                 cycles: 2,
                 a: 0x80,
-                s: FLAGS.DEFAULT | FLAGS.N | FLAGS.V
+                s: flags.X | flags.N | flags.V
             });
         });
 
@@ -1145,120 +1257,120 @@ describe('CPU6502', function() {
             }, {
                 cycles: 2,
                 a: 0x10,
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             });
         });
 
         // ********** ADC BCD
         it('should ADC BCD', function () {
             testCode([0x69, 0x16], 1, {
-                s: FLAGS.DEFAULT | FLAGS.D,
+                s: flags.X | flags.D,
                 a: 0x25
             }, {
                 cycles: 2,
-                s: FLAGS.DEFAULT | FLAGS.D | FLAGS.V,
+                s: flags.X | flags.D,
                 a: 0x41
             });
         });
 
         it('should ADC BCD with carry in', function () {
             testCode([0x69, 0x55], 1, {
-                s: FLAGS.DEFAULT | FLAGS.D | FLAGS.C,
+                s: flags.X | flags.D | flags.C,
                 a: 0x23
             }, {
                 cycles: 2,
-                s: FLAGS.DEFAULT| FLAGS.D  | FLAGS.V,
+                s: flags.X | flags.D,
                 a: 0x79
             });
         });
 
         it('should ADC BCD with carry out', function () {
             testCode([0x69, 0x10], 1, {
-                s: FLAGS.DEFAULT | FLAGS.D,
+                s: flags.X | flags.D,
                 a: 0x91
             }, {
                 cycles: 2,
                 a: 0x01,
-                s: FLAGS.DEFAULT | FLAGS.D |  FLAGS.C
+                s: flags.X | flags.N | flags.D |  flags.C
             });
         });
 
         // ********** SBC
         it('should SBC', function () {
             testCode([0xE9, 0x23], 1, {
-                s: FLAGS.DEFAULT | FLAGS.C,
+                s: flags.X | flags.C,
                 a: 0x55
             }, {
                 cycles: 2,
                 a: 0x32,
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             });
         });
 
         it('should SBC with borrow in', function () {
             testCode([0xE9, 0x23], 1, {
-                s: FLAGS.DEFAULT,
+                s: flags.X,
                 a: 0x55
             }, {
                 cycles: 2,
                 a: 0x31,
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             });
         });
 
         it('should SBC with borrow out', function () {
             testCode([0xE9, 0x55], 1, {
-                s: FLAGS.DEFAULT | FLAGS.C,
+                s: flags.X | flags.C,
                 a: 0x23
             }, {
                 cycles: 2,
                 a: 0xCE,
-                s: FLAGS.DEFAULT | FLAGS.N
+                s: flags.X | flags.N
             });
         });
 
         it('should SBC with overflow out', function () {
             testCode([0xE9, 0x7F], 1, {
-                s: FLAGS.DEFAULT | FLAGS.C,
+                s: flags.X | flags.C,
                 a: 0xAF
             }, {
                 cycles: 2,
                 a: 0x30,
-                s: FLAGS.DEFAULT | FLAGS.V | FLAGS.C
+                s: flags.X | flags.V | flags.C
             });
         });
 
         // ********** SBC BCD
         it('should SBC BCD', function () {
             testCode([0xE9, 0x23], 1, {
-                s: FLAGS.DEFAULT | FLAGS.D | FLAGS.C,
+                s: flags.X | flags.D | flags.C,
                 a: 0x55
             }, {
                 cycles: 2,
                 a: 0x32,
-                s: FLAGS.DEFAULT | FLAGS.D | FLAGS.C
+                s: flags.X | flags.D | flags.C
             });
         });
 
         it('should SBC BCD with borrow in', function () {
             testCode([0xE9, 0x23], 1, {
-                s: FLAGS.DEFAULT | FLAGS.D,
+                s: flags.X | flags.D,
                 a: 0x55
             }, {
                 cycles: 2,
                 a: 0x31,
-                s: FLAGS.DEFAULT | FLAGS.D | FLAGS.C
+                s: flags.X | flags.D | flags.C
             });
         });
 
         it('should SBC BCD with borrow out', function () {
             testCode([0xE9, 0x55], 1, {
-                s: FLAGS.DEFAULT | FLAGS.D | FLAGS.C,
+                s: flags.X | flags.D | flags.C,
                 a: 0x23
             }, {
                 cycles: 2,
                 a: 0x68,
-                s: FLAGS.DEFAULT | FLAGS.D
+                s: flags.X | flags.N | flags.D
             });
         });
 
@@ -1348,7 +1460,7 @@ describe('CPU6502', function() {
                 a: 0x33
             }, {
                 cycles: 2,
-                s: FLAGS.DEFAULT | FLAGS.N
+                s: flags.X | flags.N
             });
         });
 
@@ -1357,7 +1469,7 @@ describe('CPU6502', function() {
                 a: 0x44
             }, {
                 cycles: 2,
-                s: FLAGS.DEFAULT | FLAGS.Z | FLAGS.C
+                s: flags.X | flags.Z | flags.C
             });
         });
 
@@ -1366,7 +1478,7 @@ describe('CPU6502', function() {
                 a: 0x55
             }, {
                 cycles: 2,
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             });
         });
 
@@ -1376,7 +1488,7 @@ describe('CPU6502', function() {
                 x: 0x33
             }, {
                 cycles: 2,
-                s: FLAGS.DEFAULT | FLAGS.N
+                s: flags.X | flags.N
             });
         });
 
@@ -1385,7 +1497,7 @@ describe('CPU6502', function() {
                 x: 0x44
             }, {
                 cycles: 2,
-                s: FLAGS.DEFAULT | FLAGS.Z | FLAGS.C
+                s: flags.X | flags.Z | flags.C
             });
         });
 
@@ -1394,7 +1506,7 @@ describe('CPU6502', function() {
                 x: 0x55
             }, {
                 cycles: 2,
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             });
         });
 
@@ -1404,7 +1516,7 @@ describe('CPU6502', function() {
                 y: 0x33
             }, {
                 cycles: 2,
-                s: FLAGS.DEFAULT | FLAGS.N
+                s: flags.X | flags.N
             });
         });
 
@@ -1413,7 +1525,7 @@ describe('CPU6502', function() {
                 y: 0x44
             }, {
                 cycles: 2,
-                s: FLAGS.DEFAULT | FLAGS.Z | FLAGS.C
+                s: flags.X | flags.Z | flags.C
             });
         });
 
@@ -1422,7 +1534,7 @@ describe('CPU6502', function() {
                 y: 0x55
             }, {
                 cycles: 2,
-                s: FLAGS.DEFAULT | FLAGS.C
+                s: flags.X | flags.C
             });
         });
     });
@@ -1440,14 +1552,14 @@ describe('65c02', function() {
     describe('#signals', function() {
         it('should clear D on IRQ', function() {
             initState({
-                s: FLAGS.DEFAULT | FLAGS.D
+                s: flags.X | flags.D
             });
 
             cpu.irq();
 
             expectState(DEFAULT_STATE, {
                 cycles: 5,
-                s: FLAGS.DEFAULT | FLAGS.I,
+                s: flags.X | flags.I,
                 sp: 0xfc,
                 pc: 0xff00
             });
@@ -1455,14 +1567,14 @@ describe('65c02', function() {
 
         it('should clear D on NMI', function() {
             initState({
-                s: FLAGS.DEFAULT | FLAGS.D
+                s: flags.X | flags.D
             });
 
             cpu.nmi();
 
             expectState(DEFAULT_STATE, {
                 cycles: 5,
-                s: FLAGS.DEFAULT | FLAGS.I,
+                s: flags.X | flags.I,
                 sp: 0xfc,
                 pc: 0xff00
             });
@@ -1470,10 +1582,10 @@ describe('65c02', function() {
 
         it('should clear D on BRK', function () {
             testCode([0x00, 0x00], 1, {
-                s: FLAGS.DEFAULT | FLAGS.D
+                s: flags.X | flags.D
             }, {
                 cycles: 7,
-                s: FLAGS.DEFAULT | FLAGS.I,
+                s: flags.X | flags.I,
                 sp: 0xfc,
                 pc: 0xff00
             });
@@ -1620,11 +1732,11 @@ describe('65c02', function() {
     describe('#logical operators', function() {
         it('should BIT imm and effect other flags', function() {
             testCode([0x89, 0x33], 1, {
-                s: FLAGS.DEFAULT | FLAGS.N,
+                s: flags.X | flags.N,
                 a: 0x44
             }, {
                 cycles: 2,
-                s: FLAGS.DEFAULT | FLAGS.Z | FLAGS.N
+                s: flags.X | flags.Z | flags.N
             });
         });
 
@@ -1633,7 +1745,7 @@ describe('65c02', function() {
                 a: 0x03
             }, {
                 cycles: 2,
-                s: FLAGS.DEFAULT
+                s: flags.X
             });
         });
 
@@ -1654,7 +1766,7 @@ describe('65c02', function() {
                 a: 0xAA
             }, {
                 cycles: 6,
-                s: FLAGS.DEFAULT | FLAGS.Z
+                s: flags.X | flags.Z
             });
             expectMemory([[0x00, 0x33, [0x00]]]);
         });
@@ -1676,7 +1788,7 @@ describe('65c02', function() {
                 a: 0xAA
             }, {
                 cycles: 6,
-                s: FLAGS.DEFAULT | FLAGS.Z
+                s: flags.X | flags.Z
             });
             expectMemory([[0x03, 0x33, [0xFF]]]);
         });
@@ -1759,7 +1871,7 @@ describe('65c02', function() {
         it('BBR0 should not branch if bit 0 set', function() {
             initMemory([[0x00, 0x33, [0x01]]]);
             testCode([0x0F, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0403
             });
         });
@@ -1767,7 +1879,7 @@ describe('65c02', function() {
         it('BBR1 should not branch if bit 1 set', function() {
             initMemory([[0x00, 0x33, [0x02]]]);
             testCode([0x1F, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0403
             });
         });
@@ -1775,7 +1887,7 @@ describe('65c02', function() {
         it('BBR2 should not branch if bit 2 set', function() {
             initMemory([[0x00, 0x33, [0x04]]]);
             testCode([0x2F, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0403
             });
         });
@@ -1783,7 +1895,7 @@ describe('65c02', function() {
         it('BBR3 should not branch if bit 3 set', function() {
             initMemory([[0x00, 0x33, [0x08]]]);
             testCode([0x3F, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0403
             });
         });
@@ -1791,7 +1903,7 @@ describe('65c02', function() {
         it('BBR4 should not branch if bit 4 set', function() {
             initMemory([[0x00, 0x33, [0x10]]]);
             testCode([0x4F, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0403
             });
         });
@@ -1799,7 +1911,7 @@ describe('65c02', function() {
         it('BBR5 should not branch if bit 5 set', function() {
             initMemory([[0x00, 0x33, [0x20]]]);
             testCode([0x5F, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0403
             });
         });
@@ -1807,7 +1919,7 @@ describe('65c02', function() {
         it('BBR6 should not branch if bit 6 set', function() {
             initMemory([[0x00, 0x33, [0x40]]]);
             testCode([0x6F, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0403
             });
         });
@@ -1815,7 +1927,7 @@ describe('65c02', function() {
         it('BBR7 should not branch if bit 7 set', function() {
             initMemory([[0x00, 0x33, [0x80]]]);
             testCode([0x7F, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0403
             });
         });
@@ -1896,7 +2008,7 @@ describe('65c02', function() {
         it('BBS0 should not branch if bit 0 clear', function() {
             initMemory([[0x00, 0x33, [0xFE]]]);
             testCode([0x8F, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0403
             });
         });
@@ -1904,7 +2016,7 @@ describe('65c02', function() {
         it('BBS1 should not branch if bit 1 clear', function() {
             initMemory([[0x00, 0x33, [0xFD]]]);
             testCode([0x9F, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0403
             });
         });
@@ -1912,7 +2024,7 @@ describe('65c02', function() {
         it('BBS2 should not branch if bit 2 clear', function() {
             initMemory([[0x00, 0x33, [0xFB]]]);
             testCode([0xAF, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0403
             });
         });
@@ -1920,7 +2032,7 @@ describe('65c02', function() {
         it('BBS3 should not branch if bit 3 clear', function() {
             initMemory([[0x00, 0x33, [0xF7]]]);
             testCode([0xBF, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0403
             });
         });
@@ -1928,7 +2040,7 @@ describe('65c02', function() {
         it('BBS4 should not branch if bit 4 clear', function() {
             initMemory([[0x00, 0x33, [0xEF]]]);
             testCode([0xCF, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0403
             });
         });
@@ -1936,7 +2048,7 @@ describe('65c02', function() {
         it('BBS5 should not branch if bit 5 clear', function() {
             initMemory([[0x00, 0x33, [0xDF]]]);
             testCode([0xDF, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0403
             });
         });
@@ -1944,7 +2056,7 @@ describe('65c02', function() {
         it('BBS6 should not branch if bit 6 clear', function() {
             initMemory([[0x00, 0x33, [0xBF]]]);
             testCode([0xEF, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0403
             });
         });
@@ -1952,7 +2064,7 @@ describe('65c02', function() {
         it('BBS7 should not branch if bit 7 clear', function() {
             initMemory([[0x00, 0x33, [0x7B]]]);
             testCode([0xFF, 0x33, 0x7F], 1, {}, {
-                cycles: 5,
+                cycles: 6,
                 pc: 0x0403
             });
         });
