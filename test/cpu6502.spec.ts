@@ -89,6 +89,122 @@ describe('CPU6502', function() {
         cpu.addPageHandler(bios);
     });
 
+    describe('#step functions', function() {
+        const code = [0xEA, 0xEA, 0xEA, 0xEA, 0xEA, 0xEA, 0xEA, 0xEA];
+        const initialState = {...DEFAULT_STATE};
+
+        it('step', function() {
+            cpu.setState(initialState);
+            program = new Program(0x04, code);
+            cpu.addPageHandler(program);
+            cpu.step();
+            expect(cpu.getState()).toEqual(
+                { ...DEFAULT_STATE, pc: 0x401, cycles: 2 }
+            );
+            expect(cpu.getCycles()).toEqual(2);
+        });
+
+        it('step with callback', function() {
+            const callback = jest.fn();
+            cpu.setState(initialState);
+            program = new Program(0x04, code);
+            cpu.addPageHandler(program);
+            cpu.step(callback);
+            expect(cpu.getState()).toEqual({
+                ...DEFAULT_STATE, pc: 0x401, cycles: 2,
+            });
+            expect(cpu.getCycles()).toEqual(2);
+            expect(callback).toHaveBeenCalledTimes(1);
+        });
+
+        it('stepN', function() {
+            cpu.setState(initialState);
+            program = new Program(0x04, code);
+            cpu.addPageHandler(program);
+            cpu.stepN(4);
+            expect(cpu.getState()).toEqual({
+                ...DEFAULT_STATE, pc: 0x404, cycles: 8,
+            });
+            expect(cpu.getCycles()).toEqual(8);
+        });
+
+        it('stepN with callback', function() {
+            const callback = jest.fn();
+            cpu.setState(initialState);
+            program = new Program(0x04, code);
+            cpu.addPageHandler(program);
+            cpu.stepN(4, callback);
+            expect(cpu.getState()).toEqual({
+                ...DEFAULT_STATE, pc: 0x404, cycles: 8,
+            });
+            expect(cpu.getCycles()).toEqual(8);
+            expect(callback).toHaveBeenCalledTimes(4);
+        });
+
+        it('stepN with breakpoint', function() {
+            const callback = jest.fn().mockReturnValue(true);
+            cpu.setState(initialState);
+            program = new Program(0x04, code);
+            cpu.addPageHandler(program);
+            cpu.stepN(4, callback);
+            expect(cpu.getState()).toEqual({
+                ...DEFAULT_STATE, pc: 0x401, cycles: 2,
+            });
+            expect(cpu.getCycles()).toEqual(2);
+            expect(callback).toHaveBeenCalledTimes(1);
+        });
+
+        it('stepCycles', function() {
+            cpu.setState(initialState);
+            program = new Program(0x04, code);
+            cpu.addPageHandler(program);
+            cpu.stepCycles(4);
+            expect(cpu.getState()).toEqual({
+                ...DEFAULT_STATE, pc: 0x402, cycles: 4,
+            });
+            expect(cpu.getCycles()).toEqual(4);
+        });
+
+        it('stepCyclesDebug', function() {
+            cpu.setState(initialState);
+            program = new Program(0x04, code);
+            cpu.addPageHandler(program);
+            cpu.stepCyclesDebug(4);
+            expect(cpu.getState()).toEqual({
+                ...DEFAULT_STATE, pc: 0x402, cycles: 4,
+            });
+            expect(cpu.getCycles()).toEqual(4);
+        });
+
+        it('stepCyclesDebug with callback', function() {
+            const callback = jest.fn();
+
+            cpu.setState(initialState);
+            program = new Program(0x04, code);
+            cpu.addPageHandler(program);
+            cpu.stepCyclesDebug(4, callback);
+            expect(cpu.getState()).toEqual({
+                ...DEFAULT_STATE, pc: 0x402, cycles: 4,
+            });
+            expect(cpu.getCycles()).toEqual(4);
+            expect(callback).toHaveBeenCalledTimes(2);
+        });
+
+        it('stepCyclesDebug with breakpoint', function() {
+            const callback = jest.fn().mockReturnValue(true);
+
+            cpu.setState(initialState);
+            program = new Program(0x04, code);
+            cpu.addPageHandler(program);
+            cpu.stepCyclesDebug(4, callback);
+            expect(cpu.getState()).toEqual({
+                ...DEFAULT_STATE, pc: 0x401, cycles: 2,
+            });
+            expect(cpu.getCycles()).toEqual(2);
+            expect(callback).toHaveBeenCalledTimes(1);
+        });
+    });
+
     describe('#signals', function () {
         it('should reset', function () {
             cpu.reset();
@@ -160,6 +276,14 @@ describe('CPU6502', function() {
                 sp: 0xFF,
                 pc: 0x1234
             });
+        });
+
+        it('should log unimplemented opcodes', () => {
+            jest.spyOn(console, 'log').mockImplementation();
+            testCode([0xFF], 1, {}, {
+                cycles: 1
+            });
+            expect(console.log).toHaveBeenLastCalledWith('Unknown OpCode: FF at 0400');
         });
     });
 

@@ -161,27 +161,44 @@ type StrictInstruction =
 
 type Instructions = Record<byte, StrictInstruction>
 
-type callback = (cpu: CPU6502) => void;
+type callback = (cpu: CPU6502) => boolean | void;
 
 export default class CPU6502 {
+    /** 65C02 emulation mode flag */
     private readonly is65C02: boolean;
 
-    /* Registers */
-    private pc: word = 0; //
-    private sr: byte = flags.X // Process Status Register
-    private ar: byte = 0; // Accumulator
-    private xr: byte = 0; // X Register
-    private yr: byte = 0; // Y Register
-    private sp: byte = 0xff; // Stack Pointer
+    /**
+     * Registers
+     */
 
+    /** Program counter */
+    private pc: word = 0;
+    /** Status register */
+    private sr: byte = flags.X
+    /** Accumulator */
+    private ar: byte = 0;
+    /** X index */
+    private xr: byte = 0;
+    /** Y index */
+    private yr: byte = 0;
+    /** Stack pointer */
+    private sp: byte = 0xff;
+
+    /** Current instruction */
     private op: Instruction
-    private addr: word = 0; // address bus
+    /** Last accessed memory address */
+    private addr: word = 0;
 
+    /** Filled array of memory handlers by address page */
     private memPages: Memory[] = new Array(0x100);
+    /** Callbacks invoked on reset signal */
     private resetHandlers: ResettablePageHandler[] = [];
+    /** Elapsed cycles */
     private cycles = 0;
+    /** Command being fetched signal */
     private sync = false;
 
+    /** Filled array of CPU operations */
     private readonly opary: Instruction[];
 
     constructor(options: CpuOptions = {}) {
@@ -391,7 +408,7 @@ export default class CPU6502 {
         }
     }
 
-    private writePageCross(pc: word, addr: word, addrIdx: word): void {
+    private workCycleIndexedWrite(pc: word, addr: word, addrIdx: word): void {
         const oldPage = addr & 0xff00;
         if (this.is65C02) {
             this.readByte(pc);
@@ -401,7 +418,7 @@ export default class CPU6502 {
         }
     }
 
-    private readPageCross(pc: word, addr: word, addrIdx: word): void {
+    private workCycleIndexedRead(pc: word, addr: word, addrIdx: word): void {
         const oldPage = addr & 0xff00;
         const newPage = addrIdx & 0xff00;
         if (newPage !== oldPage) {
@@ -446,7 +463,7 @@ export default class CPU6502 {
         const addr = this.readWordPC();
         const pc = this.addr;
         const addrIdx = (addr + this.xr) & 0xffff;
-        this.readPageCross(pc, addr, addrIdx);
+        this.workCycleIndexedRead(pc, addr, addrIdx);
         return this.readByte(addrIdx);
     }
 
@@ -455,7 +472,7 @@ export default class CPU6502 {
         const addr = this.readWordPC();
         const pc = this.addr;
         const addrIdx = (addr + this.yr) & 0xffff;
-        this.readPageCross(pc, addr, addrIdx);
+        this.workCycleIndexedRead(pc, addr, addrIdx);
         return this.readByte(addrIdx);
     }
 
@@ -487,7 +504,7 @@ export default class CPU6502 {
         const pc = this.addr;
         const addr = this.readZPWord(zpAddr);
         const addrIdx = (addr + this.yr) & 0xffff;
-        this.readPageCross(pc, addr, addrIdx);
+        this.workCycleIndexedRead(pc, addr, addrIdx);
         return this.readByte(addrIdx);
     }
 
@@ -515,7 +532,7 @@ export default class CPU6502 {
         const addr = this.readWordPC();
         const pc = this.addr;
         const addrIdx = (addr + this.xr) & 0xffff;
-        this.writePageCross(pc, addr, addrIdx);
+        this.workCycleIndexedWrite(pc, addr, addrIdx);
         this.writeByte(addrIdx, val);
     }
 
@@ -524,7 +541,7 @@ export default class CPU6502 {
         const addr = this.readWordPC();
         const pc = this.addr;
         const addrIdx = (addr + this.yr) & 0xffff;
-        this.writePageCross(pc, addr, addrIdx);
+        this.workCycleIndexedWrite(pc, addr, addrIdx);
         this.writeByte(addrIdx, val);
     }
 
@@ -556,7 +573,7 @@ export default class CPU6502 {
         const pc = this.addr;
         const addr = this.readZPWord(zpAddr);
         const addrIdx = (addr + this.yr) & 0xffff;
-        this.writePageCross(pc, addr, addrIdx);
+        this.workCycleIndexedWrite(pc, addr, addrIdx);
         this.writeByte(addrIdx, val);
     }
 
