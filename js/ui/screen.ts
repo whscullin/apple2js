@@ -10,48 +10,30 @@ declare global {
     interface Document {
         webkitCancelFullScreen: () => void;
         webkitIsFullScreen: boolean;
-        mozCancelFullScreen: () => void;
-        mozIsFullScreen: boolean;
     }
     interface Element {
         webkitRequestFullScreen: (options?: any) => void;
-        mozRequestFullScreen: () => void;
     }
 }
 export class Screen implements OptionHandler {
     constructor(private vm: VideoModes) {}
 
-    enterFullScreen = (evt: KeyboardEvent) => {
+    enterFullScreen = () => {
         const elem = document.getElementById('screen')!;
-        if (evt.shiftKey) { // Full window, but not full screen
-            this.setFullPage(!document.body.classList.contains('full-page'));
-        } else if (document.webkitCancelFullScreen) {
+        if (document.fullscreenEnabled) {
+            if (document.fullscreenElement) {
+                void document.exitFullscreen();
+            } else {
+                void elem.requestFullscreen();
+            }
+        } else if (elem.webkitRequestFullScreen) {
             if (document.webkitIsFullScreen) {
                 document.webkitCancelFullScreen();
             } else {
-                const allowKeyboardInput = (Element as any).ALLOW_KEYBOARD_INPUT;
-                if (allowKeyboardInput) {
-                    elem.webkitRequestFullScreen(allowKeyboardInput);
-                } else {
-                    elem.webkitRequestFullScreen();
-                }
-            }
-        } else if (document.mozCancelFullScreen) {
-            if (document.mozIsFullScreen) {
-                document.mozCancelFullScreen();
-            } else {
-                elem.mozRequestFullScreen();
+                elem.webkitRequestFullScreen();
             }
         }
     };
-
-    setFullPage(on: boolean) {
-        if (on) {
-            document.body.classList.add('full-page');
-        } else {
-            document.body.classList.remove('full-page');
-        }
-    }
 
     getOptions() {
         return [
@@ -98,6 +80,14 @@ export class Screen implements OptionHandler {
             case SCREEN_SCANLINE:
                 this.vm.scanlines(value);
                 break;
+        }
+    }
+
+    private setFullPage(on: boolean) {
+        if (on) {
+            document.body.classList.add('full-page');
+        } else {
+            document.body.classList.remove('full-page');
         }
     }
 }

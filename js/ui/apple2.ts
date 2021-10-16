@@ -28,7 +28,7 @@ import Apple2IO from '../apple2io';
 import Printer from './printer';
 
 import { OptionsModal } from './options_modal';
-import { Screen } from './screen';
+import { Screen, SCREEN_FULL_PAGE } from './screen';
 import { JoyStick } from './joystick';
 import { System } from './system';
 
@@ -883,7 +883,16 @@ function onLoaded(apple2: Apple2, disk2: DiskII, massStorage: MassStorage, print
     keyboard = new KeyBoard(cpu, io, e);
     keyboard.create('#keyboard');
     keyboard.setFunction('F1', () => cpu.reset());
-    keyboard.setFunction('F2', screen.enterFullScreen);
+    keyboard.setFunction('F2', (event) => {
+        if (event.shiftKey) { // Full window, but not full screen
+            optionsModal.setOption(
+                SCREEN_FULL_PAGE,
+                !optionsModal.getOption(SCREEN_FULL_PAGE)
+            );
+        } else {
+            screen.enterFullScreen();
+        }
+    });
     keyboard.setFunction('F3', () => io.keyDown(0x1b)); // Escape
     keyboard.setFunction('F4', optionsModal.openModal);
     keyboard.setFunction('F6', () => {
