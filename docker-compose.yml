@@ -1,0 +1,11 @@
+version: "2"
+services:
+  apple2js:
+    container_name: "apple2js"
+    build: .
+    restart: always
+    volumes:
+      - ./:/home/node/app
+    ports:
+      - '8080:8080'
+
