@@ -43,7 +43,6 @@ const appConfig = merge(baseConfig,
         },
         devServer: {
             compress: true,
-            public: 'dev-box.localdomain',
             static: {
                 watch: {
                     ignored: /(node_modules|test|\.git)/

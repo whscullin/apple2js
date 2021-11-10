@@ -8,6 +8,5 @@ echo "Building..."
 npm install
 
 echo "Starting server..."
-#npx webpack-cli serve --mode=development --progress --public $HOSTNAME
-npm start
+npm run start -- --public $HOSTNAME
 

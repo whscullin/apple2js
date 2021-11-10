@@ -5,7 +5,7 @@ services:
     build: .
     restart: always
     environment:
-      - HOSTNAME="dev-box.localdomain"
+      - HOSTNAME=dev-box.localdomain
     volumes:
       - ./:/home/node/app
     ports:
