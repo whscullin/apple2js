@@ -14,5 +14,6 @@ npm install
 #./bin/index
 
 echo "Starting server..."
+#npx webpack-cli serve --mode=development --progress --public $HOSTNAME
 npm start
 

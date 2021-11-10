@@ -4,6 +4,8 @@ services:
     container_name: "apple2js"
     build: .
     restart: always
+    environment:
+      - HOSTNAME="dev-box.localdomain"
     volumes:
       - ./:/home/node/app
     ports:
