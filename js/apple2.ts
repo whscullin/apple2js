@@ -78,7 +78,7 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
         renderedFrames: 0
     };
 
-    public ready: Promise<void>
+    public ready: Promise<void>;
 
     constructor(options: Apple2Options) {
         this.ready = this.init(options);

@@ -42,7 +42,7 @@ export class Screen implements OptionHandler {
                 elem.mozRequestFullScreen();
             }
         }
-    }
+    };
 
     getOptions() {
         return [

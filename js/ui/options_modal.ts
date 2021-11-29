@@ -34,9 +34,9 @@ export interface OptionHandler {
 
 export class OptionsModal {
     private prefs: Prefs = new Prefs();
-    private options: Record<string, Option> = {}
-    private handlers: Record<string, OptionHandler> = {}
-    private sections: OptionSection[] = []
+    private options: Record<string, Option> = {};
+    private handlers: Record<string, OptionHandler> = {};
+    private sections: OptionSection[] = [];
 
     addOptions(handler: OptionHandler) {
         const sections = handler.getOptions();

@@ -97,13 +97,13 @@ export type DiskFormat = MemberOf<typeof DISK_FORMATS>;
  */
 
 export class JSONDiskBase {
-    type: DiskFormat
-    name: string
-    disk?: string
-    category?: string
-    volume?: byte
-    readOnly?: boolean
-    gamepad?: GamepadConfiguration
+    type: DiskFormat;
+    name: string;
+    disk?: string;
+    category?: string;
+    volume?: byte;
+    readOnly?: boolean;
+    gamepad?: GamepadConfiguration;
 }
 
 /**

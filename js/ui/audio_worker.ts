@@ -24,7 +24,7 @@ declare global {
 }
 
 export class AppleAudioProcessor extends AudioWorkletProcessor {
-    private samples: Float32Array[] = []
+    private samples: Float32Array[] = [];
 
     constructor() {
         super();

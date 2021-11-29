@@ -51,7 +51,7 @@ export class LoresPageGL implements LoresPage {
     private _refreshing = false;
     private _blink = false;
 
-    dirty: Region = {...notDirty}
+    dirty: Region = {...notDirty};
     imageData: ImageData;
 
     constructor(
@@ -563,7 +563,7 @@ export class VideoModesGL implements VideoModes {
     private _refreshFlag: boolean = true;
     private _canvas: HTMLCanvasElement;
 
-    public ready: Promise<void>
+    public ready: Promise<void>;
 
     public textMode: boolean;
     public mixedMode: boolean;

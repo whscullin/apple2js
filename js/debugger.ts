@@ -57,7 +57,7 @@ export default class Debugger {
 
     break = () => {
         this.container.stop();
-    }
+    };
 
     step = () => {
         this.cpu.step(() => {
@@ -65,45 +65,45 @@ export default class Debugger {
             debug(this.printDebugInfo(info));
             this.updateTrace(info);
         });
-    }
+    };
 
     continue = () => {
         this.container.run();
-    }
+    };
 
     setVerbose = (verbose: boolean) => {
         this.verbose = verbose;
-    }
+    };
 
     setMaxTrace = (maxTrace: number) => {
         this.maxTrace = maxTrace;
-    }
+    };
 
     getTrace = () => {
         return this.trace.map(this.printDebugInfo).join('\n');
-    }
+    };
 
     printTrace = () => {
         debug(this.getTrace());
-    }
+    };
 
     setBreakpoint = (addr: word, exp?: breakpointFn) => {
         this.breakpoints.set(addr, exp || alwaysBreak);
-    }
+    };
 
     clearBreakpoint = (addr: word) => {
         this.breakpoints.delete(addr);
-    }
+    };
 
     listBreakpoints = () => {
         for(const [addr, fn] of this.breakpoints.entries()) {
             debug(toHex(addr, 4), fn);
         }
-    }
+    };
 
     addSymbols = (symbols: symbols) => {
         this.symbols = { ...this.symbols, ...symbols };
-    }
+    };
 
     printDebugInfo = (info: DebugInfo) => {
         const { pc, cmd } = info;
@@ -118,7 +118,7 @@ export default class Debugger {
             ' ',
             this.dumpOp(pc, cmd)
         ].join('');
-    }
+    };
 
     dumpPC = (pc: word) => {
         const b = this.cpu.read(pc);
@@ -136,7 +136,7 @@ export default class Debugger {
         result += this.dumpRawOp(cmd) + ' ' + this.dumpOp(pc, cmd);
 
         return result;
-    }
+    };
 
     dumpRegisters = (debugInfo?: DebugInfo) => {
         if (debugInfo === undefined) {
@@ -152,7 +152,7 @@ export default class Debugger {
             ' ',
             dumpStatusRegister(sr),
         ].join('');
-    }
+    };
 
     dumpPage = (start: byte, end?: byte) => {
         let result = '';
@@ -179,7 +179,7 @@ export default class Debugger {
             }
         }
         return result;
-    }
+    };
 
     list = (pc: word) => {
         const results = [];
@@ -190,7 +190,7 @@ export default class Debugger {
             pc += sizes[op.mode];
         }
         return results;
-    }
+    };
 
     private updateTrace(info: DebugInfo) {
         this.trace.push(info);

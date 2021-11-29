@@ -27,9 +27,9 @@ const LOC = {
 } as const;
 
 export class RAMFactorState {
-    loc: number
-    firmware: byte
-    mem: memory
+    loc: number;
+    firmware: byte;
+    mem: memory;
 }
 
 export default class RAMFactor implements Card, Restorable<RAMFactorState> {

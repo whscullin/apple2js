@@ -548,7 +548,7 @@ export default class KeyBoard {
             }
         }
 
-    }
+    };
 
     private keyup = (evt: KeyboardEvent) => {
         if (!this.dialogOpen()) {
@@ -568,5 +568,5 @@ export default class KeyBoard {
                 this.optionKey(false);
             }
         }
-    }
+    };
 }

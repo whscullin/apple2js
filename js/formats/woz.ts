@@ -37,22 +37,22 @@ function stringFromBytes(data: DataView, start: number, end: number): string {
 }
 
 export class InfoChunk {
-    version: byte
+    version: byte;
 
     // Version 1
-    diskType: byte
-    writeProtected: byte
-    synchronized: byte
-    cleaned: byte
-    creator: string
+    diskType: byte;
+    writeProtected: byte;
+    synchronized: byte;
+    cleaned: byte;
+    creator: string;
 
     // Version 2
-    sides: byte = 0
-    bootSector: byte = 0
-    bitTiming: byte = 0
-    compatibleHardware: word = 0
-    requiredRAM: word = 0
-    largestTrack: word = 0
+    sides: byte = 0;
+    bootSector: byte = 0;
+    bitTiming: byte = 0;
+    compatibleHardware: word = 0;
+    requiredRAM: word = 0;
+    largestTrack: word = 0;
 
     constructor(data: DataView) {
         this.version = data.getUint8(0);
@@ -74,7 +74,7 @@ export class InfoChunk {
 }
 
 export class TMapChunk {
-    trackMap: byte[]
+    trackMap: byte[];
 
     constructor(data: DataView) {
         this.trackMap = [];
@@ -89,8 +89,8 @@ const WOZ_TRACK_SIZE = 6656;
 const WOZ_TRACK_INFO_BITS = 6648;
 
 export class TrksChunk {
-    rawTracks: Uint8Array[]
-    tracks: Uint8Array[]
+    rawTracks: Uint8Array[];
+    tracks: Uint8Array[];
 }
 
 export class TrksChunk1 extends TrksChunk {
@@ -135,7 +135,7 @@ export interface Trk {
 }
 
 export class TrksChunk2 extends TrksChunk {
-    trks: Trk[]
+    trks: Trk[];
 
     constructor (data: DataView) {
         super();
@@ -188,7 +188,7 @@ export class TrksChunk2 extends TrksChunk {
 }
 
 export class MetaChunk  {
-    values: Record<string, string>
+    values: Record<string, string>;
 
     constructor (data: DataView) {
         const infoStr = stringFromBytes(data, 0, data.byteLength);

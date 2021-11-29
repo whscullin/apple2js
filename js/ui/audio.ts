@@ -116,7 +116,7 @@ export class Audio implements OptionHandler {
                 console.warn('audio not started', error);
             });
         }
-    }
+    };
 
     start = () => {
         if (this.audioContext) {
@@ -125,11 +125,11 @@ export class Audio implements OptionHandler {
                 console.warn('audio not resumed', error);
             });
         }
-    }
+    };
 
     isEnabled = () => {
         return this.sound;
-    }
+    };
 
     getOptions() {
         return [
@@ -152,5 +152,5 @@ export class Audio implements OptionHandler {
             case SOUND_ENABLED_OPTION:
                 this.sound = value;
         }
-    }
+    };
 }

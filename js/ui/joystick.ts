@@ -100,5 +100,5 @@ export class JoyStick implements OptionHandler {
 
         this.io.paddle(0, this.flipX ? 1 - x : x);
         this.io.paddle(1, this.flipY ? 1 - y : y);
-    }
+    };
 }

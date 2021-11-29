@@ -122,9 +122,9 @@ export class LoresPage2D implements LoresPage {
     private _refreshing = false;
     private _blink = false;
 
-    private highColorTextMode = false
+    private highColorTextMode = false;
 
-    dirty: Region = {...notDirty}
+    dirty: Region = {...notDirty};
     imageData: ImageData;
 
     constructor(
