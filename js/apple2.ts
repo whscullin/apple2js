@@ -17,7 +17,11 @@ import {
 } from './gl';
 import ROM from './roms/rom';
 import { Apple2IOState } from './apple2io';
-import CPU6502, { CpuState } from './cpu6502';
+import CPU6502, {
+    CpuState,
+    FLAVOR_6502,
+    FLAVOR_ROCKWELL_65C02,
+} from './cpu6502';
 import MMU, { MMUState } from './mmu';
 import RAM, { RAMState } from './ram';
 
@@ -92,7 +96,9 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
         const HiresPage = options.gl ? HiresPageGL : HiresPage2D;
         const VideoModes = options.gl ? VideoModesGL : VideoModes2D;
 
-        this.cpu = new CPU6502({ '65C02': options.enhanced });
+        this.cpu = new CPU6502({
+            flavor: options.enhanced ? FLAVOR_ROCKWELL_65C02 : FLAVOR_6502
+        });
         this.vm = new VideoModes(options.canvas, options.e);
 
         const [{ default: Apple2ROM }, { default: characterRom }] = await Promise.all([

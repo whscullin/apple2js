@@ -10,11 +10,27 @@
  * implied warranty.
  */
 
-import { Memory, MemoryPages, byte, word } from './types';
+import { Memory, MemberOf, MemoryPages, byte, word } from './types';
 import { debug, toHex } from './util';
 
+export const FLAVOR_6502 = '6502';
+export const FLAVOR_ROCKWELL_65C02 = 'rockwell65c02';
+export const FLAVOR_WDC_65C02 = 'wdc65c02';
+
+export const FLAVORS_65C02 = [
+    FLAVOR_ROCKWELL_65C02,
+    FLAVOR_WDC_65C02
+];
+
+export const FLAVORS = [
+    FLAVOR_6502,
+    ...FLAVORS_65C02
+];
+
+export type Flavor = MemberOf<typeof FLAVORS>;
+
 export interface CpuOptions {
-    '65C02'?: boolean;
+    flavor?: Flavor
 }
 
 export interface CpuState {
@@ -164,6 +180,8 @@ type Instructions = Record<byte, StrictInstruction>
 type callback = (cpu: CPU6502) => boolean | void;
 
 export default class CPU6502 {
+    /** flavor */
+    private readonly flavor: Flavor;
     /** 65C02 emulation mode flag */
     private readonly is65C02: boolean;
 
@@ -198,11 +216,17 @@ export default class CPU6502 {
     /** Command being fetched signal */
     private sync = false;
 
+    /** Processor is in WAI mode */
+    private wait = false;
+    /** Processor is in STP mode */
+    private stop = false;
+
     /** Filled array of CPU operations */
     private readonly opary: Instruction[];
 
-    constructor(options: CpuOptions = {}) {
-        this.is65C02 = options['65C02'] ? true : false;
+    constructor({ flavor }: CpuOptions = {}) {
+        this.flavor = flavor ?? FLAVOR_6502;
+        this.is65C02 = !!flavor && FLAVORS_65C02.includes(flavor);
 
         this.memPages.fill(BLANK_PAGE);
         this.memPages.fill(BLANK_PAGE);
@@ -210,17 +234,29 @@ export default class CPU6502 {
         // Create this CPU's instruction table
 
         let ops = { ...this.OPS_6502 };
-        if (this.is65C02) {
-            ops = { ...ops, ...this.OPS_65C02 };
+
+        if (this.flavor === FLAVOR_WDC_65C02) {
+            ops = {
+                ...ops,
+                ...this.OPS_65C02,
+                ...this.OPS_WDC_65C02,
+            };
+        }
+
+        if (this.flavor === FLAVOR_ROCKWELL_65C02) {
+            ops = {
+                ...ops,
+                ...this.OPS_65C02,
+                ...this.OPS_ROCKWELL_65C02,
+            };
         }
 
         // Certain browsers benefit from using arrays over maps
-        const opary: Instruction[] = new Array(0x100);
+        this.opary = new Array(0x100);
 
         for (let idx = 0; idx < 0x100; idx++) {
-            opary[idx] = ops[idx] || this.unknown(idx);
+            this.opary[idx] = ops[idx] || this.unknown(idx);
         }
-        this.opary = opary;
     }
 
     /**
@@ -274,7 +310,11 @@ export default class CPU6502 {
                 n = bin >> 7;
                 z = !bin;
                 if (this.op.mode === 'immediate') {
-                    this.readByte(sub ? 0xB8 : 0x7F);
+                    if (this.flavor === FLAVOR_WDC_65C02) {
+                        this.readByte(sub ? 0xB8 : 0x7F);
+                    } else { // rockwell65c02
+                        this.readByte(sub ? 0xB1 : 0x59);
+                    }
                 } else {
                     this.readByte(this.addr);
                 }
@@ -647,10 +687,15 @@ export default class CPU6502 {
         return this.readWord(addr);
     };
 
-    // 5C, DC, FC NOP
+    // 5C, DC, FC NOP (65C02)
     readNop = (): void => {
         this.readWordPC();
         this.readByte(this.addr);
+    };
+
+    // NOP (65C02)
+    readNopImplied = (): void => {
+        // Op is 1 cycle
     };
 
     /* Break */
@@ -663,6 +708,20 @@ export default class CPU6502 {
         }
         this.setFlag(flags.I, true);
         this.pc = this.readWord(loc.BRK);
+    };
+
+    /* Stop (65C02) */
+    stp = () => {
+        this.stop = true;
+        this.readByte(this.pc);
+        this.readByte(this.pc);
+    };
+
+    /* Wait (65C02) */
+    wai = () => {
+        this.wait = true;
+        this.readByte(this.pc);
+        this.readByte(this.pc);
     };
 
     /* Load Accumulator */
@@ -1071,10 +1130,11 @@ export default class CPU6502 {
         let unk: StrictInstruction;
 
         if (this.is65C02) {
+            // Default behavior is a 1 cycle NOP
             unk = {
                 name: 'NOP',
                 op: this.nop,
-                modeFn: this.implied,
+                modeFn: this.readNopImplied,
                 mode: 'implied',
             };
         } else {
@@ -1157,6 +1217,8 @@ export default class CPU6502 {
         this.yr = 0;
         this.xr = 0;
         this.pc = this.readWord(loc.RESET);
+        this.wait = false;
+        this.stop = false;
 
         for (let idx = 0; idx < this.resetHandlers.length; idx++) {
             this.resetHandlers[idx].reset();
@@ -1173,6 +1235,7 @@ export default class CPU6502 {
             }
             this.setFlag(flags.I, true);
             this.pc = this.readWord(loc.BRK);
+            this.wait = false;
         }
     }
 
@@ -1185,6 +1248,7 @@ export default class CPU6502 {
         }
         this.setFlag(flags.I, true);
         this.pc = this.readWord(loc.NMI);
+        this.wait = false;
     }
 
     public getPC() {
@@ -1217,6 +1281,14 @@ export default class CPU6502 {
     }
     public getSync() {
         return this.sync;
+    }
+
+    public getStop() {
+        return this.stop;
+    }
+
+    public getWait() {
+        return this.wait;
     }
 
     public getCycles() {
@@ -1663,5 +1735,17 @@ export default class CPU6502 {
         // TSB
         0x04: { name: 'TSB', op: this.tsb, modeFn: this.readAddrZeroPage, mode: 'zeroPage' },
         0x0C: { name: 'TSB', op: this.tsb, modeFn: this.readAddrAbsolute, mode: 'absolute' }
+    };
+
+    OPS_ROCKWELL_65C02: Instructions = {
+        0xCB: { name: 'NOP', op: this.nop, modeFn: this.implied, mode: 'implied' },
+        0xDB: { name: 'NOP', op: this.nop, modeFn: this.readZeroPageX, mode: 'immediate' },
+    };
+
+    /* WDC 65C02 Instructions */
+
+    OPS_WDC_65C02: Instructions = {
+        0xCB: { name: 'WAI', op: this.wai, modeFn: this.implied, mode: 'implied' },
+        0xDB: { name: 'STP', op: this.stp, modeFn: this.implied, mode: 'implied' }
     };
 }
