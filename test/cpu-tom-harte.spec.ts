@@ -168,14 +168,18 @@ if (testPath) {
     const buildOpArrays = () => {
         const cpu = new CPU6502();
 
-        // Grab the implemented op codes
-        // TODO: Decide which undocumented opcodes are worthwhile.
         for (const op in cpu.OPS_6502) {
             const { name, mode } = cpu.OPS_6502[op];
             const test = { op: toHex(+op), name, mode };
             opAry6502.push(test);
             opAryRW65C02.push(test);
             opAryWDC65C02.push(test);
+        }
+
+        for (const op in cpu.OPS_NMOS_6502) {
+            const { name, mode } = cpu.OPS_NMOS_6502[op];
+            const test = { op: toHex(+op), name, mode };
+            opAry6502.push(test);
         }
 
         for (const op in cpu.OPS_65C02) {
@@ -212,7 +216,7 @@ if (testPath) {
         let cpu: CPU6502;
         let memory: TestMemory;
 
-        describe('6502', function() {
+        describe('NMOS 6502', function() {
             beforeAll(function() {
                 cpu = new CPU6502();
                 memory = new TestMemory(256);

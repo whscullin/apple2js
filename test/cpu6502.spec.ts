@@ -281,14 +281,6 @@ describe('CPU6502', function() {
                 pc: 0x1234
             });
         });
-
-        it('should log unimplemented opcodes', () => {
-            jest.spyOn(console, 'log').mockImplementation();
-            testCode([0xFF], 1, {}, {
-                cycles: 1
-            });
-            expect(console.log).toHaveBeenLastCalledWith('Unknown OpCode: FF at 0400');
-        });
     });
 
     describe('#registers', function() {
