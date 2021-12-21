@@ -103,8 +103,8 @@
         },
         {
             "files": [
-                "js/entry2.js",
-                "js/entry2e.js",
+                "js/entry2.ts",
+                "js/entry2e.ts",
                 "jest.config.js"
             ],
             "env": {

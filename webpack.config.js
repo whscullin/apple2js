@@ -31,8 +31,8 @@ const baseConfig = {
 const appConfig = merge(baseConfig,
     {
         entry: {
-            main2: path.resolve('js/entry2.js'),
-            main2e: path.resolve('js/entry2e.js')
+            main2: path.resolve('js/entry2.ts'),
+            main2e: path.resolve('js/entry2e.ts')
         },
         output: {
             library: {
