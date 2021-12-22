@@ -85,7 +85,6 @@ export interface CFFAState {
     disks: Array<BlockDisk | null>
 }
 
-type Partition = ReturnType<typeof ProDOSVolume>
 export default class CFFA implements Card, MassStorage, Restorable<CFFAState> {
 
     // CFFA internal Flags
@@ -123,7 +122,7 @@ export default class CFFA implements Card, MassStorage, Restorable<CFFAState> {
 
     // Disk data
 
-    private _partitions: Array<Partition|null> = [
+    private _partitions: Array<ProDOSVolume|null> = [
         // Drive 1
         null,
         // Drive 2
@@ -435,7 +434,7 @@ export default class CFFA implements Card, MassStorage, Restorable<CFFAState> {
         this._identity[drive][IDENTITY.SectorCountHigh] = this._sectors[0].length & 0xffff;
         this._identity[drive][IDENTITY.SectorCountLow] = this._sectors[0].length >> 16;
 
-        const prodos = ProDOSVolume(disk);
+        const prodos = new ProDOSVolume(disk);
         dump(prodos);
 
         this._partitions[drive] = prodos;

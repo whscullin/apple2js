@@ -5,6 +5,8 @@ import { MassStorage, BlockDisk, ENCODING_BLOCK } from '../formats/types';
 import CPU6502, { CpuState, flags } from '../cpu6502';
 import { read2MGHeader } from '../formats/2mg';
 import createBlockDisk from '../formats/block';
+import { ProDOSVolume } from '../formats/prodos';
+import { dump } from '../formats/prodos/utils';
 
 export interface SmartPortState {
     disks: BlockDisk[]
@@ -493,6 +495,9 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
         };
 
         this.disks[drive] = createBlockDisk(options);
+
+        const prodos = new ProDOSVolume(this.disks[drive]);
+        dump(prodos);
 
         return true;
     }

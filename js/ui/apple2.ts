@@ -257,6 +257,7 @@ export function loadAjax(drive: DriveNumber, url: string) {
     }).catch(function (error) {
         loadingStop();
         openAlert(error.message);
+        console.error(error);
     });
 }
 
@@ -482,6 +483,7 @@ export function doLoadHTTP(drive: DriveNumber, url?: string) {
         }).catch(function (error) {
             loadingStop();
             openAlert(error.message);
+            console.error(error);
         });
     }
 }
