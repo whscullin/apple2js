@@ -1,4 +1,8 @@
-import CPU6502, { CpuState, flags } from '../js/cpu6502';
+import CPU6502, {
+    CpuState,
+    FLAVOR_ROCKWELL_65C02,
+    flags
+} from '../js/cpu6502';
 import { TestMemory } from './util/memory';
 import { bios, Program } from './util/bios';
 import { toReadableState } from './util/cpu';
@@ -276,14 +280,6 @@ describe('CPU6502', function() {
                 sp: 0xFF,
                 pc: 0x1234
             });
-        });
-
-        it('should log unimplemented opcodes', () => {
-            jest.spyOn(console, 'log').mockImplementation();
-            testCode([0xFF], 1, {}, {
-                cycles: 1
-            });
-            expect(console.log).toHaveBeenLastCalledWith('Unknown OpCode: FF at 0400');
         });
     });
 
@@ -1542,7 +1538,7 @@ describe('CPU6502', function() {
 
 describe('65c02', function() {
     beforeEach(function() {
-        cpu = new CPU6502({'65C02': true});
+        cpu = new CPU6502({ flavor: FLAVOR_ROCKWELL_65C02 });
         memory = new TestMemory(4);
 
         cpu.addPageHandler(memory);

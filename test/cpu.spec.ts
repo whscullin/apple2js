@@ -1,4 +1,4 @@
-import CPU6502 from '../js/cpu6502';
+import CPU6502, { FLAVOR_ROCKWELL_65C02 } from '../js/cpu6502';
 // From https://github.com/Klaus2m5/6502_65C02_functional_tests
 import Test6502 from './roms/6502test';
 import Test65C02 from './roms/65C02test';
@@ -33,7 +33,7 @@ describe('CPU', function () {
 
     describe('65C02', function () {
         it('completes the test ROM', function () {
-            cpu = new CPU6502({'65C02': true});
+            cpu = new CPU6502({ flavor: FLAVOR_ROCKWELL_65C02 });
             const test = new Test65C02();
             cpu.addPageHandler(test);
             cpu.setPC(0x400);
