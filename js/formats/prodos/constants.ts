@@ -1,6 +1,6 @@
-export var BLOCK_SIZE = 512;
+export const BLOCK_SIZE = 512;
 
-export var STORAGE_TYPES = {
+export const STORAGE_TYPES = {
     DELETED: 0x0,
     SEEDLING: 0x1,
     SAPLING: 0x2,
@@ -8,18 +8,18 @@ export var STORAGE_TYPES = {
     DIRECTORY: 0xD,
     SUBDIRECTORY_HEADER: 0xE,
     VDH_HEADER: 0xF
-};
+} as const;
 
-export var ACCESS_TYPES = {
+export const ACCESS_TYPES = {
     DELETE: 0x80,
     RENAME: 0x40,
     BACKUP: 0x20,
     WRITE: 0x02,
     READ: 0x01,
     ALL: 0xE3
-};
+} as const;
 
-export var FILE_TYPES = {
+export const FILE_TYPES = {
     0x00: 'UNK', // Typeless file (SOS and ProDOS)
     0x01: 'BAD', // Bad block file
     0x02: 'PDC', // Pascal code file
@@ -51,4 +51,4 @@ export var FILE_TYPES = {
     0xFD: 'VAR', // Applesoft variables file
     0xFE: 'REL', // Relocatable code file (EDASM)
     0xFF: 'SYS'  // ProDOS system file
-};
+} as const;
