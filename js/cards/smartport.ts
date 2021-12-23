@@ -8,6 +8,8 @@ import createBlockDisk from '../formats/block';
 import { ProDOSVolume } from '../formats/prodos';
 import { dump } from '../formats/prodos/utils';
 
+const ID = 'SMARTPORT.J.S';
+
 export interface SmartPortState {
     disks: BlockDisk[]
 }
@@ -98,6 +100,24 @@ const DEVICE_OFFLINE = 0x2F;
 // const BAD_BUFFER_ADDRESS = 0x56;
 // const DUPLICATE_VOLUME_ONLINE = 0x57;
 
+// Type: Device
+// $00: Memory Expansion Card (RAM disk)
+// $01: 3.5" disk
+// $02: ProFile-type hard disk
+// $03: Generic SCSI
+// $04: ROM disk
+// $05: SCSI CD-ROM
+// $06: SCSI tape or other SCSI sequential device
+// $07: SCSI hard disk
+const DEVICE_TYPE_SCSI_HD = 0x07;
+// $08: Reserved
+// $09: SCSI printer
+// $0A: 5-1/4" disk
+// $0B: Reserved
+// $0C: Reserved
+// $0D: Printer
+// $0E: Clock
+// $0F: Modem
 export default class SmartPort implements Card, MassStorage, Restorable<SmartPortState> {
 
     private rom: rom;
@@ -371,8 +391,8 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
                                 case 0:
                                     buffer.writeByte(2); // two devices
                                     buffer.inc(1).writeByte(1 << 6); // no interrupts
-                                    buffer.inc(2).writeByte(0); // reserved
-                                    buffer.inc(3).writeByte(0); // reserved
+                                    buffer.inc(2).writeByte(0x2); // Other vendor
+                                    buffer.inc(3).writeByte(0x0); // Other vendor
                                     buffer.inc(4).writeByte(0); // reserved
                                     buffer.inc(5).writeByte(0); // reserved
                                     buffer.inc(6).writeByte(0); // reserved
@@ -387,12 +407,30 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
                         default: // Unit 1
                             switch (status) {
                                 case 0:
-                                    blocks = this.disks[unit].blocks.length;
+                                    blocks = this.disks[unit]?.blocks.length ?? 0;
                                     buffer.writeByte(0xf0); // W/R Block device in drive
                                     buffer.inc(1).writeByte(blocks & 0xff); // 1600 blocks
                                     buffer.inc(2).writeByte((blocks & 0xff00) >> 8);
                                     buffer.inc(3).writeByte((blocks & 0xff0000) >> 16);
                                     state.x = 4;
+                                    state.y = 0;
+                                    state.a = 0;
+                                    state.s &= ~flags.C;
+                                    break;
+                                case 3:
+                                    blocks = this.disks[unit]?.blocks.length ?? 0;
+                                    buffer.writeByte(0xf0); // W/R Block device in drive
+                                    buffer.inc(1).writeByte(blocks & 0xff); // Blocks low byte
+                                    buffer.inc(2).writeByte((blocks & 0xff00) >> 8); // Blocks middle byte
+                                    buffer.inc(3).writeByte((blocks & 0xff0000) >> 16); // Blocks high byte
+                                    buffer.inc(4).writeByte(ID.length); // Vendor ID length
+                                    for (let idx = 0; idx < ID.length; idx++) { // Vendor ID
+                                        buffer.inc(5 + idx).writeByte(ID.charCodeAt(idx));
+                                    }
+                                    buffer.inc(21).writeByte(DEVICE_TYPE_SCSI_HD); // Device Type
+                                    buffer.inc(22).writeByte(0x0); // Device Subtype
+                                    buffer.inc(23).writeWord(0x0101); // Version
+                                    state.x = 24;
                                     state.y = 0;
                                     state.a = 0;
                                     state.s &= ~flags.C;
