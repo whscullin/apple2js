@@ -85,7 +85,7 @@ export class OptionsModal {
         }
     }
 
-    openModal() {
+    openModal = () => {
         const content = document.querySelector('#options-modal-content');
         if (content) {
             content.innerHTML = '';
