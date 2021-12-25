@@ -19,7 +19,6 @@ import type { GamepadConfiguration } from './types';
 import ApplesoftDump from '../applesoft/decompiler';
 import ApplesoftCompiler from '../applesoft/compiler';
 
-import { debug } from '../util';
 import { Apple2, Stats } from '../apple2';
 import DiskII from '../cards/disk2';
 import CPU6502 from '../cpu6502';
@@ -92,15 +91,13 @@ let ready: Promise<[void, void]>;
 
 export const driveLights = new DriveLights();
 
-export function dumpAppleSoftProgram() {
-    const dumper = new ApplesoftDump(cpu);
-    debug(dumper.toString());
+export function dumpAppleSoft() {
+    return new ApplesoftDump(cpu);
 }
 
 export function compileAppleSoftProgram(program: string) {
     const compiler = new ApplesoftCompiler(cpu);
     compiler.compile(program);
-    dumpAppleSoftProgram();
 }
 
 export function openLoad(driveString: string, event: MouseEvent) {

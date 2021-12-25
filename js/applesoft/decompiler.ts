@@ -1,5 +1,7 @@
 import { byte, KnownKeys, Memory, word } from '../types';
 
+type AppleSoftArray = Array<word | number | string | AppleSoftArray>
+
 const LETTERS =
     '                                ' +
     ' !"#$%&\'()*+,-./0123456789:;<=>?' +
@@ -133,7 +135,87 @@ export default class ApplesoftDump {
         return (msb << 8) | lsb;
     }
 
-    toString() {
+    private readInt(addr: word): word {
+        const msb = this.readByte(addr);
+        const lsb = this.readByte(addr + 1);
+
+        return (msb << 8) | lsb;
+    }
+
+    private readFloat(addr: word): number {
+        let exponent = this.readByte(addr);
+        if (exponent === 0) {
+            return 0;
+        }
+        exponent = (exponent & 0x80 ? 1 : -1) * ((exponent & 0x7F) - 1);
+
+        let msb =  this.readByte(addr + 1);
+        const sb3 =  this.readByte(addr + 2);
+        const sb2 =  this.readByte(addr + 3);
+        const lsb =  this.readByte(addr + 4);
+        const sign = msb & 0x80 ? -1 : 1;
+        msb &= 0x7F;
+        const mantissa = (msb << 24) | (sb3 << 16) | (sb2 << 8) | lsb;
+
+        return sign * (1 + mantissa / 0x80000000) * Math.pow(2, exponent);
+    }
+
+    private readString(len: byte, addr: word): string {
+        let str = '';
+        for (let idx = 0; idx < len; idx++) {
+            str += String.fromCharCode(this.readByte(addr + idx) & 0x7F);
+        }
+        return str;
+    }
+
+    private readVar(addr: word) {
+        const firstByte = this.readByte(addr);
+        const lastByte = this.readByte(addr + 1);
+        const firstLetter = firstByte & 0x7F;
+        const lastLetter = lastByte & 0x7F;
+
+        const name =
+            String.fromCharCode(firstLetter) +
+            (lastLetter ? String.fromCharCode(lastLetter) : '');
+        const type = (lastByte & 0x80) >> 7 | (firstByte & 0x80) >> 6;
+
+        return { name, type };
+    }
+
+    private readArray(addr: word, type: byte, sizes: number[]): AppleSoftArray {
+        let strLen, strAddr;
+        let value;
+        const ary = [];
+        const len = sizes[0];
+
+        for (let idx = 0; idx < len; idx++) {
+            if (sizes.length > 1) {
+                value = this.readArray(addr, type, sizes.slice(1));
+            } else {
+                switch (type) {
+                    case 0: // Real
+                        value = this.readFloat(addr);
+                        addr += 5;
+                        break;
+                    case 1: // String
+                        strLen = this.readByte(addr);
+                        strAddr = this.readWord(addr + 1);
+                        value = this.readString(strLen, strAddr);
+                        addr += 3;
+                        break;
+                    case 3: // Integer
+                    default:
+                        value = this.readInt(addr);
+                        addr += 2;
+                        break;
+                }
+            }
+            ary[idx] = value;
+        }
+        return ary;
+    }
+
+    dumpProgram() {
         let str = '';
         const start = this.readWord(0x67); // Start
         const end = this.readWord(0xaf); // End of program
@@ -167,5 +249,56 @@ export default class ApplesoftDump {
         } while (addr && addr >= start && addr < end);
 
         return str;
+    }
+
+    dumpVariables() {
+        const simpleVariableTable = this.readWord(0x69);
+        const arrayVariableTable = this.readWord(0x6B);
+        const variableStorageEnd = this.readWord(0x6D);
+        // var stringStorageStart = readWord(0x6F);
+
+        let addr;
+        const vars = [];
+        let value;
+        let strLen, strAddr;
+
+        for (addr = simpleVariableTable; addr < arrayVariableTable; addr += 7) {
+            const { name, type } = this.readVar(addr);
+
+            switch (type) {
+                case 0: // Real
+                    value = this.readFloat(addr + 2);
+                    break;
+                case 1: // String
+                    strLen = this.readByte(addr + 2);
+                    strAddr = this.readWord(addr + 3);
+                    value = this.readString(strLen, strAddr);
+                    break;
+                case 3: // Integer
+                    value = this.readInt(addr + 2);
+                    break;
+            }
+            vars.push({ name, type, value });
+        }
+
+        while (addr < variableStorageEnd) {
+            const { name, type } = this.readVar(addr);
+            const off = this.readWord(addr + 2);
+            const dim = this.readByte(addr + 4);
+            const sizes = [];
+            for (let idx = 0; idx < dim; idx++) {
+                sizes[idx] = this.readInt(addr + 5 + idx * 2);
+            }
+            value = this.readArray(addr + 5 + dim * 2, type, sizes);
+            vars.push({ name, sizes, type, value });
+
+            addr += off;
+        }
+
+        return vars;
+    }
+
+    toString() {
+        return this.dumpProgram();
     }
 }
