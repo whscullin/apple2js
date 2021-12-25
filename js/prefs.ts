@@ -1,7 +1,7 @@
 const havePrefs = typeof window.localStorage !== 'undefined';
 
 export default class Prefs {
-    params: URLSearchParams
+    params: URLSearchParams;
 
     constructor() {
         this.params = new URLSearchParams(window.location.search);

@@ -170,5 +170,5 @@ export class OptionsModal {
             console.error('Cannot find target div#options-modal-content');
         }
         MicroModal.show('options-modal');
-    }
+    };
 }
