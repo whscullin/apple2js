@@ -6,6 +6,7 @@ import Printer from './ui/printer';
 import DiskII from './cards/disk2';
 import Parallel from './cards/parallel';
 import RAMFactor from './cards/ramfactor';
+import Serial from './cards/serial';
 import SmartPort from './cards/smartport';
 import Thunderclock from './cards/thunderclock';
 
@@ -59,10 +60,12 @@ apple2.ready.then(() => {
     const slinky = new RAMFactor(1024 * 1024);
     const disk2 = new DiskII(io, driveLights);
     const clock = new Thunderclock();
+    const serial = new Serial();
     const smartport = new SmartPort(cpu, { block: !enhanced });
 
     io.setSlot(1, parallel);
-    io.setSlot(2, slinky);
+    io.setSlot(2, serial);
+    io.setSlot(3, slinky);
     io.setSlot(5, clock);
     io.setSlot(6, disk2);
     io.setSlot(7, smartport);
