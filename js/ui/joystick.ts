@@ -6,6 +6,12 @@ const JOYSTICK_FLIP_X_AXIS = 'flip_x';
 const JOYSTICK_FLIP_Y_AXIS = 'flip_y';
 const JOYSTICK_SWAP_AXIS = 'swap_x_y';
 
+let mouseMode = false;
+
+export function enableMouseMode(on: boolean) {
+    mouseMode = on;
+}
+
 export class JoyStick implements OptionHandler {
     private disableMouseJoystick = false;
     private flipX = false;
@@ -17,13 +23,13 @@ export class JoyStick implements OptionHandler {
         document.addEventListener('mousemove', this.mousemove);
         document.querySelectorAll('canvas').forEach((canvas) => {
             canvas.addEventListener('mousedown', (evt) => {
-                if (!this.gamepad) {
+                if (!this.gamepad && !mouseMode) {
                     io.buttonDown(evt.which == 1 ? 0 : 1);
                 }
                 evt.preventDefault();
             });
             canvas.addEventListener('mouseup', (evt) => {
-                if (!this.gamepad) {
+                if (!this.gamepad && !mouseMode) {
                     io.buttonUp(evt.which == 1 ? 0 : 1);
                 }
             });
@@ -83,7 +89,7 @@ export class JoyStick implements OptionHandler {
     }
 
     private mousemove = (evt: MouseEvent) => {
-        if (this.gamepad || this.disableMouseJoystick) {
+        if (this.gamepad || this.disableMouseJoystick || mouseMode) {
             return;
         }
 
