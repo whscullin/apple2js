@@ -12,13 +12,8 @@ const VARTAB = 0x69; // start of variables, word
 const ARYTAB = 0x6B; // start of arrays, word
 const STREND = 0x6D; // end of strings, word
 
-// Only execute for the "new" version of the ApplesoftCompiler
-const nit = (name: string, ...args: any) =>
-    false ? it(name, ...args) : it.skip(name, ...args);
-
 function compileToMemory(ram: Memory, program: string) {
-    const compiler = new ApplesoftCompiler(ram);
-    compiler.compile(program);
+    ApplesoftCompiler.compileToMemory(ram, program);
 }
 
 // Manual decompilation based on "Applesoft Internal Structure"
@@ -95,7 +90,7 @@ describe('ApplesoftCompiler', () => {
         expect(ram.read(0x08, 0x0b)).toBe(0x00); // end of line
     });
 
-    nit('allows lower-case characters in strings', () => {
+    it('allows lower-case characters in strings', () => {
         const ram = new RAM(0, 0xff); // 64K of RAM
 
         compileToMemory(ram, '10 PRINT "Hello!"');
@@ -110,7 +105,7 @@ describe('ApplesoftCompiler', () => {
         expect(ram.read(0x08, 0x0b)).toBe(0x6F); // o
     });
 
-    nit('allows lower-case characters in comments', () => {
+    it('allows lower-case characters in comments', () => {
         const ram = new RAM(0, 0xff); // 64K of RAM
 
         compileToMemory(ram, '10 REM Hello!');
@@ -134,7 +129,7 @@ describe('ApplesoftCompiler', () => {
         expect(ram.read(0x08, 0x05)).toBe(0xba); // PRINT
     });
 
-    nit('accepts out-of-order lines', () => {
+    it('accepts out-of-order lines', () => {
         const ram = new RAM(0, 0xff); // 64K of RAM
 
         compileToMemory(ram, '20 GOTO 10\n10 PRINT "HELLO');
@@ -162,7 +157,7 @@ describe('ApplesoftCompiler', () => {
         expect(ram.read(0x08, 0x16)).toBe(0x00); // end of program high
     });
 
-    nit('prefers ATN to AT', () => {
+    it('prefers ATN to AT', () => {
         const ram = new RAM(0, 0xff); // 64K of RAM
 
         compileToMemory(ram, '10 X = ATN(20)');
@@ -178,7 +173,7 @@ describe('ApplesoftCompiler', () => {
         expect(ram.read(0x08, 0x0c)).toBe(0x00); // end of line
     });
 
-    nit('prefers TO to AT', () => {
+    it('prefers TO to AT', () => {
         const ram = new RAM(0, 0xff); // 64K of RAM
 
         compileToMemory(ram, '10 FORI=ATOZ');
@@ -193,7 +188,7 @@ describe('ApplesoftCompiler', () => {
         expect(ram.read(0x08, 0x0b)).toBe(0x00); // end of line
     });
 
-    nit('parses DATA statements that start with space', () => {
+    it('parses DATA statements that start with space', () => {
         const ram = new RAM(0, 0xff); // 64K of RAM
 
         compileToMemory(ram, '10 DATA 1,2,3');
@@ -224,7 +219,7 @@ describe('ApplesoftCompiler', () => {
         expect(ram.read(0x08, 0x0b)).toBe(0x00); // end of line
     });
 
-    nit('parses DATA statements with strings including lower-case', () => {
+    it('parses DATA statements with strings including lower-case', () => {
         const ram = new RAM(0, 0xff); // 64K of RAM
 
         compileToMemory(ram, '10 DATA"abc"');
@@ -254,7 +249,7 @@ describe('ApplesoftCompiler', () => {
         expect(ram.read(0x08, 0x0b)).toBe(0x00); // end of line
     });
 
-    nit('parses DATA statements with literals including lower-case', () => {
+    it('parses DATA statements with literals including lower-case', () => {
         const ram = new RAM(0, 0xff); // 64K of RAM
 
         compileToMemory(ram, '10 DATAHello');
@@ -283,7 +278,7 @@ describe('ApplesoftCompiler', () => {
         expect(ram.read(0x08, 0x0a)).toBe(0x00); // end of line
     });
 
-    nit('parses DATA statements with literals including spaces', () => {
+    it('parses DATA statements with literals including spaces', () => {
         const ram = new RAM(0, 0xff); // 64K of RAM
 
         compileToMemory(ram, '10 DATAA  B');

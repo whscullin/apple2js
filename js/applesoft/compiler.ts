@@ -1,4 +1,4 @@
-import { byte, KnownKeys, KnownValues, Memory, word } from '../types';
+import { byte, KnownValues, Memory, word } from '../types';
 
 /** Map from keyword to token. */
 const TOKENS = {
@@ -111,178 +111,294 @@ const TOKENS = {
     'MID$': 0xea
 } as const;
 
-const LOMEM = 0x69;
-const ARRAY_START = 0x6B;
-const ARRAY_END = 0x6D;
+/** Start of program (word) */
+const TXTTAB = 0x67;
+/** Start of variables (word) */
+const VARTAB = 0x69;
+/** Start of arrays (word) */
+const ARYTAB = 0x6B;
+/** End of strings (word). (Strings are allocated down from HIMEM.) */
+const STREND = 0x6D;
+/** Default address for program start */
 const PROGRAM_START = 0x801;
 
-const STATES = {
-    NORMAL: 0,
-    STRING: 1,
-    COMMENT: 2,
-    DATA: 3
-} as const;
+/** Parse states. Starts in `NORMAL`. */
+enum STATES {
+    /**
+     * Tries to tokenize the input. Transitions:
+     *   * `"`: `STRING`
+     *   * `REM`: `COMMENT`
+     *   * `DATA`: `DATA`
+     */
+    NORMAL = 0,
+    /**
+     * Stores the input exactly. Tranistions:
+     *   * `"`: `NORMAL`
+     */
+    STRING = 1,
+    /** Stores the input exactly up until the end of the line. No transitions. */
+    COMMENT = 2,
+    /**
+     * Stores the input exactly. Transitions:
+     *   * `:`: `NORMAL`
+     *   * `"`: `DATA_QUOTE`
+     */
+    DATA = 3,
+    /**
+     * Stores the input exactly. Transitions:
+     *   * `"`: `DATA`
+     */
+    DATA_QUOTE = 4,
+};
 
-export default class ApplesoftCompiler {
-    constructor(private mem: Memory) { }
+function writeByte(mem: Memory, addr: word, val: byte) {
+    const page = addr >> 8;
+    const off = addr & 0xff;
 
-    private writeByte(addr: word, val: byte) {
-        const page = addr >> 8;
-        const off = addr & 0xff;
+    return mem.write(page, off, val);
+}
 
-        return this.mem.write(page, off, val);
+function writeWord(mem: Memory, addr: word, val: byte) {
+    const lsb = val & 0xff;
+    const msb = val >> 8;
+
+    writeByte(mem, addr, lsb);
+    writeByte(mem, addr + 1, msb);
+}
+
+class LineBuffer implements IterableIterator<string> {
+    constructor(private readonly line: string, private curChar: number = 0) { }
+
+    [Symbol.iterator](): IterableIterator<string> {
+        return this;
     }
 
-    private writeWord(addr: word, val: byte) {
-        const lsb = val & 0xff;
-        const msb = val >> 8;
+    clone(): LineBuffer {
+        return new LineBuffer(this.line, this.curChar);
+    }
 
-        this.writeByte(addr, lsb);
-        this.writeByte(addr + 1, msb);
+    next(): IteratorResult<string> {
+        if (this.curChar >= this.line.length) {
+            return { done: true, value: undefined };
+        }
+        return { done: false, value: this.line[this.curChar++] };
+    }
+
+    /**
+     * Tries to match the input token at the current buffer location. If
+     * the token matches, the current buffer location is advanced passed
+     * the token and this method returns `true`. Otherwise, this method
+     * returns `false`.
+     * 
+     * The input is assumed to be an all-uppercase string and the tokens
+     * in the buffer are uppercased before the comparison.
+     * 
+     * @param token An all-uppercase string to match.
+     */
+    lookingAtToken(token: string): boolean {
+        // Back up one since next() has already consumed the first character.
+        const possibleToken = this.line.substring(
+            this.curChar, this.curChar + token.length).toUpperCase();
+        if (possibleToken === token) {
+            this.curChar += token.length;
+            return true;
+        }
+        return false;
+    }
+
+    backup(chars: number = 1) {
+        this.curChar = Math.max(this.curChar - chars, 0);
+    }
+
+    peek(): string {
+        if (this.atEnd()) {
+            throw new RangeError(`Reading past the end of ${this.line}`);
+        }
+        return this.line[this.curChar];
+    }
+
+    atEnd(): boolean {
+        return this.curChar >= this.line.length;
+    }
+}
+
+export default class ApplesoftCompiler {
+    private lines: Map<number, byte[]> = new Map();
+
+    constructor() { }
+
+    /**
+     * Loads an AppleSoft BASIC program into memory.
+     * 
+     * @param mem Memory, including zero page, into which the program is
+     *     loaded.
+     * @param program A string with a BASIC program to compile (tokenize).
+     * @param programStart Optional start address of the program. Defaults to
+     *     standard AppleSoft program address, 0x801.
+     */
+    static compileToMemory(mem: Memory, program: string, programStart: word = PROGRAM_START) {
+        const compiler = new ApplesoftCompiler();
+        compiler.compile(program);
+        const compiledProgram: Uint8Array = compiler.program(programStart);
+
+        for (let i = 0; i < compiledProgram.byteLength; i++) {
+            writeByte(mem, programStart + i, compiledProgram[i]);
+        }
+        writeWord(mem, TXTTAB, programStart);
+        writeWord(mem, VARTAB, programStart + compiledProgram.byteLength);
+        writeWord(mem, ARYTAB, programStart + compiledProgram.byteLength);
+        writeWord(mem, STREND, programStart + compiledProgram.byteLength);
+    }
+
+    private readLineNumber(lineBuffer: LineBuffer): number {
+        let lineNoStr = '';
+
+        for (const character of lineBuffer) {
+            if (/\d/.test(character)) {
+                lineNoStr += character;
+            } else {
+                break;
+            }
+        }
+        if (lineNoStr.length === 0) {
+            throw new Error('Missing line number');
+        }
+
+        return parseInt(lineNoStr, 10);
+    }
+
+    private readToken(lineBuffer: LineBuffer): byte {
+        // Try to match a token
+        for (const possibleToken in TOKENS) {
+            if (lineBuffer.lookingAtToken(possibleToken)) {
+                // NOTE(flan): This special token-preference
+                // logic is straight from the AppleSoft BASIC
+                // code (D5BE-D5CA in the Apple //e ROM).
+
+                // Found a token
+                if (possibleToken === 'AT' && !lineBuffer.atEnd()) {
+                    const lookAhead = lineBuffer.peek();
+                    // ATN takes precedence over AT
+                    if (lookAhead === 'N') {
+                        lineBuffer.next();
+                        return TOKENS['ATN'];
+                    }
+                    // TO takes precedence over AT
+                    if (lookAhead === 'O') {
+                        // Backup to before the token
+                        lineBuffer.backup(possibleToken.length);
+                        // and emit the 'A' (upper- or lower-case)
+                        return lineBuffer.next().value.charCodeAt(0);
+                    }
+                }
+                return TOKENS[possibleToken as keyof typeof TOKENS];
+            }
+        }
+
+        // If not a token, output the character upper-cased
+        return lineBuffer.next().value.toUpperCase().charCodeAt(0);
+    }
+
+    private compileLine(line: string | null | undefined) {
+        const result: byte[] = [];
+        if (!line) {
+            return;
+        }
+
+        const lineBuffer = new LineBuffer(line);
+        let state: KnownValues<typeof STATES> = STATES.NORMAL;
+
+        const lineNumber = this.readLineNumber(lineBuffer);
+        if (lineNumber < 0 || lineNumber > 65535) {
+            throw new Error('Line number out of range');
+        }
+
+        // Read the rest of the line
+        for (const character of lineBuffer) {
+            const charCode = character.charCodeAt(0);
+            switch (state) {
+                case STATES.NORMAL:
+                    // Skip spaces
+                    if (character === ' ') {
+                        break;
+                    }
+
+                    // Transition to parsing a string
+                    if (character === '"') {
+                        result.push(charCode);
+                        state = STATES.STRING;
+                        break;
+                    }
+
+                    // Try to parse a token or character
+                    lineBuffer.backup();
+                    const token = this.readToken(lineBuffer);
+                    if (token === TOKENS['REM']) {
+                        state = STATES.COMMENT;
+                    }
+                    if (token === TOKENS['DATA']) {
+                        state = STATES.DATA;
+                    }
+                    result.push(token);
+                    break;
+                case STATES.COMMENT:
+                        result.push(character.charCodeAt(0));
+                    break;
+                case STATES.STRING:
+                    if (character === '"') {
+                        state = STATES.NORMAL;
+                    }
+                    result.push(character.charCodeAt(0));
+                    break;
+                case STATES.DATA:
+                    if (character === ':') {
+                        state = STATES.NORMAL;
+                    }
+                    if (character === '"') {
+                        state = STATES.DATA_QUOTE;
+                    }
+                    result.push(character.charCodeAt(0));
+                    break;
+                case STATES.DATA_QUOTE:
+                    if (character === '"') {
+                        state = STATES.DATA;
+                    }
+                    result.push(character.charCodeAt(0));
+                    break;
+            }
+        }
+
+        this.lines.set(lineNumber, result);
     }
 
     compile(program: string) {
-        const lineNos: { [line: string]: byte[]} = {};
-
-        function compileLine(line: string | null | undefined, offset: number) {
-            if (!line) {
-                return [];
-            }
-
-            let state: KnownValues<typeof STATES> = STATES.NORMAL;
-            const result = [0, 0, 0, 0];
-            let curChar = 0;
-            let character;
-            let lineNoStr = '';
-
-            while (line.length) {
-                character = line.charAt(curChar);
-                if (/\d/.test(character)) {
-                    lineNoStr += character;
-                    curChar++;
-                } else {
-                    break;
-                }
-            }
-
-            while (curChar < line.length) {
-                character = line.charAt(curChar).toUpperCase();
-                switch (state) {
-                    case STATES.NORMAL:
-                        if (character !== ' ') {
-                            if (character === '"') {
-                                result.push(character.charCodeAt(0));
-                                state = STATES.STRING;
-                                curChar++;
-                            } else {
-                                let foundToken = '';
-                                let tokenIdx = -1;
-                                for (const possibleToken in TOKENS) {
-                                    if (possibleToken.charAt(0) == character) {
-                                        tokenIdx = curChar + 1;
-                                        let idx = 1;
-                                        while (idx < possibleToken.length) {
-                                            if (line.charAt(tokenIdx) !== ' ') {
-                                                if (line.charAt(tokenIdx).toUpperCase() !== possibleToken.charAt(idx)) {
-                                                    break;
-                                                }
-                                                idx++;
-                                            }
-                                            tokenIdx++;
-                                        }
-                                        if (idx === possibleToken.length) {
-                                            // Found a token
-                                            if (possibleToken === 'AT') {
-                                                const lookAhead = line.charAt(tokenIdx + 1).toUpperCase();
-                                                // ATN takes precedence over AT
-                                                if (lookAhead === 'N') {
-                                                    foundToken = 'ATN';
-                                                    tokenIdx++;
-                                                }
-                                                // TO takes precedence over AT
-                                                if (lookAhead === 'O') {
-                                                    result.push(lookAhead.charCodeAt(0));
-                                                    foundToken = 'TO';
-                                                    tokenIdx++;
-                                                }
-                                            }
-                                            foundToken = possibleToken;
-                                        }
-                                    }
-                                    if (foundToken) {
-                                        break;
-                                    }
-                                }
-                                if (foundToken) {
-                                    result.push(TOKENS[foundToken as KnownKeys<typeof TOKENS>]);
-                                    curChar = tokenIdx;
-                                    if (foundToken === 'REM') {
-                                        state = STATES.COMMENT;
-                                    }
-                                } else {
-                                    result.push(character.charCodeAt(0));
-                                    curChar++;
-                                }
-                            }
-                        } else {
-                            curChar++;
-                        }
-                        break;
-                    case STATES.COMMENT:
-                        result.push(character.charCodeAt(0));
-                        curChar++;
-                        break;
-                    case STATES.STRING:
-                        result.push(character.charCodeAt(0));
-                        if (character == '"') {
-                            state = STATES.NORMAL;
-                        }
-                        curChar++;
-                        break;
-                }
-            }
-
-            if (lineNoStr.length) {
-                const lineNo = parseInt(lineNoStr, 10);
-                if (lineNo < 0 || lineNo > 65535) {
-                    throw new Error('Line number out of range');
-                }
-                if (lineNos[lineNoStr]) {
-                    throw new Error('Duplicate line number');
-                }
-                lineNos[lineNoStr] = result;
-
-                // Next line pointer
-                result.push(0);
-                const nextLine = offset + result.length;
-                result[0] = nextLine & 0xff;
-                result[1] = nextLine >> 8;
-
-                // Line number
-                result[2] = lineNo & 0xff;
-                result[3] = lineNo >> 8;
-            } else {
-                throw new Error('Missing line number');
-            }
-
-            return result;
-        }
-
-        let compiled: number[] = [];
         const lines = program.split(/[\r\n]+/g);
 
         while (lines.length) {
             const line = lines.shift();
-            const compiledLine = compileLine(line, PROGRAM_START + compiled.length);
-            compiled = compiled.concat(compiledLine);
+            this.compileLine(line);
         }
-        compiled.push(0, 0);
+    }
 
-        for (let idx = 0; idx < compiled.length; idx++) {
-            this.writeByte(PROGRAM_START + idx, compiled[idx]);
+    /** Returns the compiled program at the given start address. */
+    program(programStart: word = PROGRAM_START): Uint8Array {
+        const result: byte[] = [];
+
+        // Lines can be inserted out of order, but they should be in order
+        // when tokenized.
+        const lineNumbers = [...this.lines.keys()].sort();
+
+        for (const lineNo of lineNumbers) {
+            const lineBytes = this.lines.get(lineNo)!;
+            const nextLineAddr = programStart + result.length + 4
+                + lineBytes.length + 1; // +1 for the zero at end of line
+            result.push(nextLineAddr & 0xff, nextLineAddr >> 8);
+            result.push(lineNo & 0xff, lineNo >> 8);
+            result.push(...lineBytes);
+            result.push(0x00);
         }
-        this.writeWord(LOMEM, PROGRAM_START + compiled.length);
-        this.writeWord(ARRAY_START, PROGRAM_START + compiled.length);
-        this.writeWord(ARRAY_END, PROGRAM_START + compiled.length);
+        result.push(0x00, 0x00);
+
+        return new Uint8Array(result);
     }
 }
