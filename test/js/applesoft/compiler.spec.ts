@@ -7,10 +7,11 @@ import { Memory } from 'js/types';
 // assembler, revision 4/27/84. There is evidence from
 // https://www.pagetable.com/?p=774 that the original Microsoft
 // BASIC source code used these names as well.
-// const TXTTAB = 0x67; // start of program, word
+const TXTTAB = 0x67; // start of program, word
 const VARTAB = 0x69; // start of variables, word
 const ARYTAB = 0x6B; // start of arrays, word
 const STREND = 0x6D; // end of strings, word
+const PRGEND = 0xAF; // end of program, word
 
 function compileToMemory(ram: Memory, program: string) {
     ApplesoftCompiler.compileToMemory(ram, program);
@@ -27,15 +28,15 @@ function compileToMemory(ram: Memory, program: string) {
 // and comparing the resulting bytes (starting at 801).
 
 describe('ApplesoftCompiler', () => {
-    // it('compiles a one-line hello world', () => {
-    //     const compiler = new ApplesoftCompiler();
-    //     compiler.compile('10 PRINT "HELLO, WORLD!"');
-    //     expect(compiler.program()).toEqual(new Uint8Array([
-    //         0x16, 0x08, 0x0a, 0x00, 0xba, 0x22, 0x48, 0x45,
-    //         0x4c, 0x4c, 0x4f, 0x2c, 0x20, 0x57, 0x4f, 0x52,
-    //         0x4c, 0x44, 0x21, 0x22, 0x00, 0x00, 0x00
-    //     ]));
-    // });
+    it('compiles a one-line hello world', () => {
+        const compiler = new ApplesoftCompiler();
+        compiler.compile('10 PRINT "HELLO, WORLD!"');
+        expect(compiler.program()).toEqual(new Uint8Array([
+            0x16, 0x08, 0x0a, 0x00, 0xba, 0x22, 0x48, 0x45,
+            0x4c, 0x4c, 0x4f, 0x2c, 0x20, 0x57, 0x4f, 0x52,
+            0x4c, 0x44, 0x21, 0x22, 0x00, 0x00, 0x00
+        ]));
+    });
 
     it('compiles a one-line hello world into memory', () => {
         const ram = new RAM(0, 0xff); // 64K of RAM
@@ -65,14 +66,16 @@ describe('ApplesoftCompiler', () => {
         expect(ram.read(0x08, 0x16)).toBe(0x00); // end of program low
         expect(ram.read(0x08, 0x17)).toBe(0x00); // end of program high
 
-        // expect(ram.read(0x00, TXTTAB)).toBe(0x01);   // start of program low
-        // expect(ram.read(0x00, TXTTAB+1)).toBe(0x08); // start of program high
-        expect(ram.read(0x00, VARTAB)).toBe(0x18);   // start of variables low
+        expect(ram.read(0x00, TXTTAB)).toBe(0x01);   // start of program low
+        expect(ram.read(0x00, TXTTAB + 1)).toBe(0x08); // start of program high
+        expect(ram.read(0x00, VARTAB)).toBe(0x19);   // start of variables low
         expect(ram.read(0x00, VARTAB + 1)).toBe(0x08); // start of variables high
-        expect(ram.read(0x00, ARYTAB)).toBe(0x18);   // start of arrays low
+        expect(ram.read(0x00, ARYTAB)).toBe(0x19);   // start of arrays low
         expect(ram.read(0x00, ARYTAB + 1)).toBe(0x08); // start of arrays high
-        expect(ram.read(0x00, STREND)).toBe(0x18);   // end of strings low
+        expect(ram.read(0x00, STREND)).toBe(0x19);   // end of strings low
         expect(ram.read(0x00, STREND + 1)).toBe(0x08); // end of strings high
+        expect(ram.read(0x00, PRGEND)).toBe(0x19);   // end of program low
+        expect(ram.read(0x00, PRGEND + 1)).toBe(0x08); // end of program high
     });
 
     it('uppercases normal-mode text, like variables', () => {

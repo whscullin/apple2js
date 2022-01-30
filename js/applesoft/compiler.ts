@@ -119,6 +119,11 @@ const VARTAB = 0x69;
 const ARYTAB = 0x6B;
 /** End of strings (word). (Strings are allocated down from HIMEM.) */
 const STREND = 0x6D;
+/**
+ * End of program (word). This is actually 1 or 2 bytes past the three
+ * zero bytes that end the program.
+ */
+const PRGEND = 0xAF;
 /** Default address for program start */
 const PROGRAM_START = 0x801;
 
@@ -244,10 +249,20 @@ export default class ApplesoftCompiler {
         for (let i = 0; i < compiledProgram.byteLength; i++) {
             writeByte(mem, programStart + i, compiledProgram[i]);
         }
+        // Set zero page locations. Applesoft is weird because, when a line
+        // is inserted, PRGEND is copied to VARTAB in the beginning, but then
+        // VARTAB is manipulated to make space for the line, then PRGEND is
+        // set from VARTAB. There's also a bug in NEW at D657 where the carry
+        // flag is not cleared, so it can add 2 or 3. The upshot, though, is
+        // that PRGEND and VARTAB end up being 1 or 2 bytes past the end of
+        // the program. From my tests is the emulator, it's usually 1, so
+        // that's what we're going with here.
+        const prgend = programStart + compiledProgram.byteLength + 1;
         writeWord(mem, TXTTAB, programStart);
-        writeWord(mem, VARTAB, programStart + compiledProgram.byteLength);
-        writeWord(mem, ARYTAB, programStart + compiledProgram.byteLength);
-        writeWord(mem, STREND, programStart + compiledProgram.byteLength);
+        writeWord(mem, PRGEND, prgend);
+        writeWord(mem, VARTAB, prgend);
+        writeWord(mem, ARYTAB, prgend);
+        writeWord(mem, STREND, prgend);
     }
 
     private readLineNumber(lineBuffer: LineBuffer): number {
