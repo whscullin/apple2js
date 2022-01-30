@@ -272,6 +272,7 @@ export default class ApplesoftCompiler {
             if (/\d/.test(character)) {
                 lineNoStr += character;
             } else {
+                lineBuffer.backup();
                 break;
             }
         }
@@ -342,6 +343,12 @@ export default class ApplesoftCompiler {
                     if (character === '"') {
                         result.push(charCode);
                         state = STATES.STRING;
+                        break;
+                    }
+
+                    // Shorthand for PRINT (D580 in Apple //e ROM)
+                    if (character === '?') {
+                        result.push(TOKENS['PRINT']);
                         break;
                     }
 
