@@ -375,4 +375,57 @@ describe('ApplesoftCompiler', () => {
             0x4c, 0x44, 0x21, 0x22, 0x00, 0x00, 0x00
         ]));
     });
+
+    it('skips spaces when reading tokens', () => {
+        const compiler = new ApplesoftCompiler();
+        compiler.compile('10 T H E N');
+        expect(compiler.program()).toEqual(new Uint8Array([
+            0x07, 0x08, 0x0a, 0x00, 0xc4, 0x00, 0x00, 0x00,
+        ]));
+    });
+
+    it('skips spaces and ignores case when reading tokens', () => {
+        const compiler = new ApplesoftCompiler();
+        compiler.compile('10 T h E n');
+        expect(compiler.program()).toEqual(new Uint8Array([
+            0x07, 0x08, 0x0a, 0x00, 0xc4, 0x00, 0x00, 0x00,
+        ]));
+    });
+
+    it('smashes tokens together', () => {
+        const compiler = new ApplesoftCompiler();
+        compiler.compile('10 NOT RACE A THEN B');
+        expect(compiler.program()).toEqual(new Uint8Array([
+            0x0c, 0x08, 0x0a, 0x00, 0x9c, 0xc5, 0x48, 0x45,
+            0x4e, 0x42, 0x00, 0x00, 0x00,
+        ]));
+    });
+
+    it('parses 10ATOZ correctly', () => {
+        const compiler = new ApplesoftCompiler();
+        compiler.compile('10ATOZ');
+        expect(compiler.program()).toEqual(new Uint8Array([
+            0x09, 0x08, 0x0a, 0x00, 0x41, 0xc1, 0x5a, 0x00,
+            0x00, 0x00,
+        ]));
+    });
+
+    it('parses a bunch of crazy correctly', () => {
+        const compiler = new ApplesoftCompiler();
+        compiler.compile([
+            '10 A THEN B',
+            '30 A TO Z',
+            '40 AT N',
+            '50 A TN',
+            '60 N O T R A C E',
+            '70 NOT RACE'].join('\n'));
+        expect(compiler.program()).toEqual(new Uint8Array([
+            0x0b, 0x08, 0x0a, 0x00, 0xc5, 0x48, 0x45,
+            0x4e, 0x42, 0x00, 0x13, 0x08, 0x1e, 0x00, 0x41,
+            0xc1, 0x5a, 0x00, 0x1a, 0x08, 0x28, 0x00, 0xc5,
+            0x4e, 0x00, 0x20, 0x08, 0x32, 0x00, 0xe1, 0x00,
+            0x26, 0x08, 0x3c, 0x00, 0x9c, 0x00, 0x2c, 0x08,
+            0x46, 0x00, 0x9c, 0x00, 0x00, 0x00,
+        ]));
+    });
 });

@@ -172,6 +172,7 @@ function writeWord(mem: Memory, addr: word, val: byte) {
 }
 
 class LineBuffer implements IterableIterator<string> {
+    private prevChar: number = 0;
     constructor(private readonly line: string, private curChar: number = 0) { }
 
     [Symbol.iterator](): IterableIterator<string> {
@@ -183,9 +184,10 @@ class LineBuffer implements IterableIterator<string> {
     }
 
     next(): IteratorResult<string> {
-        if (this.curChar >= this.line.length) {
+        if (this.atEnd()) {
             return { done: true, value: undefined };
         }
+        this.prevChar = this.curChar;
         return { done: false, value: this.line[this.curChar++] };
     }
 
@@ -201,18 +203,31 @@ class LineBuffer implements IterableIterator<string> {
      * @param token An all-uppercase string to match.
      */
     lookingAtToken(token: string): boolean {
-        // Back up one since next() has already consumed the first character.
-        const possibleToken = this.line.substring(
-            this.curChar, this.curChar + token.length).toUpperCase();
-        if (possibleToken === token) {
-            this.curChar += token.length;
+        const oldCurChar = this.curChar;
+        const oldPrevChar = this.prevChar;
+        let possibleToken = '';
+        for (const char of this) {
+            if (char === ' ') {
+                continue;
+            }
+            possibleToken += char;
+            if (possibleToken.length === token.length) {
+                break;
+            }
+        }
+        if (possibleToken.toUpperCase() === token) {
+            // Matched; set prevChar to before the match.
+            this.prevChar = oldCurChar;
             return true;
         }
+        // No match; restore state.
+        this.curChar = oldCurChar;
+        this.prevChar = oldPrevChar;
         return false;
     }
 
-    backup(chars: number = 1) {
-        this.curChar = Math.max(this.curChar - chars, 0);
+    backup() {
+        this.curChar = this.prevChar;
     }
 
     peek(): string {
@@ -302,7 +317,7 @@ export default class ApplesoftCompiler {
                     // TO takes precedence over AT
                     if (lookAhead === 'O') {
                         // Backup to before the token
-                        lineBuffer.backup(possibleToken.length);
+                        lineBuffer.backup();
                         // and emit the 'A' (upper- or lower-case)
                         return lineBuffer.next().value.charCodeAt(0);
                     }
