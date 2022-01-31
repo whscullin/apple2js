@@ -1,4 +1,5 @@
-import { byte, KnownKeys, Memory, word } from '../types';
+import { byte, word, ReadonlyUint8Array } from '../types';
+import { TOKEN_TO_STRING, STRING_TO_TOKEN } from './tokens';
 
 const LETTERS =
     '                                ' +
@@ -6,166 +7,268 @@ const LETTERS =
     '@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_' +
     '`abcdefghijklmnopqrstuvwxyz{|}~ ';
 
-const TOKENS = {
-    0x80: 'END',
-    0x81: 'FOR',
-    0x82: 'NEXT',
-    0x83: 'DATA',
-    0x84: 'INPUT',
-    0x85: 'DEL',
-    0x86: 'DIM',
-    0x87: 'READ',
-    0x88: 'GR',
-    0x89: 'TEXT',
-    0x8a: 'PR#',
-    0x8b: 'IN#',
-    0x8c: 'CALL',
-    0x8d: 'PLOT',
-    0x8e: 'HLIN',
-    0x8f: 'VLIN',
-    0x90: 'HGR2',
-    0x91: 'HGR',
-    0x92: 'HCOLOR=',
-    0x93: 'HPLOT',
-    0x94: 'DRAW',
-    0x95: 'XDRAW',
-    0x96: 'HTAB',
-    0x97: 'HOME',
-    0x98: 'ROT=',
-    0x99: 'SCALE=',
-    0x9a: 'SHLOAD',
-    0x9b: 'TRACE',
-    0x9c: 'NOTRACE',
-    0x9d: 'NORMAL',
-    0x9e: 'INVERSE',
-    0x9f: 'FLASH',
-    0xa0: 'COLOR=',
-    0xa1: 'POP=',
-    0xa2: 'VTAB',
-    0xa3: 'HIMEM:',
-    0xa4: 'LOMEM:',
-    0xa5: 'ONERR',
-    0xa6: 'RESUME',
-    0xa7: 'RECALL',
-    0xa8: 'STORE',
-    0xa9: 'SPEED=',
-    0xaa: 'LET',
-    0xab: 'GOTO',
-    0xac: 'RUN',
-    0xad: 'IF',
-    0xae: 'RESTORE',
-    0xaf: '&',
-    0xb0: 'GOSUB',
-    0xb1: 'RETURN',
-    0xb2: 'REM',
-    0xb3: 'STOP',
-    0xb4: 'ON',
-    0xb5: 'WAIT',
-    0xb6: 'LOAD',
-    0xb7: 'SAVE',
-    0xb8: 'DEF',
-    0xb9: 'POKE',
-    0xba: 'PRINT',
-    0xbb: 'CONT',
-    0xbc: 'LIST',
-    0xbd: 'CLEAR',
-    0xbe: 'GET',
-    0xbf: 'NEW',
-    0xc0: 'TAB(',
-    0xc1: 'TO',
-    0xc2: 'FN',
-    0xc3: 'SPC(',
-    0xc4: 'THEN',
-    0xc5: 'AT',
-    0xc6: 'NOT',
-    0xc7: 'STEP',
-    0xc8: '+',
-    0xc9: '-',
-    0xca: '*',
-    0xcb: '/',
-    0xcc: '^',
-    0xcd: 'AND',
-    0xce: 'OR',
-    0xcf: '>',
-    0xd0: '=',
-    0xd1: '<',
-    0xd2: 'SGN',
-    0xd3: 'INT',
-    0xd4: 'ABS',
-    0xd5: 'USR',
-    0xd6: 'FRE',
-    0xd7: 'SCRN(',
-    0xd8: 'PDL',
-    0xd9: 'POS',
-    0xda: 'SQR',
-    0xdb: 'RND',
-    0xdc: 'LOG',
-    0xdd: 'EXP',
-    0xde: 'COS',
-    0xdf: 'SIN',
-    0xe0: 'TAN',
-    0xe1: 'ATN',
-    0xe2: 'PEEK',
-    0xe3: 'LEN',
-    0xe4: 'STR$',
-    0xe5: 'VAL',
-    0xe6: 'ASC',
-    0xe7: 'CHR$',
-    0xe8: 'LEFT$',
-    0xe9: 'RIGHT$',
-    0xea: 'MID$'
-} as const;
+interface ListOptions {
+    apple2: 'e' | 'plus';
+    columns: number; // usually 40 or 80
+}
 
-export default class ApplesoftDump {
-    constructor(private mem: Memory) { }
+const DEFAULT_LIST_OPTIONS: ListOptions = {
+    apple2: 'e',
+    columns: 40,
+}
 
-    private readByte(addr: word): byte {
-        const page = addr >> 8;
-        const off = addr & 0xff;
+interface DecompileOptions {
+    style: 'compact' | 'pretty';
+}
 
-        return this.mem.read(page, off);
+const DEFAULT_DECOMPILE_OPTIONS: DecompileOptions = {
+    style: 'pretty',
+}
+
+export class ApplesoftDecompiler {
+    /**
+     * Constructs a decompiler for the given program data. The data is
+     * assumed to be a dump of memory beginning at `base`. If the data
+     * does not cover the whole program, attempting to decompile will
+     * fail.
+     * 
+     * @param program The program bytes.
+     * @param base 
+     */
+    constructor(private readonly program: ReadonlyUint8Array,
+        private readonly base: word = 0x801) {
     }
 
-    private readWord(addr: word): word {
-        const lsb = this.readByte(addr);
-        const msb = this.readByte(addr + 1);
-
-        return (msb << 8) | lsb;
+    /** Returns the 2-byte word at the given offset. */
+    private wordAt(offset: word): word {
+        return this.program[offset] + (this.program[offset + 1] << 8)
     }
 
-    toString() {
-        let str = '';
-        const start = this.readWord(0x67); // Start
-        const end = this.readWord(0xaf); // End of program
-        let addr = start;
-        do {
-            let line = '';
-            const next = this.readWord(addr);
-            addr += 2;
-            const lineno = this.readWord(addr);
-            addr += 2;
+    /**
+     * Iterates through the lines of the given program in the order of
+     * the linked list of lines, starting from the first line. This
+     * does _not_ mean that all lines in memory will 
+     * 
+     * @param from First line for which to call the callback.
+     * @param to Last line for which to call the callback.
+     * @param callback A function to call for each line. The first parameter
+     *     is the offset of the line number of the line; the tokens follow.
+     */
+    private forEachLine(from: number, to: number,
+        callback: (offset: word) => void): void {
 
-            line += lineno;
-            line += ' ';
-            let val = 0;
-            do {
-                if (addr < start || addr > end)
-                    return str;
+        let offset = 0;
+        let nextLineAddr = this.wordAt(offset);
+        let nextLineNo = this.wordAt(offset + 2);
+        while (nextLineAddr != 0 && nextLineNo < from) {
+            offset = nextLineAddr;
+            nextLineAddr = this.wordAt(offset);
+            nextLineNo = this.wordAt(offset + 2);
+        }
+        while (nextLineAddr != 0 && nextLineNo <= to) {
+            callback(offset + 2);
+            offset = nextLineAddr - this.base;
+            nextLineAddr = this.wordAt(offset);
+            nextLineNo = this.wordAt(offset + 2);
+        }
+    }
 
-                val = this.readByte(addr++);
-                if (val >= 0x80) {
-                    line += ' ';
-                    line += TOKENS[val as KnownKeys<typeof TOKENS>];
-                    line += ' ';
+    /** Lists a single line like an Apple II. */
+    listLine(offset: word, options: ListOptions): string {
+        const lines: string[] = [];
+        let line = '';
+
+        const lineNo = this.wordAt(offset);
+        // The Apple //e prints a space before each line number to make
+        // it easier to edit the lines.  The change is at the subroutine
+        // called at D6F9: on the //e it is SPCLIN (F7AA), on the ][+ it
+        // is LINPRT (ED24).
+        if (options.apple2 === 'e') {
+            line += ' '; // D6F9: JSR SPCLIN
+        }
+        line += lineNo + ' '; // D6FC, always 1 space after line number
+        offset += 2;
+
+        // In the original ROM, the line length is checked immediately
+        // after the line number is printed. For simplicity, this method
+        // always assumes that there is space for one token—which would
+        // have been the case on a realy Apple.
+        while (this.program[offset] != 0) {
+            const token = this.program[offset];
+            if (token >= 0x80 && token <= 0xea) {
+                line += ' '; // D750, always put a space in front of token
+                line += TOKEN_TO_STRING[token as keyof typeof TOKEN_TO_STRING];
+                line += ' '; // D762, always put a trailing space
+            } else {
+                line += LETTERS[token];
+            }
+            offset++;
+
+            // The Apple //e and ][+ differ in how they choose to break
+            // long lines. In the ][+, D705 prints a newline if the
+            // current column (MON_CH, $24) is greater than or equal to
+            // 33. In the //e, control is passed to GETCH (F7B4), which
+            // uses column 33 in 40-column mode and column 73 in 80-column
+            // mode.
+            //
+            // The ][+ behaves more like a //e when there is an 80-column
+            // card active (programs wrap at column 73).  From what I can
+            // tell (using Virtual ]['s inspector), the 80-column card
+            // keeps MON_CH at zero until the actual column is >= 71, when
+            // it sets it to the actual cursor position - 40.  In the
+            // Videx Videoterm ROM, this fixup happens in BASOUT (CBCD) at
+            // CBE6 by getting the 80-column horizontal cursor position and
+            // subtracting 0x47 (71). If the result is less than zero, then
+            // 0x00 is stored in MON_CH, otherwise 31 is added back and the
+            // result is stored in MON_CH. (The manual is archived at
+            // http://www.apple-iigs.info/doc/fichiers/videoterm.pdf, among
+            // other places.)
+            //
+            // For out purposes, we're just going to use the number of
+            // columns - 7.
+            if (line.length >= options.columns - 7) {
+                line += '\n';
+                lines.push(line);
+                line = '     ';
+            }
+        }
+        lines.push(line + `\n`);
+        return lines.join('');
+    }
+
+    /**
+     * Lists the program in the same format that an Apple II prints to the
+     * screen.
+     * 
+     * This method also accepts a starting and ending line number. Like on
+     * an Apple II, this will print all of the lines between `from` and `to`
+     * (inclusive) regardless of the actual line numbers between them.
+     * 
+     * To list a single line, pass the same number for both `from` and `to`.
+     * 
+     * @param options The options for formatting the output.
+     * @param from The first line to print (default 0).
+     * @param to The last line to print (default end of program).
+     */
+    list(options: Partial<ListOptions> = {},
+        from: number = 0, to: number = 65536): string {
+        const allOptions = { ...DEFAULT_LIST_OPTIONS, ...options };
+
+        let result = "";
+        this.forEachLine(from, to, offset => {
+            result += this.listLine(offset, allOptions);
+        });
+        return result;
+    }
+
+    /**
+     * Returns a single line for the given compiled line in as little
+     * space as possible.
+     */
+    compactLine(offset: word): string {
+        let result = '';
+        let spaceIf: (nextToken: string) => boolean = () => false;
+
+        const lineNo = this.wordAt(offset);
+        result += lineNo;
+        spaceIf = (nextToken: string) => /^\d/.test(nextToken);
+        offset += 2;
+
+        while (this.program[offset] != 0) {
+            const token = this.program[offset];
+            let tokenString: string;
+            if (token >= 0x80 && token <= 0xea) {
+                tokenString = TOKEN_TO_STRING[token as keyof typeof TOKEN_TO_STRING];
+                if (tokenString === 'PRINT') {
+                    tokenString = '?';
                 }
-                else
-                    line += LETTERS[val];
-            } while (val);
-            line += '\n';
-            str += line;
-            addr = next;
-        } while (addr && addr >= start && addr < end);
+            } else {
+                tokenString = LETTERS[token];
+            }
 
-        return str;
+            if (spaceIf(tokenString)) {
+                result += ' ';
+            }
+
+            result += tokenString;
+
+            spaceIf = () => false;
+            if (token === STRING_TO_TOKEN['AT']) {
+                spaceIf = (nextToken) => nextToken.toUpperCase().startsWith('N');
+            }
+
+            offset++;
+        }
+        return result;
+    }
+
+    /**
+     * Returns a single line for the compiled line, but with even spacing:
+     *   * space after line number (not before)
+     *   * space before and after colons (`:`)
+     *   * space around equality and assignment operators (`=`, `<=`, etc.)
+     *   * space after tokens, unless it looks like a function call
+     *   * space after commas, but not before
+     */
+    prettyLine(offset: word): string {
+        let result = '';
+        let inString = false;
+        let spaceIf: (char: byte) => boolean = () => false;
+
+        const lineNo = this.wordAt(offset);
+        result += lineNo + ' ';
+        offset += 2;
+
+        while (this.program[offset] != 0) {
+            const token = this.program[offset];
+            let tokenString: string;
+            if (token >= 0x80 && token <= 0xea) {
+                tokenString = TOKEN_TO_STRING[token as keyof typeof TOKEN_TO_STRING];
+            } else {
+                tokenString = LETTERS[token];
+            }
+            if (tokenString === '"') {
+                inString = !inString;
+            }
+
+            if (spaceIf(token) || (!inString && tokenString === ':')) {
+                result += ' ';
+            }
+
+            result += tokenString;
+
+            if (!inString && tokenString === ':') {
+                spaceIf = () => true;
+            } else if (!inString && tokenString === ',') {
+                spaceIf = () => true;
+            } else if (token >= 0xcf && token <= 0xd1) {
+                // For '<', '=', '>', don't add a space between them.
+                spaceIf = (token: byte) => token < 0xcf || token > 0xd1;
+            } else if (token > 0x80 && token < 0xea) {
+                // By default, if a token is followed by an open paren, don't
+                // add a space.
+                spaceIf = (token: byte) => token !== 0x28;
+            } else {
+                // By default, if a literal is followed by a token, add a space.
+                spaceIf = (token: byte) => token >= 0x80 && token <= 0xea;
+            }
+
+            offset++;
+        }
+        return result;
+    }
+
+    /**
+     * Decompiles the program based on the given options.
+     */
+    decompile(options: Partial<DecompileOptions> = {},
+        from: number = 0, to: number = 65536): string {
+        const allOptions = { ...DEFAULT_DECOMPILE_OPTIONS, ...options };
+
+        const results: string[] = [];
+        this.forEachLine(from, to, offset => {
+            results.push(allOptions.style === 'compact' ? this.compactLine(offset) : this.prettyLine(offset));
+        });
+        return results.join('\n');
     }
 }
