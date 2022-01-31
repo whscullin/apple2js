@@ -1,7 +1,29 @@
-import { ApplesoftDecompiler } from 'js/applesoft/decompiler';
+import ApplesoftDecompiler from 'js/applesoft/decompiler';
 import ApplesoftCompiler from 'js/applesoft/compiler';
+import RAM from 'js/ram';
+import { Memory } from 'js/types';
+
+function decompileFromMemory(ram: Memory): string {
+    const decompiler = ApplesoftDecompiler.decompilerFromMemory(ram);
+    return decompiler.list();
+}
 
 describe('ApplesoftDecompiler', () => {
+    it('decompiles one-line program from memory', () => {
+        const ram = new RAM(0x00, 0xff);  // 64K
+        ApplesoftCompiler.compileToMemory(ram, '10 PRINT "Hello, World!"');
+
+        const program = decompileFromMemory(ram);
+        expect(program).toEqual(' 10  PRINT "Hello, World!"\n');
+    });
+
+    it('decompiles REM statements correctly', () => {
+        const ram = new RAM(0x00, 0xff);  // 64K
+        ApplesoftCompiler.compileToMemory(ram, '10 REMNo space before\n20 REM with space');
+
+        const program = decompileFromMemory(ram);
+        expect(program).toEqual(' 10  REM No space before\n 20  REM  with space\n');
+    });
 
     it('lists a one-line program', () => {
         const compiler = new ApplesoftCompiler();

@@ -16,7 +16,7 @@ import KeyBoard from './keyboard';
 import Tape, { TAPE_TYPES } from './tape';
 import type { GamepadConfiguration } from './types';
 
-import ApplesoftDump from '../applesoft/decompiler';
+import ApplesoftDecompiler from '../applesoft/decompiler';
 import ApplesoftCompiler from '../applesoft/compiler';
 
 import { debug } from '../util';
@@ -92,14 +92,17 @@ let ready: Promise<[void, void]>;
 
 export const driveLights = new DriveLights();
 
+/** Start of program (word) */
+const TXTTAB = 0x67;
+
 export function dumpAppleSoftProgram() {
-    const dumper = new ApplesoftDump(cpu);
-    debug(dumper.toString());
+    const decompiler = ApplesoftDecompiler.decompilerFromMemory(cpu);
+    debug(decompiler.list({apple2: _e ? 'e' : 'plus'}));
 }
 
 export function compileAppleSoftProgram(program: string) {
-    const compiler = new ApplesoftCompiler(cpu);
-    compiler.compile(program);
+    const start = cpu.read(TXTTAB) + (cpu.read(TXTTAB + 1) << 8);
+    ApplesoftCompiler.compileToMemory(cpu, program, start);
     dumpAppleSoftProgram();
 }
 

@@ -1,5 +1,13 @@
-import { byte, word, ReadonlyUint8Array } from '../types';
+import { byte, word, ReadonlyUint8Array, Memory } from '../types';
 import { TOKEN_TO_STRING, STRING_TO_TOKEN } from './tokens';
+
+/** Start of program (word) */
+const TXTTAB = 0x67;
+/**
+ * End of program (word). This is actually 1 or 2 bytes past the three
+ * zero bytes that end the program.
+ */
+const PRGEND = 0xAF;
 
 const LETTERS =
     '                                ' +
@@ -25,7 +33,25 @@ const DEFAULT_DECOMPILE_OPTIONS: DecompileOptions = {
     style: 'pretty',
 }
 
-export class ApplesoftDecompiler {
+export default class ApplesoftDecompiler {
+
+    /**
+     * Returns a decompiler for the program in the given memory.
+     * 
+     * The memory is assumed to have set `TXTTAB` and `PRGEND` correctly.
+     */
+    static decompilerFromMemory(ram: Memory): ApplesoftDecompiler {
+        const program: byte[] = [];
+
+        const start = ram.read(0x00, TXTTAB) + (ram.read(0x00, TXTTAB + 1) << 8);
+        const end = ram.read(0x00, PRGEND) + (ram.read(0x00, PRGEND + 1) << 8);
+        for (let addr = start; addr <= end; addr++) {
+            program.push(ram.read(addr >> 8, addr & 0xff));
+        }
+
+        return new ApplesoftDecompiler(new Uint8Array(program), start);
+    }
+
     /**
      * Constructs a decompiler for the given program data. The data is
      * assumed to be a dump of memory beginning at `base`. If the data
