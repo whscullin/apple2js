@@ -122,6 +122,10 @@ body {
     height: 16px;
 }
 
+.disk-light.on {
+    background-image: url(red-on-16.png);
+}
+
 .disk-label {
     color: #000;
     font-family: sans-serif;

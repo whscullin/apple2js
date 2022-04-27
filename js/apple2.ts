@@ -44,6 +44,7 @@ export interface Apple2Options {
 export interface Stats {
     frames: number,
     renderedFrames: number,
+    cycles: number,
 }
 
 interface State {
@@ -78,6 +79,7 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
     private tick: () => void;
 
     private stats: Stats = {
+        cycles: 0,
         frames: 0,
         renderedFrames: 0
     };
@@ -187,6 +189,7 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
                 }
             }
             this.stats.frames++;
+            this.stats.cycles = this.cpu.getCycles();
             this.io.tick();
             this.tick();
             processGamepad(this.io);

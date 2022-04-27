@@ -85,6 +85,14 @@ export class OptionsModal {
         }
     }
 
+    getOptions() {
+        return this.options;
+    }
+
+    getSections() {
+        return this.sections;
+    }
+
     openModal = () => {
         const content = document.querySelector('#options-modal-content');
         if (content) {

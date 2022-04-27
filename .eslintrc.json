@@ -120,5 +120,10 @@
             }
         }
     ],
-    "ignorePatterns": ["coverage/**/*"]
+    "ignorePatterns": ["coverage/**/*"],
+    "settings": {
+        "react": {
+          "pragma": "h"
+        }
+    }
 }
