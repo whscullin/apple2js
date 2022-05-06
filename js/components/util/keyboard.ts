@@ -2,6 +2,11 @@ import { JSX } from 'preact';
 import { byte, DeepMemberOf, KnownKeys } from '../../types';
 import { debug, toHex } from '../../util';
 
+/**
+ * Map of KeyboardEvent.keyCode to ASCII, for normal,
+ * shifted and control states.
+ */
+
 // keycode: [plain, ctrl, shift]
 export const keymap = {
     // Most of these won't happen
@@ -162,6 +167,10 @@ export const isUiKitKey = (k: string): k is KnownKeys<typeof uiKitMap> => {
     return k in uiKitMap;
 };
 
+/**
+ * Keyboard layout for the Apple ][ / ][+
+ */
+
 export const keys2 = [
     [
         ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', ':', '-', 'RESET'],
@@ -179,6 +188,10 @@ export const keys2 = [
 ] as const;
 
 export type Key2 = DeepMemberOf<typeof keys2>;
+
+/**
+ * Keyboard layout for the Apple //e
+ */
 
 export const keys2e = [
     [
@@ -202,6 +215,15 @@ export type Key = Key2 | Key2e;
 
 export type KeyFunction = (key: KeyboardEvent) => void
 
+/**
+ * Convert a DOM keyboard event into an ASCII equivalent that
+ * an Apple // can recognize.
+ *
+ * @param evt Event to convert
+ * @param caps Caps Lock state
+ * @returns ASCII character
+ */
+
 export const mapKeyEvent = (evt: KeyboardEvent, caps: boolean) => {
     const code = evt.keyCode;
     let key: byte = 0xff;
@@ -221,6 +243,17 @@ export const mapKeyEvent = (evt: KeyboardEvent, caps: boolean) => {
     return key;
 };
 
+/**
+ * Convert a mouse event into an ASCII character based on the
+ * data attached to the target DOM element.
+ *
+ * @param event Event to convert
+ * @param shifted Shift key state
+ * @param controlled Control key state
+ * @param caps Caps Lock state
+ * @param e //e status
+ * @returns ASCII character
+ */
 export const mapMouseEvent = (
     event: JSX.TargetedMouseEvent<HTMLElement>,
     shifted: boolean,
@@ -280,4 +313,26 @@ export const mapMouseEvent = (
         }
     }
     return { keyCode, key, keyLabel };
+};
+
+/**
+ * Remap keys so that upper and lower are a tuple per row instead of
+ * separate rows
+ *
+ * @param inKeys keys2 or keys2e
+ * @returns Keys remapped
+ */
+
+export const keysAsTuples = (inKeys: typeof keys2e | typeof keys2): string[][][] => {
+    const rows = [];
+    for (let idx = 0; idx < inKeys[0].length; idx++) {
+        const upper = inKeys[0][idx];
+        const lower = inKeys[1][idx];
+        const keys = [];
+        for (let jdx = 0; jdx < upper.length; jdx++) {
+            keys.push([upper[jdx], lower[jdx]]);
+        }
+        rows.push(keys);
+    }
+    return rows;
 };

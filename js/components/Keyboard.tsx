@@ -1,38 +1,36 @@
 import { h, Fragment, JSX } from 'preact';
-import classNames from 'classnames';
-import { useCallback, useEffect, useState } from 'preact/hooks';
+import cs from 'classnames';
+import { useCallback, useEffect, useMemo, useState } from 'preact/hooks';
 import { Apple2 as Apple2Impl } from '../apple2';
-import { mapKeyEvent, keys2e, mapMouseEvent } from './util/keyboard';
+import {
+    keys2,
+    keys2e,
+    mapKeyEvent,
+    mapMouseEvent,
+    keysAsTuples
+} from './util/keyboard';
 
-export interface KeyboardProps {
-    apple2: Apple2Impl | undefined
-}
-
-const keysAsTuples = (): string[][][] => {
-    const rows = [];
-    for (let idx = 0; idx < keys2e[0].length; idx++) {
-        const upper = keys2e[0][idx];
-        const lower = keys2e[1][idx];
-        const keys = [];
-        for (let jdx = 0; jdx < upper.length; jdx++) {
-            keys.push([upper[jdx], lower[jdx]]);
-        }
-        rows.push(keys);
-    }
-    return rows;
-};
-
-const keys = keysAsTuples();
+/**
+ * Convenience function for massaging key labels for upper
+ * and lower case
+ *
+ * @param key Raw key label
+ * @returns Span representing that label
+ */
 
 const buildLabel = (key: string) => {
     const small = key.length > 1 && !key.startsWith('&');
     return (
         <span
-            className={classNames({ small })}
-            dangerouslySetInnerHTML={{__html: key}}
+            className={cs({ small })}
+            dangerouslySetInnerHTML={{ __html: key }}
         />
     );
 };
+
+/**
+ * Key properties
+ */
 
 interface KeyProps {
     lower: string
@@ -43,18 +41,36 @@ interface KeyProps {
     onMouseUp: (event: MouseEvent) => void
 }
 
-export const Key = ({ lower, upper, active, pressed, onMouseDown, onMouseUp }: KeyProps) => {
+/**
+ * Individual Key components. Sets up DOM data attributes to be passed to mouse
+ * handlers
+ *
+ * @param lower Lower key symbol
+ * @param upper Upper key symbol
+ * @param active Active state for shift, control, lock
+ * @param pressed Pressed state
+ * @param onMouseDown mouse down callback
+ * @param onMouseUp mouse up callback
+ */
+export const Key = ({
+    lower,
+    upper,
+    active,
+    pressed,
+    onMouseDown,
+    onMouseUp
+}: KeyProps) => {
     const keyName = lower.replace(/[&#;]/g, '');
     const center =
         lower === 'LOCK' ?
             'v-center2' :
-            (upper === lower && upper.length > 0 ?
+            (upper === lower && upper.length > 1 ?
                 'v-center'
                 : ''
             );
     return (
         <div
-            className={classNames(
+            className={cs(
                 'key',
                 `key-${keyName}`,
                 center,
@@ -73,15 +89,34 @@ export const Key = ({ lower, upper, active, pressed, onMouseDown, onMouseUp }: K
     );
 };
 
-export const Keyboard = ({ apple2 }: KeyboardProps) => {
+/**
+ * Keyboard properties
+ */
+export interface KeyboardProps {
+    apple2: Apple2Impl | undefined
+    e: boolean
+}
+
+/**
+ * Keyboard component that can render an Apple ][ or //e keyboard
+ * and accept keyboard and mouse input. Relies heavily on the
+ * ancient keyboard css to achieve its appearance.
+ *
+ * @param apple2 Apple2 object
+ * @returns Keyboard component
+ */
+
+export const Keyboard = ({ apple2, e }: KeyboardProps) => {
     const [pressed, setPressed] = useState<string[]>([]);
     const [active, setActive] = useState<string[]>(['LOCK']);
+    const keys = useMemo(() => keysAsTuples(e ? keys2e : keys2 ), [e]);
 
     // Set global keystroke handler
     useEffect(() => {
         const keyDown = (event: KeyboardEvent) => {
             const key = mapKeyEvent(event, active.includes('LOCK'));
             if (key !== 0xff) {
+                // CTRL-SHIFT-DELETE for reset
                 if (key === 0x7F && event.shiftKey && event.ctrlKey) {
                     apple2?.reset();
                 } else {
@@ -151,19 +186,22 @@ export const Keyboard = ({ apple2 }: KeyboardProps) => {
         [apple2, active, pressed]
     );
 
-    const onMouseUp = useCallback((event: JSX.TargetedMouseEvent<HTMLElement>) => {
-        const { keyLabel } = mapMouseEvent(
-            event,
-            active.includes('SHIFT'),
-            active.includes('CTRL'),
-            active.includes('LOCK'),
-            true
-        );
-        apple2?.getIO().keyUp();
-        setPressed(pressed.filter(x => x !== keyLabel));
-    }, [apple2, active, pressed]);
+    const onMouseUp = useCallback(
+        (event: JSX.TargetedMouseEvent<HTMLElement>) => {
+            const { keyLabel } = mapMouseEvent(
+                event,
+                active.includes('SHIFT'),
+                active.includes('CTRL'),
+                active.includes('LOCK'),
+                true
+            );
+            apple2?.getIO().keyUp();
+            setPressed(pressed.filter(x => x !== keyLabel));
+        },
+        [apple2, active, pressed]
+    );
 
-    const bindKey = ([lower, upper] : [string, string]) =>
+    const bindKey = ([lower, upper]: [string, string]) =>
         <Key
             lower={lower}
             upper={upper}
@@ -180,7 +218,7 @@ export const Keyboard = ({ apple2 }: KeyboardProps) => {
     );
 
     return (
-        <div id="keyboard">
+        <div id="keyboard" style={{ marginLeft: e ? 0 : 15 }}>
             {rows}
         </div>
     );

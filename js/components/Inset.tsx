@@ -1,6 +1,12 @@
-import { h, FunctionComponent } from 'preact';
+import { h, FunctionalComponent } from 'preact';
 
-export const Inset: FunctionComponent = ({ children }) => (
+/**
+ * Convenience component for a nice beveled border
+ *
+ * @returns Inset component
+ */
+
+export const Inset: FunctionalComponent = ({ children }) => (
     <div className="inset">
         {children}
     </div>

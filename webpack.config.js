@@ -25,6 +25,10 @@ const baseConfig = {
     },
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
+        alias: {
+            js: path.resolve(__dirname, 'js/'),
+            json: path.resolve(__dirname, 'json/'),
+        }
     },
 };
 

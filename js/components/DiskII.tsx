@@ -1,37 +1,67 @@
-import { h, Fragment } from 'preact';
+import { h } from 'preact';
 import { useCallback, useEffect, useState } from 'preact/hooks';
-import classNames from 'classnames';
-import Disk2, { Callbacks } from '../cards/disk2';
-import { NibbleFormat } from '../formats/types';
-import Apple2IO from '../apple2io';
+import cs from 'classnames';
+import Disk2 from '../cards/disk2';
 import { FileModal } from './FileModal';
+import { loadJSON, loadHttpFile, getHashParts } from './util/files';
 
-export interface DiskIIProps {
-    io?: Apple2IO
-}
+/**
+ * Storage structure for Disk II state returned via callbacks
+ */
 
-interface DriveData {
+export interface DiskIIData {
     number: 1 | 2
     on: boolean
     name?: string
     side?: string
 }
 
-interface DriveProps extends DriveData {
+/**
+ * Interface for Disk II component
+ */
+
+export interface DiskIIProps extends DiskIIData {
     disk2?: Disk2
 }
 
-const Drive = ({ disk2, number, on, name, side }: DriveProps) => {
-    const label = side ? `${name} - ${side}` : name;
+/**
+ * Disk II component
+ *
+ * Include drive light, disk name and side, and UI for loading disks
+ * Handles initial loading of disks specified in the hash.
+ *
+ * @param disk2 Disk2 object
+ * @param number Drive 1 or 2
+ * @param on Active state
+ * @param name Disk name identifier
+ * @param side Disk side identifier
+ * @returns DiskII component
+ */
 
+export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
+    const label = side ? `${name} - ${side}` : name;
     const [modalOpen, setModalOpen] = useState(false);
 
-    const onOpen = useCallback((name: string, fmt: NibbleFormat, rawData: ArrayBuffer) => {
-        setModalOpen(false);
-        return disk2?.setBinary(number, name, fmt, rawData) || false;
-    }, [disk2, number]);
+    useEffect(() => {
+        const hashParts = getHashParts();
+        if (disk2 && hashParts && hashParts[number]) {
+            const hashPart = decodeURIComponent(hashParts[number]);
+            if (hashPart.match(/^https?:/)) {
+                loadHttpFile(disk2, number, hashPart)
+                    .catch((error) =>
+                        console.error(error)
+                    );
+            } else {
+                const filename = `/json/disks/${hashPart}.json`;
+                loadJSON(disk2, number, filename)
+                    .catch((error) =>
+                        console.error(error)
+                    );
+            }
+        }
+    }, [disk2]);
 
-    const onCancel = useCallback(() => {
+    const doClose = useCallback(() => {
         setModalOpen(false);
     }, []);
 
@@ -41,10 +71,10 @@ const Drive = ({ disk2, number, on, name, side }: DriveProps) => {
 
     return (
         <div className="disk">
-            <FileModal onOpen={onOpen} onCancel={onCancel} show={modalOpen} />
+            <FileModal disk2={disk2} number={number} onClose={doClose} isOpen={modalOpen} />
             <div
                 id={`disk${number}`}
-                className={classNames('disk-light', { on })}
+                className={cs('disk-light', { on })}
             />
             <button title="Load Disk">
                 <i class="fas fa-folder-open" onClick={onOpenModal} />
@@ -56,38 +86,5 @@ const Drive = ({ disk2, number, on, name, side }: DriveProps) => {
                 {label}
             </div>
         </div>
-    );
-};
-
-
-export const DiskII = ({ io }: DiskIIProps) => {
-    const [disk2, setDisk2] = useState<Disk2>();
-    const [data1, setData1] = useState<DriveData>({ on: false, number: 1, name: 'Disk1' });
-    const [data2, setData2] = useState<DriveData>({ on: false, number: 2, name: 'Disk2' });
-
-    useEffect(() => {
-        const setData = [setData1, setData2];
-        const callbacks: Callbacks = {
-            driveLight: (drive, on) => {
-                setData[drive - 1]?.(data => ({...data, on }));
-            },
-            label: (drive, name, side) => {
-                setData[drive - 1]?.(data => ({...data, name, side }));
-            },
-            dirty: () => {}
-        };
-
-        if (io) {
-            const disk2 = new Disk2(io, callbacks);
-            io.setSlot(6, disk2);
-            setDisk2(disk2);
-        }
-    }, [io]);
-
-    return (
-        <>
-            <Drive disk2={disk2} {...data1} />
-            <Drive disk2={disk2} {...data2} />
-        </>
     );
 };

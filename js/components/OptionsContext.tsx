@@ -1,4 +1,8 @@
 import { createContext } from 'preact';
-import { OptionsModal } from '../ui/options_modal';
+import { Options } from '../options';
 
-export const OptionsContext = createContext(new OptionsModal());
+/**
+ * Context for getting, setting and configuring options
+ */
+
+export const OptionsContext = createContext(new Options());

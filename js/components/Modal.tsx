@@ -1,4 +1,10 @@
 import { h, FunctionalComponent } from 'preact';
+import { useCallback } from 'preact/hooks';
+
+/**
+ * Temporary JS styling while I figure out how I really want
+ * to do it.
+ */
 
 const modalOverlayStyle = {
     position: 'fixed',
@@ -10,6 +16,7 @@ const modalOverlayStyle = {
     alignItems: 'center',
     justifyContent: 'center',
     background: 'rgba(0,0,0,0.6)',
+    zIndex: 1,
 };
 
 const modalStyle = {
@@ -21,7 +28,7 @@ const modalStyle = {
     boxSizing: 'border-box',
 };
 
-const modalTitleStyle = {
+const modalHeaderStyle = {
     display: 'flex',
     fontSize: '14px',
     justifyContent: 'space-between',
@@ -33,10 +40,20 @@ const modalTitleStyle = {
     borderRadius: '3px',
 };
 
+const modalTitleStyle = {
+    marginTop: 0,
+    marginBottom: 0,
+    fontWeight: 600,
+    fontSize: '1.25rem',
+    lineHeight: 1.25,
+    color: '#fff',
+    boxSizing: 'border-box',
+};
+
 const modalContentStyle = {
     marginTop: '10px',
     marginBottom: '10px',
-    lineHeight: '1.5',
+    lineHeight: 1.5,
     color: '#000'
 };
 
@@ -44,10 +61,12 @@ const modalFooterStyle = {
     textAlign: 'right'
 };
 
-export interface ModalProps {
-    show: boolean
-    title: string
-}
+/**
+ * ModalOverlay creates a semi-transparent overlay in which the
+ * modal is centered.
+ *
+ * @returns ModalOverlay component
+ */
 
 export const ModalOverlay: FunctionalComponent = ({ children }) => {
     return (
@@ -57,6 +76,12 @@ export const ModalOverlay: FunctionalComponent = ({ children }) => {
     );
 };
 
+/**
+ * ModalContent provides a styled container for modal content
+ *
+ * @returns ModalContent component
+ */
+
 export const ModalContent: FunctionalComponent = ({ children }) => {
     return (
         <div style={modalContentStyle}>
@@ -64,6 +89,12 @@ export const ModalContent: FunctionalComponent = ({ children }) => {
         </div>
     );
 };
+
+/**
+ * ModalFooter provides a right-aligned container for modal buttons
+ *
+ * @returns ModalFooter component
+ */
 
 export const ModalFooter: FunctionalComponent = ({ children }) => {
     return (
@@ -73,14 +104,69 @@ export const ModalFooter: FunctionalComponent = ({ children }) => {
     );
 };
 
-export const Modal: FunctionalComponent<ModalProps> = ({ show, title, children }) => {
+/**
+ * ModalHeader component properties
+ */
+
+export interface ModalHeaderProps {
+    onClose?: (closeBox?: boolean) => void
+    title: string
+}
+
+/**
+ * Header used internally for Modal component
+ *
+ * @param onClose Close callback
+ * @param title Modal title
+ * @returns
+ */
+
+export const ModalHeader = ({ onClose, title }: ModalHeaderProps) => {
+    const doClose = useCallback(() => onClose?.(true), [onClose]);
+
     return (
-        show ? (
+        <div style={modalHeaderStyle}>
+            <span style={modalTitleStyle}>{title}</span>
+            {onClose && (
+                <button onClick={doClose} title="Close">
+                    {'\u2715'}
+                </button>
+            )}
+        </div>
+    );
+};
+
+/**
+ * Modal component properties
+ */
+export interface ModalProps {
+    onClose?: (closeBox?: boolean) => void
+    isOpen: boolean
+    title: string
+}
+
+/**
+ * Very simple modal component, provides a transparent overlay, title bar
+ * with optional close box if onClose is provided. ModalContent and
+ * ModalFooter components are provided for convenience but not required.
+ *
+ * @param isOpen true to show modal
+ * @param title Modal title
+ * @onClose Close callback
+ * @returns Modal component
+ */
+
+export const Modal: FunctionalComponent<ModalProps> = ({
+    isOpen,
+    title,
+    children,
+    onClose
+}) => {
+    return (
+        isOpen ? (
             <ModalOverlay>
                 <div style={modalStyle}>
-                    <div style={modalTitleStyle}>
-                        {title}
-                    </div>
+                    {title && <ModalHeader onClose={onClose} title={title} />}
                     {children}
                 </div>
             </ModalOverlay>

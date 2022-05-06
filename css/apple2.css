@@ -587,6 +587,7 @@ button:focus {
 
 #reset-row .inset {
     margin: 0;
+    width: 604px;
 }
 
 #reset {
@@ -654,7 +655,6 @@ button:focus {
 
 #options-modal {
     width: 300px;
-    line-height: 1.75em;
 }
 
 #options-modal h3 {

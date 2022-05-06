@@ -1,51 +1,77 @@
-import { h } from 'preact';
+import { h, JSX } from 'preact';
 import { useCallback, useRef, useState } from 'preact/hooks';
-import { includes } from '../types';
-import { NibbleFormat, DISK_FORMATS, NIBBLE_FORMATS } from '../formats/types';
+import { DiskDescriptor, DriveNumber, NibbleFormat } from '../formats/types';
 import { Modal, ModalContent, ModalFooter } from './Modal';
-import { initGamepad } from '../ui/gamepad';
+import { loadLocalFile, loadJSON, getHashParts, setHashParts } from './util/files';
+import DiskII from '../cards/disk2';
+
+import index from 'json/disks/index.json';
+
+const categories = index.reduce<Record<string, DiskDescriptor[]>>(
+    (
+        acc: Record<string, DiskDescriptor[]>,
+        disk: DiskDescriptor
+    ) => {
+        const category = disk.category || 'Misc';
+        acc[category] = [disk, ...(acc[category] || [])];
+
+        return acc;
+    },
+    {}
+);
+
+const categoryNames = Object.keys(categories).sort();
+
+export type NibbleFileCallback = (
+    name: string,
+    fmt: NibbleFormat,
+    rawData: ArrayBuffer
+) => boolean
 
 interface FileModalProps {
-    show: boolean
-    onOpen: (name: string, fmt: NibbleFormat, rawData: ArrayBuffer) => boolean
-    onCancel: () => void
+    isOpen: boolean
+    disk2?: DiskII,
+    number: DriveNumber,
+    onClose: (closeBox?: boolean) => void
 }
 
-export const FileModal = ({ show, onOpen, onCancel } : FileModalProps) => {
+export const FileModal = ({ disk2, number, onClose, isOpen } : FileModalProps) => {
     const inputRef = useRef<HTMLInputElement>(null);
     const [busy, setBusy] = useState<boolean>(false);
     const [empty, setEmpty] = useState<boolean>(true);
+    const [category, setCategory] = useState<string>();
+    const [filename, setFilename] = useState<string>();
 
-    const onClick = useCallback(() => {
-        if (inputRef.current && inputRef.current.files?.length === 1) {
+    const doCancel = useCallback(() => onClose(true), []);
+
+    const doOpen = useCallback(() => {
+        const hashParts = getHashParts();
+
+        if (disk2 && inputRef.current && inputRef.current.files?.length === 1) {
+            hashParts[number] = '';
             setBusy(true);
-            const file = inputRef.current.files[0];
-            const fileReader = new FileReader();
-            fileReader.onload = function () {
-                const result = this.result as ArrayBuffer;
-                const parts = file.name.split('.');
-                const ext = parts.pop()!.toLowerCase();
-                const name = parts.join('.');
-
-                if (includes(DISK_FORMATS, ext)) {
-                    if (result.byteLength >= 800 * 1024) {
-                        console.error(`Unable to load ${name}`);
-                    } else {
-                        if (
-                            includes(NIBBLE_FORMATS, ext) &&
-                            onOpen(name, ext, result)
-                        ) {
-                            initGamepad();
-                        } else {
-                            console.error(`Unable to load ${name}`);
-                        }
-                    }
-                }
-                setBusy(false);
-            };
-            fileReader.readAsArrayBuffer(file);
+            loadLocalFile(disk2, number, inputRef.current.files[0])
+                .catch(console.error)
+                .finally(() => {
+                    setBusy(false);
+                    onClose();
+                });
         }
-    }, [ onOpen ]);
+
+        if (disk2 && filename) {
+            const name = filename.match(/\/([^/]+).json$/) || ['', ''];
+            hashParts[number] = name[1];
+            setBusy(true);
+            loadJSON(disk2, number, filename)
+                .catch(console.error)
+                .finally(() => {
+                    setBusy(false);
+                    onClose();
+                });
+        }
+
+        setHashParts(hashParts);
+    }, [ disk2, filename, number, onClose ]);
 
     const onChange = useCallback(() => {
         if (inputRef) {
@@ -53,14 +79,44 @@ export const FileModal = ({ show, onOpen, onCancel } : FileModalProps) => {
         }
     }, [ inputRef ]);
 
+    const doSelectCategory = useCallback(
+        (event: JSX.TargetedMouseEvent<HTMLSelectElement>) =>
+            setCategory(event.currentTarget.value)
+        , []
+    );
+
+    const doSelectFilename = useCallback(
+        (event: JSX.TargetedMouseEvent<HTMLSelectElement>) => {
+            setEmpty(!event.currentTarget.value);
+            setFilename(event.currentTarget.value);
+        }, []
+    );
+
+    const disks = category ? categories[category] : [];
+
     return (
-        <Modal title="Open File" show={show}>
+        <Modal title="Open File" isOpen={isOpen}>
             <ModalContent>
+                <div id="load-modal">
+                    <select multiple onChange={doSelectCategory}>
+                        {categoryNames.map((name) => (
+                            <option>{name}</option>
+                        ))}
+                    </select>
+                    <select multiple onChange={doSelectFilename}>
+                        {disks.map((disk) => (
+                            <option value={disk.filename}>
+                                {disk.name}
+                                {disk.disk ? ` - ${disk.disk}` : ''}
+                            </option>
+                        ))}
+                    </select>
+                </div>
                 <input type="file" ref={inputRef} onChange={onChange} />
             </ModalContent>
             <ModalFooter>
-                <button onClick={onCancel}>Cancel</button>
-                <button onClick={onClick} disabled={busy || empty}>Open</button>
+                <button onClick={doCancel}>Cancel</button>
+                <button onClick={doOpen} disabled={busy || empty}>Open</button>
             </ModalFooter>
         </Modal>
     );

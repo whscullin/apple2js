@@ -1,5 +1,5 @@
 import Apple2IO from '../apple2io';
-import { BOOLEAN_OPTION, OptionHandler } from './options_modal';
+import { BOOLEAN_OPTION, OptionHandler } from '../options';
 
 const JOYSTICK_DISABLE = 'disable_mouse';
 const JOYSTICK_FLIP_X_AXIS = 'flip_x';

@@ -1,10 +1,12 @@
 const havePrefs = typeof window.localStorage !== 'undefined';
 
 export default class Prefs {
-    params: URLSearchParams;
+    url: URL;
+    title: string;
 
     constructor() {
-        this.params = new URLSearchParams(window.location.search);
+        this.url = new URL(window.location.href);
+        this.title = window.document.title;
     }
 
     havePrefs() {
@@ -14,8 +16,8 @@ export default class Prefs {
     readPref(name: string): string | null
     readPref(name: string, defaultValue: string): string
     readPref(name: string, defaultValue: string | null = null) {
-        if (this.params.has(name)) {
-            return this.params.get(name);
+        if (this.url.searchParams.has(name)) {
+            return this.url.searchParams.get(name);
         }
 
         if (havePrefs) {
@@ -25,6 +27,15 @@ export default class Prefs {
     }
 
     writePref(name: string, value: string) {
+        if (this.url.searchParams.has(name)) {
+            this.url.searchParams.set(name, value);
+            history.replaceState(
+                null,
+                this.title,
+                this.url.toString()
+            );
+        }
+
         if (havePrefs) {
             window.localStorage.setItem(name, value);
         }
