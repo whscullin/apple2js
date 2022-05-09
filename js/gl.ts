@@ -797,6 +797,8 @@ export class VideoModesGL implements VideoModes {
         const gr = this._grs[this.pageMode - 1];
 
         if (this._refreshFlag) {
+            const { width, height } = screenEmu.C.NTSC_DETAILS.imageSize;
+            this.context.clearRect(0, 0, width, height);
             hgr.refresh();
             gr.refresh();
             this._refreshFlag = false;
