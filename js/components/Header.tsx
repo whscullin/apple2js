@@ -1,18 +1,17 @@
 import { h } from 'preact';
 
 /**
- * Header component properties
+ * Header component properties.
  */
 export interface HeaderProps {
-    e: boolean
+    e: boolean;
 }
 
 /**
- * Header component, which consists of a badge and title
+ * Header component, which consists of a badge and title.
  *
  * @returns Header component
  */
-
 export const Header = ({ e }: HeaderProps) => {
     return (
         <div id="header">

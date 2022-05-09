@@ -1,23 +1,22 @@
 import { h } from 'preact';
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { Apple2 as Apple2Impl } from '../apple2';
-import type { Stats} from '../apple2';
+import type { Stats } from '../apple2';
 
 /**
- * Interface for CPUMeter
+ * Interface for CPUMeter.
  */
 export interface CPUMeterProps {
-    apple2: Apple2Impl | undefined
+    apple2: Apple2Impl | undefined;
 }
 
 /**
  * A simple display that can cycle between emulator Khz
- * performance, frames/second and rendered frames/second
+ * performance, frames/second and rendered frames/second.
  *
  * @param apple2 Apple2 object
  * @returns CPU Meter component
  */
-
 export const CPUMeter = ({ apple2 }: CPUMeterProps) => {
     const lastStats = useRef<Stats>({
         frames: 0,

@@ -26,13 +26,13 @@ export type NibbleFileCallback = (
     name: string,
     fmt: NibbleFormat,
     rawData: ArrayBuffer
-) => boolean
+) => boolean;
 
 interface FileModalProps {
-    isOpen: boolean
-    disk2?: DiskII,
-    number: DriveNumber,
-    onClose: (closeBox?: boolean) => void
+    isOpen: boolean;
+    disk2: DiskII | undefined;
+    number: DriveNumber;
+    onClose: (closeBox?: boolean) => void;
 }
 
 export const FileModal = ({ disk2, number, onClose, isOpen } : FileModalProps) => {

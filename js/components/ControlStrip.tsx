@@ -15,8 +15,8 @@ import { System } from '../ui/system';
 const README = 'https://github.com/whscullin/apple2js#readme';
 
 interface ControlStripProps {
-    apple2?: Apple2Impl
-    e: boolean
+    apple2: Apple2Impl | undefined;
+    e: boolean;
 }
 
 /**
@@ -28,7 +28,6 @@ interface ControlStripProps {
  * @param e Whether or not this is a //e
  * @returns ControlStrip component
  */
-
 export const ControlStrip = ({ apple2, e }: ControlStripProps) => {
     const [running, setRunning] = useState(true);
     const [audio, setAudio] = useState<Audio>();

@@ -651,7 +651,7 @@ function updateLocalStorage() {
 
 type LocalDiskIndex = {
     [name: string]: string,
-}
+};
 
 function saveLocalStorage(drive: DriveNumber, name: string) {
     const diskIndex = JSON.parse(window.localStorage.diskIndex || '{}') as LocalDiskIndex;

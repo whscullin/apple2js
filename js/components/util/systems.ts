@@ -1,9 +1,9 @@
 export interface SystemType {
-    rom: string
-    characterRom: string
-    e: boolean
-    enhanced: boolean
-    sectors: 13 | 16
+    rom: string;
+    characterRom: string;
+    e: boolean;
+    enhanced: boolean;
+    sectors: 13 | 16;
 }
 
 // Enhanced Apple //e

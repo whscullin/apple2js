@@ -17,7 +17,6 @@ import {
  * @param key Raw key label
  * @returns Span representing that label
  */
-
 const buildLabel = (key: string) => {
     const small = key.length > 1 && !key.startsWith('&');
     return (
@@ -31,14 +30,13 @@ const buildLabel = (key: string) => {
 /**
  * Key properties
  */
-
 interface KeyProps {
-    lower: string
-    upper: string
-    active: boolean,
-    pressed: boolean
-    onMouseDown: (event: MouseEvent) => void
-    onMouseUp: (event: MouseEvent) => void
+    lower: string;
+    upper: string;
+    active: boolean;
+    pressed: boolean;
+    onMouseDown: (event: MouseEvent) => void;
+    onMouseUp: (event: MouseEvent) => void;
 }
 
 /**
@@ -93,8 +91,8 @@ export const Key = ({
  * Keyboard properties
  */
 export interface KeyboardProps {
-    apple2: Apple2Impl | undefined
-    e: boolean
+    apple2: Apple2Impl | undefined;
+    e: boolean;
 }
 
 /**
@@ -105,7 +103,6 @@ export interface KeyboardProps {
  * @param apple2 Apple2 object
  * @returns Keyboard component
  */
-
 export const Keyboard = ({ apple2, e }: KeyboardProps) => {
     const [pressed, setPressed] = useState<string[]>([]);
     const [active, setActive] = useState<string[]>(['LOCK']);

@@ -14,11 +14,10 @@ import {
 /**
  * Boolean property interface
  */
-
 interface BooleanProps {
-    option: BooleanOption
-    value: boolean
-    setValue: (name: string, value: boolean) => void
+    option: BooleanOption;
+    value: boolean;
+    setValue: (name: string, value: boolean) => void;
 }
 
 /**
@@ -51,11 +50,10 @@ const Boolean = ({ option, value, setValue } : BooleanProps) => {
 /**
  * Select property interface
  */
-
 interface SelectProps {
-    option: SelectOption
-    value: string
-    setValue: (name: string, value: string) => void
+    option: SelectOption;
+    value: string;
+    setValue: (name: string, value: string) => void;
 }
 
 /**
@@ -67,7 +65,6 @@ interface SelectProps {
  * @param setValue Value setter
  * @returns Select component
  */
-
 const Select = ({ option, value, setValue } : SelectProps) => {
     const { label, name } = option;
     const onChange = useCallback(
@@ -97,8 +94,8 @@ const Select = ({ option, value, setValue } : SelectProps) => {
  * OptionsModal properties
  */
 export interface OptionsModalProps {
-    isOpen: boolean
-    onClose: (closeBox?: boolean) => void
+    isOpen: boolean;
+    onClose: (closeBox?: boolean) => void;
 }
 
 /**
@@ -108,7 +105,6 @@ export interface OptionsModalProps {
  * @param Modal params
  * @returns OptionsModal component
  */
-
 export const OptionsModal = ({ isOpen, onClose }: OptionsModalProps) => {
     const options = useContext(OptionsContext);
     const sections = options.getSections();

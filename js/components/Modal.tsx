@@ -5,7 +5,6 @@ import { useCallback } from 'preact/hooks';
  * Temporary JS styling while I figure out how I really want
  * to do it.
  */
-
 const modalOverlayStyle = {
     position: 'fixed',
     left: '0',
@@ -67,7 +66,6 @@ const modalFooterStyle = {
  *
  * @returns ModalOverlay component
  */
-
 export const ModalOverlay: FunctionalComponent = ({ children }) => {
     return (
         <div style={modalOverlayStyle}>
@@ -81,7 +79,6 @@ export const ModalOverlay: FunctionalComponent = ({ children }) => {
  *
  * @returns ModalContent component
  */
-
 export const ModalContent: FunctionalComponent = ({ children }) => {
     return (
         <div style={modalContentStyle}>
@@ -91,11 +88,10 @@ export const ModalContent: FunctionalComponent = ({ children }) => {
 };
 
 /**
- * ModalFooter provides a right-aligned container for modal buttons
+ * ModalFooter provides a right-aligned container for modal buttons.
  *
  * @returns ModalFooter component
  */
-
 export const ModalFooter: FunctionalComponent = ({ children }) => {
     return (
         <div style={modalFooterStyle}>
@@ -107,10 +103,9 @@ export const ModalFooter: FunctionalComponent = ({ children }) => {
 /**
  * ModalHeader component properties
  */
-
 export interface ModalHeaderProps {
-    onClose?: (closeBox?: boolean) => void
-    title: string
+    onClose?: (closeBox?: boolean) => void;
+    title: string;
 }
 
 /**
@@ -120,7 +115,6 @@ export interface ModalHeaderProps {
  * @param title Modal title
  * @returns
  */
-
 export const ModalHeader = ({ onClose, title }: ModalHeaderProps) => {
     const doClose = useCallback(() => onClose?.(true), [onClose]);
 
@@ -155,7 +149,6 @@ export interface ModalProps {
  * @onClose Close callback
  * @returns Modal component
  */
-
 export const Modal: FunctionalComponent<ModalProps> = ({
     isOpen,
     title,

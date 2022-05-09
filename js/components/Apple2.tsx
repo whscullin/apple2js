@@ -10,15 +10,15 @@ import { Screen } from './Screen';
 import { Drives } from './Drives';
 
 /**
- * Interface for the Apple2 component
+ * Interface for the Apple2 component.
  */
 export interface Apple2Props {
-    characterRom: string
-    enhanced: boolean
-    e: boolean
-    gl: boolean
-    rom: string
-    sectors: number
+    characterRom: string;
+    enhanced: boolean;
+    e: boolean;
+    gl: boolean;
+    rom: string;
+    sectors: number;
 }
 
 /**
@@ -30,7 +30,6 @@ export interface Apple2Props {
  * @param props Apple2 initialization props
  * @returns
  */
-
 export const Apple2 = (props: Apple2Props) => {
     const { e, sectors } = props;
     const screen = useRef<HTMLCanvasElement>(null);
@@ -38,7 +37,7 @@ export const Apple2 = (props: Apple2Props) => {
     const [io, setIO] = useState<Apple2IO>();
 
     useEffect(() => {
-        if (screen.current && !apple2) {
+        if (screen.current) {
             const options = {
                 canvas: screen.current,
                 tick: () => {},
@@ -53,7 +52,7 @@ export const Apple2 = (props: Apple2Props) => {
                 apple2.run();
             }).catch(error => console.error(error));
         }
-    }, [screen.current]);
+    }, []);
 
     return (
         <div className={cs('outer', { apple2e: e})}>

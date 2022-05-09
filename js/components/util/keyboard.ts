@@ -6,7 +6,6 @@ import { debug, toHex } from '../../util';
  * Map of KeyboardEvent.keyCode to ASCII, for normal,
  * shifted and control states.
  */
-
 // keycode: [plain, ctrl, shift]
 export const keymap = {
     // Most of these won't happen
@@ -170,7 +169,6 @@ export const isUiKitKey = (k: string): k is KnownKeys<typeof uiKitMap> => {
 /**
  * Keyboard layout for the Apple ][ / ][+
  */
-
 export const keys2 = [
     [
         ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', ':', '-', 'RESET'],
@@ -192,7 +190,6 @@ export type Key2 = DeepMemberOf<typeof keys2>;
 /**
  * Keyboard layout for the Apple //e
  */
-
 export const keys2e = [
     [
         ['ESC', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 'DELETE'],
@@ -213,7 +210,7 @@ export type Key2e = DeepMemberOf<typeof keys2e>;
 
 export type Key = Key2 | Key2e;
 
-export type KeyFunction = (key: KeyboardEvent) => void
+export type KeyFunction = (key: KeyboardEvent) => void;
 
 /**
  * Convert a DOM keyboard event into an ASCII equivalent that
@@ -223,7 +220,6 @@ export type KeyFunction = (key: KeyboardEvent) => void
  * @param caps Caps Lock state
  * @returns ASCII character
  */
-
 export const mapKeyEvent = (evt: KeyboardEvent, caps: boolean) => {
     const code = evt.keyCode;
     let key: byte = 0xff;
@@ -322,7 +318,6 @@ export const mapMouseEvent = (
  * @param inKeys keys2 or keys2e
  * @returns Keys remapped
  */
-
 export const keysAsTuples = (inKeys: typeof keys2e | typeof keys2): string[][][] => {
     const rows = [];
     for (let idx = 0; idx < inKeys[0].length; idx++) {

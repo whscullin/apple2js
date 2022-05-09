@@ -13,7 +13,6 @@ import DiskII from 'js/cards/disk2';
  *
  * @returns an padded array for 1 based indexing
  */
-
 export const getHashParts = () => {
     const parts = window.location.hash.match(/^#([^|]*)\|?(.*)$/) || ['', '', ''];
     return ['', parts[1], parts[2]];
@@ -24,7 +23,6 @@ export const getHashParts = () => {
  *
  * @param parts a padded array with values starting at index 1
  */
-
 export const setHashParts = (parts: string[]) => {
     window.location.hash = `#${parts[1]}` + (parts[2] ? `|${parts[2]}` : '');
 };
@@ -38,8 +36,7 @@ export const setHashParts = (parts: string[]) => {
  * @param file Browser File object to load
  * @returns true if successful
  */
-
-export const loadLocalFile = async (
+export const loadLocalFile = (
     disk2: DiskII,
     number: DriveNumber,
     file: File,
@@ -82,25 +79,17 @@ export const loadLocalFile = async (
  * @param url URL, relative or absolute to JSON file
  * @returns true if successful
  */
-
 export const loadJSON = async (disk2: DiskII, number: DriveNumber, url: string) => {
-    return new Promise((resolve, reject) => {
-        fetch(url).then(function (response: Response) {
-            if (response.ok) {
-                return response.json();
-            } else {
-                throw new Error('Error loading: ' + response.statusText);
-            }
-        }).then(function (data: JSONDisk) {
-            if (includes(DISK_FORMATS, data.type)) {
-                disk2.setDisk(number, data);
-            }
-            initGamepad(data.gamepad);
-            resolve(true);
-        }).catch(function (error) {
-            reject(error.message);
-        });
-    });
+    const response = await fetch(url);
+    if (response.ok) {
+        const data: JSONDisk = await response.json();
+        if (includes(NIBBLE_FORMATS, data.type)) {
+            disk2.setDisk(number, data);
+        }
+        initGamepad(data.gamepad);
+    } else {
+        throw new Error('Error loading: ' + response.statusText);
+    }
 };
 
 /**
@@ -113,7 +102,6 @@ export const loadJSON = async (disk2: DiskII, number: DriveNumber, url: string) 
  * @param url URL, relative or absolute to JSON file
  * @returns true if successful
  */
-
 export const loadHttpFile = async (
     disk2: DiskII,
     number: DriveNumber,
@@ -122,55 +110,39 @@ export const loadHttpFile = async (
     if (url.endsWith('.json')) {
         return loadJSON(disk2, number, url);
     } else {
-        return new Promise((resolve, reject) => {
-            fetch(url).then(function (response: Response) {
-                if (response.ok) {
-                    const reader = response!.body!.getReader();
-                    let received = 0;
-                    const chunks: Uint8Array[] = [];
-                    // const contentLength = parseInt(response.headers.get('content-length')!, 10);
+        const response = await fetch(url);
+        if (response.ok) {
+            const reader = response.body!.getReader();
+            let received = 0;
+            const chunks: Uint8Array[] = [];
 
-                    return reader.read().then(
-                        function readChunk(result): Promise<ArrayBufferLike> {
-                            if (result.done) {
-                                const data = new Uint8Array(received);
-                                let offset = 0;
-                                for (let idx = 0; idx < chunks.length; idx++) {
-                                    data.set(chunks[idx], offset);
-                                    offset += chunks[idx].length;
-                                }
-                                return Promise.resolve(data.buffer);
-                            }
+            let result = await reader.read();
+            while (!result.done) {
+                chunks.push(result.value);
+                received += result.value.length;
+                result = await reader.read();
+            }
 
-                            received += result.value.length;
-                            // if (contentLength) {
-                            //     loadingProgress(received, contentLength);
-                            // }
-                            chunks.push(result.value);
+            const data = new Uint8Array(received);
+            let offset = 0;
+            for (const chunk of chunks) {
+                data.set(chunk, offset);
+                offset += chunk.length;
+            }
 
-                            return reader.read().then(readChunk);
-                        });
-                } else {
-                    reject('Error loading: ' + response.statusText);
-                }
-            }).then(function (data: ArrayBufferLike) {
-                const urlParts = url!.split('/');
-                const file = urlParts.pop()!;
-                const fileParts = file.split('.');
-                const ext = fileParts.pop()!.toLowerCase();
-                const name = decodeURIComponent(fileParts.join('.'));
-                if (data.byteLength >= 800 * 1024) {
-                    reject(`Unable to load ${url}`);
-                } else if (
-                    includes(NIBBLE_FORMATS, ext) &&
-                    disk2.setBinary(number, name, ext, data)
-                ) {
-                    initGamepad();
-                } else {
-                    reject(`Extension ${ext} not recognized.`);
-                }
-                resolve(true);
-            }).catch(reject);
-        });
+            const urlParts = url!.split('/');
+            const file = urlParts.pop()!;
+            const fileParts = file.split('.');
+            const ext = fileParts.pop()!.toLowerCase();
+            const name = decodeURIComponent(fileParts.join('.'));
+            if (includes(NIBBLE_FORMATS, ext)) {
+                disk2.setBinary(number, name, ext, data);
+                initGamepad();
+            } else {
+                throw new Error(`Extension ${ext} not recognized.`);
+            }
+        } else {
+            throw new Error('Error loading: ' + response.statusText);
+        }
     }
 };

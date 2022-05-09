@@ -5,23 +5,21 @@ import Apple2IO from '../apple2io';
 import { DiskII, DiskIIData } from './DiskII';
 
 /**
- * Interface for Drives component
+ * Interface for Drives component.
  */
-
 export interface DrivesProps {
-    io?: Apple2IO
-    sectors: number
+    io: Apple2IO | undefined;
+    sectors: number;
 }
 
 /**
  * Drive interface component. Presents the interface to load disks.
  * Provides the callback to the Disk2 object to update the DiskII
- * components
+ * components.
  *
  * @param io Apple I/O object
  * @returns Drives component
  */
-
 export const Drives = ({ io, sectors }: DrivesProps) => {
     const [disk2, setDisk2] = useState<Disk2>();
     const [data1, setData1] = useState<DiskIIData>({ on: false, number: 1, name: 'Disk 1' });

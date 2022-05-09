@@ -6,28 +6,26 @@ import { FileModal } from './FileModal';
 import { loadJSON, loadHttpFile, getHashParts } from './util/files';
 
 /**
- * Storage structure for Disk II state returned via callbacks
+ * Storage structure for Disk II state returned via callbacks.
  */
-
 export interface DiskIIData {
-    number: 1 | 2
-    on: boolean
-    name?: string
-    side?: string
+    number: 1 | 2;
+    on: boolean;
+    name?: string;
+    side?: string;
 }
 
 /**
- * Interface for Disk II component
+ * Interface for Disk II component.
  */
-
 export interface DiskIIProps extends DiskIIData {
-    disk2?: Disk2
+    disk2: Disk2 | undefined;
 }
 
 /**
  * Disk II component
  *
- * Include drive light, disk name and side, and UI for loading disks
+ * Includes drive light, disk name and side, and UI for loading disks.
  * Handles initial loading of disks specified in the hash.
  *
  * @param disk2 Disk2 object
@@ -37,7 +35,6 @@ export interface DiskIIProps extends DiskIIData {
  * @param side Disk side identifier
  * @returns DiskII component
  */
-
 export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
     const label = side ? `${name} - ${side}` : name;
     const [modalOpen, setModalOpen] = useState(false);

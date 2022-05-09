@@ -20,7 +20,8 @@
         "prefer-const": [
             "error"
         ],
-        "semi": [
+        "semi": "off",
+        "@typescript-eslint/semi": [
             "error",
             "always"
         ],
@@ -52,7 +53,8 @@
                     "error"
                 ]
             }
-        ]
+        ],
+        "@typescript-eslint/require-await": ["error"]
     },
     "env": {
         "builtin": true,

@@ -4,17 +4,16 @@ import { h, Ref } from 'preact';
  * Screen properties
  */
 export interface ScreenProps {
-    screen: Ref<HTMLCanvasElement>
+    screen: Ref<HTMLCanvasElement>;
 }
 
 /**
  * Styled canvas element that the Apple II display is
- * rendered to by VideoModes
+ * rendered to by VideoModes.
  *
  * @param screen Canvas element reference
  * @returns
  */
-
 export const Screen = ({ screen }: ScreenProps) => {
     return (
         <div id="display">

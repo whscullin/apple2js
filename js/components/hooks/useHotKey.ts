@@ -7,7 +7,6 @@ import { useEffect } from 'preact/hooks';
  * @param key KeyboardEvent key value to match
  * @param callback Invoked when key is pressed
  */
-
 export const useHotKey = (key: string, callback: (ev: KeyboardEvent) => void) => {
     useEffect(() => {
         const onKeyDown = (ev: KeyboardEvent) => {

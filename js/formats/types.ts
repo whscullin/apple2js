@@ -210,7 +210,7 @@ export interface DiskProcessedResponse {
 }
 
 export type FormatWorkerResponse =
-    DiskProcessedResponse
+    DiskProcessedResponse;
 
 /**
  * Block device common interface

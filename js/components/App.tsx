@@ -9,11 +9,10 @@ import { defaultSystem, systemTypes } from './util/systems';
 
 /**
  * Top level application component, provides the parameters
- * needed by the Apple2 component to bootstrap itself
+ * needed by the Apple2 component to bootstrap itself.
  *
  * @returns Application component
  */
-
 export const App = () => {
     const prefs = usePrefs();
     const systemType = prefs.readPref(SYSTEM_TYPE_APPLE2E, 'apple2enh');
