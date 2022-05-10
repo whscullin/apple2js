@@ -83,9 +83,10 @@ export const loadJSON = async (disk2: DiskII, number: DriveNumber, url: string) 
         throw new Error(`Error loading: ${response.statusText}`);
     }
     const data: JSONDisk = await response.json();
-    if (includes(NIBBLE_FORMATS, data.type)) {
-        disk2.setDisk(number, data);
+    if (!includes(NIBBLE_FORMATS, data.type)) {
+        throw new Error(`Type ${data.type} not recognized.`);
     }
+    disk2.setDisk(number, data);
     initGamepad(data.gamepad);
 };
 
