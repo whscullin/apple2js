@@ -32,27 +32,27 @@ import { Restorable, rom } from './types';
 import { processGamepad } from './ui/gamepad';
 
 export interface Apple2Options {
-    characterRom: string
-    enhanced: boolean
-    e: boolean
-    gl: boolean
-    rom: string
-    canvas: HTMLCanvasElement
-    tick: () => void
+    characterRom: string;
+    enhanced: boolean;
+    e: boolean;
+    gl: boolean;
+    rom: string;
+    canvas: HTMLCanvasElement;
+    tick: () => void;
 }
 
 export interface Stats {
-    cycles: number
-    frames: number
-    renderedFrames: number
+    cycles: number;
+    frames: number;
+    renderedFrames: number;
 }
 
 interface State {
-    cpu: CpuState
-    vm: VideoModesState
-    io: Apple2IOState
-    mmu?: MMUState
-    ram?: RAMState[]
+    cpu: CpuState;
+    vm: VideoModesState;
+    io: Apple2IOState;
+    mmu?: MMUState;
+    ram?: RAMState[];
 }
 
 export class Apple2 implements Restorable<State>, DebuggerContainer {

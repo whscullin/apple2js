@@ -1,5 +1,6 @@
 import { h, FunctionalComponent } from 'preact';
 import { useCallback } from 'preact/hooks';
+import { useHotKey } from './hooks/useHotKey';
 
 /**
  * Temporary JS styling while I figure out how I really want
@@ -101,6 +102,31 @@ export const ModalFooter: FunctionalComponent = ({ children }) => {
 };
 
 /**
+ * ModalCloseButton component properties
+ */
+interface ModalCloseButtonProp {
+    onClose: (closeBox?: boolean) => void;
+}
+
+/**
+ * Renders a close button and registers a global Escape key
+ * hook to trigger it.
+ *
+ * @param onClose Close callback
+ * @returns ModalClose component
+ */
+export const ModalCloseButton = ({ onClose }: ModalCloseButtonProp) => {
+    const doClose = useCallback(() => onClose(true), [onClose]);
+    useHotKey('Escape', doClose);
+
+    return (
+        <button onClick={doClose} title="Close">
+            {'\u2715'}
+        </button>
+    );
+};
+
+/**
  * ModalHeader component properties
  */
 export interface ModalHeaderProps {
@@ -113,19 +139,13 @@ export interface ModalHeaderProps {
  *
  * @param onClose Close callback
  * @param title Modal title
- * @returns
+ * @returns ModalHeader component
  */
 export const ModalHeader = ({ onClose, title }: ModalHeaderProps) => {
-    const doClose = useCallback(() => onClose?.(true), [onClose]);
-
     return (
         <div style={modalHeaderStyle}>
             <span style={modalTitleStyle}>{title}</span>
-            {onClose && (
-                <button onClick={doClose} title="Close">
-                    {'\u2715'}
-                </button>
-            )}
+            {onClose && <ModalCloseButton onClose={onClose} />}
         </div>
     );
 };

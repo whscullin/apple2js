@@ -221,6 +221,7 @@ export type KeyFunction = (key: KeyboardEvent) => void;
  * @returns ASCII character
  */
 export const mapKeyEvent = (evt: KeyboardEvent, caps: boolean) => {
+    // TODO(whscullin): Find replacement for deprecated keycode
     const code = evt.keyCode;
     let key: byte = 0xff;
 
@@ -233,7 +234,7 @@ export const mapKeyEvent = (evt: KeyboardEvent, caps: boolean) => {
             key -= 0x20;
         }
     } else {
-        debug('Unhandled key = ' + toHex(code));
+        debug(`Unhandled key = ${toHex(code)}`);
     }
 
     return key;

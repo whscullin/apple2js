@@ -1,7 +1,6 @@
 import { includes } from 'js/types';
 import { initGamepad } from 'js/ui/gamepad';
 import {
-    DISK_FORMATS,
     DriveNumber,
     JSONDisk,
     NIBBLE_FORMATS
@@ -46,24 +45,23 @@ export const loadLocalFile = (
         fileReader.onload = function () {
             const result = this.result as ArrayBuffer;
             const parts = file.name.split('.');
-            const ext = parts.pop()!.toLowerCase();
+            const ext = parts.pop()?.toLowerCase() || '[none]';
             const name = parts.join('.');
 
-            if (includes(DISK_FORMATS, ext)) {
+            if (includes(NIBBLE_FORMATS, ext)) {
                 if (result.byteLength >= 800 * 1024) {
                     reject(`Unable to load ${name}`);
                 } else {
-                    if (
-                        includes(NIBBLE_FORMATS, ext) &&
-                        disk2?.setBinary(number, name, ext, result)
-                    ) {
-                        initGamepad();
+                    initGamepad();
+                    if (disk2.setBinary(number, name, ext, result)) {
+                        resolve(true);
                     } else {
                         reject(`Unable to load ${name}`);
                     }
                 }
+            } else {
+                reject(`Extension ${ext} not recognized.`);
             }
-            resolve(true);
         };
         fileReader.readAsArrayBuffer(file);
     });
@@ -81,15 +79,14 @@ export const loadLocalFile = (
  */
 export const loadJSON = async (disk2: DiskII, number: DriveNumber, url: string) => {
     const response = await fetch(url);
-    if (response.ok) {
-        const data: JSONDisk = await response.json();
-        if (includes(NIBBLE_FORMATS, data.type)) {
-            disk2.setDisk(number, data);
-        }
-        initGamepad(data.gamepad);
-    } else {
-        throw new Error('Error loading: ' + response.statusText);
+    if (!response.ok) {
+        throw new Error(`Error loading: ${response.statusText}`);
     }
+    const data: JSONDisk = await response.json();
+    if (includes(NIBBLE_FORMATS, data.type)) {
+        disk2.setDisk(number, data);
+    }
+    initGamepad(data.gamepad);
 };
 
 /**
@@ -109,40 +106,37 @@ export const loadHttpFile = async (
 ) => {
     if (url.endsWith('.json')) {
         return loadJSON(disk2, number, url);
-    } else {
-        const response = await fetch(url);
-        if (response.ok) {
-            const reader = response.body!.getReader();
-            let received = 0;
-            const chunks: Uint8Array[] = [];
-
-            let result = await reader.read();
-            while (!result.done) {
-                chunks.push(result.value);
-                received += result.value.length;
-                result = await reader.read();
-            }
-
-            const data = new Uint8Array(received);
-            let offset = 0;
-            for (const chunk of chunks) {
-                data.set(chunk, offset);
-                offset += chunk.length;
-            }
-
-            const urlParts = url!.split('/');
-            const file = urlParts.pop()!;
-            const fileParts = file.split('.');
-            const ext = fileParts.pop()!.toLowerCase();
-            const name = decodeURIComponent(fileParts.join('.'));
-            if (includes(NIBBLE_FORMATS, ext)) {
-                disk2.setBinary(number, name, ext, data);
-                initGamepad();
-            } else {
-                throw new Error(`Extension ${ext} not recognized.`);
-            }
-        } else {
-            throw new Error('Error loading: ' + response.statusText);
-        }
     }
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Error loading: ${response.statusText}`);
+    }
+    const reader = response.body!.getReader();
+    let received = 0;
+    const chunks: Uint8Array[] = [];
+
+    let result = await reader.read();
+    while (!result.done) {
+        chunks.push(result.value);
+        received += result.value.length;
+        result = await reader.read();
+    }
+
+    const data = new Uint8Array(received);
+    let offset = 0;
+    for (const chunk of chunks) {
+        data.set(chunk, offset);
+        offset += chunk.length;
+    }
+
+    const urlParts = url.split('/');
+    const file = urlParts.pop()!;
+    const fileParts = file.split('.');
+    const ext = fileParts.pop()?.toLowerCase() || '[none]';
+    const name = decodeURIComponent(fileParts.join('.'));
+    if (!includes(NIBBLE_FORMATS, ext)) {
+        throw new Error(`Extension ${ext} not recognized.`);
+    }
+    disk2.setBinary(number, name, ext, data);
+    initGamepad();
 };
