@@ -82,7 +82,7 @@ const IDENTITY = {
 };
 
 export interface CFFAState {
-    disks: Array<BlockDisk | null>
+    disks: Array<BlockDisk | null>;
 }
 
 export default class CFFA implements Card, MassStorage, Restorable<CFFAState> {

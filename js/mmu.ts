@@ -122,29 +122,29 @@ class AuxRom implements Memory {
 }
 
 export interface MMUState {
-    bank1: boolean
-    readbsr: boolean
-    writebsr: boolean
-    prewrite: boolean
+    bank1: boolean;
+    readbsr: boolean;
+    writebsr: boolean;
+    prewrite: boolean;
 
-    intcxrom: boolean
-    slot3rom: boolean
-    intc8rom: boolean
+    intcxrom: boolean;
+    slot3rom: boolean;
+    intc8rom: boolean;
 
-    auxRamRead: boolean
-    auxRamWrite: boolean
-    altzp: boolean
+    auxRamRead: boolean;
+    auxRamWrite: boolean;
+    altzp: boolean;
 
-    _80store: boolean
-    page2: boolean
-    hires: boolean
+    _80store: boolean;
+    page2: boolean;
+    hires: boolean;
 
-    mem00_01: [RAMState, RAMState]
-    mem02_03: [RAMState, RAMState]
-    mem0C_1F: [RAMState, RAMState]
-    mem60_BF: [RAMState, RAMState]
-    memD0_DF: [ROMState, RAMState, RAMState, RAMState, RAMState]
-    memE0_FF: [ROMState, RAMState, RAMState]
+    mem00_01: [RAMState, RAMState];
+    mem02_03: [RAMState, RAMState];
+    mem0C_1F: [RAMState, RAMState];
+    mem60_BF: [RAMState, RAMState];
+    memD0_DF: [ROMState, RAMState, RAMState, RAMState, RAMState];
+    memE0_FF: [ROMState, RAMState, RAMState];
 }
 
 export default class MMU implements Memory, Restorable<MMUState> {

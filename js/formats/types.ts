@@ -9,13 +9,13 @@ export type DriveNumber = MemberOf<typeof DRIVE_NUMBERS>;
  */
 
 export interface DiskOptions {
-    name: string
-    side?: string
-    volume: byte
-    readOnly: boolean
-    data?: memory[][]
-    rawData?: ArrayBuffer
-    blockVolume?: boolean
+    name: string;
+    side?: string;
+    volume: byte;
+    readOnly: boolean;
+    data?: memory[][];
+    rawData?: ArrayBuffer;
+    blockVolume?: boolean;
 }
 
 /**
@@ -34,11 +34,11 @@ export interface DiskDescriptor {
  */
 
 export interface JSONBinaryImage {
-    type: 'binary',
-    start: word,
-    length: word,
-    data: byte[],
-    gamepad?: GamepadConfiguration,
+    type: 'binary';
+    start: word;
+    length: word;
+    data: byte[];
+    gamepad?: GamepadConfiguration;
 }
 
 /**
@@ -47,9 +47,9 @@ export interface JSONBinaryImage {
  */
 
 export interface Disk {
-    name: string
-    side?: string
-    readOnly: boolean
+    name: string;
+    side?: string;
+    readOnly: boolean;
 }
 
 export const ENCODING_NIBBLE = 'nibble';
@@ -57,24 +57,24 @@ export const ENCODING_BITSTREAM = 'bitstream';
 export const ENCODING_BLOCK = 'block';
 
 export interface FloppyDisk extends Disk {
-    tracks: memory[]
+    tracks: memory[];
 }
 
 export interface NibbleDisk extends FloppyDisk {
-    encoding: typeof ENCODING_NIBBLE
-    format: DiskFormat
-    volume: byte
+    encoding: typeof ENCODING_NIBBLE;
+    format: DiskFormat;
+    volume: byte;
 }
 
 export interface WozDisk extends FloppyDisk {
-    encoding: typeof ENCODING_BITSTREAM
-    trackMap: number[]
-    rawTracks: Uint8Array[]
+    encoding: typeof ENCODING_BITSTREAM;
+    trackMap: number[];
+    rawTracks: Uint8Array[];
 }
 
 export interface BlockDisk extends Disk {
-    encoding: typeof ENCODING_BLOCK
-    blocks: Uint8Array[]
+    encoding: typeof ENCODING_BLOCK;
+    blocks: Uint8Array[];
 }
 
 /**
@@ -123,9 +123,9 @@ export class JSONDiskBase {
  */
 
 export interface Base64JSONDisk extends JSONDiskBase {
-    type: Exclude<DiskFormat, 'nib'>
-    encoding: 'base64'
-    data: string[][]
+    type: Exclude<DiskFormat, 'nib'>;
+    encoding: 'base64';
+    data: string[][];
 }
 
 /**
@@ -133,9 +133,9 @@ export interface Base64JSONDisk extends JSONDiskBase {
  */
 
 export interface Base64JSONNibbleDisk extends JSONDiskBase {
-    type: 'nib'
-    encoding: 'base64'
-    data: string[]
+    type: 'nib';
+    encoding: 'base64';
+    data: string[];
 }
 
 /**
@@ -143,9 +143,9 @@ export interface Base64JSONNibbleDisk extends JSONDiskBase {
  */
 
 export interface BinaryJSONDisk extends JSONDiskBase {
-    type: DiskFormat
-    encoding: 'binary'
-    data: memory[][]
+    type: DiskFormat;
+    encoding: 'binary';
+    data: memory[][];
 }
 
 /**
@@ -164,30 +164,30 @@ export const PROCESS_JSON = 'PROCESS_JSON';
 
 /** Binary disk file message */
 export interface ProcessBinaryMessage {
-    type: typeof PROCESS_BINARY
+    type: typeof PROCESS_BINARY;
     payload: {
-        drive: DriveNumber
-        fmt: NibbleFormat
-        options: DiskOptions
-    }
+        drive: DriveNumber;
+        fmt: NibbleFormat;
+        options: DiskOptions;
+    };
 }
 
 /** Processed JSON file message (used for localStorage) */
 export interface ProcessJsonDiskMessage {
-    type: typeof PROCESS_JSON_DISK
+    type: typeof PROCESS_JSON_DISK;
     payload: {
-        drive: DriveNumber
-        jsonDisk: JSONDisk
-    }
+        drive: DriveNumber;
+        jsonDisk: JSONDisk;
+    };
 }
 
 /** Raw JSON file message */
 export interface ProcessJsonMessage {
-    type: typeof PROCESS_JSON
+    type: typeof PROCESS_JSON;
     payload: {
-        drive: DriveNumber
-        json: string
-    }
+        drive: DriveNumber;
+        json: string;
+    };
 }
 
 export type FormatWorkerMessage =
@@ -202,11 +202,11 @@ export type FormatWorkerMessage =
 export const DISK_PROCESSED = 'DISK_PROCESSED';
 
 export interface DiskProcessedResponse {
-    type: typeof DISK_PROCESSED
+    type: typeof DISK_PROCESSED;
     payload: {
-        drive: DriveNumber
-        disk: Disk | null
-    }
+        drive: DriveNumber;
+        disk: Disk | null;
+    };
 }
 
 export type FormatWorkerResponse =
@@ -216,5 +216,5 @@ export type FormatWorkerResponse =
  * Block device common interface
  */
 export interface MassStorage {
-    setBinary(drive: number, name: string, ext: BlockFormat, data: ArrayBuffer): boolean
+    setBinary(drive: number, name: string, ext: BlockFormat, data: ArrayBuffer): boolean;
 }

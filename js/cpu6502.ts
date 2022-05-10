@@ -18,24 +18,24 @@ export const FLAVORS = [
 export type Flavor = MemberOf<typeof FLAVORS>;
 
 export interface CpuOptions {
-    flavor?: Flavor
+    flavor?: Flavor;
 }
 
 export interface CpuState {
     /** Accumulator */
-    a: byte,
+    a: byte;
     /** X index */
-    x: byte,
+    x: byte;
     /** Y index */
-    y: byte,
+    y: byte;
     /** Status register */
-    s: byte,
+    s: byte;
     /** Program counter */
-    pc: word,
+    pc: word;
     /** Stack pointer */
-    sp: byte,
+    sp: byte;
     /** Elapsed cycles */
-    cycles: number
+    cycles: number;
 }
 
 export type Mode =
@@ -90,19 +90,19 @@ export type flag = 0x80 | 0x40 | 0x20 | 0x10 | 0x08 | 0x04 | 0x02 | 0x01;
  */
 export type DebugInfo = {
     /** Program counter */
-    pc: word,
+    pc: word;
     /** Accumulator */
-    ar: byte,
+    ar: byte;
     /** X index */
-    xr: byte,
+    xr: byte;
     /** Y index */
-    yr: byte,
+    yr: byte;
     /** Status register */
-    sr: byte,
+    sr: byte;
     /** Stack pointer */
-    sp: byte,
+    sp: byte;
     /** Current command */
-    cmd: byte[],
+    cmd: byte[];
 };
 
 /** Flags to status byte mask. */
@@ -148,10 +148,10 @@ type ReadAddrFn = (opts?: Opts) => word;
 type ImpliedFn = () => void;
 
 interface Instruction<T = any> {
-    name: string
-    mode: Mode
-    op: (fn: T) => void
-    modeFn: T
+    name: string;
+    mode: Mode;
+    op: (fn: T) => void;
+    modeFn: T;
 }
 
 type StrictInstruction =

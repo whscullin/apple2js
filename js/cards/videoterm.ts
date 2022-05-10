@@ -3,12 +3,12 @@ import { Card, Restorable, byte, Color, memory, word } from '../types';
 import { ROM, VIDEO_ROM } from '../roms/cards/videoterm';
 
 interface VideotermState {
-    curReg: byte,
-    startPos: word,
-    cursorPos: word,
-    bank: byte,
-    buffer: memory,
-    regs: byte[],
+    curReg: byte;
+    startPos: word;
+    cursorPos: word;
+    bank: byte;
+    buffer: memory;
+    regs: byte[];
 }
 
 const LOC = {

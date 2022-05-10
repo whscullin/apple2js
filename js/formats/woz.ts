@@ -118,9 +118,9 @@ export class TrksChunk1 extends TrksChunk {
 }
 
 export interface Trk {
-    startBlock: word
-    blockCount: word
-    bitCount: number
+    startBlock: word;
+    blockCount: word;
+    bitCount: number;
 }
 
 export class TrksChunk2 extends TrksChunk {
@@ -191,11 +191,11 @@ export class MetaChunk  {
 }
 
 interface Chunks {
-    [key: string]: any
-    info?: InfoChunk
-    tmap?: TMapChunk
-    trks?: TrksChunk
-    meta?: MetaChunk
+    [key: string]: any;
+    info?: InfoChunk;
+    tmap?: TMapChunk;
+    trks?: TrksChunk;
+    meta?: MetaChunk;
 }
 
 /**
