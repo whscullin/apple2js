@@ -6,7 +6,7 @@
     "build": "rimraf dist/* && webpack --mode=production",
     "dev": "webpack serve --mode=development",
     "index": "bin/index > json/disks/index.js",
-    "lint": "eslint '**/*.js' '**/*.ts'",
+    "lint": "eslint '**/*.js' '**/*.ts' '**/*.tsx'",
     "start": "webpack serve --mode=development --progress",
     "test": "jest"
   },
@@ -25,18 +25,20 @@
   "homepage": "https://github.com/whscullin/apple2js#readme",
   "devDependencies": {
     "@babel/core": "^7.9.0",
+    "@babel/plugin-transform-react-jsx": "^7.17.3",
     "@babel/preset-env": "^7.9.0",
+    "@babel/preset-typescript": "^7.16.7",
     "@testing-library/dom": "^7.30.3",
     "@testing-library/user-event": "^13.1.3",
     "@types/jest": "^27.0.2",
     "@types/jest-image-snapshot": "^4.3.1",
     "@types/micromodal": "^0.3.2",
-    "@typescript-eslint/eslint-plugin": "^5.4.0",
-    "@typescript-eslint/parser": "^5.4.0",
+    "@typescript-eslint/eslint-plugin": "^5.22.0",
+    "@typescript-eslint/parser": "^5.22.0",
     "ajv": "^6.12.0",
     "babel-jest": "^27.2.4",
     "canvas": "^2.8.0",
-    "eslint": "^8.3.0",
+    "eslint": "^8.15.0",
     "file-loader": "^6.0.0",
     "jest": "^27.2.4",
     "jest-image-snapshot": "^4.5.1",
@@ -54,6 +56,8 @@
   },
   "dependencies": {
     "apple2shader": "0.0.3",
-    "micromodal": "^0.4.2"
+    "classnames": "^2.3.1",
+    "micromodal": "^0.4.2",
+    "preact": "^10.7.1"
   }
 }

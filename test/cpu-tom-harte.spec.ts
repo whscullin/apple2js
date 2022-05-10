@@ -25,7 +25,7 @@ const detail = !!process.env.JEST_DETAIL;
 /**
  * Memory address and value
  */
-type MemoryValue = [address: word, value: byte]
+type MemoryValue = [address: word, value: byte];
 
 /**
  * Represents initial and final CPU and memory states
@@ -50,7 +50,7 @@ type MemoryValue = [address: word, value: byte]
 /**
  * CPU cycle memory operation
  */
-type Cycle = [address: word, value: byte, type: 'read'|'write']
+type Cycle = [address: word, value: byte, type: 'read'|'write'];
 
 /**
  * One test record

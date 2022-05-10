@@ -1,4 +1,4 @@
-import type { byte, memory, MemberOf } from '../types';
+import type { byte, memory, MemberOf, word } from '../types';
 import type { GamepadConfiguration } from '../ui/types';
 
 export const DRIVE_NUMBERS = [1, 2] as const;
@@ -16,6 +16,29 @@ export interface DiskOptions {
     data?: memory[][]
     rawData?: ArrayBuffer
     blockVolume?: boolean
+}
+
+/**
+ * JSON file entry format
+ */
+export interface DiskDescriptor {
+    name: string;
+    disk?: number;
+    filename: string;
+    e?: boolean;
+    category: string;
+}
+
+/**
+ * JSON binary image (not used?)
+ */
+
+export interface JSONBinaryImage {
+    type: 'binary',
+    start: word,
+    length: word,
+    data: byte[],
+    gamepad?: GamepadConfiguration,
 }
 
 /**
@@ -187,7 +210,7 @@ export interface DiskProcessedResponse {
 }
 
 export type FormatWorkerResponse =
-    DiskProcessedResponse
+    DiskProcessedResponse;
 
 /**
  * Block device common interface

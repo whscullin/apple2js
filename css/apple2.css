@@ -122,6 +122,10 @@ body {
     height: 16px;
 }
 
+.disk-light.on {
+    background-image: url(red-on-16.png);
+}
+
 .disk-label {
     color: #000;
     font-family: sans-serif;
@@ -583,6 +587,7 @@ button:focus {
 
 #reset-row .inset {
     margin: 0;
+    width: 604px;
 }
 
 #reset {
@@ -650,7 +655,6 @@ button:focus {
 
 #options-modal {
     width: 300px;
-    line-height: 1.75em;
 }
 
 #options-modal h3 {

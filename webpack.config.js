@@ -7,7 +7,7 @@ const baseConfig = {
     module: {
         rules: [
             {
-                test: /\.ts$/i,
+                test: /\.tsx?$/i,
                 use: [
                     {
                         loader: 'ts-loader'
@@ -24,7 +24,11 @@ const baseConfig = {
         chunkFilename: '[name].bundle.js',
     },
     resolve: {
-        extensions: ['.ts', '.js'],
+        extensions: ['.ts', '.tsx', '.js'],
+        alias: {
+            js: path.resolve(__dirname, 'js/'),
+            json: path.resolve(__dirname, 'json/'),
+        }
     },
 };
 
@@ -32,7 +36,8 @@ const appConfig = merge(baseConfig,
     {
         entry: {
             main2: path.resolve('js/entry2.ts'),
-            main2e: path.resolve('js/entry2e.ts')
+            main2e: path.resolve('js/entry2e.ts'),
+            preact: path.resolve('js/entry.tsx'),
         },
         output: {
             library: {

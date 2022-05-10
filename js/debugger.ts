@@ -10,7 +10,7 @@ export interface DebuggerContainer {
 }
 
 type symbols = { [key: number]: string };
-type breakpointFn = (info: DebugInfo) => boolean
+type breakpointFn = (info: DebugInfo) => boolean;
 
 const alwaysBreak = (_info: DebugInfo) => { return true; };
 

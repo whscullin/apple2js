@@ -3,18 +3,21 @@ import MicroModal from 'micromodal';
 import { base64_json_parse, base64_json_stringify } from '../base64';
 import { Audio, SOUND_ENABLED_OPTION } from './audio';
 import DriveLights from './drive_lights';
-import { byte, includes, word } from '../types';
-import { BLOCK_FORMATS, MassStorage, NIBBLE_FORMATS } from '../formats/types';
+import { includes, word } from '../types';
 import {
+    BLOCK_FORMATS,
     DISK_FORMATS,
+    DiskDescriptor,
     DriveNumber,
     DRIVE_NUMBERS,
+    MassStorage,
+    NIBBLE_FORMATS,
+    JSONBinaryImage,
     JSONDisk
 } from '../formats/types';
 import { initGamepad } from './gamepad';
 import KeyBoard from './keyboard';
 import Tape, { TAPE_TYPES } from './tape';
-import type { GamepadConfiguration } from './types';
 
 import ApplesoftDump from '../applesoft/decompiler';
 import ApplesoftCompiler from '../applesoft/compiler';
@@ -31,6 +34,7 @@ import { OptionsModal } from './options_modal';
 import { Screen, SCREEN_FULL_PAGE } from './screen';
 import { JoyStick } from './joystick';
 import { System } from './system';
+import { Options } from '../options';
 
 let paused = false;
 
@@ -41,15 +45,8 @@ let lastRenderedFrames = 0;
 
 let hashtag = document.location.hash;
 
-const optionsModal = new OptionsModal();
-
-interface DiskDescriptor {
-    name: string;
-    disk?: number;
-    filename: string;
-    e?: boolean;
-    category: string;
-}
+const options = new Options();
+const optionsModal = new OptionsModal(options);
 
 type DiskCollection = {
     [name: string]: DiskDescriptor[]
@@ -226,14 +223,6 @@ function loadingStop() {
             _apple2.run();
         }).catch(console.error);
     }
-}
-
-interface JSONBinaryImage {
-    type: 'binary',
-    start: word,
-    length: word,
-    data: byte[],
-    gamepad?: GamepadConfiguration,
 }
 
 export function loadAjax(drive: DriveNumber, url: string) {
@@ -538,7 +527,7 @@ export function toggleShowFPS() {
 
 export function toggleSound() {
     const on = !audio.isEnabled();
-    optionsModal.setOption(SOUND_ENABLED_OPTION, on);
+    options.setOption(SOUND_ENABLED_OPTION, on);
     updateSoundButton(on);
 }
 
@@ -662,7 +651,7 @@ function updateLocalStorage() {
 
 type LocalDiskIndex = {
     [name: string]: string,
-}
+};
 
 function saveLocalStorage(drive: DriveNumber, name: string) {
     const diskIndex = JSON.parse(window.localStorage.diskIndex || '{}') as LocalDiskIndex;
@@ -866,16 +855,16 @@ function onLoaded(apple2: Apple2, disk2: DiskII, massStorage: MassStorage, print
     _e = e;
 
     system = new System(io, e);
-    optionsModal.addOptions(system);
+    options.addOptions(system);
 
     joystick = new JoyStick(io);
-    optionsModal.addOptions(joystick);
+    options.addOptions(joystick);
 
     screen = new Screen(vm);
-    optionsModal.addOptions(screen);
+    options.addOptions(screen);
 
     audio = new Audio(io);
-    optionsModal.addOptions(audio);
+    options.addOptions(audio);
     initSoundToggle();
 
     ready = Promise.all([audio.ready, apple2.ready]);
@@ -887,9 +876,9 @@ function onLoaded(apple2: Apple2, disk2: DiskII, massStorage: MassStorage, print
     keyboard.setFunction('F1', () => cpu.reset());
     keyboard.setFunction('F2', (event) => {
         if (event.shiftKey) { // Full window, but not full screen
-            optionsModal.setOption(
+            options.setOption(
                 SCREEN_FULL_PAGE,
-                !optionsModal.getOption(SCREEN_FULL_PAGE)
+                !options.getOption(SCREEN_FULL_PAGE)
             );
         } else {
             screen.enterFullScreen();

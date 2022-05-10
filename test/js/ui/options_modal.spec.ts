@@ -1,11 +1,14 @@
 /** @jest-environment jsdom */
 import { screen } from '@testing-library/dom';
 import userEvent from '@testing-library/user-event';
+import { Options } from 'js/options';
 
 import {
     BOOLEAN_OPTION,
     SELECT_OPTION,
     OptionHandler,
+} from 'js/options';
+import {
     OptionsModal
 } from 'js/ui/options_modal';
 
@@ -59,10 +62,12 @@ const mockOptionHandler: OptionHandler = {
 };
 
 describe('OptionsModal', () => {
+    let options: Options;
     let modal: OptionsModal;
     beforeEach(() => {
-        modal = new OptionsModal();
-        modal.addOptions(mockOptionHandler);
+        options = new Options();
+        options.addOptions(mockOptionHandler);
+        modal = new OptionsModal(options);
     });
     afterEach(() => {
         localStorage.clear();
@@ -107,31 +112,32 @@ describe('OptionsModal', () => {
 
     describe('getOption', () => {
         beforeEach(() => {
-            modal = new OptionsModal();
-            modal.addOptions(mockOptionHandler);
+            options = new Options();
+            options.addOptions(mockOptionHandler);
+            modal = new OptionsModal(options);
         });
         it('gets boolean', () => {
-            expect(modal.getOption('option_1'))
+            expect(options.getOption('option_1'))
                 .toEqual(false);
-            expect(modal.getOption('option_3'))
+            expect(options.getOption('option_3'))
                 .toEqual(true);
         });
 
         it('gets selector', () => {
-            expect(modal.getOption('option_2'))
+            expect(options.getOption('option_2'))
                 .toEqual('select_1');
         });
     });
 
     describe('setOption', () => {
         it('sets boolean', () => {
-            modal.setOption('option_1', true);
+            options.setOption('option_1', true);
             expect(mockOptionHandler.setOption)
                 .toHaveBeenCalledWith('option_1', true);
         });
 
         it('sets selector', () => {
-            modal.setOption('option_2', 'select_2');
+            options.setOption('option_2', 'select_2');
             expect(mockOptionHandler.setOption)
                 .toHaveBeenCalledWith('option_2', 'select_2');
         });

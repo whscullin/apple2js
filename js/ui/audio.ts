@@ -1,4 +1,4 @@
-import { BOOLEAN_OPTION, OptionHandler } from './options_modal';
+import { BOOLEAN_OPTION, OptionHandler } from '../options';
 import Apple2IO from '../apple2io';
 import { debug } from '../util';
 

@@ -1,5 +1,5 @@
 import { VideoModes } from '../videomodes';
-import { BOOLEAN_OPTION, OptionHandler } from './options_modal';
+import { BOOLEAN_OPTION, OptionHandler } from '../options';
 
 export const SCREEN_MONO = 'mono_screen';
 export const SCREEN_FULL_PAGE = 'full_page';

@@ -1,5 +1,8 @@
 {
   "compilerOptions": {
+      "jsx": "react",
+      "jsxFactory": "h",
+      "jsxFragmentFactory": "Fragment",
       "module": "esnext",
       "esModuleInterop": true,
       "allowSyntheticDefaultImports": true,
@@ -10,6 +13,7 @@
       "noUnusedLocals": true,
       "noUnusedParameters": true,
       "moduleResolution": "node",
+      "resolveJsonModule": true,
       "sourceMap": true,
       "strictNullChecks": true,
       "outDir": "dist",
@@ -23,7 +27,10 @@
           "js/*": [
               "js/*"
           ],
-          "test/*": [
+          "json/*": [
+            "json/*"
+        ],
+        "test/*": [
             "test/*"
           ]
       }

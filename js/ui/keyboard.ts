@@ -202,7 +202,7 @@ type Key2e = DeepMemberOf<typeof keys2e>;
 
 type Key = Key2 | Key2e;
 
-type KeyFunction = (key: KeyboardEvent) => void
+type KeyFunction = (key: KeyboardEvent) => void;
 
 export default class KeyBoard {
     private kb: HTMLElement;

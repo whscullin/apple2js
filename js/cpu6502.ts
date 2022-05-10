@@ -145,7 +145,7 @@ interface Opts {
 type ReadFn = () => byte;
 type WriteFn = (val: byte) => void;
 type ReadAddrFn = (opts?: Opts) => word;
-type ImpliedFn = () => void
+type ImpliedFn = () => void;
 
 interface Instruction<T = any> {
     name: string
@@ -161,9 +161,9 @@ type StrictInstruction =
     Instruction<ImpliedFn> |
     Instruction<flag> |
     Instruction<flag|0> |
-    Instruction<byte>
+    Instruction<byte>;
 
-type Instructions = Record<byte, StrictInstruction>
+type Instructions = Record<byte, StrictInstruction>;
 
 type callback = (cpu: CPU6502) => boolean | void;
 
