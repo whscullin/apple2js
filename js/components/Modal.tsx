@@ -154,9 +154,9 @@ export const ModalHeader = ({ onClose, title }: ModalHeaderProps) => {
  * Modal component properties
  */
 export interface ModalProps {
-    onClose?: (closeBox?: boolean) => void
-    isOpen: boolean
-    title: string
+    onClose?: (closeBox?: boolean) => void;
+    isOpen: boolean;
+    title: string;
 }
 
 /**

@@ -25,6 +25,19 @@
             "error",
             "always"
         ],
+        "@typescript-eslint/member-delimiter-style": [
+            "error",
+            {
+                "multiline": {
+                    "delimiter": "semi",
+                    "requireLast": true
+                },
+                "singleline": {
+                    "delimiter": "semi",
+                    "requireLast": false
+                }
+            }
+        ],
         "no-use-before-define": "off",
         "@typescript-eslint/no-floating-promises": "error",
         "@typescript-eslint/no-use-before-define": [

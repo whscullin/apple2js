@@ -9,7 +9,7 @@ declare global {
         new(options?: AudioWorkletNodeOptions): AudioWorkletProcessor;
     };
 
-    function registerProcessor(name: string, ctor :{ new(): AudioWorkletProcessor; }): void;
+    function registerProcessor(name: string, ctor :{ new(): AudioWorkletProcessor }): void;
 }
 
 export class AppleAudioProcessor extends AudioWorkletProcessor {

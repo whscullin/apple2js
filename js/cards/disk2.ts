@@ -161,29 +161,29 @@ export interface Callbacks {
 
 interface BaseDrive {
     /** Current disk format. */
-    format: NibbleFormat,
+    format: NibbleFormat;
     /** Current disk volume number. */
-    volume: byte,
+    volume: byte;
     /** Displayed disk name */
-    name: string,
+    name: string;
     /** (Optional) Disk side (Front/Back, A/B) */
-    side?: string,
+    side?: string;
     /** Quarter track position of read/write head. */
-    track: byte,
+    track: byte;
     /** Position of the head on the track. */
-    head: byte,
+    head: byte;
     /** Current active coil in the head stepper motor. */
-    phase: Phase,
+    phase: Phase;
     /** Whether the drive write protect is on. */
-    readOnly: boolean,
+    readOnly: boolean;
     /** Whether the drive has been written to since it was loaded. */
-    dirty: boolean,
+    dirty: boolean;
 }
 
 /** WOZ format track data from https://applesaucefdc.com/woz/reference2/. */
 interface WozDrive extends BaseDrive {
     /** Woz encoding */
-    encoding: typeof ENCODING_BITSTREAM
+    encoding: typeof ENCODING_BITSTREAM;
     /** Maps quarter tracks to data in rawTracks; `0xFF` = random garbage. */
     trackMap: byte[];
     /** Unique track bitstreams. The index is arbitrary; it is NOT the track number. */
@@ -193,7 +193,7 @@ interface WozDrive extends BaseDrive {
 /** Nibble format track data. */
 interface NibbleDrive extends BaseDrive {
     /** Nibble encoding */
-    encoding: typeof ENCODING_NIBBLE
+    encoding: typeof ENCODING_NIBBLE;
     /** Nibble data. The index is the track number. */
     tracks: memory[];
 }
@@ -209,19 +209,19 @@ function isWozDrive(drive: Drive): drive is WozDrive {
 }
 
 interface DriveState {
-    format: NibbleFormat,
-    encoding: typeof ENCODING_BITSTREAM | typeof ENCODING_NIBBLE
-    volume: byte,
-    name: string,
-    side?: string,
-    tracks: memory[],
-    track: byte,
-    head: byte,
-    phase: Phase,
-    readOnly: boolean,
-    dirty: boolean,
-    trackMap: number[],
-    rawTracks: Uint8Array[],
+    format: NibbleFormat;
+    encoding: typeof ENCODING_BITSTREAM | typeof ENCODING_NIBBLE;
+    volume: byte;
+    name: string;
+    side?: string;
+    tracks: memory[];
+    track: byte;
+    head: byte;
+    phase: Phase;
+    readOnly: boolean;
+    dirty: boolean;
+    trackMap: number[];
+    rawTracks: Uint8Array[];
 }
 
 interface State {

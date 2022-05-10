@@ -74,7 +74,7 @@ const Select = ({ option, value, setValue } : SelectProps) => {
         [name, setValue]
     );
 
-    const makeOption = (option: { name: string, value: string }) => (
+    const makeOption = (option: { name: string; value: string }) => (
         <option selected={option.value === value} value={option.value}>
             {option.name}
         </option>

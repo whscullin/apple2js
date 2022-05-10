@@ -49,7 +49,7 @@ const options = new Options();
 const optionsModal = new OptionsModal(options);
 
 type DiskCollection = {
-    [name: string]: DiskDescriptor[]
+    [name: string]: DiskDescriptor[];
 };
 
 const CIDERPRESS_EXTENSION = /#([0-9a-f]{2})([0-9a-f]{4})$/i;
@@ -306,8 +306,8 @@ export function doDelete(name: string) {
 }
 
 interface LoadOptions {
-    address?: word,
-    runOnLoad?: boolean,
+    address?: word;
+    runOnLoad?: boolean;
 }
 
 function doLoadLocal(drive: DriveNumber, file: File, options: Partial<LoadOptions> = {}) {
@@ -650,7 +650,7 @@ function updateLocalStorage() {
 }
 
 type LocalDiskIndex = {
-    [name: string]: string,
+    [name: string]: string;
 };
 
 function saveLocalStorage(drive: DriveNumber, name: string) {

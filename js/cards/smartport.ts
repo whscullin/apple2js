@@ -11,7 +11,7 @@ import { dump } from '../formats/prodos/utils';
 const ID = 'SMARTPORT.J.S';
 
 export interface SmartPortState {
-    disks: BlockDisk[]
+    disks: BlockDisk[];
 }
 
 export interface SmartPortOptions {

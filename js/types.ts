@@ -110,7 +110,7 @@ export interface Restorable<T = any> {
 // Read-only typed arrays for constants
 export type TypedArrayMutableProperties = 'copyWithin' | 'fill' | 'reverse' | 'set' | 'sort';
 export interface ReadonlyUint8Array extends Omit<Uint8Array, TypedArrayMutableProperties> {
-    readonly [n: number]: number
+    readonly [n: number]: number;
 }
 
 // Readonly RGB color value

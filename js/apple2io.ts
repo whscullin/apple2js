@@ -9,15 +9,15 @@ type paddle = 0 | 1 | 2 | 3;
 type annunciator = 0 | 1 | 2 | 3;
 
 interface Annunciators {
-    0: boolean,
-    1: boolean,
-    2: boolean,
-    3: boolean,
+    0: boolean;
+    1: boolean;
+    2: boolean;
+    3: boolean;
 }
 
 export interface Apple2IOState {
     annunciators: Annunciators;
-    cards: Array<any | null>
+    cards: Array<any | null>;
 }
 
 export type SampleListener = (sample: number[]) => void;

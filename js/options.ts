@@ -4,31 +4,31 @@ export const BOOLEAN_OPTION = 'BOOLEAN_OPTION';
 export const SELECT_OPTION = 'SELECT_OPTION';
 
 export interface Option {
-    name: string
-    label: string
-    type: string
-    defaultVal: string | boolean
+    name: string;
+    label: string;
+    type: string;
+    defaultVal: string | boolean;
 }
 
 export interface BooleanOption extends Option {
-    type: typeof BOOLEAN_OPTION
-    defaultVal: boolean
+    type: typeof BOOLEAN_OPTION;
+    defaultVal: boolean;
 }
 
 export interface SelectOption extends Option {
-    type: typeof SELECT_OPTION
-    defaultVal: string
-    values: Array<{name: string, value: string}>
+    type: typeof SELECT_OPTION;
+    defaultVal: string;
+    values: Array<{name: string; value: string}>;
 }
 
 export interface OptionSection {
-    name: string
-    options: Option[]
+    name: string;
+    options: Option[];
 }
 
 export interface OptionHandler {
-    getOptions: () => OptionSection[]
-    setOption: (name: string, value: string | boolean) => void
+    getOptions: () => OptionSection[];
+    setOption: (name: string, value: string | boolean) => void;
 }
 
 export class Options {
