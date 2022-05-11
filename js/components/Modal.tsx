@@ -133,7 +133,7 @@ type OnCloseCallback = (closeBox?: boolean) => void;
  */
 
 export interface ModalHeaderProps {
-    onClose?: OnCloseCallback | undefined;
+    onClose?: OnCloseCallback;
     title: string;
 }
 
@@ -169,20 +169,20 @@ export interface ModalProps {
  *
  * @param isOpen true to show modal
  * @param title Modal title
- * @onClose Close callback
+ * @param onClose Close callback
  * @returns Modal component
  */
 export const Modal: FunctionalComponent<ModalProps> = ({
     isOpen,
-    title,
     children,
-    onClose
+    title,
+    ...props
 }) => {
     return (
         isOpen ? (
             <ModalOverlay>
                 <div style={modalStyle}>
-                    {title && <ModalHeader onClose={onClose} title={title} />}
+                    {title && <ModalHeader title={title} {...props} />}
                     {children}
                 </div>
             </ModalOverlay>
