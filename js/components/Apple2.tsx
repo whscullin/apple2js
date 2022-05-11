@@ -6,8 +6,10 @@ import Apple2IO from '../apple2io';
 import { ControlStrip } from './ControlStrip';
 import { Inset } from './Inset';
 import { Keyboard } from './Keyboard';
+import { Mouse } from './Mouse';
 import { Screen } from './Screen';
 import { Drives } from './Drives';
+import CPU6502 from 'js/cpu6502';
 
 /**
  * Interface for the Apple2 component.
@@ -35,6 +37,7 @@ export const Apple2 = (props: Apple2Props) => {
     const screen = useRef<HTMLCanvasElement>(null);
     const [apple2, setApple2] = useState<Apple2Impl>();
     const [io, setIO] = useState<Apple2IO>();
+    const [cpu, setCPU] = useState<CPU6502>();
 
     useEffect(() => {
         if (screen.current) {
@@ -47,8 +50,10 @@ export const Apple2 = (props: Apple2Props) => {
             setApple2(apple2);
             apple2.ready.then(() => {
                 const io = apple2.getIO();
+                const cpu = apple2.getCPU();
                 setIO(io);
-                apple2.getCPU().reset();
+                setCPU(cpu);
+                apple2.reset();
                 apple2.run();
             }).catch(error => console.error(error));
         }
@@ -57,6 +62,7 @@ export const Apple2 = (props: Apple2Props) => {
     return (
         <div className={cs('outer', { apple2e: e})}>
             <Screen screen={screen} />
+            <Mouse cpu={cpu} screen={screen} io={io} />
             <Inset>
                 <Drives io={io} sectors={sectors} />
             </Inset>
