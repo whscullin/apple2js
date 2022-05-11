@@ -3,13 +3,15 @@ import cs from 'classnames';
 import {useEffect, useRef, useState } from 'preact/hooks';
 import { Apple2 as Apple2Impl } from '../apple2';
 import Apple2IO from '../apple2io';
+import CPU6502 from '../cpu6502';
 import { ControlStrip } from './ControlStrip';
 import { Inset } from './Inset';
 import { Keyboard } from './Keyboard';
 import { Mouse } from './Mouse';
 import { Screen } from './Screen';
 import { Drives } from './Drives';
-import CPU6502 from 'js/cpu6502';
+import { Slinky } from './Slinky';
+import { ThunderClock } from './ThunderClock';
 
 /**
  * Interface for the Apple2 component.
@@ -62,7 +64,9 @@ export const Apple2 = (props: Apple2Props) => {
     return (
         <div className={cs('outer', { apple2e: e})}>
             <Screen screen={screen} />
-            <Mouse cpu={cpu} screen={screen} io={io} />
+            <Mouse cpu={cpu} screen={screen} io={io} slot={4} />
+            <Slinky io={io} slot={4} />
+            <ThunderClock io={io} slot={5} />
             <Inset>
                 <Drives io={io} sectors={sectors} />
             </Inset>
