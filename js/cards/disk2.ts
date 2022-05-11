@@ -167,7 +167,7 @@ interface BaseDrive {
     /** Displayed disk name */
     name: string;
     /** (Optional) Disk side (Front/Back, A/B) */
-    side?: string;
+    side?: string | undefined;
     /** Quarter track position of read/write head. */
     track: byte;
     /** Position of the head on the track. */
@@ -213,7 +213,7 @@ interface DriveState {
     encoding: typeof ENCODING_BITSTREAM | typeof ENCODING_NIBBLE;
     volume: byte;
     name: string;
-    side?: string;
+    side?: string | undefined;
     tracks: memory[];
     track: byte;
     head: byte;

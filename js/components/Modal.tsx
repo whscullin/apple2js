@@ -126,11 +126,14 @@ export const ModalCloseButton = ({ onClose }: ModalCloseButtonProp) => {
     );
 };
 
+type OnCloseCallback = (closeBox?: boolean) => void;
+
 /**
  * ModalHeader component properties
  */
+
 export interface ModalHeaderProps {
-    onClose?: (closeBox?: boolean) => void;
+    onClose?: OnCloseCallback | undefined;
     title: string;
 }
 

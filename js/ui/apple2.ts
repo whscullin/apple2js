@@ -306,7 +306,7 @@ export function doDelete(name: string) {
 }
 
 interface LoadOptions {
-    address?: word;
+    address?: word | undefined;
     runOnLoad?: boolean;
 }
 

@@ -11,8 +11,8 @@ import { loadJSON, loadHttpFile, getHashParts } from './util/files';
 export interface DiskIIData {
     number: 1 | 2;
     on: boolean;
-    name?: string;
-    side?: string;
+    name?: string | undefined;
+    side?: string | undefined;
 }
 
 /**

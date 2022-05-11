@@ -12,6 +12,7 @@
       "noImplicitThis": true,
       "noUnusedLocals": true,
       "noUnusedParameters": true,
+      "exactOptionalPropertyTypes": true,
       "moduleResolution": "node",
       "resolveJsonModule": true,
       "sourceMap": true,

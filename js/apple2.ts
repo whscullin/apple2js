@@ -51,14 +51,14 @@ interface State {
     cpu: CpuState;
     vm: VideoModesState;
     io: Apple2IOState;
-    mmu?: MMUState;
-    ram?: RAMState[];
+    mmu: MMUState | undefined;
+    ram: RAMState[] | undefined;
 }
 
 export class Apple2 implements Restorable<State>, DebuggerContainer {
     private paused = false;
 
-    private theDebugger?: Debugger;
+    private theDebugger: Debugger | undefined;
 
     private runTimer: number | null = null;
     private runAnimationFrame: number | null = null;
