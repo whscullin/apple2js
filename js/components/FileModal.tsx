@@ -2,7 +2,7 @@ import { h, Fragment, JSX } from 'preact';
 import { useCallback, useState } from 'preact/hooks';
 import { DiskDescriptor, DriveNumber, NibbleFormat, NIBBLE_FORMATS } from '../formats/types';
 import { Modal, ModalContent, ModalFooter } from './Modal';
-import { loadLocalFile, loadJSON, getHashParts, setHashParts } from './util/files';
+import { loadLocalNibbleFile, loadJSON, getHashParts, setHashParts } from './util/files';
 import DiskII from '../cards/disk2';
 import { ErrorModal } from './ErrorModal';
 
@@ -66,7 +66,7 @@ export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) =>
         try {
             if (disk2 && handles?.length === 1) {
                 hashParts[number] = '';
-                await loadLocalFile(disk2, number, await handles[0].getFile());
+                await loadLocalNibbleFile(disk2, number, await handles[0].getFile());
             }
             if (disk2 && filename) {
                 const name = filename.match(/\/([^/]+).json$/) || ['', ''];

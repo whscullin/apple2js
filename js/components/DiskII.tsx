@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'preact/hooks';
 import cs from 'classnames';
 import Disk2 from '../cards/disk2';
 import { FileModal } from './FileModal';
-import { loadJSON, loadHttpFile, getHashParts } from './util/files';
+import { loadJSON, loadHttpNibbleFile, getHashParts } from './util/files';
 import { ErrorModal } from './ErrorModal';
 import { useHash } from './hooks/useHash';
 
@@ -54,7 +54,7 @@ export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
             const hashPart = decodeURIComponent(newHash);
             if (hashPart !== currentHash) {
                 if (hashPart.match(/^https?:/)) {
-                    loadHttpFile(disk2, number, hashPart)
+                    loadHttpNibbleFile(disk2, number, hashPart)
                         .catch((e) => setError(e));
                 } else {
                     const filename = `/json/disks/${hashPart}.json`;

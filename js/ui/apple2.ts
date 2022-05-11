@@ -13,7 +13,8 @@ import {
     MassStorage,
     NIBBLE_FORMATS,
     JSONBinaryImage,
-    JSONDisk
+    JSONDisk,
+    BlockFormat
 } from '../formats/types';
 import { initGamepad } from './gamepad';
 import KeyBoard from './keyboard';
@@ -74,7 +75,7 @@ let stats: Stats;
 let vm: VideoModes;
 let tape: Tape;
 let _disk2: DiskII;
-let _massStorage: MassStorage;
+let _massStorage: MassStorage<BlockFormat>;
 let _printer: Printer;
 let audio: Audio;
 let screen: Screen;
@@ -450,10 +451,8 @@ export function doLoadHTTP(drive: DriveNumber, url?: string) {
             const name = decodeURIComponent(fileParts.join('.'));
             if (includes(DISK_FORMATS, ext)) {
                 if (data.byteLength >= 800 * 1024) {
-                    if (
-                        includes(BLOCK_FORMATS, ext) &&
-                        _massStorage.setBinary(drive, name, ext, data)
-                    ) {
+                    if (includes(BLOCK_FORMATS, ext)) {
+                        _massStorage.setBinary(drive, name, ext, data);
                         initGamepad();
                     }
                 } else {
@@ -842,7 +841,12 @@ function hup() {
         return results[1];
 }
 
-function onLoaded(apple2: Apple2, disk2: DiskII, massStorage: MassStorage, printer: Printer, e: boolean) {
+function onLoaded(
+    apple2: Apple2,
+    disk2: DiskII,
+    massStorage: MassStorage<BlockFormat>,
+    printer: Printer, e: boolean
+) {
     _apple2 = apple2;
     cpu = _apple2.getCPU();
     io = _apple2.getIO();
@@ -950,7 +954,11 @@ function onLoaded(apple2: Apple2, disk2: DiskII, massStorage: MassStorage, print
     );
 }
 
-export function initUI(apple2: Apple2, disk2: DiskII, massStorage: MassStorage, printer: Printer, e: boolean) {
+export function initUI(
+    apple2: Apple2,
+    disk2: DiskII,
+    massStorage: MassStorage<BlockFormat>,
+    printer: Printer, e: boolean) {
     window.addEventListener('load', () => {
         onLoaded(apple2, disk2, massStorage, printer, e);
     });

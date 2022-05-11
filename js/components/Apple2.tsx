@@ -68,11 +68,11 @@ export const Apple2 = (props: Apple2Props) => {
     return (
         <div className={cs(styles.outer, { apple2e: e })}>
             <Screen screen={screen} />
+            <Slinky io={io} slot={2} />
             <Mouse cpu={cpu} screen={screen} io={io} slot={4} />
-            <Slinky io={io} slot={4} />
             <ThunderClock io={io} slot={5} />
             <Inset>
-                <Drives io={io} sectors={sectors} />
+                <Drives cpu={cpu} io={io} sectors={sectors} e={e} />
             </Inset>
             <ControlStrip apple2={apple2} e={e} />
             <Inset>
