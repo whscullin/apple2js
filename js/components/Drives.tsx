@@ -22,8 +22,16 @@ export interface DrivesProps {
  */
 export const Drives = ({ io, sectors }: DrivesProps) => {
     const [disk2, setDisk2] = useState<Disk2>();
-    const [data1, setData1] = useState<DiskIIData>({ on: false, number: 1, name: 'Disk 1' });
-    const [data2, setData2] = useState<DiskIIData>({ on: false, number: 2, name: 'Disk 2' });
+    const [data1, setData1] = useState<DiskIIData>({
+        on: false,
+        number: 1,
+        name: 'Disk 1',
+    });
+    const [data2, setData2] = useState<DiskIIData>({
+        on: false,
+        number: 2,
+        name: 'Disk 2',
+    });
 
     useEffect(() => {
         const setData = [setData1, setData2];
@@ -32,7 +40,11 @@ export const Drives = ({ io, sectors }: DrivesProps) => {
                 setData[drive - 1]?.(data => ({...data, on }));
             },
             label: (drive, name, side) => {
-                setData[drive - 1]?.(data => ({...data, name, side }));
+                setData[drive - 1]?.(data => ({
+                    ...data,
+                    name: name ?? `Disk ${drive}`,
+                    side,
+                }));
             },
             dirty: () => {}
         };

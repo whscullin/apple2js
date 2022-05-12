@@ -10,7 +10,7 @@ export type DriveNumber = MemberOf<typeof DRIVE_NUMBERS>;
 
 export interface DiskOptions {
     name: string;
-    side?: string;
+    side?: string | undefined;
     volume: byte;
     readOnly: boolean;
     data?: memory[][];
@@ -48,7 +48,7 @@ export interface JSONBinaryImage {
 
 export interface Disk {
     name: string;
-    side?: string;
+    side?: string | undefined;
     readOnly: boolean;
 }
 

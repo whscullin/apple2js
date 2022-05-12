@@ -323,8 +323,8 @@ function doLoadLocal(drive: DriveNumber, file: File, options: Partial<LoadOption
     } else if (includes(TAPE_TYPES, ext)) {
         tape.doLoadLocalTape(file);
     } else if (BIN_TYPES.includes(ext) || type === '06' || options.address) {
-        const address = aux !== undefined ? parseInt(aux, 16) : undefined;
-        doLoadBinary(file, { address, ...options });
+        const auxAddress = aux !== undefined ? { address: parseInt(aux, 16) } : {};
+        doLoadBinary(file, { ...options, ...auxAddress });
     } else {
         const addressInput = document.querySelector<HTMLInputElement>('#local_file_address');
         const addressStr = addressInput?.value;
