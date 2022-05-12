@@ -3,17 +3,12 @@ import { Card, Memory, MemoryPages, TapeData, byte, Restorable } from './types';
 import { debug, garbage } from './util';
 import { VideoModes } from './videomodes';
 
-type slot = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
-type button = 0 | 1 | 2;
-type paddle = 0 | 1 | 2 | 3;
-type annunciator = 0 | 1 | 2 | 3;
+export type slot = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+export type button = 0 | 1 | 2;
+export type paddle = 0 | 1 | 2 | 3;
+export type annunciator = 0 | 1 | 2 | 3;
 
-interface Annunciators {
-    0: boolean;
-    1: boolean;
-    2: boolean;
-    3: boolean;
-}
+type Annunciators = Record<annunciator, boolean>;
 
 export interface Apple2IOState {
     annunciators: Annunciators;
