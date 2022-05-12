@@ -3,11 +3,8 @@ import { enableMouseMode } from './joystick';
 
 export class MouseUI {
     private mouse: Mouse;
-    private canvas: HTMLCanvasElement;
 
-    constructor(selector: string)  {
-        this.canvas = document.querySelector<HTMLCanvasElement>(selector)!;
-
+    constructor(private canvas: HTMLCanvasElement)  {
         this.canvas.addEventListener(
             'mousemove',
             (event: MouseEvent & { target: HTMLCanvasElement} ) => {
