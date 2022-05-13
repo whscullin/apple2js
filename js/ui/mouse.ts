@@ -1,13 +1,13 @@
 import type Mouse from '../cards/mouse';
 import { enableMouseMode } from './joystick';
 
-type TouchEventTarget = TouchEvent & { target: HTMLCanvasElement };
+type TouchEventWithTarget = TouchEvent & { target: HTMLCanvasElement };
 
 export class MouseUI {
     private mouse: Mouse;
 
     constructor(private canvas: HTMLCanvasElement)  {
-        const updateTouchXY = (event: TouchEventTarget) => {
+        const updateTouchXY = (event: TouchEventWithTarget) => {
             const { targetTouches, target } = event;
             if (targetTouches.length < 1) {
                 return;
@@ -29,22 +29,25 @@ export class MouseUI {
         if ('ontouchstart' in window) {
             this.canvas.addEventListener(
                 'touchmove',
-                (event: TouchEventTarget) => {
+                (event: TouchEventWithTarget) => {
                     updateTouchXY(event);
                 }
             );
 
             this.canvas.addEventListener(
                 'touchstart',
-                (event: TouchEventTarget) => {
+                (event: TouchEventWithTarget) => {
                     updateTouchXY(event);
+                    // Make sure the mouse down is processed in a different
+                    // pass as the move, so that a simple tap isn't treated like
+                    // a drag.
                     setTimeout(() => this.mouse.setMouseDown(true), 100);
                 }
             );
 
             this.canvas.addEventListener(
                 'touchend',
-                (event: TouchEventTarget) => {
+                (event: TouchEventWithTarget) => {
                     updateTouchXY(event);
                     this.mouse.setMouseDown(false);
                 }
@@ -52,7 +55,7 @@ export class MouseUI {
 
             this.canvas.addEventListener(
                 'touchcancel',
-                (event: TouchEventTarget) => {
+                (event: TouchEventWithTarget) => {
                     updateTouchXY(event);
                     this.mouse.setMouseDown(false);
                 }
