@@ -217,6 +217,8 @@ canvas {
     image-rendering: optimizeSpeed;
     width: 592px;
     height: 416px;
+    touch-action: manipulation;
+    user-select: none;
 }
 
 #screen.mouseMode {
