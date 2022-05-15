@@ -96,6 +96,7 @@ export default class Mouse implements Card, Restorable<MouseState> {
         private cbs: {
             setMouse: (mouse: Mouse) => void;
             mouseMode: (on: boolean) => void;
+            tick: () => void;
         }
     ) {
         this.cbs.setMouse(this);
@@ -226,6 +227,8 @@ export default class Mouse implements Card, Restorable<MouseState> {
      */
 
     tick() {
+        this.cbs.tick();
+
         if (this.mode & MODE_INT_VBL) {
             this.serve |= INT_SCREEN;
         }

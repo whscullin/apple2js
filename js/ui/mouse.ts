@@ -3,8 +3,13 @@ import { enableMouseMode } from './joystick';
 
 type TouchEventWithTarget = TouchEvent & { target: HTMLCanvasElement };
 
+interface DelayedTouchEvent {
+    mouseDown: boolean;
+}
+
 export class MouseUI {
     private mouse: Mouse;
+    private delayedEvent: DelayedTouchEvent | null = null;
 
     constructor(private canvas: HTMLCanvasElement)  {
         const updateTouchXY = (event: TouchEventWithTarget) => {
@@ -38,10 +43,7 @@ export class MouseUI {
                 'touchstart',
                 (event: TouchEventWithTarget) => {
                     updateTouchXY(event);
-                    // Make sure the mouse down is processed in a different
-                    // pass as the move, so that a simple tap isn't treated like
-                    // a drag.
-                    setTimeout(() => this.mouse.setMouseDown(true), 100);
+                    this.delayedEvent = { mouseDown: true };
                 }
             );
 
@@ -49,7 +51,7 @@ export class MouseUI {
                 'touchend',
                 (event: TouchEventWithTarget) => {
                     updateTouchXY(event);
-                    this.mouse.setMouseDown(false);
+                    this.delayedEvent = { mouseDown: false };
                 }
             );
 
@@ -57,7 +59,7 @@ export class MouseUI {
                 'touchcancel',
                 (event: TouchEventWithTarget) => {
                     updateTouchXY(event);
-                    this.mouse.setMouseDown(false);
+                    this.delayedEvent = { mouseDown: false };
                 }
             );
         } else {
@@ -86,6 +88,13 @@ export class MouseUI {
 
     setMouse = (mouse: Mouse) => {
         this.mouse = mouse;
+    };
+
+    tick = () => {
+        if (this.delayedEvent) {
+            this.mouse.setMouseDown(this.delayedEvent.mouseDown);
+            this.delayedEvent = null;
+        }
     };
 
     mouseMode = (on: boolean) => {
