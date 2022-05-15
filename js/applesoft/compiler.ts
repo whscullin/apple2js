@@ -1,19 +1,7 @@
 import { byte, KnownValues, Memory, word } from '../types';
 import { STRING_TO_TOKEN } from './tokens';
+import { TXTTAB, PRGEND, VARTAB, ARYTAB, STREND } from './zeropage';
 
-/** Start of program (word) */
-const TXTTAB = 0x67;
-/** Start of variables (word) */
-const VARTAB = 0x69;
-/** Start of arrays (word) */
-const ARYTAB = 0x6B;
-/** End of strings (word). (Strings are allocated down from HIMEM.) */
-const STREND = 0x6D;
-/**
- * End of program (word). This is actually 1 or 2 bytes past the three
- * zero bytes that end the program.
- */
-const PRGEND = 0xAF;
 /** Default address for program start */
 const PROGRAM_START = 0x801;
 
@@ -44,7 +32,7 @@ enum STATES {
      *   * `"`: `DATA`
      */
     DATA_QUOTE = 4,
-};
+}
 
 function writeByte(mem: Memory, addr: word, val: byte) {
     const page = addr >> 8;
@@ -212,7 +200,7 @@ export default class ApplesoftCompiler {
                         return lineBuffer.next().value.charCodeAt(0);
                     }
                 }
-                return STRING_TO_TOKEN[possibleToken as keyof typeof STRING_TO_TOKEN];
+                return STRING_TO_TOKEN[possibleToken];
             }
         }
 
@@ -259,17 +247,19 @@ export default class ApplesoftCompiler {
 
                     // Try to parse a token or character
                     lineBuffer.backup();
-                    const token = this.readToken(lineBuffer);
-                    if (token === STRING_TO_TOKEN['REM']) {
-                        state = STATES.COMMENT;
+                    {
+                        const token = this.readToken(lineBuffer);
+                        if (token === STRING_TO_TOKEN['REM']) {
+                            state = STATES.COMMENT;
+                        }
+                        if (token === STRING_TO_TOKEN['DATA']) {
+                            state = STATES.DATA;
+                        }
+                        result.push(token);
                     }
-                    if (token === STRING_TO_TOKEN['DATA']) {
-                        state = STATES.DATA;
-                    }
-                    result.push(token);
                     break;
                 case STATES.COMMENT:
-                        result.push(character.charCodeAt(0));
+                    result.push(character.charCodeAt(0));
                     break;
                 case STATES.STRING:
                     if (character === '"') {

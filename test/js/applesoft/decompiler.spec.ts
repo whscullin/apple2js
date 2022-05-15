@@ -209,7 +209,7 @@ describe('ApplesoftDecompiler', () => {
         const decompiler = new ApplesoftDecompiler(compiler.program());
         const program = decompiler.decompile({ style: 'pretty' });
         expect(program).toEqual('10 A = "::::" : B = ","');
-    })
+    });
 
     it('when decompiling prettily, inserts space after comma', () => {
         const compiler = new ApplesoftCompiler();
@@ -218,5 +218,5 @@ describe('ApplesoftDecompiler', () => {
         const decompiler = new ApplesoftDecompiler(compiler.program());
         const program = decompiler.decompile({ style: 'pretty' });
         expect(program).toEqual('10 HPLOT X, Y : GOTO 10');
-    })
+    });
 });

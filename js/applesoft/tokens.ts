@@ -1,6 +1,7 @@
+import { byte } from 'js/types';
 
 /** Map from token to keyword */
-export const TOKEN_TO_STRING = {
+export const TOKEN_TO_STRING: Record<byte, string> = {
     0x80: 'END',
     0x81: 'FOR',
     0x82: 'NEXT',
@@ -108,10 +109,10 @@ export const TOKEN_TO_STRING = {
     0xe8: 'LEFT$',
     0xe9: 'RIGHT$',
     0xea: 'MID$'
-} as const;
+};
 
 /** Map from keyword to token. */
-export const STRING_TO_TOKEN = {
+export const STRING_TO_TOKEN: Record<string, byte> = {
     'END': 0x80,
     'FOR': 0x81,
     'NEXT': 0x82,
@@ -219,4 +220,4 @@ export const STRING_TO_TOKEN = {
     'LEFT$': 0xe8,
     'RIGHT$': 0xe9,
     'MID$': 0xea
-} as const;
+};

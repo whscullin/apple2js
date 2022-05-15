@@ -1,13 +1,6 @@
 import { byte, word, ReadonlyUint8Array, Memory } from '../types';
 import { TOKEN_TO_STRING, STRING_TO_TOKEN } from './tokens';
-
-/** Start of program (word) */
-const TXTTAB = 0x67;
-/**
- * End of program (word). This is actually 1 or 2 bytes past the three
- * zero bytes that end the program.
- */
-const PRGEND = 0xAF;
+import { TXTTAB, PRGEND } from './zeropage';
 
 const LETTERS =
     '                                ' +
@@ -23,7 +16,7 @@ interface ListOptions {
 const DEFAULT_LIST_OPTIONS: ListOptions = {
     apple2: 'e',
     columns: 40,
-}
+};
 
 interface DecompileOptions {
     style: 'compact' | 'pretty';
@@ -31,7 +24,7 @@ interface DecompileOptions {
 
 const DEFAULT_DECOMPILE_OPTIONS: DecompileOptions = {
     style: 'pretty',
-}
+};
 
 export default class ApplesoftDecompiler {
 
@@ -67,7 +60,7 @@ export default class ApplesoftDecompiler {
 
     /** Returns the 2-byte word at the given offset. */
     private wordAt(offset: word): word {
-        return this.program[offset] + (this.program[offset + 1] << 8)
+        return this.program[offset] + (this.program[offset + 1] << 8);
     }
 
     /**
@@ -123,7 +116,7 @@ export default class ApplesoftDecompiler {
             const token = this.program[offset];
             if (token >= 0x80 && token <= 0xea) {
                 line += ' '; // D750, always put a space in front of token
-                line += TOKEN_TO_STRING[token as keyof typeof TOKEN_TO_STRING];
+                line += TOKEN_TO_STRING[token];
                 line += ' '; // D762, always put a trailing space
             } else {
                 line += LETTERS[token];
@@ -158,7 +151,7 @@ export default class ApplesoftDecompiler {
                 line = '     ';
             }
         }
-        lines.push(line + `\n`);
+        lines.push(line + '\n');
         return lines.join('');
     }
 
@@ -180,7 +173,7 @@ export default class ApplesoftDecompiler {
         from: number = 0, to: number = 65536): string {
         const allOptions = { ...DEFAULT_LIST_OPTIONS, ...options };
 
-        let result = "";
+        let result = '';
         this.forEachLine(from, to, offset => {
             result += this.listLine(offset, allOptions);
         });
@@ -204,7 +197,7 @@ export default class ApplesoftDecompiler {
             const token = this.program[offset];
             let tokenString: string;
             if (token >= 0x80 && token <= 0xea) {
-                tokenString = TOKEN_TO_STRING[token as keyof typeof TOKEN_TO_STRING];
+                tokenString = TOKEN_TO_STRING[token];
                 if (tokenString === 'PRINT') {
                     tokenString = '?';
                 }
@@ -249,7 +242,7 @@ export default class ApplesoftDecompiler {
             const token = this.program[offset];
             let tokenString: string;
             if (token >= 0x80 && token <= 0xea) {
-                tokenString = TOKEN_TO_STRING[token as keyof typeof TOKEN_TO_STRING];
+                tokenString = TOKEN_TO_STRING[token];
             } else {
                 tokenString = LETTERS[token];
             }
