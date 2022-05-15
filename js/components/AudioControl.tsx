@@ -26,13 +26,11 @@ export const AudioControl = ({ apple2 }: AudioControlProps) => {
 
     useEffect(() => {
         if (apple2) {
-            apple2.ready.then(() => {
-                const io = apple2.getIO();
-                const audio = new Audio(io);
-                options.addOptions(audio);
-                setAudio(audio);
-                setAudioEnabled(audio.isEnabled());
-            }).catch(console.error);
+            const io = apple2.getIO();
+            const audio = new Audio(io);
+            options.addOptions(audio);
+            setAudio(audio);
+            setAudioEnabled(audio.isEnabled());
         }
     }, [apple2]);
 
@@ -46,6 +44,7 @@ export const AudioControl = ({ apple2 }: AudioControlProps) => {
         <ControlButton
             onClick={doToggleSound}
             title="Toggle Sound"
+            disabled={!audio}
             icon={audioEnabled ? 'volume-up' : 'volume-off'}
         />
     );

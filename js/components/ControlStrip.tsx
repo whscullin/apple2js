@@ -35,19 +35,17 @@ export const ControlStrip = ({ apple2, e }: ControlStripProps) => {
 
     useEffect(() => {
         if (apple2) {
-            apple2.ready.then(() => {
-                const io = apple2.getIO();
-                const vm = apple2.getVideoModes();
+            const io = apple2.getIO();
+            const vm = apple2.getVideoModes();
 
-                const system = new System(io, e);
-                options.addOptions(system);
+            const system = new System(io, e);
+            options.addOptions(system);
 
-                const joystick = new JoyStick(io);
-                options.addOptions(joystick);
+            const joystick = new JoyStick(io);
+            options.addOptions(joystick);
 
-                const screen = new Screen(vm);
-                options.addOptions(screen);
-            }).catch(console.error);
+            const screen = new Screen(vm);
+            options.addOptions(screen);
         }
     }, [apple2]);
 

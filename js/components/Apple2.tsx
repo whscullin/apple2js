@@ -49,8 +49,8 @@ export const Apple2 = (props: Apple2Props) => {
                 ...props,
             };
             const apple2 = new Apple2Impl(options);
-            setApple2(apple2);
             apple2.ready.then(() => {
+                setApple2(apple2);
                 const io = apple2.getIO();
                 const cpu = apple2.getCPU();
                 setIO(io);

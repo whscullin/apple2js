@@ -6,6 +6,7 @@ import { h, JSX } from 'preact';
 export interface ControlButtonProps {
     icon: string;
     title: string;
+    disabled?: boolean;
     onClick: JSX.MouseEventHandler<HTMLButtonElement>;
 }
 
@@ -17,8 +18,8 @@ export interface ControlButtonProps {
  * @param onClick Click callback
  * @returns Control Button component
  */
-export const ControlButton = ({ icon, title, onClick }: ControlButtonProps) => (
-    <button onClick={onClick} title={title}>
+export const ControlButton = ({ icon, title, onClick, ...props }: ControlButtonProps) => (
+    <button onClick={onClick} title={title} {...props} >
         <i class={`fas fa-${icon}`}></i>
     </button>
 );

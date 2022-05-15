@@ -34,12 +34,14 @@ export const PauseControl = ({ apple2 }: PauseControlProps) => {
             {running ? (
                 <ControlButton
                     onClick={doPause}
+                    disabled={!apple2}
                     title="Pause"
                     icon="pause"
                 />
             ) : (
                 <ControlButton
                     onClick={doRun}
+                    disabled={!apple2}
                     title="Run"
                     icon="play"
                 />
