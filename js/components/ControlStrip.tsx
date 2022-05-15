@@ -3,11 +3,12 @@ import { useCallback, useContext, useEffect, useState } from 'preact/hooks';
 import { CPUMeter } from './CPUMeter';
 import { Inset } from './Inset';
 import { useHotKey } from './hooks/useHotKey';
-import { Apple2 as Apple2Impl } from '../apple2';
-import { Audio, SOUND_ENABLED_OPTION } from '../ui/audio';
+import { AudioControl } from './AudioControl';
 import { OptionsModal} from './OptionsModal';
 import { OptionsContext } from './OptionsContext';
+import { PauseControl } from './PauseControl';
 import { ControlButton } from './ControlButton';
+import { Apple2 as Apple2Impl } from '../apple2';
 import { JoyStick } from '../ui/joystick';
 import { Screen, SCREEN_FULL_PAGE } from '../ui/screen';
 import { System } from '../ui/system';
@@ -29,9 +30,6 @@ interface ControlStripProps {
  * @returns ControlStrip component
  */
 export const ControlStrip = ({ apple2, e }: ControlStripProps) => {
-    const [running, setRunning] = useState(true);
-    const [audio, setAudio] = useState<Audio>();
-    const [audioEnabled, setAudioEnabled] = useState(false);
     const [showOptions, setShowOptions] = useState(false);
     const options = useContext(OptionsContext);
 
@@ -49,30 +47,9 @@ export const ControlStrip = ({ apple2, e }: ControlStripProps) => {
 
                 const screen = new Screen(vm);
                 options.addOptions(screen);
-
-                const audio = new Audio(io);
-                options.addOptions(audio);
-                setAudio(audio);
-                setAudioEnabled(audio.isEnabled());
             }).catch(console.error);
         }
     }, [apple2]);
-
-    const doPause = useCallback(() => {
-        apple2?.stop();
-        setRunning(false);
-    }, [apple2]);
-
-    const doRun = useCallback(() => {
-        apple2?.run();
-        setRunning(true);
-    }, [apple2]);
-
-    const doToggleSound = useCallback(() => {
-        const on = !audio?.isEnabled();
-        options.setOption(SOUND_ENABLED_OPTION, on);
-        setAudioEnabled(on);
-    }, [audio]);
 
     const doReset = useCallback(() =>
         apple2?.reset()
@@ -106,32 +83,16 @@ export const ControlStrip = ({ apple2, e }: ControlStripProps) => {
             <OptionsModal isOpen={showOptions} onClose={doCloseOptions} />
             <Inset>
                 <CPUMeter apple2={apple2} />
-                {running ? (
-                    <ControlButton
-                        onClick={doPause}
-                        title="Pause"
-                        icon="pause"
-                    />
-                ) : (
-                    <ControlButton
-                        onClick={doRun}
-                        title="Run"
-                        icon="play"
-                    />
-                )}
-                <ControlButton
-                    onClick={doToggleSound}
-                    title="Toggle Sound"
-                    icon={audioEnabled ? 'volume-up' : 'volume-off'}
-                />
+                <PauseControl apple2={apple2} />
+                <AudioControl apple2={apple2} />
                 <div style={{flexGrow: 1}} />
                 <ControlButton onClick={doReadme} title="About" icon="info" />
                 <ControlButton onClick={doShowOptions} title="Options (F4)" icon="cog" />
             </Inset>
             {e && (
-                <button id="reset" onClick={doReset}>
+                <div id="reset" onClick={doReset}>
                     Reset
-                </button>
+                </div>
             )}
         </div>
     );

@@ -606,6 +606,9 @@ button:focus {
     padding: 0;
     margin-left: 10px;
     width: 42px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 #reset:hover {
@@ -614,8 +617,11 @@ button:focus {
 }
 
 #reset:active {
-  background: #22150A;
-  border: 5px outset #44372C;
+    background-color: #22150A;
+    border-left: 3px solid #44372C;
+    border-top: 3px solid #44372C;
+    border-right: 3px solid #000000;
+    border-bottom: 3px solid #000000;
 }
 
 #keyboard .key-OPEN_APPLE.active div {
