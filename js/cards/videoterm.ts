@@ -164,7 +164,7 @@ export default class Videoterm implements Card, Restorable<VideotermState> {
         const startPos =
             this.regs[REGS.STARTPOS_HI] << 8 |
             this.regs[REGS.STARTPOS_LO];
-        if (this.startPos != startPos) {
+        if (this.startPos !== startPos) {
             this.startPos = startPos;
             this.shouldRefresh = true;
         }

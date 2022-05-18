@@ -17,6 +17,7 @@
             "error",
             "unix"
         ],
+        "eqeqeq": ["error", "smart"],
         "prefer-const": [
             "error"
         ],

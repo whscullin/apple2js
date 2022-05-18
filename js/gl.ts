@@ -75,7 +75,7 @@ export class LoresPageGL implements LoresPage {
         let inverse = false;
         if (this.e) {
             if (!this.vm._80colMode && !this.vm.altCharMode) {
-                inverse = ((val & 0xc0) == 0x40) && this._blink;
+                inverse = ((val & 0xc0) === 0x40) && this._blink;
             }
         } else {
             inverse = !((val & 0x80) || (val & 0x40) && this._blink);
@@ -119,7 +119,7 @@ export class LoresPageGL implements LoresPage {
         const base = addr & 0x3FF;
         let fore, back;
 
-        if (this._buffer[bank][base] == val && !this._refreshing) {
+        if (this._buffer[bank][base] === val && !this._refreshing) {
             return;
         }
         this._buffer[bank][base] = val;
@@ -264,7 +264,7 @@ export class LoresPageGL implements LoresPage {
         this._blink = !this._blink;
         for (let idx = 0; idx < 0x400; idx++, addr++) {
             const b = this._buffer[0][idx];
-            if ((b & 0xC0) == 0x40) {
+            if ((b & 0xC0) === 0x40) {
                 this._write(addr >> 8, addr & 0xff, this._buffer[0][idx], 0);
             }
         }
@@ -418,7 +418,7 @@ export class HiresPageGL implements HiresPage {
         const addr = (page << 8) | off;
         const base = addr & 0x1FFF;
 
-        if (this._buffer[bank][base] == val && !this._refreshing) {
+        if (this._buffer[bank][base] === val && !this._refreshing) {
             return;
         }
         this._buffer[bank][base] = val;
@@ -476,7 +476,7 @@ export class HiresPageGL implements HiresPage {
                 }
                 let bits = val;
                 for (let idx = 0; idx < 7; idx++, offset += 8) {
-                    const drawPixel = cropLastPixel && idx == 6
+                    const drawPixel = cropLastPixel && idx === 6
                         ? this._drawHalfPixel
                         : this._drawPixel;
                     if (bits & 0x01) {
@@ -666,7 +666,7 @@ export class VideoModesGL implements VideoModes {
         const old = this.textMode;
         this.textMode = on;
 
-        if (old != on) {
+        if (old !== on) {
             this._refresh();
         }
     }
@@ -677,7 +677,7 @@ export class VideoModesGL implements VideoModes {
         const old = this._80colMode;
         this._80colMode = on;
 
-        if (old != on) {
+        if (old !== on) {
             this._refresh();
         }
     }
@@ -687,7 +687,7 @@ export class VideoModesGL implements VideoModes {
 
         const old = this.altCharMode;
         this.altCharMode = on;
-        if (old != on) {
+        if (old !== on) {
             this._refresh();
         }
     }
@@ -696,7 +696,7 @@ export class VideoModesGL implements VideoModes {
         const old = this.hiresMode;
         this.hiresMode = on;
 
-        if (old != on) {
+        if (old !== on) {
             this._refresh();
         }
     }
@@ -707,7 +707,7 @@ export class VideoModesGL implements VideoModes {
         const old = this.an3State;
         this.an3State = on;
 
-        if (old != on) {
+        if (old !== on) {
             this._refresh();
         }
     }
@@ -719,7 +719,7 @@ export class VideoModesGL implements VideoModes {
     mixed(on: boolean) {
         const old = this.mixedMode;
         this.mixedMode = on;
-        if (old != on) {
+        if (old !== on) {
             this._refresh();
         }
     }
@@ -727,7 +727,7 @@ export class VideoModesGL implements VideoModes {
     page(pageNo: pageNo) {
         const old = this.pageMode;
         this.pageMode = pageNo;
-        if (old != pageNo) {
+        if (old !== pageNo) {
             this._refresh();
         }
     }
@@ -741,7 +741,7 @@ export class VideoModesGL implements VideoModes {
     }
 
     isPage2() {
-        return this.pageMode == 2;
+        return this.pageMode === 2;
     }
 
     isHires() {

@@ -38,7 +38,7 @@ export default class Tape {
                     datum = data[idx];
                     if ((datum > 0.1) || (datum < -0.1)) {
                         current = (datum > 0.0);
-                        if (current != old) {
+                        if (current !== old) {
                             delta = idx - last;
                             if (delta > 2000000) {
                                 delta = 2000000;

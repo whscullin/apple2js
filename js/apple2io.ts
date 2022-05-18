@@ -217,7 +217,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
                 }
                 break;
             case LOC.TAPEIN:
-                if (this._tapeOffset == -1) {
+                if (this._tapeOffset === -1) {
                     this._tapeOffset = 0;
                     this._tapeNext = now;
                 }
@@ -248,7 +248,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
                         }
                         if (this._buffer.length > 0) {
                             let val = this._buffer.shift() as string;
-                            if (val == '\n') {
+                            if (val === '\n') {
                                 val = '\r';
                             }
                             this._key = val.charCodeAt(0) | 0x80;
@@ -343,7 +343,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
             case 0xc7:
                 slot = page & 0x0f;
                 card = this._slot[slot];
-                if (this._auxRom != card) {
+                if (this._auxRom !== card) {
                 // _debug('Setting auxRom to slot', slot);
                     this._auxRom = card;
                 }
@@ -379,7 +379,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
             case 0xc7:
                 slot = page & 0x0f;
                 card = this._slot[slot];
-                if (this._auxRom != card) {
+                if (this._auxRom !== card) {
                 // _debug('Setting auxRom to slot', slot);
                     this._auxRom = card;
                 }

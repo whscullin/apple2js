@@ -24,13 +24,13 @@ export class JoyStick implements OptionHandler {
         document.querySelectorAll('canvas').forEach((canvas) => {
             canvas.addEventListener('mousedown', (evt) => {
                 if (!this.gamepad && !mouseMode) {
-                    io.buttonDown(evt.which == 1 ? 0 : 1);
+                    io.buttonDown(evt.which === 1 ? 0 : 1);
                 }
                 evt.preventDefault();
             });
             canvas.addEventListener('mouseup', (evt) => {
                 if (!this.gamepad && !mouseMode) {
-                    io.buttonUp(evt.which == 1 ? 0 : 1);
+                    io.buttonUp(evt.which === 1 ? 0 : 1);
                 }
             });
             canvas.addEventListener('contextmenu', (evt) => {

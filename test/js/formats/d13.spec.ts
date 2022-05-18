@@ -59,7 +59,7 @@ describe('DOS-13 format', () => {
         // From Beneith Apple DOS, GAP 1 should have 12-85 0xFF bytes
         const track = disk.tracks[0];
         let numFF = 0;
-        while (track[numFF] == 0xFF && numFF < 0x100) {
+        while (track[numFF] === 0xFF && numFF < 0x100) {
             numFF++;
         }
         expect(numFF).toBeGreaterThanOrEqual(40);

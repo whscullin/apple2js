@@ -101,11 +101,11 @@ class AuxRom implements Memory {
         private readonly rom: ROM) { }
 
     _access(page: byte, off: byte) {
-        if (page == 0xc3) {
+        if (page === 0xc3) {
             this.mmu._setIntc8rom(true);
             this.mmu._updateBanks();
         }
-        if (page == 0xcf && off == 0xff) {
+        if (page === 0xcf && off === 0xff) {
             this.mmu._setIntc8rom(false);
             this.mmu._updateBanks();
         }

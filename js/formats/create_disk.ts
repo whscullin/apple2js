@@ -50,7 +50,7 @@ export function createDiskFromJsonDisk(disk: JSONDisk): FloppyDisk | null {
 
     if (includes(NIBBLE_FORMATS, fmt)) {
         let trackData: memory[][];
-        if (disk.encoding == 'base64') {
+        if (disk.encoding === 'base64') {
             trackData = [];
             for (let t = 0; t < disk.data.length; t++) {
                 trackData[t] = [];

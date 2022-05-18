@@ -330,7 +330,7 @@ export function explodeSector13(volume: byte, track: byte, sector: byte, data: m
  * @returns An array of sector data bytes.
  */
 export function readSector(disk: NibbleDisk, track: byte, sector: byte): memory {
-    const _sector = disk.format == 'po' ? _PO[sector] : _DO[sector];
+    const _sector = disk.format === 'po' ? _PO[sector] : _DO[sector];
     let val, state = 0;
     let idx = 0;
     let retry = 0;
@@ -372,7 +372,7 @@ export function readSector(disk: NibbleDisk, track: byte, sector: byte): memory 
                 t = defourXfour(_readNext(), _readNext());
                 s = defourXfour(_readNext(), _readNext());
                 checkSum = defourXfour(_readNext(), _readNext());
-                if (checkSum != (v ^ t ^ s)) {
+                if (checkSum !== (v ^ t ^ s)) {
                     debug('Invalid header checksum:', toHex(v), toHex(t), toHex(s), toHex(checkSum));
                 }
                 _skipBytes(3); // Skip footer
@@ -471,7 +471,7 @@ export function jsonDecode(data: string): NibbleDisk {
     for (let t = 0; t < json.data.length; t++) {
         let track: byte[] = [];
         for (let s = 0; s < json.data[t].length; s++) {
-            const _s = json.type == 'po' ? PO[s] : DO[s];
+            const _s = json.type === 'po' ? PO[s] : DO[s];
             const sector: string = json.data[t][_s];
             const d = base64_decode(sector);
             track = track.concat(explodeSector16(v, t, s, d));
@@ -532,7 +532,7 @@ export function analyseDisk(disk: NibbleDisk) {
                     t = defourXfour(_readNext(), _readNext());
                     s = defourXfour(_readNext(), _readNext());
                     checkSum = defourXfour(_readNext(), _readNext());
-                    if (checkSum != (v ^ t ^ s)) {
+                    if (checkSum !== (v ^ t ^ s)) {
                         debug('Invalid header checksum:', toHex(v), toHex(t), toHex(s), toHex(checkSum));
                     } else {
                         outStr += toHex(s, 1);
