@@ -45,7 +45,7 @@ export function bytify(ary: number[]): memory {
 }
 
 /** Writes to the console. */
-export function debug(...args: any[]): void {
+export function debug(...args: unknown[]): void {
     console.log.apply(console, args);
 }
 

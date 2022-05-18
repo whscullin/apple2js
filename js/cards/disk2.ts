@@ -393,7 +393,7 @@ export default class DiskII implements Card {
         this.initWorker();
     }
 
-    private debug(..._args: any[]) {
+    private debug(..._args: unknown[]) {
         // debug.apply(this, arguments);
     }
 

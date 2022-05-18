@@ -12,7 +12,7 @@ type Annunciators = Record<annunciator, boolean>;
 
 export interface Apple2IOState {
     annunciators: Annunciators;
-    cards: Array<any | null>;
+    cards: Array<unknown | null>;
 }
 
 export type SampleListener = (sample: number[]) => void;
@@ -93,7 +93,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
         this._calcSampleRate();
     }
 
-    _debug(..._args: any[]) {
+    _debug(..._args: unknown[]) {
         // debug.apply(this, arguments);
     }
 

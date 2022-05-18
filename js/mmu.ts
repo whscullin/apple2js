@@ -310,7 +310,7 @@ export default class MMU implements Memory, Restorable<MMUState> {
         this._iouDisable = true;
     }
 
-    _debug(..._args: any[]) {
+    _debug(..._args: unknown[]) {
         // debug.apply(this, _args);
     }
 

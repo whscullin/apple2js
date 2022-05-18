@@ -135,7 +135,7 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
         }
     }
 
-    private debug(..._args: any[]) {
+    private debug(..._args: unknown[]) {
         // debug.apply(this, arguments);
     }
 

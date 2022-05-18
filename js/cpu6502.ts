@@ -147,7 +147,7 @@ type WriteFn = (val: byte) => void;
 type ReadAddrFn = (opts?: Opts) => word;
 type ImpliedFn = () => void;
 
-interface Instruction<T = any> {
+interface Instruction<T = unknown> {
     name: string;
     mode: Mode;
     op: (fn: T) => void;

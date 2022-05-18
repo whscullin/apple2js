@@ -35,7 +35,7 @@ export default class Thunderclock implements Card, Restorable<ThunderclockState>
     private bits: boolean[] = [];
     private command: byte = COMMANDS.REGHOLD;
 
-    private debug(..._args: any[]) {
+    private debug(..._args: unknown[]) {
         // debug.apply(this, arguments);
     }
 

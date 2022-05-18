@@ -102,7 +102,7 @@ export interface Card extends Memory, Restorable {
 
 export type TapeData = Array<[duration: number, high: boolean]>;
 
-export interface Restorable<T = any> {
+export interface Restorable<T = unknown> {
     getState(): T;
     setState(state: T): void;
 }

@@ -21,6 +21,7 @@
             "error"
         ],
         "semi": "off",
+        "@typescript-eslint/no-explicit-any": "error",
         "@typescript-eslint/semi": [
             "error",
             "always"

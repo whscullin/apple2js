@@ -152,7 +152,7 @@ export default class CFFA implements Card, MassStorage, Restorable<CFFAState> {
 
     // Verbose debug method
 
-    private _debug(..._args: any[]) {
+    private _debug(..._args: unknown[]) {
         // debug.apply(this, arguments);
     }
 

@@ -12,7 +12,7 @@ declare global {
         webkitIsFullScreen: boolean;
     }
     interface Element {
-        webkitRequestFullScreen: (options?: any) => void;
+        webkitRequestFullScreen: (options?: unknown) => void;
     }
 }
 export class Screen implements OptionHandler {
