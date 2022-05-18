@@ -178,7 +178,7 @@ export default class ApplesoftCompiler {
                                 let foundToken = '';
                                 let tokenIdx = -1;
                                 for (const possibleToken in TOKENS) {
-                                    if (possibleToken.charAt(0) == character) {
+                                    if (possibleToken.charAt(0) === character) {
                                         tokenIdx = curChar + 1;
                                         let idx = 1;
                                         while (idx < possibleToken.length) {
@@ -234,7 +234,7 @@ export default class ApplesoftCompiler {
                         break;
                     case STATES.STRING:
                         result.push(character.charCodeAt(0));
-                        if (character == '"') {
+                        if (character === '"') {
                             state = STATES.NORMAL;
                         }
                         curChar++;

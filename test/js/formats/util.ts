@@ -3,10 +3,10 @@ import { memory } from 'js/types';
 export function skipGap(track: memory, start: number = 0): number {
     const end = start + 0x100; // no gap is this big
     let i = start;
-    while (i < end && track[i] == 0xFF) {
+    while (i < end && track[i] === 0xFF) {
         i++;
     }
-    if (i == end) {
+    if (i === end) {
         fail(`found more than 0x100 0xFF bytes after ${start}`);
     }
     return i;
@@ -14,7 +14,7 @@ export function skipGap(track: memory, start: number = 0): number {
 
 export function compareSequences(track: memory, bytes: number[], pos: number): boolean {
     for (let i = 0; i < bytes.length; i++) {
-        if (track[i + pos] != bytes[i]) {
+        if (track[i + pos] !== bytes[i]) {
             return false;
         }
     }

@@ -26,10 +26,10 @@ describe('allocMem', () => {
     it('has garbage in the right places', () => {
         const memory = allocMem(0x800);
         for (let i = 0; i < 0x800; i += 0x200) {
-            const passed = memory[i + 0x28] != 0xff
-                && memory[i + 0x29] != 0xff
-                && memory[i + 0x68] != 0xff
-                && memory[i + 0x69] != 0xff;
+            const passed = memory[i + 0x28] !== 0xff
+                && memory[i + 0x29] !== 0xff
+                && memory[i + 0x68] !== 0xff
+                && memory[i + 0x69] !== 0xff;
             if (passed) {
                 return;
             }

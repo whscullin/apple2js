@@ -148,7 +148,7 @@ export class LoresPage2D implements LoresPage {
         let inverse = false;
         if (this.e) {
             if (!this.vm._80colMode && !this.vm.altCharMode) {
-                inverse = ((val & 0xc0) == 0x40) && this._blink;
+                inverse = ((val & 0xc0) === 0x40) && this._blink;
             }
         } else {
             inverse = !((val & 0x80) || (val & 0x40) && this._blink);
@@ -192,7 +192,7 @@ export class LoresPage2D implements LoresPage {
         const base = addr & 0x3FF;
         let fore, back;
 
-        if (this._buffer[bank][base] == val && !this._refreshing) {
+        if (this._buffer[bank][base] === val && !this._refreshing) {
             return;
         }
         this._buffer[bank][base] = val;
@@ -288,7 +288,7 @@ export class LoresPage2D implements LoresPage {
                                 let color;
                                 if (colorMode) {
                                     if (b & 0x80) {
-                                        if ((b & 0x1c0) != 0x80) {
+                                        if ((b & 0x1c0) !== 0x80) {
                                             color = whiteCol;
                                         } else {
                                             color = odd ? violetCol : greenCol;
@@ -395,7 +395,7 @@ export class LoresPage2D implements LoresPage {
         this._blink = !this._blink;
         for (let idx = 0; idx < 0x400; idx++, addr++) {
             const b = this._buffer[0][idx];
-            if ((b & 0xC0) == 0x40) {
+            if ((b & 0xC0) === 0x40) {
                 this._write(addr >> 8, addr & 0xff, this._buffer[0][idx], 0);
             }
         }
@@ -575,7 +575,7 @@ export class HiresPage2D implements HiresPage {
         const addr = (page << 8) | off;
         const base = addr & 0x1FFF;
 
-        if (this._buffer[bank][base] == val && !this._refreshing) {
+        if (this._buffer[bank][base] === val && !this._refreshing) {
             return;
         }
         this._buffer[bank][base] = val;
@@ -695,16 +695,16 @@ export class HiresPage2D implements HiresPage {
                         } else if (this.colorDHRMode) {
                             this._drawHalfPixel(data, offset, dcolor);
                         } else if (
-                            ((c[idx] != c[idx - 1]) && (c[idx] != c[idx + 1])) &&
-                            (((bits & 0x1c) == 0x1c) ||
-                                ((bits & 0x70) == 0x70) ||
-                                ((bits & 0x38) == 0x38))
+                            ((c[idx] !== c[idx - 1]) && (c[idx] !== c[idx + 1])) &&
+                            (((bits & 0x1c) === 0x1c) ||
+                                ((bits & 0x70) === 0x70) ||
+                                ((bits & 0x38) === 0x38))
                         ) {
                             this._drawHalfPixel(data, offset, whiteCol);
                         } else if (
                             (bits & 0x38) ||
-                            (c[idx] == c[idx + 1]) ||
-                            (c[idx] == c[idx - 1])
+                            (c[idx] === c[idx + 1]) ||
+                            (c[idx] === c[idx - 1])
                         ) {
                             this._drawHalfPixel(data, offset, dcolor);
                         } else if (bits & 0x28) {
@@ -786,9 +786,9 @@ export class HiresPage2D implements HiresPage {
 
     refresh() {
         this.highColorHGRMode = !this.vm.an3State && this.vm.hiresMode && !this.vm._80colMode;
-        this.oneSixtyMode = this.vm.flag == 1 && this.vm.doubleHiresMode;
-        this.mixedDHRMode = this.vm.flag == 2 && this.vm.doubleHiresMode;
-        this.monoDHRMode = this.vm.flag == 3 && this.vm.doubleHiresMode;
+        this.oneSixtyMode = this.vm.flag === 1 && this.vm.doubleHiresMode;
+        this.mixedDHRMode = this.vm.flag === 2 && this.vm.doubleHiresMode;
+        this.monoDHRMode = this.vm.flag === 3 && this.vm.doubleHiresMode;
 
         let addr = 0x2000 * this.page;
         this._refreshing = true;
@@ -922,7 +922,7 @@ export class VideoModes2D implements VideoModes {
         if (on) {
             this.flag = 0;
         }
-        if (old != on) {
+        if (old !== on) {
             this._refresh();
         }
     }
@@ -933,7 +933,7 @@ export class VideoModes2D implements VideoModes {
         const old = this._80colMode;
         this._80colMode = on;
 
-        if (old != on) {
+        if (old !== on) {
             this._refresh();
         }
     }
@@ -943,7 +943,7 @@ export class VideoModes2D implements VideoModes {
 
         const old = this.altCharMode;
         this.altCharMode = on;
-        if (old != on) {
+        if (old !== on) {
             this._refresh();
         }
     }
@@ -955,7 +955,7 @@ export class VideoModes2D implements VideoModes {
             this.flag = 0;
         }
 
-        if (old != on) {
+        if (old !== on) {
             this._refresh();
         }
     }
@@ -970,7 +970,7 @@ export class VideoModes2D implements VideoModes {
             this.flag = ((this.flag << 1) | (this._80colMode ? 0x0 : 0x1)) & 0x3;
         }
 
-        if (old != on) {
+        if (old !== on) {
             this._refresh();
         }
     }
@@ -982,7 +982,7 @@ export class VideoModes2D implements VideoModes {
     mixed(on: boolean) {
         const old = this.mixedMode;
         this.mixedMode = on;
-        if (old != on) {
+        if (old !== on) {
             this._refresh();
         }
     }
@@ -990,7 +990,7 @@ export class VideoModes2D implements VideoModes {
     page(pageNo: pageNo) {
         const old = this.pageMode;
         this.pageMode = pageNo;
-        if (old != pageNo) {
+        if (old !== pageNo) {
             this._refresh();
         }
     }
@@ -1004,7 +1004,7 @@ export class VideoModes2D implements VideoModes {
     }
 
     isPage2() {
-        return this.pageMode == 2;
+        return this.pageMode === 2;
     }
 
     isHires() {

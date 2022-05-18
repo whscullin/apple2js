@@ -125,7 +125,7 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
 
     constructor(private cpu: CPU6502, options: SmartPortOptions) {
         if (options?.block) {
-            const dumbPortRom =  new Uint8Array(smartPortRom);
+            const dumbPortRom = new Uint8Array(smartPortRom);
             dumbPortRom[0x07] = 0x3C;
             this.rom = dumbPortRom;
             debug('DumbPort card');
@@ -152,7 +152,7 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
             result += toHex(idx << 4, 4) + ': ';
             for (jdx = 0; jdx < 16; jdx++) {
                 b = this.disks[drive].blocks[block][idx * 16 + jdx];
-                if (jdx == 8) {
+                if (jdx === 8) {
                     result += ' ';
                 }
                 result += toHex(b) + ' ';
@@ -160,7 +160,7 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
             result += '        ';
             for (jdx = 0; jdx < 16; jdx++) {
                 b = this.disks[drive].blocks[block][idx * 16 + jdx] & 0x7f;
-                if (jdx == 8) {
+                if (jdx === 8) {
                     result += ' ';
                 }
                 if (b >= 0x20 && b < 0x7f) {
@@ -355,7 +355,7 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
                     this.formatDevice(state, unit);
                     break;
             }
-        } else if (off == smartOff && this.cpu.getSync()) {
+        } else if (off === smartOff && this.cpu.getSync()) {
             this.debug('smartport entry');
             const stackAddr = new Address(this.cpu, state.sp + 1, 0x01);
             let blocks;
@@ -521,7 +521,7 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
     setBinary(drive: number, name: string, fmt: string, rawData: ArrayBuffer) {
         const volume = 254;
         const readOnly = false;
-        if (fmt == '2mg') {
+        if (fmt === '2mg') {
             const { bytes, offset } = read2MGHeader(rawData);
             rawData = rawData.slice(offset, offset + bytes);
         }

@@ -9,7 +9,7 @@ export default class ROM implements MemoryPages, Restorable<ROMState> {
     private readonly endPage: byte,
     private readonly rom: rom) {
         const expectedLength = (endPage-startPage+1) * 256;
-        if (rom.length != expectedLength) {
+        if (rom.length !== expectedLength) {
             throw Error(`rom does not have the correct length: expected ${expectedLength} was ${rom.length}`);
         }
     }

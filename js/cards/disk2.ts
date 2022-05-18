@@ -387,8 +387,8 @@ export default class DiskII implements Card {
         this.debug('Disk ][');
 
         this.lastCycles = this.io.cycles();
-        this.bootstrapRom = this.sectors == 16 ? BOOTSTRAP_ROM_16 : BOOTSTRAP_ROM_13;
-        this.sequencerRom = this.sectors == 16 ? SEQUENCER_ROM_16 : SEQUENCER_ROM_13;
+        this.bootstrapRom = this.sectors === 16 ? BOOTSTRAP_ROM_16 : BOOTSTRAP_ROM_13;
+        this.sequencerRom = this.sectors === 16 ? SEQUENCER_ROM_16 : SEQUENCER_ROM_13;
 
         this.initWorker();
     }
@@ -413,7 +413,7 @@ export default class DiskII implements Card {
 
         while (workCycles-- > 0) {
             let pulse: number = 0;
-            if (this.clock == 4) {
+            if (this.clock === 4) {
                 pulse = track[this.cur.head];
                 if (!pulse) {
                     // More that 2 zeros can not be read reliably.
@@ -463,7 +463,7 @@ export default class DiskII implements Card {
             }
             this.state = (command >> 4 & 0xF) as nibble;
 
-            if (this.clock == 4) {
+            if (this.clock === 4) {
                 if (this.on) {
                     if (this.q7) {
                         track[this.cur.head] = this.state & 0x8 ? 0x01 : 0x00;

@@ -12,7 +12,7 @@ describe('CPU', function () {
 
     function traceCB() {
         const pc = cpu.getPC();
-        done = lastPC == pc;
+        done = lastPC === pc;
         lastPC = pc;
     }
 

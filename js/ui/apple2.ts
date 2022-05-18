@@ -181,10 +181,10 @@ export function handleDrop(drive: number, event: DragEvent) {
         }
     }
     const dt = event.dataTransfer!;
-    if (dt.files.length == 1) {
+    if (dt.files.length === 1) {
         const runOnLoad = event.shiftKey;
         doLoadLocal(drive as DriveNumber, dt.files[0], { runOnLoad });
-    } else if (dt.files.length == 2) {
+    } else if (dt.files.length === 2) {
         doLoadLocal(1, dt.files[0]);
         doLoadLocal(2, dt.files[1]);
     } else {
@@ -255,7 +255,7 @@ export function doLoad(event: MouseEvent|KeyboardEvent) {
     const urls = select.value;
     let url;
     if (urls && urls.length) {
-        if (typeof (urls) == 'string') {
+        if (typeof (urls) === 'string') {
             url = urls;
         } else {
             url = urls[0];
@@ -264,15 +264,15 @@ export function doLoad(event: MouseEvent|KeyboardEvent) {
 
     const localFile = document.querySelector<HTMLInputElement>('#local_file')!;
     const files = localFile.files;
-    if (files && files.length == 1) {
+    if (files && files.length === 1) {
         const runOnLoad = event.shiftKey;
         doLoadLocal(_currentDrive, files[0], { runOnLoad });
     } else if (url) {
         let filename;
         MicroModal.close('load-modal');
-        if (url.substr(0, 6) == 'local:') {
+        if (url.substr(0, 6) === 'local:') {
             filename = url.substr(6);
-            if (filename == '__manage') {
+            if (filename === '__manage') {
                 openManage();
             } else {
                 loadLocalStorage(_currentDrive, filename);
@@ -711,7 +711,7 @@ function buildDiskIndex() {
         if (file.e && !_e) {
             continue;
         }
-        if (cat != oldCat) {
+        if (cat !== oldCat) {
             option = document.createElement('option');
             option.value = cat;
             option.innerText = cat;
@@ -751,7 +751,7 @@ function processHash(hash: string) {
         if (file.indexOf('://') > 0) {
             const parts = file.split('.');
             const ext = parts[parts.length - 1].toLowerCase();
-            if (ext == 'json') {
+            if (ext === 'json') {
                 loadAjax(drive, file);
             } else {
                 doLoadHTTP(drive, file);
@@ -763,7 +763,7 @@ function processHash(hash: string) {
 }
 
 export function updateUI() {
-    if (document.location.hash != hashtag) {
+    if (document.location.hash !== hashtag) {
         hashtag = document.location.hash;
         const hash = hup();
         if (hash) {

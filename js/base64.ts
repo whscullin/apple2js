@@ -111,10 +111,10 @@ export function base64_decode(data: string | null | undefined): memory | undefin
         o3 = bits & 0xff;
 
         tmp_arr[ac++] = o1;
-        if (h3 != 64) {
+        if (h3 !== 64) {
             tmp_arr[ac++] = o2;
         }
-        if (h4 != 64) {
+        if (h4 !== 64) {
             tmp_arr[ac++] = o3;
         }
     } while (i < data.length);
