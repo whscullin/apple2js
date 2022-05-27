@@ -113,8 +113,7 @@
                 "node": true
             },
             "rules": {
-                "no-console": 0,
-                "@typescript-eslint/no-undef": "off",
+                "no-console": 0
             }
         },
         {

@@ -108,7 +108,7 @@ const FilePickerChooser = ({
     accept = [ACCEPT_EVERYTHING_TYPE]
 }: FilePickerChooserProps) => {
     const [busy, setBusy] = useState<boolean>(false);
-    const filenameSpanRef = useRef<HTMLSpanElement>(null);
+    const [selectedFilename, setSelectedFilename] = useState<string>();
     const fileHandlesRef = useRef<FileSystemFileHandle[]>();
 
     const onClickInternal = useCallback(async () => {
@@ -134,15 +134,10 @@ const FilePickerChooser = ({
     }, []);
 
     useEffect(() => {
-        if (!filenameSpanRef.current) {
-            return;
-        }
-
-        if (fileHandlesRef.current?.length) {
-            filenameSpanRef.current.textContent = fileHandlesRef.current[0].name;
-        } else {
-            filenameSpanRef.current.textContent = 'No file selected';
-        }
+        setSelectedFilename(
+            fileHandlesRef.current?.length
+                ? fileHandlesRef.current[0].name
+                : 'No file selected');
     }, [fileHandlesRef.current]);
 
     return (
@@ -151,7 +146,7 @@ const FilePickerChooser = ({
                 Choose File
             </button>
             &nbsp;
-            <span role="label" ref={filenameSpanRef} />
+            <span role="label">{selectedFilename}</span>
         </>
     );
 };

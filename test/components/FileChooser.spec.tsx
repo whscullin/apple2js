@@ -23,6 +23,7 @@ const FAKE_FILE_HANDLE = {
     isDirectory: false,
 } as const;
 
+// eslint-disable-next-line no-undef
 const EMPTY_FILE_LIST = backdoors.newFileList();
 
 const FAKE_FILE = new File([], 'fake');
@@ -57,6 +58,7 @@ describe('FileChooser', () => {
             const onChange = jest.fn<ReturnType<FileChooserProps['onChange']>, Parameters<FileChooserProps['onChange']>>();
             render(<FileChooser control='input' onChange={onChange} />);
             const inputElement = await screen.findByRole('button') as HTMLInputElement;
+            // eslint-disable-next-line no-undef
             inputElement.files = backdoors.newFileList(FAKE_FILE);
             fireEvent.change(inputElement);
             await waitFor(async () => {
