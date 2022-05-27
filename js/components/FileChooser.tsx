@@ -12,17 +12,9 @@ const ACCEPT_EVERYTHING_TYPE: FilePickerAcceptType = {
     accept: { '*/*': [] },
 };
 
-export interface FileSystemFileHandleLike {
-    readonly name: string;
-    readonly kind: string;
-    readonly isWritable: boolean;
-    getFile(): Promise<File>;
-    createWritable: FileSystemFileHandle['createWritable'];
-}
-
 export interface FileChooserProps {
     disabled?: boolean;
-    onChange: (handles: Array<FileSystemFileHandleLike>) => void;
+    onChange: (handles: Array<FileSystemFileHandle>) => void;
     accept?: FilePickerAcceptType[];
     control?: typeof controlDefault;
 }
@@ -170,7 +162,7 @@ export const FileChooser = ({
 }: FileChooserProps) => {
 
     const onChangeForInput = useCallback((files: FileList) => {
-        const handles: FileSystemFileHandleLike[] = [];
+        const handles: FileSystemFileHandle[] = [];
         for (let i = 0; i < files.length; i++) {
             const file = files.item(i);
             if (file === null) {
@@ -180,25 +172,19 @@ export const FileChooser = ({
                 kind: 'file',
                 name: file.name,
                 getFile: () => Promise.resolve(file),
-                isWritable: false,
                 createWritable: (_options) => Promise.reject('File not writable.'),
+                queryPermission: (descriptor) => Promise.resolve(descriptor === 'read' ? 'granted' : 'denied'),
+                requestPermission: (descriptor) => Promise.resolve(descriptor === 'read' ? 'granted' : 'denied'),
+                isSameEntry: (_unused) => Promise.resolve(false),
+                isDirectory: false,
+                isFile: true,
             });
         }
         onChange(handles);
     }, [onChange]);
 
     const onChangeForPicker = useCallback((fileHandles: FileSystemFileHandle[]) => {
-        const handles: FileSystemFileHandleLike[] = [];
-        for (const fileHandle of fileHandles) {
-            handles.push({
-                kind: fileHandle.kind,
-                name: fileHandle.name,
-                getFile: () => fileHandle.getFile(),
-                isWritable: true,
-                createWritable: (options) => fileHandle.createWritable(options),
-            });
-        }
-        onChange(handles);
+        onChange(fileHandles);
     }, [onChange]);
 
     return control === 'picker'

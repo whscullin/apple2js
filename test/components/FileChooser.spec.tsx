@@ -69,9 +69,9 @@ describe('FileChooser', () => {
                 const handle = handleList[0];
                 expect(handle.kind).toBe('file');
                 expect(handle.name).toBe(FAKE_FILE.name);
-                expect(handle.isWritable).toBe(false);
                 await expect(handle.getFile()).resolves.toBe(FAKE_FILE);
                 await expect(handle.createWritable()).rejects.toEqual('File not writable.');
+                await expect(handle.queryPermission({ mode: 'readwrite' })).resolves.toBe('denied');
             });
         });
     });
@@ -125,7 +125,6 @@ describe('FileChooser', () => {
                 const handle = handleList[0];
                 expect(handle.kind).toBe(FAKE_FILE_HANDLE.kind);
                 expect(handle.name).toBe(FAKE_FILE_HANDLE.name);
-                expect(handle.isWritable).toBe(true);
             });
         });
     });

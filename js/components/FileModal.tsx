@@ -7,9 +7,9 @@ import DiskII from '../cards/disk2';
 import { ErrorModal } from './ErrorModal';
 
 import index from 'json/disks/index.json';
-import { FileChooser, FilePickerAcceptType, FileSystemFileHandleLike } from './FileChooser';
 import { noAwait } from './util/promises';
 import { useHash } from './hooks/useHash';
+import { FileChooser, FilePickerAcceptType } from './FileChooser';
 
 const DISK_TYPES: FilePickerAcceptType[] = [
     {
@@ -50,7 +50,7 @@ export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) =>
     const [busy, setBusy] = useState<boolean>(false);
     const [empty, setEmpty] = useState<boolean>(true);
     const [category, setCategory] = useState<string>();
-    const [handles, setHandles] = useState<FileSystemFileHandleLike[]>();
+    const [handles, setHandles] = useState<FileSystemFileHandle[]>();
     const [filename, setFilename] = useState<string>();
     const [error, setError] = useState<unknown>();
     const hash = useHash();
@@ -82,7 +82,7 @@ export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) =>
         setHashParts(hashParts);
     }, [disk2, filename, number, onClose, handles, hash]);
 
-    const onChange = useCallback((handles: FileSystemFileHandleLike[]) => {
+    const onChange = useCallback((handles: FileSystemFileHandle[]) => {
         setEmpty(handles.length === 0);
         setHandles(handles);
     }, []);
