@@ -12,6 +12,7 @@ import { Screen } from './Screen';
 import { Drives } from './Drives';
 import { Slinky } from './Slinky';
 import { ThunderClock } from './ThunderClock';
+import { ErrorModal } from './ErrorModal';
 
 /**
  * Interface for the Apple2 component.
@@ -40,6 +41,7 @@ export const Apple2 = (props: Apple2Props) => {
     const [apple2, setApple2] = useState<Apple2Impl>();
     const [io, setIO] = useState<Apple2IO>();
     const [cpu, setCPU] = useState<CPU6502>();
+    const [error, setError] =useState<string>();
 
     useEffect(() => {
         if (screen.current) {
@@ -57,7 +59,7 @@ export const Apple2 = (props: Apple2Props) => {
                 setCPU(cpu);
                 apple2.reset();
                 apple2.run();
-            }).catch(error => console.error(error));
+            }).catch((e) => setError(e.message));
         }
     }, [props]);
 
@@ -74,6 +76,7 @@ export const Apple2 = (props: Apple2Props) => {
             <Inset>
                 <Keyboard apple2={apple2} e={e} />
             </Inset>
+            <ErrorModal error={error} setError={setError} />
         </div>
     );
 };

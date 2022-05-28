@@ -1,9 +1,10 @@
-import { h, JSX } from 'preact';
+import { h, Fragment, JSX } from 'preact';
 import { useCallback, useState } from 'preact/hooks';
 import { DiskDescriptor, DriveNumber, NibbleFormat, NIBBLE_FORMATS } from '../formats/types';
 import { Modal, ModalContent, ModalFooter } from './Modal';
 import { loadLocalFile, loadJSON, getHashParts, setHashParts } from './util/files';
 import DiskII from '../cards/disk2';
+import { ErrorModal } from './ErrorModal';
 
 import index from 'json/disks/index.json';
 import { FileChooser, FilePickerAcceptType, FileSystemFileHandleLike } from './FileChooser';
@@ -50,6 +51,7 @@ export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) =>
     const [category, setCategory] = useState<string>();
     const [handles, setHandles] = useState<FileSystemFileHandleLike[]>();
     const [filename, setFilename] = useState<string>();
+    const [error, setError] = useState<string>();
 
     const doCancel = useCallback(() => onClose(true), [onClose]);
 
@@ -61,8 +63,12 @@ export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) =>
             setBusy(true);
             try {
                 await loadLocalFile(disk2, number, await handles[0].getFile());
-            } catch (e) {
-                console.error(e);
+            } catch (e: unknown) {
+                if (e instanceof Error) {
+                    setError(e.message);
+                } else {
+                    console.error(e);
+                }
             } finally {
                 setBusy(false);
                 onClose();
@@ -74,7 +80,7 @@ export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) =>
             hashParts[number] = name[1];
             setBusy(true);
             loadJSON(disk2, number, filename)
-                .catch(console.error)
+                .catch((e: Error) => setError(e.message))
                 .finally(() => {
                     setBusy(false);
                     onClose();
@@ -105,29 +111,32 @@ export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) =>
     const disks = category ? categories[category] : [];
 
     return (
-        <Modal title="Open File" isOpen={isOpen}>
-            <ModalContent>
-                <div id="load-modal">
-                    <select multiple onChange={doSelectCategory}>
-                        {categoryNames.map((name) => (
-                            <option key={name}>{name}</option>
-                        ))}
-                    </select>
-                    <select multiple onChange={doSelectFilename}>
-                        {disks.map((disk) => (
-                            <option key={disk.filename} value={disk.filename}>
-                                {disk.name}
-                                {disk.disk ? ` - ${disk.disk}` : ''}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                <FileChooser onChange={onChange} accept={DISK_TYPES} />
-            </ModalContent>
-            <ModalFooter>
-                <button onClick={doCancel}>Cancel</button>
-                <button onClick={noAwait(doOpen)} disabled={busy || empty}>Open</button>
-            </ModalFooter>
-        </Modal>
+        <>
+            <Modal title="Open File" isOpen={isOpen}>
+                <ModalContent>
+                    <div id="load-modal">
+                        <select multiple onChange={doSelectCategory}>
+                            {categoryNames.map((name) => (
+                                <option key={name}>{name}</option>
+                            ))}
+                        </select>
+                        <select multiple onChange={doSelectFilename}>
+                            {disks.map((disk) => (
+                                <option key={disk.filename} value={disk.filename}>
+                                    {disk.name}
+                                    {disk.disk ? ` - ${disk.disk}` : ''}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <FileChooser onChange={onChange} accept={DISK_TYPES} />
+                </ModalContent>
+                <ModalFooter>
+                    <button onClick={doCancel}>Cancel</button>
+                    <button onClick={noAwait(doOpen)} disabled={busy || empty}>Open</button>
+                </ModalFooter>
+            </Modal>
+            <ErrorModal error={error} setError={setError} />
+        </>
     );
 };

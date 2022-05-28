@@ -135,6 +135,7 @@ type OnCloseCallback = (closeBox?: boolean) => void;
 export interface ModalHeaderProps {
     onClose?: OnCloseCallback;
     title: string;
+    icon?: string;
 }
 
 /**
@@ -144,10 +145,14 @@ export interface ModalHeaderProps {
  * @param title Modal title
  * @returns ModalHeader component
  */
-export const ModalHeader = ({ onClose, title }: ModalHeaderProps) => {
+export const ModalHeader = ({ onClose, title, icon }: ModalHeaderProps) => {
     return (
         <div style={modalHeaderStyle}>
-            <span style={modalTitleStyle}>{title}</span>
+            <span style={modalTitleStyle}>
+                <i class={`fas fa-${icon}`} />
+                {' '}
+                {title}
+            </span>
             {onClose && <ModalCloseButton onClose={onClose} />}
         </div>
     );
@@ -161,6 +166,7 @@ export interface ModalProps {
     isOpen: boolean;
     title: string;
     children: ComponentChildren;
+    icon?: string;
 }
 
 /**
