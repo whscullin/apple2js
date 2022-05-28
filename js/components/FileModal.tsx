@@ -1,11 +1,19 @@
 import { h, JSX } from 'preact';
-import { useCallback, useRef, useState } from 'preact/hooks';
-import { DiskDescriptor, DriveNumber, NibbleFormat } from '../formats/types';
+import { useCallback, useState } from 'preact/hooks';
+import { DiskDescriptor, DriveNumber, NibbleFormat, NIBBLE_FORMATS } from '../formats/types';
 import { Modal, ModalContent, ModalFooter } from './Modal';
 import { loadLocalFile, loadJSON, getHashParts, setHashParts } from './util/files';
 import DiskII from '../cards/disk2';
 
 import index from 'json/disks/index.json';
+import { FileChooser, FilePickerAcceptType, FileSystemFileHandleLike } from './FileChooser';
+
+const DISK_TYPES: FilePickerAcceptType[] = [
+    {
+        description: 'Disk Images',
+        accept: { 'application/octet-stream': NIBBLE_FORMATS.map(x => '.' + x) },
+    }
+];
 
 const categories = index.reduce<Record<string, DiskDescriptor[]>>(
     (
@@ -35,27 +43,29 @@ interface FileModalProps {
     onClose: (closeBox?: boolean) => void;
 }
 
-export const FileModal = ({ disk2, number, onClose, isOpen } : FileModalProps) => {
-    const inputRef = useRef<HTMLInputElement>(null);
+export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) => {
     const [busy, setBusy] = useState<boolean>(false);
     const [empty, setEmpty] = useState<boolean>(true);
     const [category, setCategory] = useState<string>();
+    const [handles, setHandles] = useState<FileSystemFileHandleLike[]>();
     const [filename, setFilename] = useState<string>();
 
     const doCancel = useCallback(() => onClose(true), []);
 
-    const doOpen = useCallback(() => {
+    const doOpen = useCallback(async () => {
         const hashParts = getHashParts();
 
-        if (disk2 && inputRef.current && inputRef.current.files?.length === 1) {
+        if (disk2 && handles && handles.length === 1) {
             hashParts[number] = '';
             setBusy(true);
-            loadLocalFile(disk2, number, inputRef.current.files[0])
-                .catch(console.error)
-                .finally(() => {
-                    setBusy(false);
-                    onClose();
-                });
+            try {
+                await loadLocalFile(disk2, number, await handles[0].getFile());
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setBusy(false);
+                onClose();
+            }
         }
 
         if (disk2 && filename) {
@@ -71,13 +81,12 @@ export const FileModal = ({ disk2, number, onClose, isOpen } : FileModalProps) =
         }
 
         setHashParts(hashParts);
-    }, [ disk2, filename, number, onClose ]);
+    }, [disk2, filename, number, onClose, handles]);
 
-    const onChange = useCallback(() => {
-        if (inputRef) {
-            setEmpty(!inputRef.current?.files?.length);
-        }
-    }, [ inputRef ]);
+    const onChange = useCallback((handles: FileSystemFileHandleLike[]) => {
+        setEmpty(handles.length === 0);
+        setHandles(handles);
+    }, []);
 
     const doSelectCategory = useCallback(
         (event: JSX.TargetedMouseEvent<HTMLSelectElement>) =>
@@ -112,7 +121,7 @@ export const FileModal = ({ disk2, number, onClose, isOpen } : FileModalProps) =
                         ))}
                     </select>
                 </div>
-                <input type="file" ref={inputRef} onChange={onChange} />
+                <FileChooser onChange={onChange} accept={DISK_TYPES} />
             </ModalContent>
             <ModalFooter>
                 <button onClick={doCancel}>Cancel</button>

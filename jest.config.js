@@ -8,12 +8,13 @@ module.exports = {
         'test/',
     ],
     'testMatch': [
-        '**/?(*.)+(spec|test).+(ts|js)'
+        '**/?(*.)+(spec|test).+(ts|js|tsx)'
     ],
 
     'transform': {
         '^.+\\.js$': 'babel-jest',
-        '^.+\\.ts$': 'ts-jest'
+        '^.+\\.ts$': 'ts-jest',
+        '^.*\\.tsx$': 'ts-jest',
     },
     'setupFilesAfterEnv': [
         '<rootDir>/test/jest-setup.js'
