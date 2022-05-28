@@ -2,10 +2,12 @@ import { h } from 'preact';
 import { useCallback, useEffect, useState } from 'preact/hooks';
 import cs from 'classnames';
 import Disk2 from '../cards/disk2';
+import { ErrorModal } from './ErrorModal';
 import { FileModal } from './FileModal';
 import { loadJSON, loadHttpNibbleFile, getHashParts } from './util/files';
-import { ErrorModal } from './ErrorModal';
 import { useHash } from './hooks/useHash';
+import { includes } from 'js/types';
+import { NIBBLE_FORMATS } from 'js/formats/types';
 
 import styles from './css/DiskII.module.css';
 
@@ -54,8 +56,12 @@ export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
             const hashPart = decodeURIComponent(newHash);
             if (hashPart !== currentHash) {
                 if (hashPart.match(/^https?:/)) {
-                    loadHttpNibbleFile(disk2, number, hashPart)
-                        .catch((e) => setError(e));
+                    const fileParts = hashPart.split('.');
+                    const ext = fileParts[fileParts.length - 1];
+                    if (includes(NIBBLE_FORMATS, ext)) {
+                        loadHttpNibbleFile(disk2, number, hashPart)
+                            .catch((e) => setError(e));
+                    }
                 } else {
                     const filename = `/json/disks/${hashPart}.json`;
                     loadJSON(disk2, number, filename)

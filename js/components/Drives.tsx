@@ -40,12 +40,12 @@ export const Drives = ({ cpu, io, sectors, e }: DrivesProps) => {
     const [smartData1, setSmartData1] = useState<DiskIIData>({
         on: false,
         number: 1,
-        name: 'Disk 1'
+        name: 'HD 1'
     });
     const [smartData2, setSmartData2] = useState<DiskIIData>({
         on: false,
         number: 2,
-        name: 'Disk 2'
+        name: 'HD 2'
     });
 
     const [smartPort, setSmartPort] = useState<SmartPort>();
@@ -76,11 +76,11 @@ export const Drives = ({ cpu, io, sectors, e }: DrivesProps) => {
             label: (drive, name, side) => {
                 setSmartData[drive - 1]?.(data => ({
                     ...data,
-                    name: name ?? `Disk ${drive}`,
+                    name: name ?? `HD ${drive}`,
                     side,
                 }));
             },
-            dirty: () => {}
+            dirty: () => {/* Unused */}
         };
 
         if (cpu && io) {
@@ -91,7 +91,7 @@ export const Drives = ({ cpu, io, sectors, e }: DrivesProps) => {
             io.setSlot(7, smartPort);
             setSmartPort(smartPort);
         }
-    }, [io, sectors]);
+    }, [cpu, e, io, sectors]);
 
     return (
         <div style={{display: 'flex', width: '100%'}}>

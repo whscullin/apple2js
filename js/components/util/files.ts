@@ -12,6 +12,8 @@ import {
 import Disk2 from 'js/cards/disk2';
 import SmartPort from 'js/cards/smartport';
 
+type ProgressCallback = (current: number, total: number) => void;
+
 /**
  * Routine to split a legacy hash into parts for disk loading
  *
@@ -96,14 +98,18 @@ export const loadLocalNibbleFile = (disk2: Disk2, number: DriveNumber, file: Fil
  * @param url URL, relative or absolute to JSON file
  * @returns true if successful
  */
-export const loadJSON = async (disk2: Disk2, number: DriveNumber, url: string) => {
+export const loadJSON = async (
+    disk2: Disk2,
+    number: DriveNumber,
+    url: string,
+) => {
     const response = await fetch(url);
     if (!response.ok) {
         throw new Error(`Error loading: ${response.statusText}`);
     }
     const data = await response.json() as JSONDisk;
     if (!includes(NIBBLE_FORMATS, data.type)) {
-        throw new Error(`Type ${data.type} not recognized.`);
+        throw new Error(`Type "${data.type}" not recognized.`);
     }
     disk2.setDisk(number, data);
     initGamepad(data.gamepad);
@@ -114,6 +120,7 @@ const loadHttpFile = async (
     formats: typeof NIBBLE_FORMATS | typeof BLOCK_FORMATS,
     number: DriveNumber,
     url: string,
+    onProgress?: ProgressCallback
 ) => {
     const response = await fetch(url);
     if (!response.ok) {
@@ -123,13 +130,16 @@ const loadHttpFile = async (
         throw new Error('Error loading: no body');
     }
     const reader = response.body.getReader();
+    const contentLength = parseInt(response.headers.get('content-length') || '0', 10);
     let received = 0;
     const chunks: Uint8Array[] = [];
 
     let result = await reader.read();
+    onProgress?.(1, contentLength);
     while (!result.done) {
         chunks.push(result.value);
         received += result.value.length;
+        onProgress?.(received, contentLength);
         result = await reader.read();
     }
 
@@ -166,8 +176,9 @@ export const loadHttpBlockFile = (
     smartPort: SmartPort,
     number: DriveNumber,
     url: string,
+    onProgress?: ProgressCallback
 ) => {
-    return loadHttpFile(smartPort, BLOCK_FORMATS, number, url);
+    return loadHttpFile(smartPort, BLOCK_FORMATS, number, url, onProgress);
 };
 
 /**
@@ -184,9 +195,10 @@ export const loadHttpNibbleFile = (
     disk2: Disk2,
     number: DriveNumber,
     url: string,
+    onProgress?: ProgressCallback
 ) => {
     if (url.endsWith('.json')) {
         return loadJSON(disk2, number, url);
     }
-    return loadHttpFile(disk2, NIBBLE_FORMATS, number, url);
+    return loadHttpFile(disk2, NIBBLE_FORMATS, number, url, onProgress);
 };

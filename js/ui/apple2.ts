@@ -271,8 +271,8 @@ export function doLoad(event: MouseEvent|KeyboardEvent) {
     } else if (url) {
         let filename;
         MicroModal.close('load-modal');
-        if (url.substr(0, 6) === 'local:') {
-            filename = url.substr(6);
+        if (url.slice(0, 6) === 'local:') {
+            filename = url.slice(6);
             if (filename === '__manage') {
                 openManage();
             } else {

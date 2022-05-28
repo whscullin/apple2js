@@ -5,6 +5,7 @@ import { Apple2 as Apple2Impl } from '../apple2';
 import Apple2IO from '../apple2io';
 import CPU6502 from '../cpu6502';
 import { ControlStrip } from './ControlStrip';
+import { ErrorModal } from './ErrorModal';
 import { Inset } from './Inset';
 import { Keyboard } from './Keyboard';
 import { Mouse } from './Mouse';
@@ -12,7 +13,6 @@ import { Screen } from './Screen';
 import { Drives } from './Drives';
 import { Slinky } from './Slinky';
 import { ThunderClock } from './ThunderClock';
-import { ErrorModal } from './ErrorModal';
 
 import styles from './css/Apple2.module.css';
 
