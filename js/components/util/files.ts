@@ -12,8 +12,8 @@ import DiskII from 'js/cards/disk2';
  *
  * @returns an padded array for 1 based indexing
  */
-export const getHashParts = () => {
-    const parts = window.location.hash.match(/^#([^|]*)\|?(.*)$/) || ['', '', ''];
+export const getHashParts = (hash: string) => {
+    const parts = hash.match(/^#([^|]*)\|?(.*)$/) || ['', '', ''];
     return ['', parts[1], parts[2]];
 };
 
@@ -60,7 +60,7 @@ export const loadLocalFile = (
                     }
                 }
             } else {
-                reject(`Extension ${ext} not recognized.`);
+                reject(`Extension "${ext}" not recognized.`);
             }
         };
         fileReader.readAsArrayBuffer(file);
@@ -139,7 +139,7 @@ export const loadHttpFile = async (
     const ext = fileParts.pop()?.toLowerCase() || '[none]';
     const name = decodeURIComponent(fileParts.join('.'));
     if (!includes(NIBBLE_FORMATS, ext)) {
-        throw new Error(`Extension ${ext} not recognized.`);
+        throw new Error(`Extension "${ext}" not recognized.`);
     }
     disk2.setBinary(number, name, ext, data);
     initGamepad();

@@ -9,6 +9,7 @@ import { ErrorModal } from './ErrorModal';
 import index from 'json/disks/index.json';
 import { FileChooser, FilePickerAcceptType, FileSystemFileHandleLike } from './FileChooser';
 import { noAwait } from './util/promises';
+import { useHash } from './hooks/useHash';
 
 const DISK_TYPES: FilePickerAcceptType[] = [
     {
@@ -52,43 +53,38 @@ export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) =>
     const [handles, setHandles] = useState<FileSystemFileHandleLike[]>();
     const [filename, setFilename] = useState<string>();
     const [error, setError] = useState<string>();
+    const hash = useHash();
 
     const doCancel = useCallback(() => onClose(true), [onClose]);
 
     const doOpen = useCallback(async () => {
-        const hashParts = getHashParts();
+        const hashParts = getHashParts(hash);
+        setBusy(true);
 
-        if (disk2 && handles && handles.length === 1) {
-            hashParts[number] = '';
-            setBusy(true);
-            try {
+        try {
+            if (disk2 && handles?.length === 1) {
+                hashParts[number] = '';
                 await loadLocalFile(disk2, number, await handles[0].getFile());
-            } catch (e: unknown) {
-                if (e instanceof Error) {
-                    setError(e.message);
-                } else {
-                    console.error(e);
-                }
-            } finally {
-                setBusy(false);
-                onClose();
             }
-        }
-
-        if (disk2 && filename) {
-            const name = filename.match(/\/([^/]+).json$/) || ['', ''];
-            hashParts[number] = name[1];
-            setBusy(true);
-            loadJSON(disk2, number, filename)
-                .catch((e: Error) => setError(e.message))
-                .finally(() => {
-                    setBusy(false);
-                    onClose();
-                });
+            if (disk2 && filename) {
+                const name = filename.match(/\/([^/]+).json$/) || ['', ''];
+                hashParts[number] = name[1];
+                await loadJSON(disk2, number, filename);
+            }
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                setError(e.message);
+            } else {
+                console.error(e);
+            }
+        } finally {
+            setHashParts(hashParts);
+            setBusy(false);
+            onClose();
         }
 
         setHashParts(hashParts);
-    }, [disk2, filename, number, onClose, handles]);
+    }, [disk2, filename, number, onClose, handles, hash]);
 
     const onChange = useCallback((handles: FileSystemFileHandleLike[]) => {
         setEmpty(handles.length === 0);

@@ -5,6 +5,7 @@ import Disk2 from '../cards/disk2';
 import { FileModal } from './FileModal';
 import { loadJSON, loadHttpFile, getHashParts } from './util/files';
 import { ErrorModal } from './ErrorModal';
+import { useHash } from './hooks/useHash';
 
 /**
  * Storage structure for Disk II state returned via callbacks.
@@ -40,21 +41,28 @@ export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
     const label = side ? `${name} - ${side}` : name;
     const [modalOpen, setModalOpen] = useState(false);
     const [error, setError] = useState<string>();
+    const [currentHash, setCurrentHash] = useState<string>();
+
+    const hash = useHash();
 
     useEffect(() => {
-        const hashParts = getHashParts();
-        if (disk2 && hashParts && hashParts[number]) {
-            const hashPart = decodeURIComponent(hashParts[number]);
-            if (hashPart.match(/^https?:/)) {
-                loadHttpFile(disk2, number, hashPart)
-                    .catch((e) => setError(e.message));
-            } else {
-                const filename = `/json/disks/${hashPart}.json`;
-                loadJSON(disk2, number, filename)
-                    .catch((e) => setError(e.message));
+        const hashParts = getHashParts(hash);
+        const newHash = hashParts[number];
+        if (disk2 && newHash) {
+            const hashPart = decodeURIComponent(newHash);
+            if (hashPart !== currentHash) {
+                if (hashPart.match(/^https?:/)) {
+                    loadHttpFile(disk2, number, hashPart)
+                        .catch((e) => setError(e.message));
+                } else {
+                    const filename = `/json/disks/${hashPart}.json`;
+                    loadJSON(disk2, number, filename)
+                        .catch((e) => setError(e.message));
+                    setCurrentHash(hashPart);
+                }
             }
         }
-    }, [disk2, number]);
+    }, [currentHash, disk2, hash, number]);
 
     const doClose = useCallback(() => {
         setModalOpen(false);
