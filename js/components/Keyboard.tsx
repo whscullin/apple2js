@@ -209,7 +209,7 @@ export const Keyboard = ({ apple2, e }: KeyboardProps) => {
         />;
 
     const rows = keys.map((row, idx) =>
-        <div className={`row row${idx}`}>
+        <div key={idx} className={`row row${idx}`}>
             {row.map(bindKey)}
         </div>
     );

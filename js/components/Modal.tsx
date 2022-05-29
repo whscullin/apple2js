@@ -1,4 +1,4 @@
-import { h, FunctionalComponent } from 'preact';
+import { h, ComponentChildren } from 'preact';
 import { useCallback } from 'preact/hooks';
 import { useHotKey } from './hooks/useHotKey';
 
@@ -67,7 +67,7 @@ const modalFooterStyle = {
  *
  * @returns ModalOverlay component
  */
-export const ModalOverlay: FunctionalComponent = ({ children }) => {
+export const ModalOverlay = ({ children }: { children: ComponentChildren }) => {
     return (
         <div style={modalOverlayStyle}>
             {children}
@@ -80,7 +80,7 @@ export const ModalOverlay: FunctionalComponent = ({ children }) => {
  *
  * @returns ModalContent component
  */
-export const ModalContent: FunctionalComponent = ({ children }) => {
+export const ModalContent = ({ children }: { children: ComponentChildren }) => {
     return (
         <div style={modalContentStyle}>
             {children}
@@ -93,7 +93,7 @@ export const ModalContent: FunctionalComponent = ({ children }) => {
  *
  * @returns ModalFooter component
  */
-export const ModalFooter: FunctionalComponent = ({ children }) => {
+export const ModalFooter = ({ children }: { children: ComponentChildren }) => {
     return (
         <div style={modalFooterStyle}>
             {children}
@@ -160,6 +160,7 @@ export interface ModalProps {
     onClose?: (closeBox?: boolean) => void;
     isOpen: boolean;
     title: string;
+    children: ComponentChildren;
 }
 
 /**
@@ -172,12 +173,12 @@ export interface ModalProps {
  * @param onClose Close callback
  * @returns Modal component
  */
-export const Modal: FunctionalComponent<ModalProps> = ({
+export const Modal = ({
     isOpen,
     children,
     title,
     ...props
-}) => {
+}: ModalProps) => {
     return (
         isOpen ? (
             <ModalOverlay>

@@ -109,12 +109,12 @@ export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) =>
                 <div id="load-modal">
                     <select multiple onChange={doSelectCategory}>
                         {categoryNames.map((name) => (
-                            <option>{name}</option>
+                            <option key={name}>{name}</option>
                         ))}
                     </select>
                     <select multiple onChange={doSelectFilename}>
                         {disks.map((disk) => (
-                            <option value={disk.filename}>
+                            <option key={disk.filename} value={disk.filename}>
                                 {disk.name}
                                 {disk.disk ? ` - ${disk.disk}` : ''}
                             </option>

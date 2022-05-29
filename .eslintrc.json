@@ -85,7 +85,10 @@
         "sourceType": "module",
         "project": "./tsconfig.json"
     },
-    "extends": "eslint:recommended",
+    "extends": [
+        "eslint:recommended",
+        "plugin:react/recommended"
+    ],
     "overrides": [
         {
             "files": [
@@ -145,7 +148,8 @@
     "ignorePatterns": ["coverage/**/*"],
     "settings": {
         "react": {
-          "pragma": "h"
+          "pragma": "h",
+          "version": "16"
         }
     }
 }

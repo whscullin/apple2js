@@ -74,7 +74,7 @@ export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
                 className={cs('disk-light', { on })}
             />
             <button title="Load Disk">
-                <i class="fas fa-folder-open" onClick={onOpenModal} />
+                <i className="fas fa-folder-open" onClick={onOpenModal} />
             </button>
             <div
                 id={`disk-label${number}`}

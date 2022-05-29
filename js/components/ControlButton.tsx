@@ -20,6 +20,6 @@ export interface ControlButtonProps {
  */
 export const ControlButton = ({ icon, title, onClick, ...props }: ControlButtonProps) => (
     <button onClick={onClick} title={title} {...props} >
-        <i class={`fas fa-${icon}`}></i>
+        <i className={`fas fa-${icon}`}></i>
     </button>
 );
