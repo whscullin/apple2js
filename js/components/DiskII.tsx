@@ -56,7 +56,7 @@ export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
                     );
             }
         }
-    }, [disk2]);
+    }, [disk2, number]);
 
     const doClose = useCallback(() => {
         setModalOpen(false);

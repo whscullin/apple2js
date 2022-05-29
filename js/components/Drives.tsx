@@ -54,7 +54,7 @@ export const Drives = ({ io, sectors }: DrivesProps) => {
             io.setSlot(6, disk2);
             setDisk2(disk2);
         }
-    }, [io]);
+    }, [io, sectors]);
 
     return (
         <>

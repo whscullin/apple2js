@@ -55,7 +55,7 @@ const InputFileChooser = ({
                 onChange(newFiles);
             }
         }
-    }, []);
+    }, [onChange]);
 
     const extraProps = useMemo<ExtraProps>(() => {
         // Accept all of the given MIME types and extensions. An argument
@@ -131,14 +131,14 @@ const FilePickerChooser = ({
         } finally {
             setBusy(false);
         }
-    }, []);
+    }, [accept, busy, onChange]);
 
     useEffect(() => {
         setSelectedFilename(
             fileHandlesRef.current?.length
                 ? fileHandlesRef.current[0].name
                 : 'No file selected');
-    }, [fileHandlesRef.current]);
+    }, []);
 
     return (
         <>
@@ -184,7 +184,7 @@ export const FileChooser = ({
             });
         }
         onChange(handles);
-    }, []);
+    }, [onChange]);
 
     const onChangeForPicker = useCallback((fileHandles: FileSystemFileHandle[]) => {
         const handles: FileSystemFileHandleLike[] = [];
@@ -198,7 +198,7 @@ export const FileChooser = ({
             });
         }
         onChange(handles);
-    }, []);
+    }, [onChange]);
 
     return control === 'picker'
         ? (

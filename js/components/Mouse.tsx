@@ -31,7 +31,7 @@ export const Mouse = ({ cpu, screen, io, slot }: MouseProps) => {
             const mouse = new MouseCard(cpu, mouseUI);
             io.setSlot(slot, mouse);
         }
-    }, [cpu, io]);
+    }, [cpu, io, screen, slot]);
 
     return null;
 };

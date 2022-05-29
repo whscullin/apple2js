@@ -50,7 +50,7 @@ export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) =>
     const [handles, setHandles] = useState<FileSystemFileHandleLike[]>();
     const [filename, setFilename] = useState<string>();
 
-    const doCancel = useCallback(() => onClose(true), []);
+    const doCancel = useCallback(() => onClose(true), [onClose]);
 
     const doOpen = useCallback(async () => {
         const hashParts = getHashParts();

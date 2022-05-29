@@ -32,13 +32,13 @@ export const AudioControl = ({ apple2 }: AudioControlProps) => {
             setAudio(audio);
             setAudioEnabled(audio.isEnabled());
         }
-    }, [apple2]);
+    }, [apple2, options]);
 
     const doToggleSound = useCallback(() => {
         const on = !audio?.isEnabled();
         options.setOption(SOUND_ENABLED_OPTION, on);
         setAudioEnabled(on);
-    }, [audio]);
+    }, [audio, options]);
 
     return (
         <ControlButton

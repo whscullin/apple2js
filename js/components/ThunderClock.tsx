@@ -22,7 +22,7 @@ export const ThunderClock = ({ io, slot }: ThunderClockProps) => {
             const clock = new ThunderClockCard();
             io.setSlot(slot, clock);
         }
-    }, [io]);
+    }, [io, slot]);
 
     return null;
 };

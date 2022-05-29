@@ -1,6 +1,9 @@
 {
     "parser": "@typescript-eslint/parser",
-    "plugins": ["@typescript-eslint/eslint-plugin"],
+    "plugins": [
+        "@typescript-eslint/eslint-plugin",
+        "react-hooks"
+    ],
     "rules": {
         "indent": [
             "error",
@@ -69,7 +72,9 @@
                 ]
             }
         ],
-        "@typescript-eslint/require-await": ["error"]
+        "@typescript-eslint/require-await": ["error"],
+        "react-hooks/rules-of-hooks": "error",
+        "react-hooks/exhaustive-deps": "error"
     },
     "env": {
         "builtin": true,
