@@ -17,7 +17,7 @@ export interface ScreenProps {
 export const Screen = ({ screen }: ScreenProps) => {
     return (
         <div id="display">
-            <div class="overscan">
+            <div className="overscan">
                 <canvas id="screen" width="592" height="416" ref={screen} />
             </div>
         </div>

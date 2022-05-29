@@ -47,7 +47,7 @@ export const ControlStrip = ({ apple2, e }: ControlStripProps) => {
             const screen = new Screen(vm);
             options.addOptions(screen);
         }
-    }, [apple2]);
+    }, [apple2, e, options]);
 
     const doReset = useCallback(() =>
         apple2?.reset()
@@ -70,7 +70,7 @@ export const ControlStrip = ({ apple2, e }: ControlStripProps) => {
             SCREEN_FULL_PAGE,
             !options.getOption(SCREEN_FULL_PAGE)
         )
-    , []);
+    , [options]);
 
     useHotKey('F2', doToggleFullPage);
     useHotKey('F4', doShowOptions);

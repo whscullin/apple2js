@@ -1,6 +1,8 @@
 {
     "parser": "@typescript-eslint/parser",
-    "plugins": ["@typescript-eslint/eslint-plugin"],
+    "plugins": [
+        "@typescript-eslint/eslint-plugin"
+    ],
     "rules": {
         "indent": [
             "error",
@@ -69,7 +71,9 @@
                 ]
             }
         ],
-        "@typescript-eslint/require-await": ["error"]
+        "@typescript-eslint/require-await": ["error"],
+        "react-hooks/rules-of-hooks": "error",
+        "react-hooks/exhaustive-deps": "error"
     },
     "env": {
         "builtin": true,
@@ -80,7 +84,11 @@
         "sourceType": "module",
         "project": "./tsconfig.json"
     },
-    "extends": "eslint:recommended",
+    "extends": [
+        "eslint:recommended",
+        "plugin:react/recommended",
+        "plugin:react-hooks/recommended"
+    ],
     "overrides": [
         {
             "files": [
@@ -140,7 +148,8 @@
     "ignorePatterns": ["coverage/**/*"],
     "settings": {
         "react": {
-          "pragma": "h"
+          "pragma": "h",
+          "version": "16"
         }
     }
 }

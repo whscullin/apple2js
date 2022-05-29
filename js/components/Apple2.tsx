@@ -59,7 +59,7 @@ export const Apple2 = (props: Apple2Props) => {
                 apple2.run();
             }).catch(error => console.error(error));
         }
-    }, []);
+    }, [props]);
 
     return (
         <div className={cs('outer', { apple2e: e})}>

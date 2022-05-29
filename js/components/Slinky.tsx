@@ -24,7 +24,7 @@ export const Slinky = ({ io, slot }: SlinkyProps) => {
             const slinky = new RAMFactor(1024 * 1024);
             io.setSlot(slot, slinky);
         }
-    }, [io]);
+    }, [io, slot]);
 
     return null;
 };
