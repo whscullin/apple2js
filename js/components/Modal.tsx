@@ -1,4 +1,5 @@
 import { h, ComponentChildren } from 'preact';
+import { createPortal } from 'preact/compat';
 import { useCallback } from 'preact/hooks';
 import { useHotKey } from './hooks/useHotKey';
 
@@ -69,7 +70,7 @@ const modalFooterStyle = {
  */
 export const ModalOverlay = ({ children }: { children: ComponentChildren }) => {
     return (
-        <div style={modalOverlayStyle}>
+        <div style={modalOverlayStyle} className="modal-overlay">
             {children}
         </div>
     );
@@ -186,13 +187,13 @@ export const Modal = ({
     ...props
 }: ModalProps) => {
     return (
-        isOpen ? (
+        isOpen ? createPortal((
             <ModalOverlay>
                 <div style={modalStyle}>
                     {title && <ModalHeader title={title} {...props} />}
                     {children}
                 </div>
             </ModalOverlay>
-        ) : null
+        ), document.body) : null
     );
 };
