@@ -72,8 +72,13 @@
             }
         ],
         "@typescript-eslint/require-await": ["error"],
-        "react-hooks/rules-of-hooks": "error",
-        "react-hooks/exhaustive-deps": "error"
+        "jest/expect-expect": ["error", {
+            "assertFunctionNames": [
+                "expect*",
+                "checkImageData",
+                "testCode"
+            ]
+        }]
     },
     "env": {
         "builtin": true,
@@ -86,6 +91,7 @@
     },
     "extends": [
         "eslint:recommended",
+        "plugin:jest/recommended",
         "plugin:react/recommended",
         "plugin:react-hooks/recommended"
     ],
