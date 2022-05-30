@@ -30,7 +30,7 @@ export class VDH {
     prev: word = 0;
     next: word = 0;
     storageType: byte = STORAGE_TYPES.VDH_HEADER;
-    name: string = '';
+    name = '';
     creation: Date = new Date();
     access: byte = ACCESS_TYPES.ALL;
     entryLength = 0x27;

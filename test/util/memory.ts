@@ -4,7 +4,7 @@ import { assertByte } from './asserts';
 export type Log = [address: word, value: byte, types: 'read'|'write'];
 export class TestMemory implements MemoryPages {
     private data: Buffer;
-    private logging: boolean = false;
+    private logging = false;
     private log: Log[] = [];
 
     constructor(private size: number) {

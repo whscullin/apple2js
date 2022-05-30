@@ -308,7 +308,7 @@ function setDriveState(state: DriveState) {
 /**
  * Emulates the 16-sector and 13-sector versions of the Disk ][ drive and controller.
  */
-export default class DiskII implements Card {
+export default class DiskII implements Card<State> {
 
     private drives: Drive[] = [
         {   // Drive 1
@@ -346,7 +346,7 @@ export default class DiskII implements Card {
     /** Q6 (Shift/Load): Used by WOZ disks. */
     private q6 = 0;
     /** Q7 (Read/Write): Used by WOZ disks. */
-    private q7: boolean = false;
+    private q7 = false;
     /** Q7 (Read/Write): Used by Nibble disks. */
     private writeMode = false;
     /** Whether the selected drive is on. */
@@ -412,7 +412,7 @@ export default class DiskII implements Card {
             this.cur.rawTracks[this.cur.trackMap[this.cur.track]] || [0];
 
         while (workCycles-- > 0) {
-            let pulse: number = 0;
+            let pulse = 0;
             if (this.clock === 4) {
                 pulse = track[this.cur.head];
                 if (!pulse) {
@@ -488,7 +488,7 @@ export default class DiskII implements Card {
             return;
         }
         if (this.on && (this.skip || this.writeMode)) {
-            const track = this.cur.tracks![this.cur.track >> 2];
+            const track = this.cur.tracks[this.cur.track >> 2];
             if (track && track.length) {
                 if (this.cur.head >= track.length) {
                     this.cur.head = 0;
@@ -520,7 +520,7 @@ export default class DiskII implements Card {
      * tracks by activating two neighboring coils at once.
      */
     private setPhase(phase: Phase, on: boolean) {
-        this.debug('phase ' + phase + (on ? ' on' : ' off'));
+        this.debug(`phase ${phase}${on ? ' on' : ' off'}`);
         if (on) {
             this.cur.track += PHASE_DELTA[this.cur.phase][phase] * 2;
             this.cur.phase = phase;
@@ -682,7 +682,7 @@ export default class DiskII implements Card {
         } else {
             // It's not explicitly stated, but writes to any address set the
             // data register.
-            this.bus = val!;
+            this.bus = val;
         }
 
         return result;
@@ -703,7 +703,9 @@ export default class DiskII implements Card {
         return this.bootstrapRom[off];
     }
 
-    write() { }
+    write() {
+        // not writable
+    }
 
     reset() {
         if (this.on) {
@@ -722,7 +724,7 @@ export default class DiskII implements Card {
         this.moveHead();
     }
 
-    getState() {
+    getState(): State {
         const result = {
             drives: [] as DriveState[],
             skip: this.skip,
@@ -803,7 +805,7 @@ export default class DiskII implements Card {
         return false;
     }
 
-    getJSON(drive: DriveNumber, pretty: boolean = false) {
+    getJSON(drive: DriveNumber, pretty = false) {
         const cur = this.drives[drive - 1];
         if (!isNibbleDrive(cur)) {
             throw new Error('Can\'t save WOZ disks to JSON');

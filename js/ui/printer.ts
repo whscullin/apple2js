@@ -24,6 +24,7 @@ export default class Printer {
      * @param {string} el The selector of the element on which to bind the "paper".
      */
     constructor(el: string) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.paper = document.querySelector(el)!;
         this.newLine();
     }

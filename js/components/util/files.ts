@@ -82,7 +82,7 @@ export const loadJSON = async (disk2: DiskII, number: DriveNumber, url: string) 
     if (!response.ok) {
         throw new Error(`Error loading: ${response.statusText}`);
     }
-    const data: JSONDisk = await response.json();
+    const data = await response.json() as JSONDisk;
     if (!includes(NIBBLE_FORMATS, data.type)) {
         throw new Error(`Type ${data.type} not recognized.`);
     }
@@ -112,7 +112,10 @@ export const loadHttpFile = async (
     if (!response.ok) {
         throw new Error(`Error loading: ${response.statusText}`);
     }
-    const reader = response.body!.getReader();
+    if (!response.body) {
+        throw new Error('Error loading: no body');
+    }
+    const reader = response.body.getReader();
     let received = 0;
     const chunks: Uint8Array[] = [];
 
@@ -131,7 +134,7 @@ export const loadHttpFile = async (
     }
 
     const urlParts = url.split('/');
-    const file = urlParts.pop()!;
+    const file = urlParts.pop() || url;
     const fileParts = file.split('.');
     const ext = fileParts.pop()?.toLowerCase() || '[none]';
     const name = decodeURIComponent(fileParts.join('.'));

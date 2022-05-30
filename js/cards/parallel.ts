@@ -6,7 +6,8 @@ const LOC = {
     IOREG: 0x80
 } as const;
 
-export interface ParallelState {}
+export type ParallelState = Record<string, never>;
+
 export interface ParallelOptions {
     putChar: (val: byte) => void;
 }
@@ -37,11 +38,15 @@ export default class Parallel implements Card, Restorable<ParallelState> {
         return rom[off];
     }
 
-    write() {}
+    write() {
+        // not writable
+    }
 
     getState() {
         return {};
     }
 
-    setState(_state: ParallelState) {}
+    setState(_state: ParallelState) {
+        // can't set the state
+    }
 }

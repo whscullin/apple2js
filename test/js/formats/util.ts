@@ -1,6 +1,6 @@
 import { memory } from 'js/types';
 
-export function skipGap(track: memory, start: number = 0): number {
+export function skipGap(track: memory, start = 0): number {
     const end = start + 0x100; // no gap is this big
     let i = start;
     while (i < end && track[i] === 0xFF) {
@@ -24,12 +24,12 @@ export function compareSequences(track: memory, bytes: number[], pos: number): b
 export function expectSequence(track: memory, pos: number, bytes: number[]): number {
     if (!compareSequences(track, bytes, pos)) {
         const track_slice = track.slice(pos, Math.min(track.length, pos + bytes.length));
-        fail(`expected ${bytes} got ${track_slice}`);
+        fail(`expected ${bytes.toString()} got ${track_slice.toString()}`);
     }
     return pos + bytes.length;
 }
 
-export function findBytes(track: memory, bytes: number[], start: number = 0): number {
+export function findBytes(track: memory, bytes: number[], start = 0): number {
     if (start + bytes.length > track.length) {
         return -1;
     }
@@ -50,7 +50,7 @@ export function findBytes(track: memory, bytes: number[], start: number = 0): nu
  * @param padLength padded length
  * @returns an array of bytes
  */
-export const stringToBytes = (val: string, pad: string = '\0', padLength: number = 0) => {
+export const stringToBytes = (val: string, pad = '\0', padLength = 0) => {
     const result = [];
     let idx = 0;
     while (idx < val.length) {

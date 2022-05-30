@@ -352,6 +352,22 @@ export class LoresPageGL implements LoresPage {
  *
  ***************************************************************************/
 
+const _drawPixel = (data: Uint8ClampedArray, off: number, color: Color) => {
+    const c0 = color[0], c1 = color[1], c2 = color[2];
+
+    data[off + 0] = data[off + 4] = c0;
+    data[off + 1] = data[off + 5] = c1;
+    data[off + 2] = data[off + 6] = c2;
+};
+
+const _drawHalfPixel = (data: Uint8ClampedArray, off: number, color: Color) => {
+    const c0 = color[0], c1 = color[1], c2 = color[2];
+
+    data[off + 0] = c0;
+    data[off + 1] = c1;
+    data[off + 2] = c2;
+};
+
 export class HiresPageGL implements HiresPage {
     public imageData: ImageData;
     dirty: Region = {...notDirty};
@@ -369,22 +385,6 @@ export class HiresPageGL implements HiresPage {
         this._buffer[1] = allocMemPages(0x20);
 
         this.vm.setHiresPage(page, this);
-    }
-
-    private _drawPixel(data: Uint8ClampedArray, off: number, color: Color) {
-        const c0 = color[0], c1 = color[1], c2 = color[2];
-
-        data[off + 0] = data[off + 4] = c0;
-        data[off + 1] = data[off + 5] = c1;
-        data[off + 2] = data[off + 6] = c2;
-    }
-
-    private _drawHalfPixel(data: Uint8ClampedArray, off: number, color: Color) {
-        const c0 = color[0], c1 = color[1], c2 = color[2];
-
-        data[off + 0] = c0;
-        data[off + 1] = c1;
-        data[off + 2] = c2;
     }
 
     bank0(): MemoryPages {
@@ -453,9 +453,9 @@ export class HiresPageGL implements HiresPage {
                 let bits = val;
                 for (let jdx = 0; jdx < 7; jdx++, offset += 4) {
                     if (bits & 0x01) {
-                        this._drawHalfPixel(data, offset, whiteCol);
+                        _drawHalfPixel(data, offset, whiteCol);
                     } else {
-                        this._drawHalfPixel(data, offset, blackCol);
+                        _drawHalfPixel(data, offset, blackCol);
                     }
                     bits >>= 1;
                 }
@@ -468,17 +468,17 @@ export class HiresPageGL implements HiresPage {
                 if (hbs) {
                     const val0 = this._buffer[bank][base - 1] || 0;
                     if (val0 & 0x40) {
-                        this._drawHalfPixel(data, offset, whiteCol);
+                        _drawHalfPixel(data, offset, whiteCol);
                     } else {
-                        this._drawHalfPixel(data, offset, blackCol);
+                        _drawHalfPixel(data, offset, blackCol);
                     }
                     offset += 4;
                 }
                 let bits = val;
                 for (let idx = 0; idx < 7; idx++, offset += 8) {
                     const drawPixel = cropLastPixel && idx === 6
-                        ? this._drawHalfPixel
-                        : this._drawPixel;
+                        ? _drawHalfPixel
+                        : _drawPixel;
                     if (bits & 0x01) {
                         drawPixel(data, offset, whiteCol);
                     } else {
@@ -548,8 +548,8 @@ export class VideoModesGL implements VideoModes {
     private _hgrs: HiresPage[] = [];
     private _sv: screenEmu.ScreenView;
     private _displayConfig: screenEmu.DisplayConfiguration;
-    private _scanlines: boolean = false;
-    private _refreshFlag: boolean = true;
+    private _scanlines = false;
+    private _refreshFlag = true;
     private _canvas: HTMLCanvasElement;
 
     public ready: Promise<void>;
@@ -564,7 +564,7 @@ export class VideoModesGL implements VideoModes {
     public doubleHiresMode: boolean;
 
     public flag = 0;
-    public monoMode: boolean = false;
+    public monoMode = false;
 
     public context: CanvasRenderingContext2D;
 
@@ -587,6 +587,9 @@ export class VideoModesGL implements VideoModes {
     }
 
     async init() {
+        // There is a typing bug in https://github.com/whscullin/apple2shader/blob/master/index.d.ts
+        // that declares initOpenGL as returning void when it actually returns Promise<void>.
+        // eslint-disable-next-line @typescript-eslint/await-thenable
         await this._sv.initOpenGL();
 
         this._displayConfig = this.defaultMonitor();

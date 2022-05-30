@@ -26,7 +26,7 @@ export interface FileChooserProps {
     control?: typeof controlDefault;
 }
 
-const hasPicker: boolean = !!window.showOpenFilePicker;
+const hasPicker = !!window.showOpenFilePicker;
 const controlDefault = hasPicker ? 'picker' : 'input';
 
 interface InputFileChooserProps {
@@ -41,7 +41,7 @@ interface ExtraProps {
 
 const InputFileChooser = ({
     disabled = false,
-    onChange = () => { },
+    onChange = () => { /* do nothing */ },
     accept = [],
 }: InputFileChooserProps) => {
     const inputRef = useRef<HTMLInputElement>(null);
@@ -104,33 +104,35 @@ interface FilePickerChooserProps {
 
 const FilePickerChooser = ({
     disabled = false,
-    onChange = () => { },
+    onChange = () => { /* do nothing */ },
     accept = [ACCEPT_EVERYTHING_TYPE]
 }: FilePickerChooserProps) => {
     const [busy, setBusy] = useState<boolean>(false);
     const [selectedFilename, setSelectedFilename] = useState<string>();
     const fileHandlesRef = useRef<FileSystemFileHandle[]>();
 
-    const onClickInternal = useCallback(async () => {
+    const onClickInternal = useCallback(() => {
         if (busy) {
             return;
         }
         setBusy(true);
-        try {
-            const pickedFiles = await window.showOpenFilePicker({
-                multiple: false,
-                excludeAcceptAllOption: true,
-                types: accept,
-            });
-            if (fileHandlesRef.current !== pickedFiles) {
-                fileHandlesRef.current = pickedFiles;
-                onChange(pickedFiles);
+        (async () => {
+            try {
+                const pickedFiles = await window.showOpenFilePicker({
+                    multiple: false,
+                    excludeAcceptAllOption: true,
+                    types: accept,
+                });
+                if (fileHandlesRef.current !== pickedFiles) {
+                    fileHandlesRef.current = pickedFiles;
+                    onChange(pickedFiles);
+                }
+            } catch (e: unknown) {
+                console.error(e);
+            } finally {
+                setBusy(false);
             }
-        } catch (e: unknown) {
-            console.error(e);
-        } finally {
-            setBusy(false);
-        }
+        })().catch(console.error);
     }, [accept, busy, onChange]);
 
     useEffect(() => {

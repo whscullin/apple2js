@@ -86,7 +86,7 @@ export interface MemoryPages extends Memory {
 }
 
 /* An interface card */
-export interface Card extends Memory, Restorable {
+export interface Card<StateT = unknown> extends Memory, Restorable<StateT> {
     /* Reset the card */
     reset?(): void;
 

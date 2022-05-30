@@ -1,7 +1,7 @@
 import { bit, byte, memory } from '../types';
 import { base64_decode, base64_encode } from '../base64';
 import { bytify, debug, toHex } from '../util';
-import { NibbleDisk, ENCODING_NIBBLE } from './types';
+import { NibbleDisk, ENCODING_NIBBLE, JSONDisk } from './types';
 
 /**
  * DOS 3.3 Physical sector order (index is physical sector, value is DOS sector).
@@ -465,14 +465,14 @@ export function jsonEncode(disk: NibbleDisk, pretty: boolean): string {
 
 export function jsonDecode(data: string): NibbleDisk {
     const tracks: memory[] = [];
-    const json = JSON.parse(data);
-    const v = json.volume;
-    const readOnly = json.readOnly;
+    const json = JSON.parse(data) as JSONDisk;
+    const v = json.volume || 254;
+    const readOnly = json.readOnly || false;
     for (let t = 0; t < json.data.length; t++) {
         let track: byte[] = [];
         for (let s = 0; s < json.data[t].length; s++) {
             const _s = json.type === 'po' ? PO[s] : DO[s];
-            const sector: string = json.data[t][_s];
+            const sector: string = json.data[t][_s] as string;
             const d = base64_decode(sector);
             track = track.concat(explodeSector16(v, t, s, d));
         }

@@ -1,3 +1,4 @@
+import { byte } from 'js/types';
 import {
     numberToBytes,
     stringToBytes,
@@ -49,7 +50,7 @@ const mockInfo2 = [
  * Track map all pointing to track 0
  */
 
-export const mockTMAP = new Array(160);
+export const mockTMAP = new Array<byte>(160);
 mockTMAP.fill(0);
 
 /**
@@ -58,7 +59,7 @@ mockTMAP.fill(0);
 
 // 24 bits of track data, padded
 
-const mockTrackData = new Array(6646);
+const mockTrackData = new Array<byte>(6646);
 mockTrackData.fill(0);
 mockTrackData[0] = 0xd5;
 mockTrackData[1] = 0xaa;
@@ -82,7 +83,7 @@ const mockTRKS = [
  * Version 2 TRKS structure
  */
 
-const mockTrackMap = new Array(160 * 8);
+const mockTrackMap = new Array<byte>(160 * 8);
 mockTrackMap.fill(0);
 mockTrackMap[0x00] = 0x03;
 mockTrackMap[0x01] = 0x00;
@@ -93,7 +94,7 @@ mockTrackMap[0x07] = 0x00;
 mockTrackMap[0x08] = 0x00;
 mockTrackMap[0x09] = 0x00;
 
-const mockTrackData2 = new Array(512);
+const mockTrackData2 = new Array<byte>(512);
 mockTrackData2.fill(0);
 mockTrackData2[0] = 0xd5;
 mockTrackData2[1] = 0xaa;

@@ -52,20 +52,20 @@ export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) =>
 
     const doCancel = useCallback(() => onClose(true), [onClose]);
 
-    const doOpen = useCallback(async () => {
+    const doOpen = useCallback(() => {
         const hashParts = getHashParts();
 
         if (disk2 && handles && handles.length === 1) {
             hashParts[number] = '';
             setBusy(true);
-            try {
-                await loadLocalFile(disk2, number, await handles[0].getFile());
-            } catch (e) {
-                console.error(e);
-            } finally {
-                setBusy(false);
-                onClose();
-            }
+            (async () => {
+                try {
+                    await loadLocalFile(disk2, number, await handles[0].getFile());
+                    onClose();
+                } finally {
+                    setBusy(false);
+                }
+            })().catch(console.error);
         }
 
         if (disk2 && filename) {

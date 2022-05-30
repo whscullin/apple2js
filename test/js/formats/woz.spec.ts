@@ -1,4 +1,4 @@
-import { WozDisk, ENCODING_BITSTREAM } from 'js/formats/types';
+import { ENCODING_BITSTREAM } from 'js/formats/types';
 import createDiskFromWoz from 'js/formats/woz';
 import {
     mockWoz1,
@@ -19,7 +19,7 @@ describe('woz', () => {
             rawData: mockWoz1
         };
 
-        const disk = createDiskFromWoz(options) as WozDisk;
+        const disk = createDiskFromWoz(options) ;
         expect(disk).toEqual({
             name: 'Mock Woz 1',
             readOnly: true,
@@ -58,7 +58,7 @@ describe('woz', () => {
             rawData: mockWoz2
         };
 
-        const disk = createDiskFromWoz(options) as WozDisk;
+        const disk = createDiskFromWoz(options) ;
         expect(disk).toEqual({
             name: 'Mock Woz 2',
             side: 'B',

@@ -272,12 +272,13 @@ export default class KeyBoard {
     }
 
     controlKey(down: boolean) {
-        const ctrlKey = this.kb.querySelector('.key-CTRL');
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const ctrlKey = this.kb.querySelector('.key-CTRL')!;
         this.controlled = down;
         if (down) {
-            ctrlKey!.classList.add('active');
+            ctrlKey.classList.add('active');
         } else {
-            ctrlKey!.classList.remove('active');
+            ctrlKey.classList.remove('active');
         }
     }
 
@@ -319,7 +320,8 @@ export default class KeyBoard {
      *     otherwise the used state is set to true.
      */
     capslockKey(down?: boolean | undefined) {
-        const capsLock = this.kb.querySelector('.key-LOCK');
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const capsLock = this.kb.querySelector('.key-LOCK')!;
 
         if (arguments.length === 0) {
             if (this.capslockKeyUsed) {
@@ -335,9 +337,9 @@ export default class KeyBoard {
         }
 
         if (this.capslocked) {
-            capsLock!.classList.add('active');
+            capsLock.classList.add('active');
         } else {
-            capsLock!.classList.remove('active');
+            capsLock.classList.remove('active');
         }
     }
 
@@ -348,6 +350,7 @@ export default class KeyBoard {
     }
 
     create(el: string) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.kb = document.querySelector(el)!;
         let x, y, row, key, label, label1, label2;
 
@@ -362,7 +365,7 @@ export default class KeyBoard {
         for (y = 0; y < 5; y++) {
             row = document.createElement('div');
             row.classList.add('row');
-            row.classList.add('row' + y);
+            row.classList.add(`row${y}`);
             this.kb.append(row);
             for (x = 0; x < this.keys[0][y].length; x++) {
                 const key1 = this.keys[0][y][x];

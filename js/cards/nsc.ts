@@ -12,7 +12,7 @@ const A2 = 0x04;
 export default class NoSlotClock {
     bits: bit[] = [];
     pattern = new Array(64);
-    patternIdx: number = 0;
+    patternIdx = 0;
 
     constructor(private rom: ROM) {
         debug('NoSlotClock');
@@ -110,6 +110,7 @@ export default class NoSlotClock {
     }
 
     setState(_: unknown) {
+        // Setting the state makes no sense.
     }
 }
 

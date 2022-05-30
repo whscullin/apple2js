@@ -93,6 +93,7 @@ export class JoyStick implements OptionHandler {
             return;
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const s = document.querySelector<HTMLDivElement>('#screen')!;
         const offset = s.getBoundingClientRect();
         let x = (evt.pageX - offset.left) / s.clientWidth;

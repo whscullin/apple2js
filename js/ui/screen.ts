@@ -19,6 +19,7 @@ export class Screen implements OptionHandler {
     constructor(private vm: VideoModes) {}
 
     enterFullScreen = () => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const elem = document.getElementById('screen')!;
         if (document.fullscreenEnabled) {
             if (document.fullscreenElement) {

@@ -28,11 +28,11 @@ export class FileEntry {
     offset: word;
 
     storageType: byte = STORAGE_TYPES.SEEDLING;
-    name: string = 'Untitled';
+    name = 'Untitled';
     fileType: byte = 0;
     auxType: word = 0;
     blocksUsed: word = 0;
-    eof: number = 0;
+    eof = 0;
     access: byte = ACCESS_TYPES.ALL;
     creation: Date = new Date();
     lastMod: Date = new Date();

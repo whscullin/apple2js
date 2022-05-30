@@ -494,7 +494,7 @@ export class HiresPage2D implements HiresPage {
     oneSixtyMode: boolean;
     mixedDHRMode: boolean;
     monoDHRMode: boolean;
-    colorDHRMode: boolean = true;
+    colorDHRMode = true;
 
     constructor(
         private vm: VideoModes,
@@ -843,7 +843,7 @@ export class VideoModes2D implements VideoModes {
     private _canvas: HTMLCanvasElement;
     private _left: number;
     private _top: number;
-    private _refreshFlag: boolean = true;
+    private _refreshFlag = true;
 
     public ready = Promise.resolve();
 

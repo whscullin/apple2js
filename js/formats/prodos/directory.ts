@@ -33,7 +33,7 @@ export class Directory {
     prev: word = 0;
     next: word = 0;
     storageType: byte = STORAGE_TYPES.DIRECTORY;
-    name: string = 'Untitled';
+    name = 'Untitled';
     creation: Date = new Date();
     access: byte = ACCESS_TYPES.ALL;
     entryLength = 0x27;

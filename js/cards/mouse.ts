@@ -217,7 +217,9 @@ export default class Mouse implements Card, Restorable<MouseState> {
         return rom[off];
     }
 
-    write() {}
+    write() {
+        // not writable
+    }
 
     /**
      * Triggers interrupts based on activity since the last tick

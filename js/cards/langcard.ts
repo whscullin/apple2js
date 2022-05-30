@@ -141,7 +141,7 @@ export default class LanguageCard implements Card, Restorable<LanguageCardState>
     }
 
     read(page: byte, off: byte): byte {
-        let result: number = 0;
+        let result = 0;
         if (page < 0xe0) {
             result = this.read1.read(page, off);
         } else {
