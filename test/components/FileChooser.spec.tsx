@@ -74,14 +74,13 @@ describe('FileChooser', () => {
         });
     });
 
-    it('window.showOpenFilePicker is undefined', () => {
-        expect(window.showOpenFilePicker).not.toBeDefined();
-    });
-
     describe('picker-base chooser', () => {
         const mockFilePicker = jest.fn<ReturnType<ShowOpenFilePicker>, Parameters<ShowOpenFilePicker>>();
 
         beforeEach(() => {
+            if (typeof window.showOpenFilePicker !== 'undefined') {
+                throw new Error('window.showOpenFilePicker not undefined');
+            }
             window.showOpenFilePicker = mockFilePicker as unknown as ShowOpenFilePicker;
             mockFilePicker.mockReset();
         });
