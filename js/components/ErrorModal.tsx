@@ -8,7 +8,7 @@ export interface ErrorProps {
 }
 
 export const ErrorModal = ({ error, setError } : ErrorProps) => {
-    const onClose = useCallback(() => setError(undefined), []);
+    const onClose = useCallback(() => setError(undefined), [setError]);
 
     return (
         <>
