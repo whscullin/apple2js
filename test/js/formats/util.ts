@@ -7,7 +7,7 @@ export function skipGap(track: memory, start: number = 0): number {
         i++;
     }
     if (i === end) {
-        fail(`found more than 0x100 0xFF bytes after ${start}`);
+        throw new Error(`found more than 0x100 0xFF bytes after ${start}`);
     }
     return i;
 }
@@ -24,7 +24,7 @@ export function compareSequences(track: memory, bytes: number[], pos: number): b
 export function expectSequence(track: memory, pos: number, bytes: number[]): number {
     if (!compareSequences(track, bytes, pos)) {
         const track_slice = track.slice(pos, Math.min(track.length, pos + bytes.length));
-        fail(`expected ${bytes} got ${track_slice}`);
+        throw new Error(`expected ${bytes} got ${track_slice}`);
     }
     return pos + bytes.length;
 }

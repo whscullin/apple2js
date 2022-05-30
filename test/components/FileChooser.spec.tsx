@@ -2,7 +2,6 @@
  * @jest-environment ./test/env/jsdom-with-backdoors
  */
 
-import 'jest';
 import { h } from 'preact';
 import { fireEvent, render, screen, waitFor } from '@testing-library/preact';
 
@@ -79,7 +78,9 @@ describe('FileChooser', () => {
         const mockFilePicker = jest.fn<ReturnType<ShowOpenFilePicker>, Parameters<ShowOpenFilePicker>>();
 
         beforeEach(() => {
-            expect(window.showOpenFilePicker).not.toBeDefined();
+            if (typeof window.showOpenFilePicker !== 'undefined') {
+                throw new Error('window.showOpenFilePicker not undefined');
+            }
             window.showOpenFilePicker = mockFilePicker as unknown as ShowOpenFilePicker;
             mockFilePicker.mockReset();
         });

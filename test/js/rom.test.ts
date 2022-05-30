@@ -18,7 +18,7 @@ const roms: { [name: string]: { new(): ROM } } = {
 for (const rom of Object.keys(roms)) {
     describe(`${rom}`, () => {
         it('is constructable', () => {
-            new roms[rom]();
+            expect(new roms[rom]()).not.toBeNull();
         });
     });
 }
