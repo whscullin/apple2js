@@ -126,7 +126,9 @@ export default class RAMFactor implements Card, Restorable<RAMFactorState> {
         return rom[this.firmware << 12 | (page - 0xC0) << 8 | off];
     }
 
-    write() {}
+    write() {
+        // not writable
+    }
 
     reset() {
         this.firmware = 0;

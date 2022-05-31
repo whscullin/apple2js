@@ -197,9 +197,9 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
      */
 
     readBlock(state: CpuState, drive: number, block: number, buffer: Address) {
-        this.debug('read drive=' + drive);
-        this.debug('read buffer=' + buffer);
-        this.debug('read block=$' + toHex(block));
+        this.debug(`read drive=${drive}`);
+        this.debug(`read buffer=${buffer.toString()}`);
+        this.debug(`read block=$${toHex(block)}`);
 
         if (!this.disks[drive]?.blocks.length) {
             debug('Drive', drive, 'is empty');
@@ -224,9 +224,9 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
      */
 
     writeBlock(state: CpuState, drive: number, block: number, buffer: Address) {
-        this.debug('write drive=' + drive);
-        this.debug('write buffer=' + buffer);
-        this.debug('write block=$' + toHex(block));
+        this.debug(`write drive=${drive}`);
+        this.debug(`write buffer=${buffer.toString()}`);
+        this.debug(`write block=$${toHex(block)}`);
 
         if (!this.disks[drive]?.blocks.length) {
             debug('Drive', drive, 'is empty');
@@ -332,11 +332,11 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
             buffer = bufferAddr.readAddress();
             block = blockAddr.readWord();
 
-            this.debug('cmd=' + cmd);
+            this.debug(`cmd=${cmd}`);
             this.debug('unit=$' + toHex(unit));
 
-            this.debug('slot=' + driveSlot + ' drive=' + drive);
-            this.debug('buffer=' + buffer + ' block=$' + toHex(block));
+            this.debug(`slot=${driveSlot} drive=${drive}`);
+            this.debug(`buffer=${buffer.toString()} block=$${toHex(block)}`);
 
             switch (cmd) {
                 case 0: // INFO
@@ -362,14 +362,14 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
 
             const retVal = stackAddr.readAddress();
 
-            this.debug('return=' + retVal);
+            this.debug(`return=${retVal.toString()}`);
 
             const cmdBlockAddr = retVal.inc(1);
             cmd = cmdBlockAddr.readByte();
             const cmdListAddr = cmdBlockAddr.inc(1).readAddress();
 
-            this.debug('cmd=' + cmd);
-            this.debug('cmdListAddr=' + cmdListAddr);
+            this.debug(`cmd=${cmd}`);
+            this.debug(`cmdListAddr=${cmdListAddr.toString()}`);
 
             stackAddr.writeAddress(retVal.inc(3));
 
@@ -378,13 +378,13 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
             buffer = cmdListAddr.inc(2).readAddress();
             let status;
 
-            this.debug('parameterCount=' + parameterCount);
+            this.debug(`parameterCount=${parameterCount}`);
             switch (cmd) {
                 case 0x00: // INFO
                     status = cmdListAddr.inc(4).readByte();
-                    this.debug('info unit=' + unit);
-                    this.debug('info buffer=' + buffer);
-                    this.debug('info status=' + status);
+                    this.debug(`info unit=${unit}`);
+                    this.debug(`info buffer=${buffer.toString()}`);
+                    this.debug(`info status=${status}`);
                     switch (unit) {
                         case 0:
                             switch (status) {
@@ -482,6 +482,7 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
     }
 
     write() {
+        // not writable
     }
 
     getState() {

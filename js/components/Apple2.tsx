@@ -45,7 +45,7 @@ export const Apple2 = (props: Apple2Props) => {
         if (screen.current) {
             const options = {
                 canvas: screen.current,
-                tick: () => {},
+                tick: () => { /* do nothing */ },
                 ...props,
             };
             const apple2 = new Apple2Impl(options);

@@ -42,6 +42,7 @@ switch (romVersion) {
 
 const options = {
     gl: prefs.readPref('gl_canvas', 'true') === 'true',
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     canvas: document.querySelector<HTMLCanvasElement>('#screen')!,
     rom,
     characterRom,

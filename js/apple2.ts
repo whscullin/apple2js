@@ -28,7 +28,7 @@ import RAM, { RAMState } from './ram';
 import SYMBOLS from './symbols';
 import Debugger, { DebuggerContainer } from './debugger';
 
-import { Restorable, rom } from './types';
+import { ReadonlyUint8Array, Restorable, rom } from './types';
 import { processGamepad } from './ui/gamepad';
 
 export interface Apple2Options {
@@ -47,7 +47,7 @@ export interface Stats {
     renderedFrames: number;
 }
 
-interface State {
+export interface State {
     cpu: CpuState;
     vm: VideoModesState;
     io: Apple2IOState;
@@ -91,8 +91,8 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
     }
 
     async init(options: Apple2Options) {
-        const romImportPromise = import(`./roms/system/${options.rom}`);
-        const characterRomImportPromise = import(`./roms/character/${options.characterRom}`);
+        const romImportPromise = import(`./roms/system/${options.rom}`) as Promise<{ default: new () => ROM }>;
+        const characterRomImportPromise = import(`./roms/character/${options.characterRom}`) as Promise<{ default: ReadonlyUint8Array }>;
 
         const LoresPage = options.gl ? LoresPageGL : LoresPage2D;
         const HiresPage = options.gl ? HiresPageGL : HiresPage2D;

@@ -24,7 +24,7 @@ export function compareSequences(track: memory, bytes: number[], pos: number): b
 export function expectSequence(track: memory, pos: number, bytes: number[]): number {
     if (!compareSequences(track, bytes, pos)) {
         const track_slice = track.slice(pos, Math.min(track.length, pos + bytes.length));
-        throw new Error(`expected ${bytes} got ${track_slice}`);
+        throw new Error(`expected ${bytes.toString()} got ${track_slice.toString()}`);
     }
     return pos + bytes.length;
 }

@@ -37,11 +37,15 @@ export default class Parallel implements Card, Restorable<ParallelState> {
         return rom[off];
     }
 
-    write() {}
+    write() {
+        // not writable
+    }
 
     getState() {
         return {};
     }
 
-    setState(_state: ParallelState) {}
+    setState(_state: ParallelState) {
+        // can't set the state
+    }
 }

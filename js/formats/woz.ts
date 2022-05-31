@@ -22,7 +22,7 @@ function stringFromBytes(data: DataView, start: number, end: number): string {
     return String.fromCharCode.apply(
         null,
         new Uint8Array(data.buffer.slice(data.byteOffset + start, data.byteOffset + end))
-    );
+    ) as string;
 }
 
 export class InfoChunk {

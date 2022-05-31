@@ -138,6 +138,7 @@ export default class Thunderclock implements Card, Restorable<ThunderclockState>
     }
 
     write() {
+        // not writable
     }
 
     ioSwitch(off: byte, val?: byte) {
@@ -148,5 +149,7 @@ export default class Thunderclock implements Card, Restorable<ThunderclockState>
         return {};
     }
 
-    setState() {}
+    setState(_state: ThunderclockState) {
+        // can't set the state
+    }
 }

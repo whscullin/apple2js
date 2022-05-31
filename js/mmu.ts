@@ -525,19 +525,19 @@ export default class MMU implements Memory, Restorable<MMUState> {
 
         switch(off) {
             case LOC.BSRBANK2:
-                this._debug('Bank 2 Read ' + !this._bank1);
+                this._debug(`Bank 2 Read ${!this._bank1 ? 'true' : 'false'}`);
                 result = !this._bank1 ? 0x80 : 0x00;
                 break;
             case LOC.BSRREADRAM:
-                this._debug('Bank SW RAM Read ' + this._readbsr);
+                this._debug(`Bank SW RAM Read ${this._readbsr ? 'true' : 'false'}`);
                 result = this._readbsr ? 0x80 : 0x00;
                 break;
             case LOC.RAMRD: // 0xC013
-                this._debug('Aux RAM Read ' + this._auxRamRead);
+                this._debug(`Aux RAM Read ${this._auxRamRead ? 'true' : 'false'}`);
                 result = this._auxRamRead ? 0x80 : 0x0;
                 break;
             case LOC.RAMWRT: // 0xC014
-                this._debug('Aux RAM Write ' + this._auxRamWrite);
+                this._debug(`Aux RAM Write ${this._auxRamWrite ? 'true' : 'false'}`);
                 result = this._auxRamWrite ? 0x80 : 0x0;
                 break;
             case LOC.INTCXROM: // 0xC015
@@ -545,15 +545,15 @@ export default class MMU implements Memory, Restorable<MMUState> {
                 result = this._intcxrom ? 0x80 : 0x00;
                 break;
             case LOC.ALTZP: // 0xC016
-                this._debug('Alt ZP ' + this._altzp);
+                this._debug(`Alt ZP ${this._altzp ? 'true' : 'false'}`);
                 result = this._altzp ? 0x80 : 0x0;
                 break;
             case LOC.SLOTC3ROM: // 0xC017
-                this._debug('Slot C3 ROM ' + this._slot3rom);
+                this._debug(`Slot C3 ROM ${this._slot3rom ? 'true' : 'false'}`);
                 result = this._slot3rom ? 0x80 : 0x00;
                 break;
             case LOC._80STORE: // 0xC018
-                this._debug('80 Store ' + this._80store);
+                this._debug(`80 Store ${this._80store ? 'true' : 'false'}`);
                 result = this._80store ? 0x80 : 0x00;
                 break;
             case LOC.VERTBLANK: // 0xC019

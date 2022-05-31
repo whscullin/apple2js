@@ -46,7 +46,9 @@ export const Drives = ({ io, sectors }: DrivesProps) => {
                     side,
                 }));
             },
-            dirty: () => {}
+            dirty: () => {
+                // do nothing
+            }
         };
 
         if (io) {
