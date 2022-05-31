@@ -58,7 +58,7 @@ export function processGamepad(io: Apple2IO) {
                 if (val <= 0) {
                     io.buttonDown(-val as 0 | 1 | 2);
                 } else {
-                    io.keyDown(gamepadMap[idx]!);
+                    io.keyDown(val);
                 }
             } else if (!pressed && old) {
                 if (val <= 0) {

@@ -23,6 +23,7 @@ export class Program implements MemoryPages {
     }
 
     write(_page: byte, _off: byte, _val: byte) {
+        // do nothing
     }
 }
 

@@ -7,6 +7,7 @@ import DiskII from '../cards/disk2';
 
 import index from 'json/disks/index.json';
 import { FileChooser, FilePickerAcceptType, FileSystemFileHandleLike } from './FileChooser';
+import { noAwait } from './util/promises';
 
 const DISK_TYPES: FilePickerAcceptType[] = [
     {
@@ -125,7 +126,7 @@ export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) =>
             </ModalContent>
             <ModalFooter>
                 <button onClick={doCancel}>Cancel</button>
-                <button onClick={doOpen} disabled={busy || empty}>Open</button>
+                <button onClick={noAwait(doOpen)} disabled={busy || empty}>Open</button>
             </ModalFooter>
         </Modal>
     );

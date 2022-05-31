@@ -1,7 +1,10 @@
 {
+    // Global
+    "root": true,
     "parser": "@typescript-eslint/parser",
-    "plugins": [
-        "@typescript-eslint/eslint-plugin"
+    "extends": [
+        "eslint:recommended",
+        "plugin:jest/recommended"
     ],
     "rules": {
         "indent": [
@@ -19,47 +22,15 @@
             "error",
             "unix"
         ],
-        "eqeqeq": ["error", "smart"],
+        "eqeqeq": [
+            "error",
+            "smart"
+        ],
         "prefer-const": [
             "error"
         ],
-        "semi": "off",
-        "@typescript-eslint/no-explicit-any": "error",
-        "@typescript-eslint/semi": [
-            "error",
-            "always"
-        ],
-        "@typescript-eslint/member-delimiter-style": [
-            "error",
-            {
-                "multiline": {
-                    "delimiter": "semi",
-                    "requireLast": true
-                },
-                "singleline": {
-                    "delimiter": "semi",
-                    "requireLast": false
-                }
-            }
-        ],
+        "no-var": "error",
         "no-use-before-define": "off",
-        "@typescript-eslint/no-floating-promises": "error",
-        "@typescript-eslint/no-use-before-define": [
-            "error",
-            {
-                "functions": false,
-                "classes": false
-            }
-        ],
-        "no-unused-vars": "off",
-        "@typescript-eslint/no-unused-vars": [
-          "error",
-          {
-              "argsIgnorePattern": "^_"
-          }
-        ],
-        "no-redeclare": "off",
-        "@typescript-eslint/no-redeclare": ["error"],
         "no-dupe-class-members": "off",
         "no-console": [
             "error",
@@ -71,39 +42,118 @@
                 ]
             }
         ],
-        "@typescript-eslint/require-await": ["error"],
-        "jest/expect-expect": ["error", {
-            "assertFunctionNames": [
-                "expect*",
-                "checkImageData",
-                "testCode"
-            ]
-        }]
+        // Jest configuration
+        "jest/expect-expect": [
+            "error",
+            {
+                "assertFunctionNames": [
+                    "expect*",
+                    "checkImageData",
+                    "testCode"
+                ]
+            }
+        ]
     },
     "env": {
         "builtin": true,
         "browser": true,
         "es6": true
     },
-    "parserOptions": {
-        "sourceType": "module",
-        "project": "./tsconfig.json"
-    },
-    "extends": [
-        "eslint:recommended",
-        "plugin:jest/recommended",
-        "plugin:react/recommended",
-        "plugin:react-hooks/recommended"
-    ],
     "overrides": [
+        // All overrides matching a file are applied in-order, with the last
+        // taking precedence.
+        //
+        // TypeScript/TSX-specific configuration
         {
             "files": [
-                "**/*.ts"
+                "*.ts",
+                "*.tsx"
+            ],
+            "plugins": [
+                "@typescript-eslint/eslint-plugin"
+            ],
+            "extends": [
+                "plugin:react/recommended",
+                "plugin:react-hooks/recommended",
+                "plugin:@typescript-eslint/recommended",
+                "plugin:@typescript-eslint/recommended-requiring-type-checking"
             ],
             "rules": {
-                "no-var": "error"
+                // recommended is just "warn"
+                "@typescript-eslint/no-explicit-any": "error",
+                // enforce semicolons at ends of statements
+                "semi": "off",
+                "@typescript-eslint/semi": [
+                    "error",
+                    "always"
+                ],
+                // enforce semicolons to separate members
+                "@typescript-eslint/member-delimiter-style": [
+                    "error",
+                    {
+                        "multiline": {
+                            "delimiter": "semi",
+                            "requireLast": true
+                        },
+                        "singleline": {
+                            "delimiter": "semi",
+                            "requireLast": false
+                        }
+                    }
+                ],
+                // definitions must come before uses for variables
+                "@typescript-eslint/no-use-before-define": [
+                    "error",
+                    {
+                        "functions": false,
+                        "classes": false
+                    }
+                ],
+                // no used variables
+                "no-unused-vars": "off",
+                "@typescript-eslint/no-unused-vars": [
+                    "error",
+                    {
+                        "argsIgnorePattern": "^_"
+                    }
+                ],
+                // no redeclaration of classes, members or variables
+                "no-redeclare": "off",
+                "@typescript-eslint/no-redeclare": [
+                    "error"
+                ],
+                // allow empty interface definitions and empty extends
+                "@typescript-eslint/no-empty-interface": "off",
+                // allow explicit type declaration
+                "@typescript-eslint/no-inferrable-types": "off",
+                // allow some non-string types in templates
+                "@typescript-eslint/restrict-template-expressions": [
+                    "error",
+                    {
+                        "allowNumber": true,
+                        "allowBoolean": true
+                    }
+                ],
+                // react rules
+                "react-hooks/rules-of-hooks": "error",
+                "react-hooks/exhaustive-deps": "error"
+            },
+            "parserOptions": {
+                "sourceType": "module",
+                "project": "./tsconfig.json"
             }
         },
+        // UI elements
+        {
+            "files": [
+                "js/ui/**.ts"
+            ],
+            "rules": {
+                // allow non-null assertions since these classes reference the DOM
+                "@typescript-eslint/no-non-null-assertion": "off"
+            }
+        },
+        // JS Node configuration
         {
             "files": [
                 "bin/*",
@@ -119,6 +169,7 @@
                 "browser": false
             }
         },
+        // Test configuration
         {
             "files": [
                 "test/**/*"
@@ -132,6 +183,7 @@
                 "no-console": 0
             }
         },
+        // Entry point configuration
         {
             "files": [
                 "js/entry2.ts",
@@ -142,6 +194,7 @@
                 "commonjs": true
             }
         },
+        // Worker configuration
         {
             "files": [
                 "workers/*"
@@ -151,11 +204,13 @@
             }
         }
     ],
-    "ignorePatterns": ["coverage/**/*"],
+    "ignorePatterns": [
+        "coverage/**/*"
+    ],
     "settings": {
         "react": {
-          "pragma": "h",
-          "version": "16"
+            "pragma": "h",
+            "version": "16"
         }
     }
 }

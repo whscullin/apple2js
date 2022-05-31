@@ -32,8 +32,8 @@ export default class Tape {
                 let old = (datum > 0.0), current;
                 let last = 0;
                 let delta: number;
-                debug('Sample Count: ' + data.length);
-                debug('Sample rate: ' + buffer.sampleRate);
+                debug(`Sample Count: ${data.length}`);
+                debug(`Sample rate: ${buffer.sampleRate}`);
                 for (let idx = 1; idx < data.length; idx++) {
                     datum = data[idx];
                     if ((datum > 0.1) || (datum < -0.1)) {
@@ -65,7 +65,7 @@ export default class Tape {
                 if (done) {
                     done();
                 }
-            }, function (error) {
+            }, (error: Error) => {
                 window.alert(error.message);
             });
         };

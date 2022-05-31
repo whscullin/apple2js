@@ -362,7 +362,7 @@ export default class KeyBoard {
         for (y = 0; y < 5; y++) {
             row = document.createElement('div');
             row.classList.add('row');
-            row.classList.add('row' + y);
+            row.classList.add(`row${y}`);
             this.kb.append(row);
             for (x = 0; x < this.keys[0][y].length; x++) {
                 const key1 = this.keys[0][y][x];

@@ -23,7 +23,7 @@ import ApplesoftDump from '../applesoft/decompiler';
 import ApplesoftCompiler from '../applesoft/compiler';
 
 import { debug } from '../util';
-import { Apple2, Stats } from '../apple2';
+import { Apple2, Stats, State as Apple2State } from '../apple2';
 import DiskII from '../cards/disk2';
 import CPU6502 from '../cpu6502';
 import { VideoModes } from '../videomodes';
@@ -123,7 +123,7 @@ export function openSave(driveString: string, event: MouseEvent) {
     const a = document.querySelector<HTMLAnchorElement>('#local_save_link')!;
 
     if (!data) {
-        alert('No data from drive ' + drive);
+        alert(`No data from drive ${drive}`);
         return;
     }
 
@@ -211,7 +211,7 @@ function loadingProgress(current: number, total: number) {
         const meter = document.querySelector<HTMLDivElement>('#loading-modal .meter')!;
         const progress = document.querySelector<HTMLDivElement>('#loading-modal .progress')!;
         meter.style.display = 'block';
-        progress.style.width = current / total * meter.clientWidth + 'px';
+        progress.style.width = `${current / total * meter.clientWidth}px`;
     }
 }
 
@@ -236,13 +236,13 @@ export function loadAjax(drive: DriveNumber, url: string) {
         }
     }).then(function (data: JSONDisk | JSONBinaryImage) {
         if (data.type === 'binary') {
-            loadBinary(data as JSONBinaryImage);
+            loadBinary(data );
         } else if (includes(DISK_FORMATS, data.type)) {
             loadDisk(drive, data);
         }
         initGamepad(data.gamepad);
         loadingStop();
-    }).catch(function (error) {
+    }).catch(function (error: Error) {
         loadingStop();
         openAlert(error.message);
         console.error(error);
@@ -414,7 +414,7 @@ export function doLoadHTTP(drive: DriveNumber, url?: string) {
     if (url) {
         fetch(url).then(function (response) {
             if (response.ok) {
-                const reader = response!.body!.getReader();
+                const reader = response.body!.getReader();
                 let received = 0;
                 const chunks: Uint8Array[] = [];
                 const contentLength = parseInt(response.headers.get('content-length')!, 10);
@@ -468,7 +468,7 @@ export function doLoadHTTP(drive: DriveNumber, url?: string) {
                 throw new Error(`Extension ${ext} not recognized.`);
             }
             loadingStop();
-        }).catch(function (error) {
+        }).catch((error: Error) => {
             loadingStop();
             openAlert(error.message);
             console.error(error);
@@ -499,19 +499,19 @@ export function updateKHz() {
         case 0: {
             delta = cycles - lastCycles;
             khz = Math.trunc(delta / ms);
-            kHzElement.innerText = khz + ' kHz';
+            kHzElement.innerText = `${khz} kHz`;
             break;
         }
         case 1: {
             delta = stats.renderedFrames - lastRenderedFrames;
             fps = Math.trunc(delta / (ms / 1000));
-            kHzElement.innerText = fps + ' rps';
+            kHzElement.innerText = `${fps} rps`;
             break;
         }
         default: {
             delta = stats.frames - lastFrames;
             fps = Math.trunc(delta / (ms / 1000));
-            kHzElement.innerText = fps + ' fps';
+            kHzElement.innerText = `${fps} fps`;
         }
     }
 
@@ -579,7 +579,7 @@ export function selectCategory() {
             const file = cat[idx];
             let name = file.name;
             if (file.disk) {
-                name += ' - ' + file.disk;
+                name += ` - ${file.disk}`;
             }
             const option = document.createElement('option');
             option.value = file.filename;
@@ -622,7 +622,7 @@ function loadDisk(drive: DriveNumber, disk: JSONDisk) {
  */
 
 function updateLocalStorage() {
-    const diskIndex = JSON.parse(window.localStorage.diskIndex || '{}');
+    const diskIndex = JSON.parse(window.localStorage.diskIndex as string || '{}') as LocalDiskIndex;
     const names = Object.keys(diskIndex);
 
     const cat: DiskDescriptor[] = disk_categories['Local Saves'] = [];
@@ -654,7 +654,7 @@ type LocalDiskIndex = {
 };
 
 function saveLocalStorage(drive: DriveNumber, name: string) {
-    const diskIndex = JSON.parse(window.localStorage.diskIndex || '{}') as LocalDiskIndex;
+    const diskIndex = JSON.parse(window.localStorage.diskIndex as string || '{}') as LocalDiskIndex;
 
     const json = _disk2.getJSON(drive);
     diskIndex[name] = json;
@@ -667,7 +667,7 @@ function saveLocalStorage(drive: DriveNumber, name: string) {
 }
 
 function deleteLocalStorage(name: string) {
-    const diskIndex = JSON.parse(window.localStorage.diskIndex || '{}') as LocalDiskIndex;
+    const diskIndex = JSON.parse(window.localStorage.diskIndex as string || '{}') as LocalDiskIndex;
     if (diskIndex[name]) {
         delete diskIndex[name];
         openAlert('Deleted');
@@ -677,7 +677,7 @@ function deleteLocalStorage(name: string) {
 }
 
 function loadLocalStorage(drive: DriveNumber, name: string) {
-    const diskIndex = JSON.parse(window.localStorage.diskIndex || '{}') as LocalDiskIndex;
+    const diskIndex = JSON.parse(window.localStorage.diskIndex as string || '{}') as LocalDiskIndex;
     if (diskIndex[name]) {
         _disk2.setJSON(drive, diskIndex[name]);
         driveLights.label(drive, name);
@@ -891,7 +891,7 @@ function onLoaded(apple2: Apple2, disk2: DiskII, massStorage: MassStorage, print
     });
     keyboard.setFunction('F9', () => {
         if (window.localStorage.state) {
-            _apple2.setState(base64_json_parse(window.localStorage.state));
+            _apple2.setState(base64_json_parse(window.localStorage.state as string) as Apple2State);
         }
     });
 

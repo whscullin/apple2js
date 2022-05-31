@@ -22,6 +22,8 @@ const FAKE_FILE_HANDLE = {
     isDirectory: false,
 } as const;
 
+const NOP = () => { /* do nothing */ };
+
 // eslint-disable-next-line no-undef
 const EMPTY_FILE_LIST = backdoors.newFileList();
 
@@ -30,13 +32,13 @@ const FAKE_FILE = new File([], 'fake');
 describe('FileChooser', () => {
     describe('input-based chooser', () => {
         it('should be instantiable', () => {
-            const { container } = render(<FileChooser control='input' onChange={() => { }} />);
+            const { container } = render(<FileChooser control='input' onChange={NOP} />);
 
             expect(container).not.toBeNull();
         });
 
         it('should use the file input element', async () => {
-            render(<FileChooser control='input' onChange={() => { }} />);
+            render(<FileChooser control='input' onChange={NOP} />);
 
             const inputElement = await screen.findByRole('button') as HTMLInputElement;
             expect(inputElement.type).toBe('file');
@@ -90,7 +92,7 @@ describe('FileChooser', () => {
         });
 
         it('should be instantiable', () => {
-            const { container } = render(<FileChooser control='picker' onChange={() => { }} />);
+            const { container } = render(<FileChooser control='picker' onChange={NOP} />);
 
             expect(container).not.toBeNull();
         });

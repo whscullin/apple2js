@@ -1,5 +1,6 @@
 import { h, Fragment } from 'preact';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { noAwait } from './util/promises';
 
 export interface FilePickerAcceptType {
     description?: string | undefined;
@@ -41,7 +42,7 @@ interface ExtraProps {
 
 const InputFileChooser = ({
     disabled = false,
-    onChange = () => { },
+    onChange = () => { /* do nothing */ },
     accept = [],
 }: InputFileChooserProps) => {
     const inputRef = useRef<HTMLInputElement>(null);
@@ -104,7 +105,7 @@ interface FilePickerChooserProps {
 
 const FilePickerChooser = ({
     disabled = false,
-    onChange = () => { },
+    onChange = () => { /* do nothing */ },
     accept = [ACCEPT_EVERYTHING_TYPE]
 }: FilePickerChooserProps) => {
     const [busy, setBusy] = useState<boolean>(false);
@@ -142,7 +143,7 @@ const FilePickerChooser = ({
 
     return (
         <>
-            <button onClick={onClickInternal} disabled={disabled || busy}>
+            <button onClick={noAwait(onClickInternal)} disabled={disabled || busy}>
                 Choose File
             </button>
             &nbsp;

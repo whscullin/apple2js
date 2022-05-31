@@ -110,6 +110,7 @@ export default class NoSlotClock {
     }
 
     setState(_: unknown) {
+        // Setting the state makes no sense.
     }
 }
 

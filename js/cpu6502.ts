@@ -135,7 +135,7 @@ function isResettablePageHandler(pageHandler: MemoryPages | ResettablePageHandle
 
 const BLANK_PAGE: Memory = {
     read: function () { return 0; },
-    write: function () { }
+    write: function () { /* not writable */ }
 };
 
 interface Opts {
@@ -196,7 +196,7 @@ export default class CPU6502 {
     private addr: word = 0;
 
     /** Filled array of memory handlers by address page */
-    private memPages: Memory[] = new Array(0x100);
+    private memPages: Memory[] = new Array<Memory>(0x100);
     /** Callbacks invoked on reset signal */
     private resetHandlers: ResettablePageHandler[] = [];
     /** Elapsed cycles */
@@ -246,7 +246,7 @@ export default class CPU6502 {
         }
 
         // Certain browsers benefit from using arrays over maps
-        this.opary = new Array(0x100);
+        this.opary = new Array<Instruction>(0x100);
 
         for (let idx = 0; idx < 0x100; idx++) {
             this.opary[idx] = ops[idx] || this.unknown(idx);

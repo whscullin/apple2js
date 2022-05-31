@@ -52,7 +52,7 @@ const LOC = {
 };
 
 export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> {
-    private _slot: Array<Card | null> = new Array(7).fill(null);
+    private _slot: Array<Card | null> = new Array<Card | null>(7).fill(null);
     private _auxRom: Memory | null = null;
 
     private _khz = 1023;
@@ -81,7 +81,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
     private _annunciators: Annunciators = [false, false, false, false];
 
     private _tape: TapeData = [];
-    private _tapeOffset = 0;
+    private _tapeOffset: number = 0;
     private _tapeNext: number = 0;
     private _tapeCurrent = false;
 
@@ -106,7 +106,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
                 if (this._audioListener) {
                     this._audioListener(this._sample);
                 }
-                this._sample = new Array(this._sample_size);
+                this._sample = new Array<number>(this._sample_size);
                 this._sampleIdx = 0;
             }
         }
@@ -226,7 +226,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
                     this._tapeCurrent = this._tape[this._tapeOffset][1];
                     while (now >= this._tapeNext) {
                         if ((this._tapeOffset % 1000) === 0) {
-                            debug('Read ' + (this._tapeOffset / 1000));
+                            debug(`Read ${this._tapeOffset / 1000}`);
                         }
                         this._tapeCurrent = this._tape[this._tapeOffset][1];
                         this._tapeNext += this._tape[this._tapeOffset++][0];
@@ -451,7 +451,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
     }
 
     setTape(tape: TapeData) {
-        debug('Tape length: ' + tape.length);
+        debug(`Tape length: ${tape.length}`);
         this._tape = tape;
         this._tapeOffset = -1;
     }
@@ -459,7 +459,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
     sampleRate(rate: number, sample_size: number) {
         this._rate = rate;
         this._sample_size = sample_size;
-        this._sample = new Array(this._sample_size);
+        this._sample = new Array<number>(this._sample_size);
         this._sampleIdx = 0;
         this._calcSampleRate();
     }

@@ -308,7 +308,7 @@ function setDriveState(state: DriveState) {
 /**
  * Emulates the 16-sector and 13-sector versions of the Disk ][ drive and controller.
  */
-export default class DiskII implements Card {
+export default class DiskII implements Card<State> {
 
     private drives: Drive[] = [
         {   // Drive 1
@@ -488,7 +488,7 @@ export default class DiskII implements Card {
             return;
         }
         if (this.on && (this.skip || this.writeMode)) {
-            const track = this.cur.tracks![this.cur.track >> 2];
+            const track = this.cur.tracks[this.cur.track >> 2];
             if (track && track.length) {
                 if (this.cur.head >= track.length) {
                     this.cur.head = 0;
@@ -520,7 +520,7 @@ export default class DiskII implements Card {
      * tracks by activating two neighboring coils at once.
      */
     private setPhase(phase: Phase, on: boolean) {
-        this.debug('phase ' + phase + (on ? ' on' : ' off'));
+        this.debug(`phase ${phase}${on ? ' on' : ' off'}`);
         if (on) {
             this.cur.track += PHASE_DELTA[this.cur.phase][phase] * 2;
             this.cur.phase = phase;
@@ -682,7 +682,7 @@ export default class DiskII implements Card {
         } else {
             // It's not explicitly stated, but writes to any address set the
             // data register.
-            this.bus = val!;
+            this.bus = val;
         }
 
         return result;
@@ -703,7 +703,9 @@ export default class DiskII implements Card {
         return this.bootstrapRom[off];
     }
 
-    write() { }
+    write() {
+        // not writable
+    }
 
     reset() {
         if (this.on) {
@@ -722,7 +724,7 @@ export default class DiskII implements Card {
         this.moveHead();
     }
 
-    getState() {
+    getState(): State {
         const result = {
             drives: [] as DriveState[],
             skip: this.skip,

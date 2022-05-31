@@ -124,7 +124,7 @@ export function base64_decode(data: string | null | undefined): memory | undefin
 
 const DATA_URL_PREFIX = 'data:application/octet-stream;base64,';
 
-export function base64_json_parse(json: string) {
+export function base64_json_parse(json: string): unknown {
     const reviver = (_key: string, value: unknown) => {
         if (typeof value ==='string' && value.startsWith(DATA_URL_PREFIX)) {
             return base64_decode(value.slice(DATA_URL_PREFIX.length));
