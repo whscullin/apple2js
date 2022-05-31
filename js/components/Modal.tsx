@@ -96,9 +96,9 @@ export const ModalContent = ({ children }: { children: ComponentChildren }) => {
  */
 export const ModalFooter = ({ children }: { children: ComponentChildren }) => {
     return (
-        <div style={modalFooterStyle}>
+        <footer style={modalFooterStyle}>
             {children}
-        </div>
+        </footer>
     );
 };
 
@@ -148,14 +148,14 @@ export interface ModalHeaderProps {
  */
 export const ModalHeader = ({ onClose, title, icon }: ModalHeaderProps) => {
     return (
-        <div style={modalHeaderStyle}>
+        <header style={modalHeaderStyle}>
             <span style={modalTitleStyle}>
-                <i className={`fas fa-${icon}`} />
+                {icon && <i className={`fas fa-${icon}`} />}
                 {' '}
                 {title}
             </span>
             {onClose && <ModalCloseButton onClose={onClose} />}
-        </div>
+        </header>
     );
 };
 
@@ -189,7 +189,7 @@ export const Modal = ({
     return (
         isOpen ? createPortal((
             <ModalOverlay>
-                <div style={modalStyle}>
+                <div style={modalStyle} role="dialog">
                     {title && <ModalHeader title={title} {...props} />}
                     {children}
                 </div>
