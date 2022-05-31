@@ -58,8 +58,8 @@ export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
                     const filename = `/json/disks/${hashPart}.json`;
                     loadJSON(disk2, number, filename)
                         .catch((e) => setError(e.message));
-                    setCurrentHash(hashPart);
                 }
+                setCurrentHash(hashPart);
             }
         }
     }, [currentHash, disk2, hash, number]);

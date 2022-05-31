@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 
 export const useHash = () => {
-    const [hash, setHash] = useState(window.location.pathname);
+    const [hash, setHash] = useState(window.location.hash);
 
     const popstateListener = () => {
         const hash = window.location.hash;
