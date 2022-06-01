@@ -6,7 +6,7 @@ import {
 } from 'js/components/ErrorModal';
 
 describe('ErrorModal', () => {
-    it('renders when there\'s an error', () => {
+    it('renders when there is an error', () => {
         const setError = jest.fn();
         render(
             <ErrorModal error="My Error" setError={setError} />
@@ -16,7 +16,7 @@ describe('ErrorModal', () => {
         expect(screen.queryByText('My Error')).toBeVisible();
     });
 
-    it('does not renders when there\'s not error', () => {
+    it('does not render when there is not an error', () => {
         const setError = jest.fn();
         render(
             <ErrorModal error={undefined} setError={setError} />
@@ -31,7 +31,7 @@ describe('ErrorModal', () => {
             <ErrorModal error="My Error" setError={setError} />
         );
         fireEvent.click(screen.getByTitle('Close'));
-        expect(setError).toHaveBeenCalled();
+        expect(setError).toHaveBeenCalledWith(undefined);
     });
 
     it('calls setError when OK is clicked', () => {
@@ -40,6 +40,6 @@ describe('ErrorModal', () => {
             <ErrorModal error="My Error" setError={setError} />
         );
         fireEvent.click(screen.getByText('OK'));
-        expect(setError).toHaveBeenCalled();
+        expect(setError).toHaveBeenCalledWith(undefined);
     });
 });

@@ -59,7 +59,13 @@ export const Apple2 = (props: Apple2Props) => {
                 setCPU(cpu);
                 apple2.reset();
                 apple2.run();
-            }).catch((e) => setError(e.message));
+            }).catch((e) => {
+                if (e instanceof Error) {
+                    setError(e.message);
+                } else {
+                    console.error(e);
+                }
+            });
         }
     }, [props]);
 

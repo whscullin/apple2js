@@ -71,7 +71,7 @@ export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) =>
                 hashParts[number] = name[1];
                 await loadJSON(disk2, number, filename);
             }
-        } catch (e: unknown) {
+        } catch (e) {
             if (e instanceof Error) {
                 setError(e.message);
             } else {

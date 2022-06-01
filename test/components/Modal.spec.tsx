@@ -22,6 +22,9 @@ describe('Modal', () => {
         expect(screen.queryByRole('banner')).toBeVisible();
         expect(screen.queryByRole('banner')).toHaveTextContent('My Title');
         expect(screen.queryByText('My Content')).toBeVisible();
+
+        expect(screen.queryByRole('img')).not.toBeInTheDocument();
+        expect(screen.queryByTitle('Close')).not.toBeInTheDocument();
     });
 
     it('does not render a title and content when not open', () => {
@@ -75,5 +78,20 @@ describe('Modal', () => {
         expect(button).toBeVisible();
         fireEvent.click(button);
         expect(onClose).toHaveBeenCalledWith(true);
+    });
+
+    it('can have an icon', () => {
+        render(
+            <Modal
+                title="My Title"
+                isOpen={true}
+                icon="warning"
+            >
+                <ModalContent>
+                    My Content
+                </ModalContent>
+            </Modal>
+        );
+        expect(screen.getByRole('img')).toBeVisible();
     });
 });

@@ -45,6 +45,14 @@ export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
 
     const hash = useHash();
 
+    const handleError = (e: unknown) => {
+        if (e instanceof Error) {
+            setError(e.message);
+        } else {
+            console.error(e);
+        }
+    };
+
     useEffect(() => {
         const hashParts = getHashParts(hash);
         const newHash = hashParts[number];
@@ -53,11 +61,11 @@ export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
             if (hashPart !== currentHash) {
                 if (hashPart.match(/^https?:/)) {
                     loadHttpFile(disk2, number, hashPart)
-                        .catch((e) => setError(e.message));
+                        .catch((e) => handleError(e));
                 } else {
                     const filename = `/json/disks/${hashPart}.json`;
                     loadJSON(disk2, number, filename)
-                        .catch((e) => setError(e.message));
+                        .catch((e) => handleError(e));
                 }
                 setCurrentHash(hashPart);
             }

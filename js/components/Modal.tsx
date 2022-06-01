@@ -150,7 +150,7 @@ export const ModalHeader = ({ onClose, title, icon }: ModalHeaderProps) => {
     return (
         <header style={modalHeaderStyle}>
             <span style={modalTitleStyle}>
-                {icon && <i className={`fas fa-${icon}`} />}
+                {icon && <i className={`fas fa-${icon}`} role="img" />}
                 {' '}
                 {title}
             </span>
