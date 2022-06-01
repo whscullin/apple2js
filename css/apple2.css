@@ -194,6 +194,7 @@ canvas {
 
 .scanlines:after {
     display: block;
+    pointer-events: none;
     background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 1px, rgba(0,0,0,0.5) 1px, rgba(0,0,0,0.5) 2px);
     content: '';
     position: absolute;
