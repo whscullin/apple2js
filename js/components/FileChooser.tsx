@@ -27,7 +27,7 @@ export interface FileChooserProps {
     control?: typeof controlDefault;
 }
 
-const hasPicker: boolean = !!window.showOpenFilePicker;
+const hasPicker = !!window.showOpenFilePicker;
 const controlDefault = hasPicker ? 'picker' : 'input';
 
 interface InputFileChooserProps {

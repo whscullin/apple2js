@@ -4,6 +4,8 @@ import cs from 'classnames';
 import Disk2 from '../cards/disk2';
 import { FileModal } from './FileModal';
 import { loadJSON, loadHttpFile, getHashParts } from './util/files';
+import { ErrorModal } from './ErrorModal';
+import { useHash } from './hooks/useHash';
 
 /**
  * Storage structure for Disk II state returned via callbacks.
@@ -38,25 +40,37 @@ export interface DiskIIProps extends DiskIIData {
 export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
     const label = side ? `${name} - ${side}` : name;
     const [modalOpen, setModalOpen] = useState(false);
+    const [error, setError] = useState<string>();
+    const [currentHash, setCurrentHash] = useState<string>();
+
+    const hash = useHash();
+
+    const handleError = (e: unknown) => {
+        if (e instanceof Error) {
+            setError(e.message);
+        } else {
+            console.error(e);
+        }
+    };
 
     useEffect(() => {
-        const hashParts = getHashParts();
-        if (disk2 && hashParts && hashParts[number]) {
-            const hashPart = decodeURIComponent(hashParts[number]);
-            if (hashPart.match(/^https?:/)) {
-                loadHttpFile(disk2, number, hashPart)
-                    .catch((error) =>
-                        console.error(error)
-                    );
-            } else {
-                const filename = `/json/disks/${hashPart}.json`;
-                loadJSON(disk2, number, filename)
-                    .catch((error) =>
-                        console.error(error)
-                    );
+        const hashParts = getHashParts(hash);
+        const newHash = hashParts[number];
+        if (disk2 && newHash) {
+            const hashPart = decodeURIComponent(newHash);
+            if (hashPart !== currentHash) {
+                if (hashPart.match(/^https?:/)) {
+                    loadHttpFile(disk2, number, hashPart)
+                        .catch((e) => handleError(e));
+                } else {
+                    const filename = `/json/disks/${hashPart}.json`;
+                    loadJSON(disk2, number, filename)
+                        .catch((e) => handleError(e));
+                }
+                setCurrentHash(hashPart);
             }
         }
-    }, [disk2, number]);
+    }, [currentHash, disk2, hash, number]);
 
     const doClose = useCallback(() => {
         setModalOpen(false);
@@ -69,6 +83,7 @@ export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
     return (
         <div className="disk">
             <FileModal disk2={disk2} number={number} onClose={doClose} isOpen={modalOpen} />
+            <ErrorModal error={error} setError={setError} />
             <div
                 id={`disk${number}`}
                 className={cs('disk-light', { on })}

@@ -1,4 +1,5 @@
 import { h, ComponentChildren } from 'preact';
+import { createPortal } from 'preact/compat';
 import { useCallback } from 'preact/hooks';
 import { useHotKey } from './hooks/useHotKey';
 
@@ -69,7 +70,7 @@ const modalFooterStyle = {
  */
 export const ModalOverlay = ({ children }: { children: ComponentChildren }) => {
     return (
-        <div style={modalOverlayStyle}>
+        <div style={modalOverlayStyle} className="modal-overlay">
             {children}
         </div>
     );
@@ -95,9 +96,9 @@ export const ModalContent = ({ children }: { children: ComponentChildren }) => {
  */
 export const ModalFooter = ({ children }: { children: ComponentChildren }) => {
     return (
-        <div style={modalFooterStyle}>
+        <footer style={modalFooterStyle}>
             {children}
-        </div>
+        </footer>
     );
 };
 
@@ -135,6 +136,7 @@ type OnCloseCallback = (closeBox?: boolean) => void;
 export interface ModalHeaderProps {
     onClose?: OnCloseCallback;
     title: string;
+    icon?: string;
 }
 
 /**
@@ -144,12 +146,16 @@ export interface ModalHeaderProps {
  * @param title Modal title
  * @returns ModalHeader component
  */
-export const ModalHeader = ({ onClose, title }: ModalHeaderProps) => {
+export const ModalHeader = ({ onClose, title, icon }: ModalHeaderProps) => {
     return (
-        <div style={modalHeaderStyle}>
-            <span style={modalTitleStyle}>{title}</span>
+        <header style={modalHeaderStyle}>
+            <span style={modalTitleStyle}>
+                {icon && <i className={`fas fa-${icon}`} role="img" />}
+                {' '}
+                {title}
+            </span>
             {onClose && <ModalCloseButton onClose={onClose} />}
-        </div>
+        </header>
     );
 };
 
@@ -161,6 +167,7 @@ export interface ModalProps {
     isOpen: boolean;
     title: string;
     children: ComponentChildren;
+    icon?: string;
 }
 
 /**
@@ -180,13 +187,13 @@ export const Modal = ({
     ...props
 }: ModalProps) => {
     return (
-        isOpen ? (
+        isOpen ? createPortal((
             <ModalOverlay>
-                <div style={modalStyle}>
+                <div style={modalStyle} role="dialog">
                     {title && <ModalHeader title={title} {...props} />}
                     {children}
                 </div>
             </ModalOverlay>
-        ) : null
+        ), document.body) : null
     );
 };
