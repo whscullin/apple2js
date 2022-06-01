@@ -52,7 +52,7 @@ export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) =>
     const [category, setCategory] = useState<string>();
     const [handles, setHandles] = useState<FileSystemFileHandleLike[]>();
     const [filename, setFilename] = useState<string>();
-    const [error, setError] = useState<string>();
+    const [error, setError] = useState<unknown>();
     const hash = useHash();
 
     const doCancel = useCallback(() => onClose(true), [onClose]);
@@ -72,11 +72,7 @@ export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) =>
                 await loadJSON(disk2, number, filename);
             }
         } catch (e) {
-            if (e instanceof Error) {
-                setError(e.message);
-            } else {
-                console.error(e);
-            }
+            setError(e);
         } finally {
             setHashParts(hashParts);
             setBusy(false);
