@@ -19,10 +19,10 @@ const WOZ_INTEGRITY_CHECK = 0x0a0d0aff;
  * @returns ASCII string
  */
 function stringFromBytes(data: DataView, start: number, end: number): string {
-    return String.fromCharCode.apply(
-        null,
-        new Uint8Array(data.buffer.slice(data.byteOffset + start, data.byteOffset + end))
-    ) as string;
+    const byteArray = new Uint8Array(
+        data.buffer.slice(data.byteOffset + start, data.byteOffset + end)
+    );
+    return String.fromCharCode(...byteArray);
 }
 
 export class InfoChunk {

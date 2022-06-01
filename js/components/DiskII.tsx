@@ -40,18 +40,10 @@ export interface DiskIIProps extends DiskIIData {
 export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
     const label = side ? `${name} - ${side}` : name;
     const [modalOpen, setModalOpen] = useState(false);
-    const [error, setError] = useState<string>();
+    const [error, setError] = useState<unknown>();
     const [currentHash, setCurrentHash] = useState<string>();
 
     const hash = useHash();
-
-    const handleError = (e: unknown) => {
-        if (e instanceof Error) {
-            setError(e.message);
-        } else {
-            console.error(e);
-        }
-    };
 
     useEffect(() => {
         const hashParts = getHashParts(hash);
@@ -61,11 +53,11 @@ export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
             if (hashPart !== currentHash) {
                 if (hashPart.match(/^https?:/)) {
                     loadHttpFile(disk2, number, hashPart)
-                        .catch((e) => handleError(e));
+                        .catch((e) => setError(e));
                 } else {
                     const filename = `/json/disks/${hashPart}.json`;
                     loadJSON(disk2, number, filename)
-                        .catch((e) => handleError(e));
+                        .catch((e) => setError(e));
                 }
                 setCurrentHash(hashPart);
             }

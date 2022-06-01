@@ -41,7 +41,7 @@ export const Apple2 = (props: Apple2Props) => {
     const [apple2, setApple2] = useState<Apple2Impl>();
     const [io, setIO] = useState<Apple2IO>();
     const [cpu, setCPU] = useState<CPU6502>();
-    const [error, setError] = useState<string>();
+    const [error, setError] = useState<unknown>();
 
     useEffect(() => {
         if (screen.current) {
@@ -59,13 +59,7 @@ export const Apple2 = (props: Apple2Props) => {
                 setCPU(cpu);
                 apple2.reset();
                 apple2.run();
-            }).catch((e) => {
-                if (e instanceof Error) {
-                    setError(e.message);
-                } else {
-                    console.error(e);
-                }
-            });
+            }).catch((e) => setError(e));
         }
     }, [props]);
 

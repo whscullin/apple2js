@@ -622,7 +622,7 @@ function loadDisk(drive: DriveNumber, disk: JSONDisk) {
  */
 
 function updateLocalStorage() {
-    const diskIndex = JSON.parse(window.localStorage.diskIndex as string || '{}') as LocalDiskIndex;
+    const diskIndex = JSON.parse(window.localStorage.getItem('diskIndex') || '{}') as LocalDiskIndex;
     const names = Object.keys(diskIndex);
 
     const cat: DiskDescriptor[] = disk_categories['Local Saves'] = [];
@@ -654,12 +654,12 @@ type LocalDiskIndex = {
 };
 
 function saveLocalStorage(drive: DriveNumber, name: string) {
-    const diskIndex = JSON.parse(window.localStorage.diskIndex as string || '{}') as LocalDiskIndex;
+    const diskIndex = JSON.parse(window.localStorage.getItem('diskIndex') || '{}') as LocalDiskIndex;
 
     const json = _disk2.getJSON(drive);
     diskIndex[name] = json;
 
-    window.localStorage.diskIndex = JSON.stringify(diskIndex);
+    window.localStorage.setItem('diskIndex',  JSON.stringify(diskIndex));
 
     driveLights.label(drive, name);
     driveLights.dirty(drive, false);
@@ -667,17 +667,17 @@ function saveLocalStorage(drive: DriveNumber, name: string) {
 }
 
 function deleteLocalStorage(name: string) {
-    const diskIndex = JSON.parse(window.localStorage.diskIndex as string || '{}') as LocalDiskIndex;
+    const diskIndex = JSON.parse(window.localStorage.getItem('diskIndex') || '{}') as LocalDiskIndex;
     if (diskIndex[name]) {
         delete diskIndex[name];
         openAlert('Deleted');
     }
-    window.localStorage.diskIndex = JSON.stringify(diskIndex);
+    window.localStorage.setItem('diskIndex',  JSON.stringify(diskIndex));
     updateLocalStorage();
 }
 
 function loadLocalStorage(drive: DriveNumber, name: string) {
-    const diskIndex = JSON.parse(window.localStorage.diskIndex as string || '{}') as LocalDiskIndex;
+    const diskIndex = JSON.parse(window.localStorage.getItem('diskIndex') || '{}') as LocalDiskIndex;
     if (diskIndex[name]) {
         _disk2.setJSON(drive, diskIndex[name]);
         driveLights.label(drive, name);
@@ -887,11 +887,12 @@ function onLoaded(apple2: Apple2, disk2: DiskII, massStorage: MassStorage, print
     keyboard.setFunction('F3', () => io.keyDown(0x1b)); // Escape
     keyboard.setFunction('F4', optionsModal.openModal);
     keyboard.setFunction('F6', () => {
-        window.localStorage.state = base64_json_stringify(_apple2.getState());
+        window.localStorage.setItem('state', base64_json_stringify(_apple2.getState()));
     });
     keyboard.setFunction('F9', () => {
-        if (window.localStorage.state) {
-            _apple2.setState(base64_json_parse(window.localStorage.state as string) as Apple2State);
+        const localState = window.localStorage.getItem('state');
+        if (localState) {
+            _apple2.setState(base64_json_parse(localState) as Apple2State);
         }
     });
 
