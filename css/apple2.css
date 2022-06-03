@@ -162,7 +162,7 @@ th {
     display: flex;
 }
 
-.inset button, .modal-overlay button {
+.inset button {
     min-width: 36px;
     margin: 0 2px;
 }

@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { Apple2 as Apple2Impl } from '../apple2';
 import type { Stats } from '../apple2';
 
+import styles from './css/CPUMeter.module.css';
+
 /**
  * Interface for CPUMeter.
  */
@@ -63,7 +65,7 @@ export const CPUMeter = ({ apple2 }: CPUMeterProps) => {
     }, []);
 
     return (
-        <div id="khz" onClick={onClick}>
+        <div className={styles.khz} onClick={onClick}>
             {mode === 0 && `${khz} Khz`}
             {mode === 1 && `${fps} fps`}
             {mode === 2 && `${rps} rps`}

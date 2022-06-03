@@ -1,5 +1,7 @@
 import { h, Ref } from 'preact';
 
+import styles from './css/Screen.module.css';
+
 /**
  * Screen properties
  */
@@ -16,9 +18,14 @@ export interface ScreenProps {
  */
 export const Screen = ({ screen }: ScreenProps) => {
     return (
-        <div id="display">
-            <div className="overscan">
-                <canvas id="screen" width="592" height="416" ref={screen} />
+        <div className={styles.display}>
+            <div className={styles.overscan}>
+                <canvas
+                    className={styles.screen}
+                    width="592"
+                    height="416"
+                    ref={screen}
+                />
             </div>
         </div>
     );

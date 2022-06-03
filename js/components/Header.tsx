@@ -1,5 +1,7 @@
 import { h } from 'preact';
 
+import styles from './css/Header.module.css';
+
 const README = 'https://github.com/whscullin/apple2js#readme';
 
 /**
@@ -16,11 +18,13 @@ export interface HeaderProps {
  */
 export const Header = ({ e }: HeaderProps) => {
     return (
-        <div id="header">
+        <div className={styles.header}>
             <a href={README} rel="noreferrer" target="_blank">
-                <img src="img/badge.png" id="badge" />
+                <img src="img/badge.png" className={styles.badge} />
             </a>
-            <div id="subtitle">An Apple {e ? '//e' : ']['} Emulator in JavaScript</div>
+            <div className={styles.subtitle}>
+                An Apple {e ? '//e' : ']['} Emulator in JavaScript
+            </div>
         </div>
     );
 };

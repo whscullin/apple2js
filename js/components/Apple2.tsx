@@ -14,6 +14,8 @@ import { Slinky } from './Slinky';
 import { ThunderClock } from './ThunderClock';
 import { ErrorModal } from './ErrorModal';
 
+import styles from './css/Apple2.module.css';
+
 /**
  * Interface for the Apple2 component.
  */
@@ -64,7 +66,7 @@ export const Apple2 = (props: Apple2Props) => {
     }, [props]);
 
     return (
-        <div className={cs('outer', { apple2e: e})}>
+        <div className={cs(styles.outer, { apple2e: e })}>
             <Screen screen={screen} />
             <Mouse cpu={cpu} screen={screen} io={io} slot={4} />
             <Slinky io={io} slot={4} />

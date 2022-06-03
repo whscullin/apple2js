@@ -2,6 +2,7 @@ module.exports = {
     'moduleNameMapper': {
         '^js/(.*)': '<rootDir>/js/$1',
         '^test/(.*)': '<rootDir>/test/$1',
+        '\\.css$': 'identity-obj-proxy',
     },
     'roots': [
         'js/',

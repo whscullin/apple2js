@@ -11,6 +11,8 @@ import { noAwait } from './util/promises';
 import { useHash } from './hooks/useHash';
 import { FileChooser, FilePickerAcceptType } from './FileChooser';
 
+import styles from './css/FileModal.module.css';
+
 const DISK_TYPES: FilePickerAcceptType[] = [
     {
         description: 'Disk Images',
@@ -106,7 +108,7 @@ export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) =>
         <>
             <Modal title="Open File" isOpen={isOpen}>
                 <ModalContent>
-                    <div id="load-modal">
+                    <div className={styles.loadModal}>
                         <select multiple onChange={doSelectCategory}>
                             {categoryNames.map((name) => (
                                 <option key={name}>{name}</option>

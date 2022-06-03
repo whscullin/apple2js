@@ -13,6 +13,8 @@ import { JoyStick } from '../ui/joystick';
 import { Screen, SCREEN_FULL_PAGE } from '../ui/screen';
 import { System } from '../ui/system';
 
+import styles from './css/ControlStrip.module.css';
+
 const README = 'https://github.com/whscullin/apple2js#readme';
 
 interface ControlStripProps {
@@ -77,7 +79,7 @@ export const ControlStrip = ({ apple2, e }: ControlStripProps) => {
     useHotKey('F12', doReset);
 
     return (
-        <div id="reset-row">
+        <div className={styles.resetRow}>
             <OptionsModal isOpen={showOptions} onClose={doCloseOptions} />
             <Inset>
                 <CPUMeter apple2={apple2} />
@@ -88,7 +90,7 @@ export const ControlStrip = ({ apple2, e }: ControlStripProps) => {
                 <ControlButton onClick={doShowOptions} title="Options (F4)" icon="cog" />
             </Inset>
             {e && (
-                <div id="reset" onClick={doReset}>
+                <div className={styles.reset} onClick={doReset}>
                     Reset
                 </div>
             )}

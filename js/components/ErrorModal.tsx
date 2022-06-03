@@ -2,6 +2,8 @@ import { h } from 'preact';
 import { useCallback } from 'preact/hooks';
 import { Modal, ModalContent, ModalFooter } from './Modal';
 
+import styles from './css/ErrorModal.module.css';
+
 export interface ErrorProps {
     error: unknown | undefined;
     setError: (error: string | undefined) => void;
@@ -30,7 +32,7 @@ export const ErrorModal = ({ error, setError }: ErrorProps) => {
                 onClose={onClose}
             >
                 <ModalContent>
-                    <div style={{ width: 320, fontSize: '1.1em', padding: '5px 11px' }}>
+                    <div className={styles.errorModal}>
                         {errorStr}
                     </div>
                 </ModalContent>
