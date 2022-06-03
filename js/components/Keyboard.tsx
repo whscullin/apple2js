@@ -10,6 +10,8 @@ import {
     keysAsTuples
 } from './util/keyboard';
 
+import styles from './css/Keyboard.module.css';
+
 /**
  * Convenience function for massaging key labels for upper
  * and lower case
@@ -21,7 +23,7 @@ const buildLabel = (key: string) => {
     const small = key.length > 1 && !key.startsWith('&');
     return (
         <span
-            className={cs({ small })}
+            className={cs({[styles.small]: small})}
             dangerouslySetInnerHTML={{ __html: key }}
         />
     );
@@ -60,19 +62,21 @@ export const Key = ({
 }: KeyProps) => {
     const keyName = lower.replace(/[&#;]/g, '');
     const center =
-        lower === 'LOCK' ?
-            'v-center2' :
-            (upper === lower && upper.length > 1 ?
-                'v-center'
-                : ''
-            );
+        lower === 'LOCK'
+            ? styles.vCenter2
+            : (upper === lower && upper.length > 1)
+                ? styles.vCenter
+                : '';
     return (
         <div
             className={cs(
-                'key',
-                `key-${keyName}`,
+                styles.key,
+                styles[`key-${keyName}`],
                 center,
-                { pressed, active },
+                {
+                    [styles.pressed]: pressed,
+                    [styles.active]: active,
+                },
             )}
             data-key1={lower}
             data-key2={upper}
@@ -209,13 +213,13 @@ export const Keyboard = ({ apple2, e }: KeyboardProps) => {
         />;
 
     const rows = keys.map((row, idx) =>
-        <div key={idx} className={`row row${idx}`}>
+        <div key={idx} className={cs(styles.row, styles[`row${idx}`])}>
             {row.map(bindKey)}
         </div>
     );
 
     return (
-        <div id="keyboard" style={{ marginLeft: e ? 0 : 15 }}>
+        <div className={styles.keyboard} style={{ marginLeft: e ? 0 : 15 }}>
             {rows}
         </div>
     );

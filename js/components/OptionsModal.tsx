@@ -11,6 +11,8 @@ import {
     SelectOption,
 } from '../options';
 
+import styles from './css/OptionsModal.module.css';
+
 /**
  * Boolean property interface
  */
@@ -153,7 +155,7 @@ export const OptionsModal = ({ isOpen, onClose }: OptionsModalProps) => {
     return (
         <Modal title="Options" isOpen={isOpen} onClose={onClose}>
             <ModalContent>
-                <div id="options-modal">
+                <div className={styles.optionsModal}>
                     {sections.map(makeSection)}
                 </div>
                 <i>* Reload page to take effect</i>

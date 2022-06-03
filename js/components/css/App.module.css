@@ -1,0 +1,34 @@
+body {
+    margin: 16px 0;
+    font-size: 14px;
+    background-color: #c4c1a0; /* Pantone 453 */
+    font-family: sans-serif;
+}
+
+:global(.full-page) {
+    background: black;
+}
+
+button {
+    background: #44372C;
+    color: #fff;
+    padding: 2px 8px;
+    border: 1px outset #66594E;
+    border-radius: 3px;
+    font-size: 15px;
+    width: 75px;
+}
+
+button:hover {
+    background-color: #55473D;
+    border: 1px outset #66594E;
+}
+
+button:active {
+    background-color: #22150A;
+    border: 1px outset #44372C;
+}
+
+button:focus {
+    outline: none;
+}

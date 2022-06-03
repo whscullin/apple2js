@@ -6,6 +6,7 @@ import { FileModal } from './FileModal';
 import { loadJSON, loadHttpFile, getHashParts } from './util/files';
 import { ErrorModal } from './ErrorModal';
 import { useHash } from './hooks/useHash';
+import styles from './css/DiskII.module.css';
 
 /**
  * Storage structure for Disk II state returned via callbacks.
@@ -73,20 +74,14 @@ export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
     }, []);
 
     return (
-        <div className="disk">
+        <div className={styles.disk}>
             <FileModal disk2={disk2} number={number} onClose={doClose} isOpen={modalOpen} />
             <ErrorModal error={error} setError={setError} />
-            <div
-                id={`disk${number}`}
-                className={cs('disk-light', { on })}
-            />
+            <div className={cs(styles.diskLight, { on })} />
             <button title="Load Disk">
                 <i className="fas fa-folder-open" onClick={onOpenModal} />
             </button>
-            <div
-                id={`disk-label${number}`}
-                className="disk-label"
-            >
+            <div className={styles.diskLabel}>
                 {label}
             </div>
         </div>

@@ -3,64 +3,7 @@ import { createPortal } from 'preact/compat';
 import { useCallback } from 'preact/hooks';
 import { useHotKey } from './hooks/useHotKey';
 
-/**
- * Temporary JS styling while I figure out how I really want
- * to do it.
- */
-const modalOverlayStyle = {
-    position: 'fixed',
-    left: '0',
-    right: '0',
-    top: '0',
-    bottom: '0',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'rgba(0,0,0,0.6)',
-    zIndex: 1,
-};
-
-const modalStyle = {
-    backgroundColor: '#c4c1a0',
-    padding: '10px',
-    maxHeight: '100vh',
-    borderRadius: '4px',
-    overflowY: 'auto',
-    boxSizing: 'border-box',
-};
-
-const modalHeaderStyle = {
-    display: 'flex',
-    fontSize: '14px',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    background: '#44372C',
-    color: '#fff',
-    padding: '5px 11px',
-    border: '1px outset #66594E',
-    borderRadius: '3px',
-};
-
-const modalTitleStyle = {
-    marginTop: 0,
-    marginBottom: 0,
-    fontWeight: 600,
-    fontSize: '1.25rem',
-    lineHeight: 1.25,
-    color: '#fff',
-    boxSizing: 'border-box',
-};
-
-const modalContentStyle = {
-    marginTop: '10px',
-    marginBottom: '10px',
-    lineHeight: 1.5,
-    color: '#000'
-};
-
-const modalFooterStyle = {
-    textAlign: 'right'
-};
+import styles from './css/Modal.module.css';
 
 /**
  * ModalOverlay creates a semi-transparent overlay in which the
@@ -70,7 +13,7 @@ const modalFooterStyle = {
  */
 export const ModalOverlay = ({ children }: { children: ComponentChildren }) => {
     return (
-        <div style={modalOverlayStyle} className="modal-overlay">
+        <div className={styles.modalOverlay}>
             {children}
         </div>
     );
@@ -83,7 +26,7 @@ export const ModalOverlay = ({ children }: { children: ComponentChildren }) => {
  */
 export const ModalContent = ({ children }: { children: ComponentChildren }) => {
     return (
-        <div style={modalContentStyle}>
+        <div className={styles.modalContent}>
             {children}
         </div>
     );
@@ -96,7 +39,7 @@ export const ModalContent = ({ children }: { children: ComponentChildren }) => {
  */
 export const ModalFooter = ({ children }: { children: ComponentChildren }) => {
     return (
-        <footer style={modalFooterStyle}>
+        <footer className={styles.modalFooter}>
             {children}
         </footer>
     );
@@ -148,9 +91,9 @@ export interface ModalHeaderProps {
  */
 export const ModalHeader = ({ onClose, title, icon }: ModalHeaderProps) => {
     return (
-        <header style={modalHeaderStyle}>
-            <span style={modalTitleStyle}>
-                {icon && <i className={`fas fa-${icon}`} role="img" />}
+        <header className={styles.modalHeader}>
+            <span className={styles.modalTitle}>
+                {icon && <i className={`fa-solid fa-${icon}`} role="img" />}
                 {' '}
                 {title}
             </span>
@@ -189,7 +132,7 @@ export const Modal = ({
     return (
         isOpen ? createPortal((
             <ModalOverlay>
-                <div style={modalStyle} role="dialog">
+                <div className={styles.modal} role="dialog">
                     {title && <ModalHeader title={title} {...props} />}
                     {children}
                 </div>

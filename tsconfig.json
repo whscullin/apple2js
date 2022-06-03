@@ -39,6 +39,7 @@
   "include": [
       "js/**/*",
       "test/**/*",
+      "types/**/*",
       "*.config.js"
   ]
 }

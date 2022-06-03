@@ -93,7 +93,7 @@ export class JoyStick implements OptionHandler {
             return;
         }
 
-        const s = document.querySelector<HTMLDivElement>('#screen')!;
+        const s = document.querySelector<HTMLDivElement>('canvas')!;
         const offset = s.getBoundingClientRect();
         let x = (evt.pageX - offset.left) / s.clientWidth;
         let y = (evt.pageY - offset.top) / s.clientHeight;

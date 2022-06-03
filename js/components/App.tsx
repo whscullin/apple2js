@@ -7,6 +7,8 @@ import { SYSTEM_TYPE_APPLE2E } from '../ui/system';
 import { SCREEN_GL } from '../ui/screen';
 import { defaultSystem, systemTypes } from './util/systems';
 
+import './css/App.module.css';
+
 /**
  * Top level application component, provides the parameters
  * needed by the Apple2 component to bootstrap itself.

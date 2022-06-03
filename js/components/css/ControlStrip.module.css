@@ -1,0 +1,41 @@
+.reset {
+    background: #44372C;
+    border-left: 3px solid #65594D;
+    border-top: 3px solid #65594D;
+    border-right: 3px solid #110E0D;
+    border-bottom: 3px solid #110E0D;
+    /* border: 5px outset #66594E; */
+    border-radius: 3px;
+    color: white;
+    font: 9px Helvetica;
+    height: 42px;
+    padding: 0;
+    margin-left: 10px;
+    width: 42px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.reset:hover {
+  background: #44372C;
+  border: 3px outset #66594E;
+}
+
+.reset:active {
+    background-color: #22150A;
+    border-left: 3px solid #44372C;
+    border-top: 3px solid #44372C;
+    border-right: 3px solid #000000;
+    border-bottom: 3px solid #000000;
+}
+
+:global(.full-page) .reset {
+    display: none;
+}
+
+.resetRow {
+    align-items: center;
+    display: flex;
+    margin: 10px 0;
+}
