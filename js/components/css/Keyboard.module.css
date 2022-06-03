@@ -1,3 +1,11 @@
+.keyboard {
+    margin-left: 15px;
+}
+
+:global(.apple2e) .keyboard {
+    margin-left: 0;
+}
+
 .row {
     display: block;
     margin: 0;

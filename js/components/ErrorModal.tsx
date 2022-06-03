@@ -1,6 +1,7 @@
 import { h } from 'preact';
 import { useCallback } from 'preact/hooks';
 import { Modal, ModalContent, ModalFooter } from './Modal';
+
 import styles from './css/ErrorModal.module.css';
 
 export interface ErrorProps {

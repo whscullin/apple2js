@@ -12,6 +12,7 @@ import { Apple2 as Apple2Impl } from '../apple2';
 import { JoyStick } from '../ui/joystick';
 import { Screen, SCREEN_FULL_PAGE } from '../ui/screen';
 import { System } from '../ui/system';
+
 import styles from './css/ControlStrip.module.css';
 
 const README = 'https://github.com/whscullin/apple2js#readme';

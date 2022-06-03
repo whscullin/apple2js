@@ -219,7 +219,7 @@ export const Keyboard = ({ apple2, e }: KeyboardProps) => {
     );
 
     return (
-        <div className={styles.keyboard} style={{ marginLeft: e ? 0 : 15 }}>
+        <div className={styles.keyboard}>
             {rows}
         </div>
     );

@@ -1,4 +1,5 @@
 import { h, Ref } from 'preact';
+
 import styles from './css/Screen.module.css';
 
 /**
