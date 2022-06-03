@@ -1,6 +1,6 @@
 import { h } from 'preact';
 import cs from 'classnames';
-import {useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Apple2 as Apple2Impl } from '../apple2';
 import Apple2IO from '../apple2io';
 import CPU6502 from '../cpu6502';
@@ -13,6 +13,7 @@ import { Screen } from './Screen';
 import { Drives } from './Drives';
 import { Slinky } from './Slinky';
 import { ThunderClock } from './ThunderClock';
+import { Ready } from './util/ready';
 
 import styles from './css/Apple2.module.css';
 
@@ -38,12 +39,13 @@ export interface Apple2Props {
  * @returns
  */
 export const Apple2 = (props: Apple2Props) => {
-    const { e, sectors } = props;
+    const { e, enhanced, sectors } = props;
     const screen = useRef<HTMLCanvasElement>(null);
     const [apple2, setApple2] = useState<Apple2Impl>();
     const [io, setIO] = useState<Apple2IO>();
     const [cpu, setCPU] = useState<CPU6502>();
     const [error, setError] = useState<unknown>();
+    const drivesReady = useMemo(() => new Ready(), []);
 
     useEffect(() => {
         if (screen.current) {
@@ -59,11 +61,13 @@ export const Apple2 = (props: Apple2Props) => {
                 const cpu = apple2.getCPU();
                 setIO(io);
                 setCPU(cpu);
-                apple2.reset();
-                apple2.run();
+                return drivesReady.promise.then(() => {
+                    apple2.reset();
+                    apple2.run();
+                });
             }).catch((e) => setError(e));
         }
-    }, [props]);
+    }, [props, drivesReady]);
 
     return (
         <div className={cs(styles.outer, { apple2e: e })}>
@@ -72,7 +76,7 @@ export const Apple2 = (props: Apple2Props) => {
             <Mouse cpu={cpu} screen={screen} io={io} slot={4} />
             <ThunderClock io={io} slot={5} />
             <Inset>
-                <Drives cpu={cpu} io={io} sectors={sectors} e={e} />
+                <Drives cpu={cpu} io={io} sectors={sectors} enhanced={enhanced} ready={drivesReady} />
             </Inset>
             <ControlStrip apple2={apple2} e={e} />
             <Inset>

@@ -1,13 +1,9 @@
 import { h } from 'preact';
-import { useCallback, useEffect, useState } from 'preact/hooks';
+import { useCallback, useState } from 'preact/hooks';
 import cs from 'classnames';
 import Disk2 from '../cards/disk2';
 import { ErrorModal } from './ErrorModal';
 import { FileModal } from './FileModal';
-import { loadJSON, loadHttpNibbleFile, getHashParts } from './util/files';
-import { useHash } from './hooks/useHash';
-import { includes } from 'js/types';
-import { NIBBLE_FORMATS } from 'js/formats/types';
 
 import styles from './css/DiskII.module.css';
 
@@ -45,32 +41,6 @@ export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
     const label = side ? `${name} - ${side}` : name;
     const [modalOpen, setModalOpen] = useState(false);
     const [error, setError] = useState<unknown>();
-    const [currentHash, setCurrentHash] = useState<string>();
-
-    const hash = useHash();
-
-    useEffect(() => {
-        const hashParts = getHashParts(hash);
-        const newHash = hashParts[number];
-        if (disk2 && newHash) {
-            const hashPart = decodeURIComponent(newHash);
-            if (hashPart !== currentHash) {
-                if (hashPart.match(/^https?:/)) {
-                    const fileParts = hashPart.split('.');
-                    const ext = fileParts[fileParts.length - 1];
-                    if (includes(NIBBLE_FORMATS, ext)) {
-                        loadHttpNibbleFile(disk2, number, hashPart)
-                            .catch((e) => setError(e));
-                    }
-                } else {
-                    const filename = `/json/disks/${hashPart}.json`;
-                    loadJSON(disk2, number, filename)
-                        .catch((e) => setError(e));
-                }
-                setCurrentHash(hashPart);
-            }
-        }
-    }, [currentHash, disk2, hash, number]);
 
     const doClose = useCallback(() => {
         setModalOpen(false);

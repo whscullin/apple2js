@@ -3,6 +3,7 @@ import { initGamepad } from 'js/ui/gamepad';
 import {
     BlockFormat,
     BLOCK_FORMATS,
+    DISK_FORMATS,
     DriveNumber,
     JSONDisk,
     MassStorage,
@@ -31,6 +32,16 @@ export const getHashParts = (hash: string) => {
  */
 export const setHashParts = (parts: string[]) => {
     window.location.hash = `#${parts[1]}` + (parts[2] ? `|${parts[2]}` : '');
+};
+
+export const getNameAndExtension = (url: string) => {
+    const urlParts = url.split('/');
+    const file = urlParts.pop() || url;
+    const fileParts = file.split('.');
+    const ext = fileParts.pop()?.toLowerCase() || '[none]';
+    const name = decodeURIComponent(fileParts.join('.'));
+
+    return { name, ext };
 };
 
 export const loadLocalFile = (
@@ -115,13 +126,10 @@ export const loadJSON = async (
     initGamepad(data.gamepad);
 };
 
-const loadHttpFile = async (
-    storage: MassStorage<NibbleFormat|BlockFormat>,
-    formats: typeof NIBBLE_FORMATS | typeof BLOCK_FORMATS,
-    number: DriveNumber,
+export const loadHttpFile = async (
     url: string,
     onProgress?: ProgressCallback
-) => {
+): Promise<ArrayBuffer> => {
     const response = await fetch(url);
     if (!response.ok) {
         throw new Error(`Error loading: ${response.statusText}`);
@@ -150,16 +158,7 @@ const loadHttpFile = async (
         offset += chunk.length;
     }
 
-    const urlParts = url.split('/');
-    const file = urlParts.pop() || url;
-    const fileParts = file.split('.');
-    const ext = fileParts.pop()?.toLowerCase() || '[none]';
-    const name = decodeURIComponent(fileParts.join('.'));
-    if (!includes(formats, ext)) {
-        throw new Error(`Extension "${ext}" not recognized.`);
-    }
-    storage.setBinary(number, name, ext, data);
-    initGamepad();
+    return data.buffer;
 };
 
 /**
@@ -172,13 +171,21 @@ const loadHttpFile = async (
  * @param url URL, relative or absolute to JSON file
  * @returns true if successful
  */
-export const loadHttpBlockFile = (
+export const loadHttpBlockFile = async (
     smartPort: SmartPort,
     number: DriveNumber,
     url: string,
     onProgress?: ProgressCallback
-) => {
-    return loadHttpFile(smartPort, BLOCK_FORMATS, number, url, onProgress);
+): Promise<boolean> => {
+    const { name, ext } = getNameAndExtension(url);
+    if (!includes(BLOCK_FORMATS, ext)) {
+        throw new Error(`Extension "${ext}" not recognized.`);
+    }
+    const data = await loadHttpFile(url, onProgress);
+    smartPort.setBinary(number, name, ext, data);
+    initGamepad();
+
+    return true;
 };
 
 /**
@@ -191,7 +198,7 @@ export const loadHttpBlockFile = (
  * @param url URL, relative or absolute to JSON file
  * @returns true if successful
  */
-export const loadHttpNibbleFile = (
+export const loadHttpNibbleFile = async (
     disk2: Disk2,
     number: DriveNumber,
     url: string,
@@ -200,5 +207,38 @@ export const loadHttpNibbleFile = (
     if (url.endsWith('.json')) {
         return loadJSON(disk2, number, url);
     }
-    return loadHttpFile(disk2, NIBBLE_FORMATS, number, url, onProgress);
+    const { name, ext } = getNameAndExtension(url);
+    if (!includes(NIBBLE_FORMATS, ext)) {
+        throw new Error(`Extension "${ext}" not recognized.`);
+    }
+    const data = await loadHttpFile(url, onProgress);
+    disk2.setBinary(number, name, ext, data);
+    initGamepad();
+    return loadHttpFile(url, onProgress);
+};
+
+export const loadHttpUnknownFile = async (
+    disk2: Disk2,
+    smartPort: SmartPort,
+    number: DriveNumber,
+    url: string,
+    onProgress?: ProgressCallback,
+) => {
+    const data = await loadHttpFile(url, onProgress);
+    const { name, ext } = getNameAndExtension(url);
+    if (includes(DISK_FORMATS, ext)) {
+        if (data.byteLength >= 800 * 1024) {
+            if (includes(BLOCK_FORMATS, ext)) {
+                smartPort.setBinary(number, name, ext, data);
+            } else {
+                throw new Error(`Unable to load "${name}"`);
+            }
+        } else if (includes(NIBBLE_FORMATS, ext)) {
+            disk2.setBinary(number, name, ext, data);
+        } else {
+            throw new Error(`Unable to load "${name}"`);
+        }
+    } else {
+        throw new Error(`Extension "${ext}" not recognized.`);
+    }
 };

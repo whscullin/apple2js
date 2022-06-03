@@ -1,11 +1,19 @@
 import { h } from 'preact';
-import {useEffect, useState } from 'preact/hooks';
+import { useCallback, useEffect, useState } from 'preact/hooks';
 import Disk2, { Callbacks } from '../cards/disk2';
 import Apple2IO from '../apple2io';
 import { DiskII, DiskIIData } from './DiskII';
 import SmartPort from 'js/cards/smartport';
 import CPU6502 from 'js/cpu6502';
 import { BlockDisk } from './BlockDisk';
+import { ErrorModal } from './ErrorModal';
+import { ProgressModal } from './ProgressModal';
+import { loadHttpUnknownFile, getHashParts, loadJSON } from './util/files';
+import { useHash } from './hooks/useHash';
+import { DriveNumber } from 'js/formats/types';
+import { Ready } from './util/ready';
+
+import styles from './css/Drives.module.css';
 
 /**
  * Interface for Drives component.
@@ -13,8 +21,9 @@ import { BlockDisk } from './BlockDisk';
 export interface DrivesProps {
     cpu: CPU6502 | undefined;
     io: Apple2IO | undefined;
-    e: boolean;
+    enhanced: boolean;
     sectors: number;
+    ready: Ready;
 }
 
 /**
@@ -25,7 +34,15 @@ export interface DrivesProps {
  * @param io Apple I/O object
  * @returns Drives component
  */
-export const Drives = ({ cpu, io, sectors, e }: DrivesProps) => {
+export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
+    const [current, setCurrent] = useState(0);
+    const [error, setError] = useState<unknown>();
+    const [total, setTotal] = useState(0);
+    const onProgress = useCallback((current: number, total: number) => {
+        setCurrent(current);
+        setTotal(total);
+    }, []);
+
     const [disk2, setDisk2] = useState<Disk2>();
     const [data1, setData1] = useState<DiskIIData>({
         on: false,
@@ -49,6 +66,38 @@ export const Drives = ({ cpu, io, sectors, e }: DrivesProps) => {
     });
 
     const [smartPort, setSmartPort] = useState<SmartPort>();
+
+    const hash = useHash();
+
+    useEffect(() => {
+        if (smartPort && disk2) {
+            const hashParts = getHashParts(hash);
+            let loading = 0;
+            for (const drive of [1, 2] as DriveNumber[]) {
+                if (hashParts && hashParts[drive]) {
+                    const hashPart = decodeURIComponent(hashParts[drive]);
+                    if (hashPart.match(/^https?:/)) {
+                        loading++;
+                        loadHttpUnknownFile(disk2, smartPort, drive, hashPart, onProgress)
+                            .catch((e) => setError(e))
+                            .finally(() => {
+                                if (--loading === 0) {
+                                    ready.onReady();
+                                }
+                                setCurrent(0);
+                                setTotal(0);
+                            });
+                    } else {
+                        const url = `/json/disks/${hashPart}.json`;
+                        loadJSON(disk2, drive, url).catch((e) => setError(e));
+                    }
+                }
+            }
+            if (!loading) {
+                ready.onReady();
+            }
+        }
+    }, [hash, onProgress, disk2, ready, smartPort]);
 
     useEffect(() => {
         const setData = [setData1, setData2];
@@ -87,19 +136,21 @@ export const Drives = ({ cpu, io, sectors, e }: DrivesProps) => {
             const disk2 = new Disk2(io, callbacks, sectors);
             io.setSlot(6, disk2);
             setDisk2(disk2);
-            const smartPort = new SmartPort(cpu, smartPortCallbacks, { block: !e });
+            const smartPort = new SmartPort(cpu, smartPortCallbacks, { block: !enhanced });
             io.setSlot(7, smartPort);
             setSmartPort(smartPort);
         }
-    }, [cpu, e, io, sectors]);
+    }, [cpu, enhanced, io, sectors]);
 
     return (
-        <div style={{display: 'flex', width: '100%'}}>
-            <div style={{display: 'flex', flexDirection: 'column', flex: '1 1 auto'}}>
+        <div className={styles.drives}>
+            <ProgressModal current={current} total={total} title="Loading..." />
+            <ErrorModal error={error} setError={setError} />
+            <div className={styles.driveBay}>
                 <DiskII disk2={disk2} {...data1} />
                 <DiskII disk2={disk2} {...data2} />
             </div>
-            <div style={{display: 'flex', flexDirection: 'column', flex: '1 1 auto'}}>
+            <div className={styles.driveBay}>
                 <BlockDisk smartPort={smartPort} {...smartData1} />
                 <BlockDisk smartPort={smartPort} {...smartData2} />
             </div>

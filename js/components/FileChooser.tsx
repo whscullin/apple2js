@@ -136,7 +136,7 @@ const FilePickerChooser = ({
     return (
         <>
             <button onClick={noAwait(onClickInternal)} disabled={disabled || busy}>
-                Choose File
+                Choose&nbsp;File
             </button>
             &nbsp;
             <span role="label">{selectedFilename}</span>
