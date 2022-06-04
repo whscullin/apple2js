@@ -61,7 +61,7 @@ export const BlockFileModal = ({ smartPort, number, onClose, isOpen } : BlockFil
 
     return (
         <>
-            <Modal title="Open File" isOpen={isOpen}>
+            <Modal title="Open File" isOpen={isOpen} onClose={onClose}>
                 <ModalContent>
                     <div className={styles.modalContent}>
                         <FileChooser onChange={onChange} accept={DISK_TYPES} />

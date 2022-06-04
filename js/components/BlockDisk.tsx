@@ -61,8 +61,8 @@ export const BlockDisk = ({ smartPort, number, on, name }: BlockDiskProps) => {
                 id={`disk${number}`}
                 className={cs(styles.diskLight, { [styles.on]: on })}
             />
-            <button title="Load Disk">
-                <i className="fas fa-folder-open" onClick={onOpenModal} />
+            <button title="Load Disk" onClick={onOpenModal}>
+                <i className="fas fa-folder-open" />
             </button>
             <div
                 id={`disk-label${number}`}
