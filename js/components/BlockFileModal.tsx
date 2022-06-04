@@ -40,12 +40,14 @@ export const BlockFileModal = ({ smartPort, number, onClose, isOpen } : BlockFil
         if (smartPort && handles?.length === 1) {
             hashParts[number] = '';
             setBusy(true);
-            loadLocalBlockFile(smartPort, number, await handles[0].getFile())
-                .catch((error) => setError(error))
-                .finally(() => {
-                    setBusy(false);
-                    onClose();
-                });
+            try {
+                await loadLocalBlockFile(smartPort, number, await handles[0].getFile());
+            } catch (error) {
+                setError(error);
+            } finally {
+                setBusy(false);
+                onClose();
+            }
         }
 
         setHashParts(hashParts);
