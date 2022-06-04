@@ -23,7 +23,9 @@ const baseConfig = {
                         loader: 'css-loader',
                         options: {
                             import: false,
-                            modules: true
+                            modules: {
+                                localIdentName: '[path][name]__[local]',
+                            }
                         }
                     }
                 ],
