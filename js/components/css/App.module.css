@@ -16,7 +16,7 @@ button {
     border: 1px outset #66594E;
     border-radius: 3px;
     font-size: 15px;
-    width: 75px;
+    min-width: 75px;
 }
 
 button:hover {
