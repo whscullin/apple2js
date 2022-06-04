@@ -79,8 +79,8 @@ export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
             <FileModal disk2={disk2} number={number} onClose={doClose} isOpen={modalOpen} />
             <ErrorModal error={error} setError={setError} />
             <div className={cs(styles.diskLight, { [styles.on]: on })} />
-            <button title="Load Disk">
-                <i className="fas fa-folder-open" onClick={onOpenModal} />
+            <button title="Load Disk" onClick={onOpenModal}>
+                <i className="fas fa-folder-open" />
             </button>
             <div className={styles.diskLabel}>
                 {label}

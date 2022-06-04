@@ -106,7 +106,7 @@ export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) =>
 
     return (
         <>
-            <Modal title="Open File" isOpen={isOpen}>
+            <Modal title="Open File" isOpen={isOpen} onClose={onClose}>
                 <ModalContent>
                     <div className={styles.loadModal}>
                         <select multiple onChange={doSelectCategory}>
