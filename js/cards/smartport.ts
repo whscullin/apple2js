@@ -129,6 +129,8 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
 
     private rom: rom;
     private disks: BlockDisk[] = [];
+    private busy: boolean[] = [];
+    private busyTimeout: ReturnType<typeof setTimeout>[] = [];
 
     constructor(
         private cpu: CPU6502,
@@ -148,6 +150,18 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
 
     private debug(..._args: unknown[]) {
         // debug.apply(this, arguments);
+    }
+
+    private driveLight(drive: DriveNumber) {
+        if (!this.busy[drive]) {
+            this.busy[drive] = true;
+            this.callbacks?.driveLight(drive, true);
+        }
+        clearTimeout(this.busyTimeout[drive]);
+        this.busyTimeout[drive] = setTimeout(() => {
+            this.busy[drive] = false;
+            this.callbacks?.driveLight(drive, false);
+        }, 100);
     }
 
     /*
@@ -220,6 +234,7 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
         }
 
         // debug('read', '\n' + dumpBlock(drive, block));
+        this.driveLight(drive);
 
         for (let idx = 0; idx < 512; idx++) {
             buffer.writeByte(this.disks[drive].blocks[block][idx]);
@@ -254,6 +269,7 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
         }
 
         // debug('write', '\n' + dumpBlock(drive, block));
+        this.driveLight(drive);
 
         for (let idx = 0; idx < 512; idx++) {
             this.disks[drive].blocks[block][idx] = buffer.readByte();
