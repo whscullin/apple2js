@@ -11,7 +11,7 @@ import { ProgressModal } from './ProgressModal';
 import { loadHttpUnknownFile, getHashParts, loadJSON } from './util/files';
 import { useHash } from './hooks/useHash';
 import { DriveNumber } from 'js/formats/types';
-import { Ready } from './util/ready';
+import { Ready } from './util/promises';
 
 import styles from './css/Drives.module.css';
 

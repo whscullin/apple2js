@@ -10,3 +10,19 @@ export type NoAwait<F extends (...args: unknown[]) => Promise<unknown>> =
 export function noAwait<F extends (...args: unknown[]) => Promise<unknown>>(f: F): NoAwait<F> {
     return f as NoAwait<F>;
 }
+
+/**
+ * Utility class that allows a promise to be passed to a
+ * service to be resolved.
+ */
+
+export class Ready {
+    onReady: (value?: unknown) => void;
+    promise: Promise<unknown>;
+
+    constructor() {
+        this.promise = new Promise((resolve, _reject) => {
+            this.onReady = resolve;
+        }).catch(console.error);
+    }
+}

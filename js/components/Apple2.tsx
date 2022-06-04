@@ -13,7 +13,7 @@ import { Screen } from './Screen';
 import { Drives } from './Drives';
 import { Slinky } from './Slinky';
 import { ThunderClock } from './ThunderClock';
-import { Ready } from './util/ready';
+import { Ready } from './util/promises';
 
 import styles from './css/Apple2.module.css';
 

@@ -1,5 +1,5 @@
 import { h, Fragment } from 'preact';
-import { useCallback, useRef, useState } from 'preact/hooks';
+import { useCallback, useState } from 'preact/hooks';
 import { DriveNumber, BLOCK_FORMATS } from '../formats/types';
 import { ErrorModal } from './ErrorModal';
 import { FileChooser } from './FileChooser';
@@ -7,6 +7,7 @@ import { Modal, ModalContent, ModalFooter } from './Modal';
 import { loadLocalBlockFile, getHashParts, setHashParts } from './util/files';
 import SmartPort from 'js/cards/smartport';
 import { useHash } from './hooks/useHash';
+import { noAwait } from './util/promises';
 
 import styles from './css/BlockFileModal.module.css';
 
@@ -25,7 +26,7 @@ interface BlockFileModalProps {
 }
 
 export const BlockFileModal = ({ smartPort, number, onClose, isOpen } : BlockFileModalProps) => {
-    const inputRef = useRef<HTMLInputElement>(null);
+    const [handles, setHandles] = useState<FileSystemFileHandle[]>();
     const [busy, setBusy] = useState<boolean>(false);
     const [empty, setEmpty] = useState<boolean>(true);
     const [error, setError] = useState<unknown>();
@@ -33,13 +34,13 @@ export const BlockFileModal = ({ smartPort, number, onClose, isOpen } : BlockFil
 
     const doCancel = useCallback(() => onClose(true), [onClose]);
 
-    const doOpen = useCallback(() => {
+    const doOpen = useCallback(async () => {
         const hashParts = getHashParts(hash);
 
-        if (smartPort && inputRef.current && inputRef.current.files?.length === 1) {
+        if (smartPort && handles?.length === 1) {
             hashParts[number] = '';
             setBusy(true);
-            loadLocalBlockFile(smartPort, number, inputRef.current.files[0])
+            loadLocalBlockFile(smartPort, number, await handles[0].getFile())
                 .catch((error) => setError(error))
                 .finally(() => {
                     setBusy(false);
@@ -48,13 +49,13 @@ export const BlockFileModal = ({ smartPort, number, onClose, isOpen } : BlockFil
         }
 
         setHashParts(hashParts);
-    }, [hash, smartPort, number, onClose]);
+    }, [handles, hash, smartPort, number, onClose]);
 
-    const onChange = useCallback(() => {
-        if (inputRef) {
-            setEmpty(!inputRef.current?.files?.length);
-        }
-    }, [ inputRef ]);
+    const onChange = useCallback((handles: FileSystemFileHandle[]) => {
+        setEmpty(handles.length === 0);
+        setHandles(handles);
+    }, []);
+
 
     return (
         <>
@@ -66,7 +67,7 @@ export const BlockFileModal = ({ smartPort, number, onClose, isOpen } : BlockFil
                 </ModalContent>
                 <ModalFooter>
                     <button onClick={doCancel}>Cancel</button>
-                    <button onClick={doOpen} disabled={busy || empty}>Open</button>
+                    <button onClick={noAwait(doOpen)} disabled={busy || empty}>Open</button>
                 </ModalFooter>
             </Modal>
             <ErrorModal error={error} setError={setError} />
