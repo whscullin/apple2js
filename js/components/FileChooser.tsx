@@ -102,7 +102,7 @@ const FilePickerChooser = ({
 }: FilePickerChooserProps) => {
     const [busy, setBusy] = useState<boolean>(false);
     const [selectedFilename, setSelectedFilename] = useState<string>();
-    const fileHandlesRef = useRef<FileSystemFileHandle[]>();
+    const [fileHandles, setFileHandles] = useState<FileSystemFileHandle[]>();
 
     const onClickInternal = useCallback(async () => {
         if (busy) {
@@ -115,8 +115,8 @@ const FilePickerChooser = ({
                 excludeAcceptAllOption: true,
                 types: accept,
             });
-            if (fileHandlesRef.current !== pickedFiles) {
-                fileHandlesRef.current = pickedFiles;
+            if (fileHandles !== pickedFiles) {
+                setFileHandles(pickedFiles);
                 onChange(pickedFiles);
             }
         } catch (e: unknown) {
@@ -124,14 +124,14 @@ const FilePickerChooser = ({
         } finally {
             setBusy(false);
         }
-    }, [accept, busy, onChange]);
+    }, [accept, busy, fileHandles, onChange]);
 
     useEffect(() => {
         setSelectedFilename(
-            fileHandlesRef.current?.length
-                ? fileHandlesRef.current[0].name
+            fileHandles?.length
+                ? fileHandles[0].name
                 : 'No file selected');
-    }, []);
+    }, [fileHandles]);
 
     return (
         <>
