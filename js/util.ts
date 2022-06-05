@@ -44,6 +44,17 @@ export function bytify(ary: number[]): memory {
     return new Uint8Array(ary);
 }
 
+/** Returns a new Uint8Array with the concatenated data from the inputs. */
+export function concat(...arys: Array<byte[] | Uint8Array>) {
+    const result = new Uint8Array(arys.reduce((l, ary) => l + ary.length, 0));
+    let offset = 0;
+    for (let i = 0; i < arys.length; i++) {
+        result.set(arys[i], offset);
+        offset += arys[i].length;
+    }
+    return result;
+}
+
 /** Writes to the console. */
 export function debug(...args: unknown[]): void {
     console.log(...args);

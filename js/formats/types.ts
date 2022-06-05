@@ -1,13 +1,61 @@
-import type { byte, memory, MemberOf, word } from '../types';
+import type { byte, memory, MemberOf, word, ReadonlyUint8Array } from '../types';
 import type { GamepadConfiguration } from '../ui/types';
 
 export const DRIVE_NUMBERS = [1, 2] as const;
 export type DriveNumber = MemberOf<typeof DRIVE_NUMBERS>;
 
+export interface Metadata {
+    name: string;
+    side?: string;
+}
+
+export interface MetadataSource {
+    getMetadata(): Metadata;
+}
+
+export interface ByteSource {
+    read(offset: number, length: number): Uint8Array;
+    length(): number;
+}
+
+export interface ByteSink {
+    write(offset: number, data: ReadonlyUint8Array): void;
+}
+
+export interface JsonSource {
+    read(): string;
+}
+
+export interface TrackSectorSource {
+    /** Returns the logical sector data for the given physical sector. */
+    read(track: byte, sector: byte): Uint8Array;
+    numTracks(): byte;
+}
+
+export interface TrackSectorSink {
+    write(track: byte, sector: byte, data: ReadonlyUint8Array): void;
+}
+
+export interface NibbleTrackSource {
+    read(track: byte): Uint8Array;
+    numTracks(): byte;
+}
+
+export interface NibbleTrackSink {
+    write(track: byte, data: Uint8Array): void;
+}
+
+export interface BlockSource {
+    read(block: word): Uint8Array;
+}
+
+export interface BlockSink {
+    write(block: word, data: Uint8Array): void;
+}
+
 /**
  * Arguments for the disk format processors.
  */
-
 export interface DiskOptions {
     name: string;
     side?: string | undefined;
@@ -32,7 +80,6 @@ export interface DiskDescriptor {
 /**
  * JSON binary image (not used?)
  */
-
 export interface JSONBinaryImage {
     type: 'binary';
     start: word;
@@ -45,7 +92,6 @@ export interface JSONBinaryImage {
  * Return value from disk format processors. Describes raw disk
  * data which the DiskII card can process.
  */
-
 export interface Disk {
     name: string;
     side?: string | undefined;
