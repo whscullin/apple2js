@@ -87,7 +87,7 @@
     user-select: none;
 }
 
-.screen.mouseMode {
+.screen:global(.mouseMode) {
     cursor: none;
 }
 
