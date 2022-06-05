@@ -45,7 +45,7 @@ export const Apple2 = (props: Apple2Props) => {
     const [io, setIO] = useState<Apple2IO>();
     const [cpu, setCPU] = useState<CPU6502>();
     const [error, setError] = useState<unknown>();
-    const drivesReady = useMemo(() => new Ready(), []);
+    const drivesReady = useMemo(() => new Ready(setError), []);
 
     useEffect(() => {
         if (screen.current) {

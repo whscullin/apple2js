@@ -161,7 +161,6 @@ const uiKitMap = {
     'UIKeyInputEscape': 0x1B
 } as const;
 
-
 export const isUiKitKey = (k: string): k is KnownKeys<typeof uiKitMap> => {
     return k in uiKitMap;
 };

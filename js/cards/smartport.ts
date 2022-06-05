@@ -168,7 +168,7 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
      * dumpBlock
      */
 
-    dumpBlock(drive: DriveNumber, block: DriveNumber) {
+    dumpBlock(drive: DriveNumber, block: number) {
         let result = '';
         let b;
         let jdx;

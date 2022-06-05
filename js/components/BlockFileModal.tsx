@@ -58,7 +58,6 @@ export const BlockFileModal = ({ smartPort, number, onClose, isOpen } : BlockFil
         setHandles(handles);
     }, []);
 
-
     return (
         <>
             <Modal title="Open File" isOpen={isOpen} onClose={onClose}>

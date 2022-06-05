@@ -22,10 +22,10 @@ export class Ready {
 
     ready: Promise<unknown>;
 
-    constructor() {
+    constructor(private errorHandler = console.error) {
         this.ready = new Promise((resolve, reject) => {
             this.onReady = resolve;
             this.onError = reject;
-        }).catch(console.error);
+        }).catch(this.errorHandler);
     }
 }
