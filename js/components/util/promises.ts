@@ -17,12 +17,15 @@ export function noAwait<F extends (...args: unknown[]) => Promise<unknown>>(f: F
  */
 
 export class Ready {
+    onError: (value?: unknown) => void;
     onReady: (value?: unknown) => void;
-    promise: Promise<unknown>;
+
+    ready: Promise<unknown>;
 
     constructor() {
-        this.promise = new Promise((resolve, _reject) => {
+        this.ready = new Promise((resolve, reject) => {
             this.onReady = resolve;
+            this.onError = reject;
         }).catch(console.error);
     }
 }

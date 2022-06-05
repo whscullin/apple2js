@@ -13,7 +13,7 @@ import { Screen } from './Screen';
 import { Drives } from './Drives';
 import { Slinky } from './Slinky';
 import { ThunderClock } from './ThunderClock';
-import { Ready } from './util/promises';
+import { noAwait, Ready } from './util/promises';
 
 import styles from './css/Apple2.module.css';
 
@@ -55,17 +55,19 @@ export const Apple2 = (props: Apple2Props) => {
                 ...props,
             };
             const apple2 = new Apple2Impl(options);
-            apple2.ready.then(() => {
-                setApple2(apple2);
-                const io = apple2.getIO();
-                const cpu = apple2.getCPU();
-                setIO(io);
-                setCPU(cpu);
-                return drivesReady.promise.then(() => {
+            noAwait((async () => {
+                try {
+                    await apple2.ready;
+                    setApple2(apple2);
+                    setIO(apple2.getIO());
+                    setCPU(apple2.getCPU());
+                    await drivesReady.ready;
                     apple2.reset();
                     apple2.run();
-                });
-            }).catch((e) => setError(e));
+                } catch (e) {
+                    setError(e);
+                }
+            }))();
         }
     }, [props, drivesReady]);
 
