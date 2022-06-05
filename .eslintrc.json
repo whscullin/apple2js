@@ -31,7 +31,6 @@
         ],
         "no-var": "error",
         "no-use-before-define": "off",
-        "no-dupe-class-members": "off",
         "no-console": [
             "error",
             {

@@ -74,7 +74,7 @@ apple2.ready.then(() => {
     const slinky = new RAMFactor(1024 * 1024);
     const disk2 = new DiskII(io, driveLights, sectors);
     const clock = new Thunderclock();
-    const smartport = new SmartPort(cpu, { block: true });
+    const smartport = new SmartPort(cpu, null, { block: true });
 
     io.setSlot(0, lc);
     io.setSlot(1, parallel);

@@ -215,6 +215,6 @@ export type FormatWorkerResponse =
 /**
  * Block device common interface
  */
-export interface MassStorage {
-    setBinary(drive: number, name: string, ext: BlockFormat, data: ArrayBuffer): boolean;
+export interface MassStorage<T> {
+    setBinary(drive: number, name: string, ext: T, data: ArrayBuffer): boolean;
 }

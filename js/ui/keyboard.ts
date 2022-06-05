@@ -354,7 +354,7 @@ export default class KeyBoard {
         const buildLabel = (k: string) => {
             const span = document.createElement('span');
             span.innerHTML = k;
-            if (k.length > 1 && k.substr(0, 1) !== '&')
+            if (k.length > 1 && k.slice(0, 1) !== '&')
                 span.classList.add('small');
             return span;
         };

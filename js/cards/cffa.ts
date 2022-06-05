@@ -85,7 +85,7 @@ export interface CFFAState {
     disks: Array<BlockDisk | null>;
 }
 
-export default class CFFA implements Card, MassStorage, Restorable<CFFAState> {
+export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<CFFAState> {
 
     // CFFA internal Flags
 

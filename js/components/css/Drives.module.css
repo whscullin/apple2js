@@ -1,0 +1,10 @@
+.drives {
+    display: flex;
+    width: 100%;
+}
+
+.driveBay {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 50%;
+}
