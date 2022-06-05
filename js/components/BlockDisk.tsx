@@ -5,31 +5,30 @@ import SmartPort from '../cards/smartport';
 import { BlockFileModal } from './BlockFileModal';
 import { ErrorModal } from './ErrorModal';
 
-import styles from './css/DiskII.module.css';
+import styles from './css/BlockDisk.module.css';
 
 /**
- * Storage structure for Disk II state returned via callbacks.
+ * Storage structure for drive state returned via callbacks.
  */
-export interface DiskIIData {
+export interface BlockDiskData {
     number: 1 | 2;
     on: boolean;
     name?: string;
 }
 
 /**
- * Interface for Disk II component.
+ * Interface for BlockDisk.
  */
-export interface BlockDiskProps extends DiskIIData {
+export interface BlockDiskProps extends BlockDiskData {
     smartPort: SmartPort | undefined;
 }
 
 /**
- * Disk II component
+ * BlockDisk component
  *
  * Includes drive light, disk name and side, and UI for loading disks.
- * Handles initial loading of disks specified in the hash.
  *
- * @param disk2 Disk2 object
+ * @param smartPort SmartPort object
  * @param number Drive 1 or 2
  * @param on Active state
  * @param name Disk name identifier

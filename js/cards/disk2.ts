@@ -749,7 +749,7 @@ export default class DiskII implements Card<State> {
         for (const d of DRIVE_NUMBERS) {
             const idx = d - 1;
             this.drives[idx] = setDriveState(state.drives[idx]);
-            const { name, side, dirty } = state.drives[idx];
+            const { name, side, dirty,  } = state.drives[idx];
             this.callbacks.label(d, name, side);
             this.callbacks.driveLight(d, this.on);
             this.callbacks.dirty(d, dirty);

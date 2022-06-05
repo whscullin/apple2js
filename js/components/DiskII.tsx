@@ -28,7 +28,6 @@ export interface DiskIIProps extends DiskIIData {
  * Disk II component
  *
  * Includes drive light, disk name and side, and UI for loading disks.
- * Handles initial loading of disks specified in the hash.
  *
  * @param disk2 Disk2 object
  * @param number Drive 1 or 2

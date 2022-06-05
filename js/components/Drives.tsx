@@ -28,10 +28,15 @@ export interface DrivesProps {
 
 /**
  * Drive interface component. Presents the interface to load disks.
- * Provides the callback to the Disk2 object to update the DiskII
- * components.
+ * Provides the callback to the Disk2 and SmartPort objects to update
+ * the DiskII and BlockDisk components.
+ * Handles initial loading of disks specified in the hash.
  *
+ * @cpu CPU object
  * @param io Apple I/O object
+ * @param sectors 13 or 16 sector rom mode
+ * @enhanced Whether to create a SmartPort ROM device
+ * @ready Signal disk availability
  * @returns Drives component
  */
 export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
