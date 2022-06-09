@@ -9,7 +9,7 @@ body {
     background: black;
 }
 
-button {
+button, a[role="button"] {
     background: #44372C;
     color: #fff;
     padding: 2px 8px;
@@ -19,16 +19,20 @@ button {
     min-width: 75px;
 }
 
-button:hover {
+button:hover, a[role="button"]:hover {
     background-color: #55473D;
     border: 1px outset #66594E;
 }
 
-button:active {
+button:active, a[role="button"]:active  {
     background-color: #22150A;
     border: 1px outset #44372C;
 }
 
-button:focus {
+button:focus, a[role="button"]:focus  {
     outline: none;
+}
+
+a[role="button"] {
+    text-decoration: none;
 }

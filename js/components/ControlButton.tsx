@@ -1,4 +1,7 @@
 import { h, JSX } from 'preact';
+import cs from 'classnames';
+
+import styles from './css/ControlButton.module.css';
 
 /**
  * Interface for ControlButton.
@@ -7,6 +10,7 @@ export interface ControlButtonProps {
     icon: string;
     title: string;
     disabled?: boolean;
+    active?: boolean;
     onClick: JSX.MouseEventHandler<HTMLButtonElement>;
 }
 
@@ -18,8 +22,8 @@ export interface ControlButtonProps {
  * @param onClick Click callback
  * @returns Control Button component
  */
-export const ControlButton = ({ icon, title, onClick, ...props }: ControlButtonProps) => (
+export const ControlButton = ({ active, icon, title, onClick, ...props }: ControlButtonProps) => (
     <button onClick={onClick} title={title} {...props} >
-        <i className={`fas fa-${icon}`}></i>
+        <i className={cs('fas', `fa-${icon}`, { [styles.active]: active })}></i>
     </button>
 );

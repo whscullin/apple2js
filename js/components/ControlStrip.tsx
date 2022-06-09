@@ -7,6 +7,7 @@ import { AudioControl } from './AudioControl';
 import { OptionsModal} from './OptionsModal';
 import { OptionsContext } from './OptionsContext';
 import { PauseControl } from './PauseControl';
+import { Printer } from './Printer';
 import { ControlButton } from './ControlButton';
 import { Apple2 as Apple2Impl } from '../apple2';
 import { JoyStick } from '../ui/joystick';
@@ -14,6 +15,7 @@ import { Screen, SCREEN_FULL_PAGE } from '../ui/screen';
 import { System } from '../ui/system';
 
 import styles from './css/ControlStrip.module.css';
+import Apple2IO from 'js/apple2io';
 
 const README = 'https://github.com/whscullin/apple2js#readme';
 
@@ -33,12 +35,14 @@ interface ControlStripProps {
  */
 export const ControlStrip = ({ apple2, e }: ControlStripProps) => {
     const [showOptions, setShowOptions] = useState(false);
+    const [io, setIO] = useState<Apple2IO>();
     const options = useContext(OptionsContext);
 
     useEffect(() => {
         if (apple2) {
             const io = apple2.getIO();
             const vm = apple2.getVideoModes();
+            setIO(io);
 
             const system = new System(io, e);
             options.addOptions(system);
@@ -85,6 +89,7 @@ export const ControlStrip = ({ apple2, e }: ControlStripProps) => {
                 <CPUMeter apple2={apple2} />
                 <PauseControl apple2={apple2} />
                 <AudioControl apple2={apple2} />
+                <Printer io={io} slot={1} />
                 <div style={{flexGrow: 1}} />
                 <ControlButton onClick={doReadme} title="About" icon="info" />
                 <ControlButton onClick={doShowOptions} title="Options (F4)" icon="cog" />

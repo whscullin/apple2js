@@ -35,6 +35,7 @@
     padding: 5px 11px;
     border: 1px outset #66594E;
     border-radius: 3px;
+    user-select: none;
 }
 
 .modalHeader button {
@@ -60,4 +61,10 @@
 
 .modalFooter {
     text-align: right;
+    user-select: none;
+}
+
+.modalFooter a[role="button"], .modalFooter button {
+    margin: 0 0 0 5px;
+    min-width: 75px;
 }
