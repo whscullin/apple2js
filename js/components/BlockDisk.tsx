@@ -22,7 +22,7 @@ export interface BlockDiskData {
  * Interface for BlockDisk.
  */
 export interface BlockDiskProps extends BlockDiskData {
-    smartPort: SmartPort | undefined;
+    smartPort: SmartPort;
 }
 
 /**

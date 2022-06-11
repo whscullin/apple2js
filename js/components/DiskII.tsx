@@ -23,7 +23,7 @@ export interface DiskIIData {
  * Interface for Disk II component.
  */
 export interface DiskIIProps extends DiskIIData {
-    disk2: Disk2 | undefined;
+    disk2: Disk2;
 }
 
 /**

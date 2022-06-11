@@ -16,6 +16,12 @@ import { noAwait, Ready } from './util/promises';
 import styles from './css/Drives.module.css';
 import { DiskDragTarget } from './DiskDragTarget';
 
+interface StorageDevices {
+    disk2: Disk2;
+    smartPort: SmartPort;
+    unknownStorage: UnknownStorage;
+}
+
 /**
  * Interface for Drives component.
  */
@@ -50,7 +56,8 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
         setTotal(total);
     }, []);
 
-    const [disk2, setDisk2] = useState<Disk2>();
+    const [storageDevices, setStorageDevices] = useState<StorageDevices>();
+
     const [data1, setData1] = useState<DiskIIData>({
         on: false,
         number: 1,
@@ -72,13 +79,11 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
         name: 'HD 2'
     });
 
-    const [smartPort, setSmartPort] = useState<SmartPort>();
-    const [unknownStorage, setUnknownStorage] = useState<UnknownStorage>();
-
     const hash = useHash();
 
     useEffect(() => {
-        if (disk2 && unknownStorage) {
+        if (storageDevices) {
+            const { unknownStorage, disk2 } = storageDevices;
             const hashParts = getHashParts(hash);
             let loading = 0;
             for (const drive of [1, 2] as DriveNumber[]) {
@@ -108,7 +113,7 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
                 ready.onReady();
             }
         }
-    }, [disk2, hash, onProgress, ready, unknownStorage]);
+    }, [hash, onProgress, ready, storageDevices]);
 
     useEffect(() => {
         const setData = [setData1, setData2];
@@ -146,15 +151,19 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
         if (cpu && io) {
             const disk2 = new Disk2(io, callbacks, sectors);
             io.setSlot(6, disk2);
-            setDisk2(disk2);
             const smartPort = new SmartPort(cpu, smartPortCallbacks, { block: !enhanced });
             io.setSlot(7, smartPort);
-            setSmartPort(smartPort);
 
             const unknownStorage = new UnknownStorage(disk2, smartPort);
-            setUnknownStorage(unknownStorage);
+            setStorageDevices({ disk2, smartPort, unknownStorage });
         }
     }, [cpu, enhanced, io, sectors]);
+
+    if (!storageDevices) {
+        return null;
+    }
+
+    const { disk2, smartPort, unknownStorage } = storageDevices;
 
     return (
         <DiskDragTarget

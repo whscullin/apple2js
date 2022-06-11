@@ -20,7 +20,7 @@ const DISK_TYPES: FilePickerAcceptType[] = [
 
 interface BlockFileModalProps {
     isOpen: boolean;
-    smartPort: SmartPort | undefined;
+    smartPort: SmartPort;
     number: DriveNumber;
     onClose: (closeBox?: boolean) => void;
 }
@@ -37,7 +37,7 @@ export const BlockFileModal = ({ smartPort, number, onClose, isOpen } : BlockFil
     const doOpen = useCallback(async () => {
         const hashParts = getHashParts(hash);
 
-        if (smartPort && handles?.length === 1) {
+        if (handles?.length === 1) {
             hashParts[number] = '';
             setBusy(true);
             try {
