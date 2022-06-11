@@ -8,7 +8,7 @@ import CPU6502 from 'js/cpu6502';
 import { BlockDisk } from './BlockDisk';
 import { ErrorModal } from './ErrorModal';
 import { ProgressModal } from './ProgressModal';
-import { loadHttpUnknownFile, getHashParts, loadJSON, UnknownStorage } from './util/files';
+import { loadHttpUnknownFile, getHashParts, loadJSON, SmartStorageBroker } from './util/files';
 import { useHash } from './hooks/useHash';
 import { DISK_FORMATS, DriveNumber } from 'js/formats/types';
 import { noAwait, Ready } from './util/promises';
@@ -22,7 +22,7 @@ import { DiskDragTarget } from './DiskDragTarget';
 interface StorageDevices {
     disk2: Disk2;
     smartPort: SmartPort;
-    unknownStorage: UnknownStorage;
+    smartStorageBroker: SmartStorageBroker;
 }
 
 /**
@@ -86,7 +86,7 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
 
     useEffect(() => {
         if (storageDevices) {
-            const { unknownStorage, disk2 } = storageDevices;
+            const { smartStorageBroker, disk2 } = storageDevices;
             const hashParts = getHashParts(hash);
             let loading = 0;
             for (const drive of [1, 2] as DriveNumber[]) {
@@ -96,7 +96,7 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
                         loading++;
                         noAwait(async () => {
                             try {
-                                await loadHttpUnknownFile(unknownStorage, drive, hashPart, onProgress);
+                                await loadHttpUnknownFile(smartStorageBroker, drive, hashPart, onProgress);
                             } catch (e) {
                                 setError(e);
                             }
@@ -157,8 +157,8 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
             const smartPort = new SmartPort(cpu, smartPortCallbacks, { block: !enhanced });
             io.setSlot(7, smartPort);
 
-            const unknownStorage = new UnknownStorage(disk2, smartPort);
-            setStorageDevices({ disk2, smartPort, unknownStorage });
+            const smartStorageBroker = new SmartStorageBroker(disk2, smartPort);
+            setStorageDevices({ disk2, smartPort, smartStorageBroker });
         }
     }, [cpu, enhanced, io, sectors]);
 
@@ -166,11 +166,11 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
         return null;
     }
 
-    const { disk2, smartPort, unknownStorage } = storageDevices;
+    const { disk2, smartPort, smartStorageBroker } = storageDevices;
 
     return (
         <DiskDragTarget
-            storage={unknownStorage}
+            storage={smartStorageBroker}
             dropRef={bodyRef}
             className={styles.drives}
             onError={setError}

@@ -215,17 +215,17 @@ export const loadHttpNibbleFile = async (
 };
 
 export const loadHttpUnknownFile = async (
-    unknownStorage: UnknownStorage,
+    smartStorageBroker: SmartStorageBroker,
     number: DriveNumber,
     url: string,
     onProgress?: ProgressCallback,
 ) => {
     const data = await loadHttpFile(url, onProgress);
     const { name, ext } = getNameAndExtension(url);
-    unknownStorage.setBinary(number, name, ext, data);
+    smartStorageBroker.setBinary(number, name, ext, data);
 };
 
-export class UnknownStorage implements MassStorage<unknown> {
+export class SmartStorageBroker implements MassStorage<unknown> {
     constructor(private disk2: Disk2, private smartPort: SmartPort) {}
 
     setBinary(drive: DriveNumber, name: string, ext: string, data: ArrayBuffer): boolean {
