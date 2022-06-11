@@ -46,7 +46,7 @@ export const getNameAndExtension = (url: string) => {
 
 export const loadLocalFile = (
     storage: MassStorage<NibbleFormat|BlockFormat>,
-    formats: typeof NIBBLE_FORMATS | typeof BLOCK_FORMATS,
+    formats: typeof NIBBLE_FORMATS | typeof BLOCK_FORMATS | typeof DISK_FORMATS,
     number: DriveNumber,
     file: File,
 ) => {
@@ -54,10 +54,7 @@ export const loadLocalFile = (
         const fileReader = new FileReader();
         fileReader.onload = function () {
             const result = this.result as ArrayBuffer;
-            const parts = file.name.split('.');
-            const ext = parts.pop()?.toLowerCase() || '[none]';
-            const name = parts.join('.');
-
+            const { name, ext } = getNameAndExtension(file.name);
             if (includes(formats, ext)) {
                 initGamepad();
                 if (storage.setBinary(number, name, ext, result)) {
@@ -218,27 +215,35 @@ export const loadHttpNibbleFile = async (
 };
 
 export const loadHttpUnknownFile = async (
-    disk2: Disk2,
-    smartPort: SmartPort,
+    unknownStorage: UnknownStorage,
     number: DriveNumber,
     url: string,
     onProgress?: ProgressCallback,
 ) => {
     const data = await loadHttpFile(url, onProgress);
     const { name, ext } = getNameAndExtension(url);
-    if (includes(DISK_FORMATS, ext)) {
-        if (data.byteLength >= 800 * 1024) {
-            if (includes(BLOCK_FORMATS, ext)) {
-                smartPort.setBinary(number, name, ext, data);
+    unknownStorage.setBinary(number, name, ext, data);
+};
+
+export class UnknownStorage implements MassStorage<unknown> {
+    constructor(private disk2: Disk2, private smartPort: SmartPort) {}
+
+    setBinary(drive: DriveNumber, name: string, ext: string, data: ArrayBuffer): boolean {
+        if (includes(DISK_FORMATS, ext)) {
+            if (data.byteLength >= 800 * 1024) {
+                if (includes(BLOCK_FORMATS, ext)) {
+                    this.smartPort.setBinary(drive, name, ext, data);
+                } else {
+                    throw new Error(`Unable to load "${name}"`);
+                }
+            } else if (includes(NIBBLE_FORMATS, ext)) {
+                this.disk2.setBinary(drive, name, ext, data);
             } else {
                 throw new Error(`Unable to load "${name}"`);
             }
-        } else if (includes(NIBBLE_FORMATS, ext)) {
-            disk2.setBinary(number, name, ext, data);
         } else {
-            throw new Error(`Unable to load "${name}"`);
+            throw new Error(`Extension "${ext}" not recognized.`);
         }
-    } else {
-        throw new Error(`Extension "${ext}" not recognized.`);
+        return true;
     }
-};
+}

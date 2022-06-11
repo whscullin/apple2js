@@ -1,5 +1,5 @@
 import { h } from 'preact';
-import { useCallback, useEffect, useState } from 'preact/hooks';
+import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import Disk2, { Callbacks } from '../cards/disk2';
 import Apple2IO from '../apple2io';
 import { DiskII, DiskIIData } from './DiskII';
@@ -8,12 +8,13 @@ import CPU6502 from 'js/cpu6502';
 import { BlockDisk } from './BlockDisk';
 import { ErrorModal } from './ErrorModal';
 import { ProgressModal } from './ProgressModal';
-import { loadHttpUnknownFile, getHashParts, loadJSON } from './util/files';
+import { loadHttpUnknownFile, getHashParts, loadJSON, UnknownStorage } from './util/files';
 import { useHash } from './hooks/useHash';
-import { DriveNumber } from 'js/formats/types';
-import { Ready } from './util/promises';
+import { DISK_FORMATS, DriveNumber } from 'js/formats/types';
+import { noAwait, Ready } from './util/promises';
 
 import styles from './css/Drives.module.css';
+import { DiskDragTarget } from './DiskDragTarget';
 
 /**
  * Interface for Drives component.
@@ -43,6 +44,7 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
     const [current, setCurrent] = useState(0);
     const [error, setError] = useState<unknown>();
     const [total, setTotal] = useState(0);
+    const bodyRef = useRef(document.body);
     const onProgress = useCallback((current: number, total: number) => {
         setCurrent(current);
         setTotal(total);
@@ -71,11 +73,12 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
     });
 
     const [smartPort, setSmartPort] = useState<SmartPort>();
+    const [unknownStorage, setUnknownStorage] = useState<UnknownStorage>();
 
     const hash = useHash();
 
     useEffect(() => {
-        if (smartPort && disk2) {
+        if (disk2 && unknownStorage) {
             const hashParts = getHashParts(hash);
             let loading = 0;
             for (const drive of [1, 2] as DriveNumber[]) {
@@ -83,15 +86,18 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
                     const hashPart = decodeURIComponent(hashParts[drive]);
                     if (hashPart.match(/^https?:/)) {
                         loading++;
-                        loadHttpUnknownFile(disk2, smartPort, drive, hashPart, onProgress)
-                            .catch((e) => setError(e))
-                            .finally(() => {
-                                if (--loading === 0) {
-                                    ready.onReady();
-                                }
-                                setCurrent(0);
-                                setTotal(0);
-                            });
+                        noAwait(async () => {
+                            try {
+                                await loadHttpUnknownFile(unknownStorage, drive, hashPart, onProgress);
+                            } catch (e) {
+                                setError(e);
+                            }
+                            if (--loading === 0) {
+                                ready.onReady();
+                            }
+                            setCurrent(0);
+                            setTotal(0);
+                        })();
                     } else {
                         const url = `/json/disks/${hashPart}.json`;
                         loadJSON(disk2, drive, url).catch((e) => setError(e));
@@ -102,7 +108,7 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
                 ready.onReady();
             }
         }
-    }, [hash, onProgress, disk2, ready, smartPort]);
+    }, [disk2, hash, onProgress, ready, unknownStorage]);
 
     useEffect(() => {
         const setData = [setData1, setData2];
@@ -144,11 +150,20 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
             const smartPort = new SmartPort(cpu, smartPortCallbacks, { block: !enhanced });
             io.setSlot(7, smartPort);
             setSmartPort(smartPort);
+
+            const unknownStorage = new UnknownStorage(disk2, smartPort);
+            setUnknownStorage(unknownStorage);
         }
     }, [cpu, enhanced, io, sectors]);
 
     return (
-        <div className={styles.drives}>
+        <DiskDragTarget
+            storage={unknownStorage}
+            dropRef={bodyRef}
+            className={styles.drives}
+            onError={setError}
+            formats={DISK_FORMATS}
+        >
             <ProgressModal current={current} total={total} title="Loading..." />
             <ErrorModal error={error} setError={setError} />
             <div className={styles.driveBay}>
@@ -159,6 +174,6 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
                 <BlockDisk smartPort={smartPort} {...smartData1} />
                 <BlockDisk smartPort={smartPort} {...smartData2} />
             </div>
-        </div>
+        </DiskDragTarget>
     );
 };
