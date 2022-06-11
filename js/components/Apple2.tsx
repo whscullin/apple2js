@@ -55,13 +55,19 @@ export const Apple2 = (props: Apple2Props) => {
                 ...props,
             };
             const apple2 = new Apple2Impl(options);
-            spawn(async () => {
+            return spawn(async (interrupted) => {
                 try {
                     await apple2.ready;
+                    if (interrupted()) {
+                        return;
+                    }
                     setApple2(apple2);
                     setIO(apple2.getIO());
                     setCPU(apple2.getCPU());
                     await drivesReady.ready;
+                    if (interrupted()) {
+                        return;
+                    }
                     apple2.reset();
                     apple2.run();
                 } catch (e) {
