@@ -12,6 +12,14 @@ export function noAwait<F extends (...args: unknown[]) => Promise<unknown>>(f: F
 }
 
 /**
+ * Calls the given `Promise`-returning function and returns void, signalling that it is
+ * explicitly not awaited.
+ */
+export function spawn(f: () => Promise<unknown>): void {
+    noAwait(f)();
+}
+
+/**
  * Utility class that allows a promise to be passed to a
  * service to be resolved.
  */
