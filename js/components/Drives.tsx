@@ -16,6 +16,9 @@ import { noAwait, Ready } from './util/promises';
 import styles from './css/Drives.module.css';
 import { DiskDragTarget } from './DiskDragTarget';
 
+/**
+ * Storage device storage
+ */
 interface StorageDevices {
     disk2: Disk2;
     smartPort: SmartPort;

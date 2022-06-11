@@ -1,4 +1,9 @@
 .outer {
     margin: auto;
     width: 620px;
+    display: none;
+}
+
+.outer.ready {
+    display: block;
 }
