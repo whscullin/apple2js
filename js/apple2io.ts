@@ -421,8 +421,8 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
         this._keyDown = false;
     }
 
-    buttonDown(b: button) {
-        this._button[b] = true;
+    buttonDown(b: button, state = true) {
+        this._button[b] = state;
     }
 
     buttonUp(b: button) {

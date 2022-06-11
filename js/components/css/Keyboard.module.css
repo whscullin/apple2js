@@ -1,5 +1,6 @@
 .keyboard {
     margin-left: 15px;
+    user-select: none;
 }
 
 :global(.apple2e) .keyboard {

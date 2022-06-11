@@ -145,9 +145,10 @@ export const Keyboard = ({ apple2, e }: KeyboardProps) => {
             const toggleActive = (key: string) => {
                 if (!active.includes(key)) {
                     setActive([...active, key]);
-                } else {
-                    setActive(active.filter(x => x !== key));
+                    return true;
                 }
+                setActive(active.filter(x => x !== key));
+                return false;
             };
 
             const io = apple2.getIO();
@@ -171,11 +172,11 @@ export const Keyboard = ({ apple2, e }: KeyboardProps) => {
                         apple2.reset();
                         break;
                     case 'OPEN_APPLE':
-                        io.ioSwitch(0, io.ioSwitch(0) ? 0 : 1);
+                        io.buttonDown(0, toggleActive(key));
                         toggleActive(key);
                         break;
                     case 'CLOSED_APPLE':
-                        io.ioSwitch(1, io.ioSwitch(1) ? 0 : 1);
+                        io.buttonDown(1, toggleActive(key));
                         toggleActive(key);
                         break;
                     default:
