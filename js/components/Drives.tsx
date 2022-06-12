@@ -11,7 +11,7 @@ import { ProgressModal } from './ProgressModal';
 import { loadHttpUnknownFile, getHashParts, loadJSON, SmartStorageBroker } from './util/files';
 import { useHash } from './hooks/useHash';
 import { DISK_FORMATS, DriveNumber } from 'js/formats/types';
-import { noAwait, Ready } from './util/promises';
+import { spawn, Ready } from './util/promises';
 
 import styles from './css/Drives.module.css';
 import { DiskDragTarget } from './DiskDragTarget';
@@ -88,15 +88,21 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
         if (storageDevices) {
             const { smartStorageBroker, disk2 } = storageDevices;
             const hashParts = getHashParts(hash);
+            const controllers: AbortController[] = [];
             let loading = 0;
             for (const drive of [1, 2] as DriveNumber[]) {
                 if (hashParts && hashParts[drive]) {
                     const hashPart = decodeURIComponent(hashParts[drive]);
                     if (hashPart.match(/^https?:/)) {
                         loading++;
-                        noAwait(async () => {
+                        controllers.push(spawn(async (signal) => {
                             try {
-                                await loadHttpUnknownFile(smartStorageBroker, drive, hashPart, onProgress);
+                                await loadHttpUnknownFile(
+                                    smartStorageBroker,
+                                    drive,
+                                    hashPart,
+                                    signal,
+                                    onProgress);
                             } catch (e) {
                                 setError(e);
                             }
@@ -105,7 +111,7 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
                             }
                             setCurrent(0);
                             setTotal(0);
-                        })();
+                        }));
                     } else {
                         const url = `/json/disks/${hashPart}.json`;
                         loadJSON(disk2, drive, url).catch((e) => setError(e));
@@ -115,6 +121,7 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
             if (!loading) {
                 ready.onReady();
             }
+            return () => controllers.forEach((controller) => controller.abort());
         }
     }, [hash, onProgress, ready, storageDevices]);
 

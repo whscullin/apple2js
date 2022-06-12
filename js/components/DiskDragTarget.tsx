@@ -2,7 +2,7 @@ import { BLOCK_FORMATS, DISK_FORMATS, DriveNumber, MassStorage, NIBBLE_FORMATS }
 import { h, JSX, RefObject } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
 import {  loadLocalFile } from './util/files';
-import { noAwait } from './util/promises';
+import { spawn } from './util/promises';
 
 export interface DiskDragTargetProps<T> extends JSX.HTMLAttributes<HTMLDivElement> {
     storage: MassStorage<T> | undefined;
@@ -58,22 +58,22 @@ export const DiskDragTarget = ({
 
                 const dt = event.dataTransfer;
                 if (dt?.files.length === 1 && storage) {
-                    noAwait(async () => {
+                    spawn(async () => {
                         try {
                             await loadLocalFile(storage, formats, targetDrive, dt.files[0]);
                         } catch (e) {
                             onError(e);
                         }
-                    })();
+                    });
                 } else if (dt?.files.length === 2 && storage) {
-                    noAwait(async () => {
+                    spawn(async () => {
                         try {
                             await loadLocalFile(storage, formats, 1, dt.files[0]);
                             await loadLocalFile(storage, formats, 2, dt.files[1]);
                         } catch (e) {
                             onError(e);
                         }
-                    })();
+                    });
                 }
             };
 

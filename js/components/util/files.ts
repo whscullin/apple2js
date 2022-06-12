@@ -125,9 +125,10 @@ export const loadJSON = async (
 
 export const loadHttpFile = async (
     url: string,
-    onProgress?: ProgressCallback
+    signal?: AbortSignal,
+    onProgress?: ProgressCallback,
 ): Promise<ArrayBuffer> => {
-    const response = await fetch(url);
+    const response = await fetch(url, signal ? { signal } : {});
     if (!response.ok) {
         throw new Error(`Error loading: ${response.statusText}`);
     }
@@ -172,13 +173,14 @@ export const loadHttpBlockFile = async (
     smartPort: SmartPort,
     number: DriveNumber,
     url: string,
+    signal?: AbortSignal,
     onProgress?: ProgressCallback
 ): Promise<boolean> => {
     const { name, ext } = getNameAndExtension(url);
     if (!includes(BLOCK_FORMATS, ext)) {
         throw new Error(`Extension "${ext}" not recognized.`);
     }
-    const data = await loadHttpFile(url, onProgress);
+    const data = await loadHttpFile(url, signal, onProgress);
     smartPort.setBinary(number, name, ext, data);
     initGamepad();
 
@@ -199,6 +201,7 @@ export const loadHttpNibbleFile = async (
     disk2: Disk2,
     number: DriveNumber,
     url: string,
+    signal?: AbortSignal,
     onProgress?: ProgressCallback
 ) => {
     if (url.endsWith('.json')) {
@@ -208,19 +211,20 @@ export const loadHttpNibbleFile = async (
     if (!includes(NIBBLE_FORMATS, ext)) {
         throw new Error(`Extension "${ext}" not recognized.`);
     }
-    const data = await loadHttpFile(url, onProgress);
+    const data = await loadHttpFile(url, signal, onProgress);
     disk2.setBinary(number, name, ext, data);
     initGamepad();
-    return loadHttpFile(url, onProgress);
+    return loadHttpFile(url, signal, onProgress);
 };
 
 export const loadHttpUnknownFile = async (
     smartStorageBroker: SmartStorageBroker,
     number: DriveNumber,
     url: string,
+    signal?: AbortSignal,
     onProgress?: ProgressCallback,
 ) => {
-    const data = await loadHttpFile(url, onProgress);
+    const data = await loadHttpFile(url, signal, onProgress);
     const { name, ext } = getNameAndExtension(url);
     smartStorageBroker.setBinary(number, name, ext, data);
 };

@@ -67,6 +67,9 @@ export const Apple2 = (props: Apple2Props) => {
                     setCPU(apple2.getCPU());
                     await drivesReady.ready;
                     if (signal.aborted) {
+                        setApple2(undefined);
+                        setIO(undefined);
+                        setCPU(undefined);
                         return;
                     }
                     apple2.reset();
@@ -76,7 +79,7 @@ export const Apple2 = (props: Apple2Props) => {
                 }
                 setReady(true);
             });
-            return controller.abort();
+            return () => controller.abort();
         }
     }, [props, drivesReady]);
 
