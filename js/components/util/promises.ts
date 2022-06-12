@@ -11,12 +11,6 @@ export function noAwait<F extends (...args: unknown[]) => Promise<unknown>>(f: F
     return f as NoAwait<F>;
 }
 
-/** Returns true if the spawned task should stop doing work. */
-export type Interrupted = () => boolean;
-
-/** Tells the spawned task to stop doing work. */
-export type Interrupt = () => void;
-
 /**
  * Calls the given `Promise`-returning function, `f`, and does not await
  * the result. The function `f` is passed an {@link Interrupted} function
@@ -25,10 +19,10 @@ export type Interrupt = () => void;
  * function to return `true`. This can be used in `useEffect` calls as the
  * cleanup function.
  */
-export function spawn(f: (interrupted: Interrupted) => Promise<unknown>): Interrupt {
-    let interrupted = false;
-    noAwait(f)(() => interrupted);
-    return () => { interrupted = true; };
+export function spawn(f: (abortSignal: AbortSignal) => Promise<unknown>): AbortController {
+    const abortController = new AbortController();
+    noAwait(f)(abortController.signal);
+    return abortController;
 }
 
 /**
