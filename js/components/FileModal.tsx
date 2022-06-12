@@ -43,7 +43,7 @@ export type NibbleFileCallback = (
 
 interface FileModalProps {
     isOpen: boolean;
-    disk2: DiskII | undefined;
+    disk2: DiskII;
     number: DriveNumber;
     onClose: (closeBox?: boolean) => void;
 }
@@ -64,11 +64,11 @@ export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) =>
         setBusy(true);
 
         try {
-            if (disk2 && handles?.length === 1) {
+            if (handles?.length === 1) {
                 hashParts[number] = '';
                 await loadLocalNibbleFile(disk2, number, await handles[0].getFile());
             }
-            if (disk2 && filename) {
+            if (filename) {
                 const name = filename.match(/\/([^/]+).json$/) || ['', ''];
                 hashParts[number] = name[1];
                 await loadJSON(disk2, number, filename);

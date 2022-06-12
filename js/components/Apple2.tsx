@@ -45,6 +45,7 @@ export const Apple2 = (props: Apple2Props) => {
     const [io, setIO] = useState<Apple2IO>();
     const [cpu, setCPU] = useState<CPU6502>();
     const [error, setError] = useState<unknown>();
+    const [ready, setReady] = useState(false);
     const drivesReady = useMemo(() => new Ready(setError), []);
 
     useEffect(() => {
@@ -66,6 +67,9 @@ export const Apple2 = (props: Apple2Props) => {
                     setCPU(apple2.getCPU());
                     await drivesReady.ready;
                     if (signal.aborted) {
+                        setApple2(undefined);
+                        setIO(undefined);
+                        setCPU(undefined);
                         return;
                     }
                     apple2.reset();
@@ -73,13 +77,14 @@ export const Apple2 = (props: Apple2Props) => {
                 } catch (e) {
                     setError(e);
                 }
+                setReady(true);
             });
-            return controller.abort();
+            return () => controller.abort();
         }
     }, [props, drivesReady]);
 
     return (
-        <div className={cs(styles.outer, { apple2e: e })}>
+        <div className={cs(styles.outer, { apple2e: e, [styles.ready]: ready })}>
             <Screen screen={screen} />
             <Slinky io={io} slot={2} />
             <Mouse cpu={cpu} screen={screen} io={io} slot={4} />

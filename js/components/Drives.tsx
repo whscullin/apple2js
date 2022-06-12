@@ -1,5 +1,5 @@
 import { h } from 'preact';
-import { useCallback, useEffect, useState } from 'preact/hooks';
+import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import Disk2, { Callbacks } from '../cards/disk2';
 import Apple2IO from '../apple2io';
 import { DiskII, DiskIIData } from './DiskII';
@@ -8,12 +8,22 @@ import CPU6502 from 'js/cpu6502';
 import { BlockDisk } from './BlockDisk';
 import { ErrorModal } from './ErrorModal';
 import { ProgressModal } from './ProgressModal';
-import { loadHttpUnknownFile, getHashParts, loadJSON } from './util/files';
+import { loadHttpUnknownFile, getHashParts, loadJSON, SmartStorageBroker } from './util/files';
 import { useHash } from './hooks/useHash';
-import { DriveNumber } from 'js/formats/types';
-import { Ready } from './util/promises';
+import { DISK_FORMATS, DriveNumber } from 'js/formats/types';
+import { spawn, Ready } from './util/promises';
 
 import styles from './css/Drives.module.css';
+import { DiskDragTarget } from './DiskDragTarget';
+
+/**
+ * Storage device storage
+ */
+interface StorageDevices {
+    disk2: Disk2;
+    smartPort: SmartPort;
+    smartStorageBroker: SmartStorageBroker;
+}
 
 /**
  * Interface for Drives component.
@@ -43,12 +53,14 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
     const [current, setCurrent] = useState(0);
     const [error, setError] = useState<unknown>();
     const [total, setTotal] = useState(0);
+    const bodyRef = useRef(document.body);
     const onProgress = useCallback((current: number, total: number) => {
         setCurrent(current);
         setTotal(total);
     }, []);
 
-    const [disk2, setDisk2] = useState<Disk2>();
+    const [storageDevices, setStorageDevices] = useState<StorageDevices>();
+
     const [data1, setData1] = useState<DiskIIData>({
         on: false,
         number: 1,
@@ -70,28 +82,36 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
         name: 'HD 2'
     });
 
-    const [smartPort, setSmartPort] = useState<SmartPort>();
-
     const hash = useHash();
 
     useEffect(() => {
-        if (smartPort && disk2) {
+        if (storageDevices) {
+            const { smartStorageBroker, disk2 } = storageDevices;
             const hashParts = getHashParts(hash);
+            const controllers: AbortController[] = [];
             let loading = 0;
             for (const drive of [1, 2] as DriveNumber[]) {
                 if (hashParts && hashParts[drive]) {
                     const hashPart = decodeURIComponent(hashParts[drive]);
                     if (hashPart.match(/^https?:/)) {
                         loading++;
-                        loadHttpUnknownFile(disk2, smartPort, drive, hashPart, onProgress)
-                            .catch((e) => setError(e))
-                            .finally(() => {
-                                if (--loading === 0) {
-                                    ready.onReady();
-                                }
-                                setCurrent(0);
-                                setTotal(0);
-                            });
+                        controllers.push(spawn(async (signal) => {
+                            try {
+                                await loadHttpUnknownFile(
+                                    smartStorageBroker,
+                                    drive,
+                                    hashPart,
+                                    signal,
+                                    onProgress);
+                            } catch (e) {
+                                setError(e);
+                            }
+                            if (--loading === 0) {
+                                ready.onReady();
+                            }
+                            setCurrent(0);
+                            setTotal(0);
+                        }));
                     } else {
                         const url = `/json/disks/${hashPart}.json`;
                         loadJSON(disk2, drive, url).catch((e) => setError(e));
@@ -101,8 +121,9 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
             if (!loading) {
                 ready.onReady();
             }
+            return () => controllers.forEach((controller) => controller.abort());
         }
-    }, [hash, onProgress, disk2, ready, smartPort]);
+    }, [hash, onProgress, ready, storageDevices]);
 
     useEffect(() => {
         const setData = [setData1, setData2];
@@ -140,15 +161,28 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
         if (cpu && io) {
             const disk2 = new Disk2(io, callbacks, sectors);
             io.setSlot(6, disk2);
-            setDisk2(disk2);
             const smartPort = new SmartPort(cpu, smartPortCallbacks, { block: !enhanced });
             io.setSlot(7, smartPort);
-            setSmartPort(smartPort);
+
+            const smartStorageBroker = new SmartStorageBroker(disk2, smartPort);
+            setStorageDevices({ disk2, smartPort, smartStorageBroker });
         }
     }, [cpu, enhanced, io, sectors]);
 
+    if (!storageDevices) {
+        return null;
+    }
+
+    const { disk2, smartPort, smartStorageBroker } = storageDevices;
+
     return (
-        <div className={styles.drives}>
+        <DiskDragTarget
+            storage={smartStorageBroker}
+            dropRef={bodyRef}
+            className={styles.drives}
+            onError={setError}
+            formats={DISK_FORMATS}
+        >
             <ProgressModal current={current} total={total} title="Loading..." />
             <ErrorModal error={error} setError={setError} />
             <div className={styles.driveBay}>
@@ -159,6 +193,6 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
                 <BlockDisk smartPort={smartPort} {...smartData1} />
                 <BlockDisk smartPort={smartPort} {...smartData2} />
             </div>
-        </div>
+        </DiskDragTarget>
     );
 };

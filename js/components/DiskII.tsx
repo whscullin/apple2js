@@ -6,6 +6,8 @@ import { ErrorModal } from './ErrorModal';
 import { FileModal } from './FileModal';
 
 import styles from './css/DiskII.module.css';
+import { DiskDragTarget } from './DiskDragTarget';
+import { NIBBLE_FORMATS } from 'js/formats/types';
 
 /**
  * Storage structure for Disk II state returned via callbacks.
@@ -21,7 +23,7 @@ export interface DiskIIData {
  * Interface for Disk II component.
  */
 export interface DiskIIProps extends DiskIIData {
-    disk2: Disk2 | undefined;
+    disk2: Disk2;
 }
 
 /**
@@ -50,7 +52,13 @@ export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
     }, []);
 
     return (
-        <div className={styles.disk}>
+        <DiskDragTarget
+            className={styles.disk}
+            storage={disk2}
+            drive={number}
+            formats={NIBBLE_FORMATS}
+            onError={setError}
+        >
             <FileModal disk2={disk2} number={number} onClose={doClose} isOpen={modalOpen} />
             <ErrorModal error={error} setError={setError} />
             <div className={cs(styles.diskLight, { [styles.on]: on })} />
@@ -60,6 +68,6 @@ export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
             <div className={styles.diskLabel}>
                 {label}
             </div>
-        </div>
+        </DiskDragTarget>
     );
 };

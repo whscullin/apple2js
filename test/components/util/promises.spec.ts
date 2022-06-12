@@ -25,26 +25,26 @@ describe('promises', () => {
 
             const controllerIsAborted = new Ready();
             const spawnHasRecorded = new Ready();
-   
+
             const controller = spawn(async (signal) => {
                 await controllerIsAborted.ready;
                 isAborted = signal.aborted;
                 spawnHasRecorded.onReady();
             });
-   
+
             controller.abort();
             controllerIsAborted.onReady();
-   
+
             await spawnHasRecorded.ready;
             expect(isAborted).toBe(true);
         });
 
-        it('allows long-runing tasks to be stopped', async () => {
+        it('allows long-running tasks to be stopped', async () => {
             let isFinished = false;
 
             const innerReady = new Ready();
             const innerFinished = new Ready();
-            
+
             const controller = spawn(async (signal) => {
                 innerReady.onReady();
                 let i = 0;
@@ -52,8 +52,8 @@ describe('promises', () => {
                     i++;
                     await tick();
                 }
+                expect(i).toBe(2);
                 isFinished = true;
-                console.log(i);
                 innerFinished.onReady();
             });
             await innerReady.ready;

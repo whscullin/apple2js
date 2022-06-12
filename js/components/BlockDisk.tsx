@@ -3,9 +3,11 @@ import { useCallback, useState } from 'preact/hooks';
 import cs from 'classnames';
 import SmartPort from '../cards/smartport';
 import { BlockFileModal } from './BlockFileModal';
+import { DiskDragTarget } from './DiskDragTarget';
 import { ErrorModal } from './ErrorModal';
 
 import styles from './css/BlockDisk.module.css';
+import { BLOCK_FORMATS } from 'js/formats/types';
 
 /**
  * Storage structure for drive state returned via callbacks.
@@ -20,7 +22,7 @@ export interface BlockDiskData {
  * Interface for BlockDisk.
  */
 export interface BlockDiskProps extends BlockDiskData {
-    smartPort: SmartPort | undefined;
+    smartPort: SmartPort;
 }
 
 /**
@@ -48,7 +50,13 @@ export const BlockDisk = ({ smartPort, number, on, name }: BlockDiskProps) => {
     }, []);
 
     return (
-        <div className={styles.disk}>
+        <DiskDragTarget
+            className={styles.disk}
+            storage={smartPort}
+            drive={number}
+            formats={BLOCK_FORMATS}
+            onError={setError}
+        >
             <ErrorModal error={error} setError={setError} />
             <BlockFileModal
                 smartPort={smartPort}
@@ -69,6 +77,6 @@ export const BlockDisk = ({ smartPort, number, on, name }: BlockDiskProps) => {
             >
                 {name}
             </div>
-        </div>
+        </DiskDragTarget>
     );
 };
