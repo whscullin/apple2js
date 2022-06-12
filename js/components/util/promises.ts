@@ -12,11 +12,17 @@ export function noAwait<F extends (...args: unknown[]) => Promise<unknown>>(f: F
 }
 
 /**
- * Calls the given `Promise`-returning function and returns void, signalling that it is
- * explicitly not awaited.
+ * Calls the given `Promise`-returning function, `f`, and does not await
+ * the result. The function `f` is passed an {@link Interrupted} function
+ * that returns `true` if it should stop doing work.  `spawn` returns an
+ * {@link Interrupt} function that, when called, causes the `Interrupted`
+ * function to return `true`. This can be used in `useEffect` calls as the
+ * cleanup function.
  */
-export function spawn(f: () => Promise<unknown>): void {
-    noAwait(f)();
+export function spawn(f: (abortSignal: AbortSignal) => Promise<unknown>): AbortController {
+    const abortController = new AbortController();
+    noAwait(f)(abortController.signal);
+    return abortController;
 }
 
 /**
