@@ -13,7 +13,7 @@ import { Screen } from './Screen';
 import { Drives } from './Drives';
 import { Slinky } from './Slinky';
 import { ThunderClock } from './ThunderClock';
-import { noAwait, Ready } from './util/promises';
+import { spawn, Ready } from './util/promises';
 
 import styles from './css/Apple2.module.css';
 
@@ -55,7 +55,7 @@ export const Apple2 = (props: Apple2Props) => {
                 ...props,
             };
             const apple2 = new Apple2Impl(options);
-            noAwait((async () => {
+            spawn(async () => {
                 try {
                     await apple2.ready;
                     setApple2(apple2);
@@ -67,7 +67,7 @@ export const Apple2 = (props: Apple2Props) => {
                 } catch (e) {
                     setError(e);
                 }
-            }))();
+            });
         }
     }, [props, drivesReady]);
 
