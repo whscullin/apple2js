@@ -276,7 +276,7 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
             buffer = buffer.inc(1);
         }
         state.a = 0;
-        state.s &= flags.C;
+        state.s &= ~flags.C;
     }
 
     /*
