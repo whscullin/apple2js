@@ -60,10 +60,13 @@ const InputFileChooser = ({
         //
         // which allows pretty generous interpretations.
         //
+        // Update(whscullin) - Adding the MIME type seems to block loading anything
+        // from iCloud when using Safari, so reverting to simply using extensions for
+        // now.
         const newAccept = [];
         for (const type of accept) {
-            for (const [typeString, suffixes] of Object.entries(type.accept)) {
-                newAccept.push(typeString);
+            for (const [/* typeString */, suffixes] of Object.entries(type.accept)) {
+                // newAccept.push(typeString);
                 if (Array.isArray(suffixes)) {
                     newAccept.push(...suffixes);
                 } else {
