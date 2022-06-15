@@ -587,9 +587,6 @@ export class VideoModesGL implements VideoModes {
     }
 
     async init() {
-        // There is a typing bug in https://github.com/whscullin/apple2shader/blob/master/index.d.ts
-        // that declares initOpenGL as returning void when it actually returns Promise<void>.
-        // eslint-disable-next-line @typescript-eslint/await-thenable
         await this._sv.initOpenGL();
 
         this._displayConfig = this.defaultMonitor();
