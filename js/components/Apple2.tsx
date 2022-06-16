@@ -13,6 +13,7 @@ import { Screen } from './Screen';
 import { Drives } from './Drives';
 import { Slinky } from './Slinky';
 import { ThunderClock } from './ThunderClock';
+import { Videoterm } from './Videoterm';
 import { spawn, Ready } from './util/promises';
 
 import styles from './css/Apple2.module.css';
@@ -87,6 +88,7 @@ export const Apple2 = (props: Apple2Props) => {
         <div className={cs(styles.outer, { apple2e: e, [styles.ready]: ready })}>
             <Screen screen={screen} />
             <Slinky io={io} slot={2} />
+            {!e ? <Videoterm io={io} slot={3} /> : null}
             <Mouse cpu={cpu} screen={screen} io={io} slot={4} />
             <ThunderClock io={io} slot={5} />
             <Inset>
