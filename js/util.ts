@@ -100,3 +100,13 @@ export function numToString(num: number) {
     }
     return result;
 }
+
+/** Packs an ASCII string into 32-bit integer in little-endian order. */
+export function stringToNum(str: string): number {
+    let result = 0;
+    for (let idx = 3; idx >= 0; idx--) {
+        result <<= 8;
+        result |= str.charCodeAt(idx);
+    }
+    return result;
+}

@@ -1,4 +1,11 @@
-import { read2MGHeader } from 'js/formats/2mg';
+import {
+    create2MGFragments,
+    create2MGFromBlockDisk,
+    FORMAT,
+    HeaderData,
+    read2MGHeader
+} from 'js/formats/2mg';
+import { BlockDisk, ENCODING_BLOCK } from 'js/formats/types';
 import { concat } from 'js/util';
 import { BYTES_BY_SECTOR_IMAGE } from './testdata/16sector';
 
@@ -95,9 +102,101 @@ describe('2mg format', () => {
             expect(header.offset).toBe(64);
             expect(header.format).toBe(1);
             expect(header.readOnly).toBeFalsy();
-            expect(header.volume).toBe(254);
+            expect(header.volume).toBe(0);
             expect(header.comment).toBeUndefined();
             expect(header.creatorData).toBeUndefined();
+        });
+    });
+
+    describe('create2MGFragments', () => {
+        it('creates a valid image from header data and blocks', () => {
+            const header = read2MGHeader(VALID_PRODOS_IMAGE.buffer);
+            const { prefix, suffix } = create2MGFragments(header, { blocks: header.bytes / 512 });
+            expect(prefix).toEqual(VALID_PRODOS_IMAGE.slice(0, 64));
+            expect(suffix).toEqual(new Uint8Array());
+        });
+
+        it('throws an error if block count does not match byte count', () => {
+            const headerData: HeaderData = {
+                creator: 'A2JS',
+                bytes: 32768,
+                format: FORMAT.ProDOS,
+                readOnly: false,
+                offset: 64,
+                volume: 0,
+            };
+            expect(() => create2MGFragments(headerData, { blocks: 63 })).toThrowError(/does not match/);
+        });
+
+        it('throws an error if not a ProDOS volume', () => {
+            const headerData: HeaderData = {
+                creator: 'A2JS',
+                bytes: 143_360,
+                format: FORMAT.DOS,
+                readOnly: false,
+                offset: 64,
+                volume: 254,
+            };
+            expect(() => create2MGFragments(headerData, { blocks: 280 })).toThrowError(/not supported/);
+        });
+
+        it('uses defaults', () => {
+            const { prefix, suffix } = create2MGFragments(null, { blocks: 280 });
+            const image = concat(prefix, BYTES_BY_SECTOR_IMAGE, suffix);
+            const headerData = read2MGHeader(image.buffer);
+            expect(headerData).toEqual({
+                creator: 'A2JS',
+                bytes: 143_360,
+                format: FORMAT.ProDOS,
+                readOnly: false,
+                offset: 64,
+                volume: 0,
+            });
+        });
+
+        it.each([
+            ['Hello, sailor', undefined],
+            ['Hieyz wizka', new Uint8Array([4, 3, 2, 1])],
+            [undefined, new Uint8Array([4, 3, 2, 1])]
+        ])('can create comment %p and creator data %p', (testComment, testData) => {
+            const headerData: HeaderData = {
+                creator: 'A2JS',
+                bytes: 0,
+                format: FORMAT.ProDOS,
+                readOnly: false,
+                offset: 64,
+                volume: 254,
+            };
+            if (testComment) {
+                headerData.comment = testComment;
+            }
+            if (testData) {
+                headerData.creatorData = testData;
+            }
+            const { prefix, suffix } = create2MGFragments(headerData, { blocks: 0 });
+            const image = concat(prefix, suffix);
+            const { comment, creatorData } = read2MGHeader(image.buffer);
+            expect(comment).toEqual(testComment);
+            expect(creatorData).toEqual(testData);
+        });
+    });
+
+    describe('create2MGFromBlockDisk', () => {
+        it('can create a 2mg disk', () => {
+            const header = read2MGHeader(VALID_PRODOS_IMAGE.buffer);
+            console.log(BYTES_BY_SECTOR_IMAGE.length);
+            const blocks = [];
+            for (let idx = 0; idx < BYTES_BY_SECTOR_IMAGE.length; idx += 512) {
+                blocks.push(BYTES_BY_SECTOR_IMAGE.slice(idx, idx + 512));
+            }
+            const disk: BlockDisk = {
+                blocks,
+                name: 'Good disk',
+                readOnly: false,
+                encoding: ENCODING_BLOCK,
+            };
+            const image = create2MGFromBlockDisk(header, disk);
+            expect(VALID_PRODOS_IMAGE.buffer).toEqual(image);
         });
     });
 });
