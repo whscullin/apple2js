@@ -520,6 +520,18 @@ export default class DiskII implements Card<State> {
      * tracks by activating two neighboring coils at once.
      */
     private setPhase(phase: Phase, on: boolean) {
+        // According to Sather, UtA2e, p. 9-12, Drive On/Off and Drive
+        // Select:
+        //     Turning a drive on ($C089,X) [...]:
+        //       1. [...]
+        //       5. [...] enables head positioning [...]
+        //
+        // Therefore do nothing if no drive is on.
+        if (!this.on) {
+            this.debug(`ignoring phase ${phase}${on ? ' on' : ' off'}`);
+            return;
+        }
+
         this.debug(`phase ${phase}${on ? ' on' : ' off'}`);
         if (on) {
             this.cur.track += PHASE_DELTA[this.cur.phase][phase] * 2;
@@ -868,6 +880,10 @@ export default class DiskII implements Card<State> {
     }
 
     initWorker() {
+        if (!window.Worker) {
+            return;
+        }
+
         this.worker = new Worker('dist/format_worker.bundle.js');
 
         this.worker.addEventListener('message', (message: MessageEvent<FormatWorkerResponse>) => {
