@@ -8,6 +8,7 @@ import { FileModal } from './FileModal';
 import styles from './css/DiskII.module.css';
 import { DiskDragTarget } from './DiskDragTarget';
 import { NIBBLE_FORMATS } from 'js/formats/types';
+import { DownloadModal } from './DownloadModal';
 
 /**
  * Storage structure for Disk II state returned via callbacks.
@@ -41,6 +42,7 @@ export interface DiskIIProps extends DiskIIData {
 export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
     const label = side ? `${name} - ${side}` : name;
     const [modalOpen, setModalOpen] = useState(false);
+    const [downloadModalOpen, setDownloadModalOpen] = useState(false);
     const [error, setError] = useState<unknown>();
 
     const doClose = useCallback(() => {
@@ -49,6 +51,14 @@ export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
 
     const onOpenModal = useCallback(() => {
         setModalOpen(true);
+    }, []);
+
+    const doCloseDownload = useCallback(() => {
+        setDownloadModalOpen(false);
+    }, []);
+
+    const onOpenDownloadModal = useCallback(() => {
+        setDownloadModalOpen(true);
     }, []);
 
     return (
@@ -60,10 +70,19 @@ export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
             onError={setError}
         >
             <FileModal disk2={disk2} number={number} onClose={doClose} isOpen={modalOpen} />
+            <DownloadModal
+                number={number}
+                massStorage={disk2}
+                isOpen={downloadModalOpen}
+                onClose={doCloseDownload}
+            />
             <ErrorModal error={error} setError={setError} />
             <div className={cs(styles.diskLight, { [styles.on]: on })} />
             <button title="Load Disk" onClick={onOpenModal}>
                 <i className="fas fa-folder-open" />
+            </button>
+            <button title="Save Disk" onClick={onOpenDownloadModal}>
+                <i className="fas fa-save" />
             </button>
             <div className={styles.diskLabel}>
                 {label}

@@ -1,13 +1,14 @@
 import { h } from 'preact';
 import { useCallback, useState } from 'preact/hooks';
 import cs from 'classnames';
+import { BLOCK_FORMATS } from 'js/formats/types';
 import SmartPort from '../cards/smartport';
 import { BlockFileModal } from './BlockFileModal';
 import { DiskDragTarget } from './DiskDragTarget';
+import { DownloadModal } from './DownloadModal';
 import { ErrorModal } from './ErrorModal';
 
 import styles from './css/BlockDisk.module.css';
-import { BLOCK_FORMATS } from 'js/formats/types';
 
 /**
  * Storage structure for drive state returned via callbacks.
@@ -39,6 +40,7 @@ export interface BlockDiskProps extends BlockDiskData {
  */
 export const BlockDisk = ({ smartPort, number, on, name }: BlockDiskProps) => {
     const [modalOpen, setModalOpen] = useState(false);
+    const [downloadModalOpen, setDownloadModalOpen] = useState(false);
     const [error, setError] = useState<unknown>();
 
     const doClose = useCallback(() => {
@@ -47,6 +49,14 @@ export const BlockDisk = ({ smartPort, number, on, name }: BlockDiskProps) => {
 
     const onOpenModal = useCallback(() => {
         setModalOpen(true);
+    }, []);
+
+    const doCloseDownload = useCallback(() => {
+        setDownloadModalOpen(false);
+    }, []);
+
+    const onOpenDownloadModal = useCallback(() => {
+        setDownloadModalOpen(true);
     }, []);
 
     return (
@@ -64,12 +74,21 @@ export const BlockDisk = ({ smartPort, number, on, name }: BlockDiskProps) => {
                 onClose={doClose}
                 isOpen={modalOpen}
             />
+            <DownloadModal
+                number={number}
+                massStorage={smartPort}
+                isOpen={downloadModalOpen}
+                onClose={doCloseDownload}
+            />
             <div
                 id={`disk${number}`}
                 className={cs(styles.diskLight, { [styles.on]: on })}
             />
             <button title="Load Disk" onClick={onOpenModal}>
                 <i className="fas fa-folder-open" />
+            </button>
+            <button title="Save Disk" onClick={onOpenDownloadModal}>
+                <i className="fas fa-save" />
             </button>
             <div
                 id={`disk-label${number}`}

@@ -10,6 +10,7 @@ import {
     BlockFormat,
     ENCODING_BLOCK,
     MassStorage,
+    MassStorageData,
 } from 'js/formats/types';
 
 const rom = new Uint8Array(readOnlyRom);
@@ -135,6 +136,9 @@ export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<
         // Drive 2
         []
     ];
+
+    private _name: string[] = [];
+    private _ext: string[] = [];
 
     constructor() {
         debug('CFFA');
@@ -412,6 +416,8 @@ export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<
         drive = drive - 1;
 
         this._sectors[drive] = [];
+        this._name[drive] = '';
+        this._ext[drive] = '';
 
         this._identity[drive][IDENTITY.SectorCountHigh] = 0;
         this._identity[drive][IDENTITY.SectorCountLow] = 0;
@@ -437,6 +443,8 @@ export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<
         const prodos = new ProDOSVolume(disk);
         dump(prodos);
 
+        this._name[drive] = disk.name;
+        this._ext[drive] = disk.encoding;
         this._partitions[drive] = prodos;
 
         if (drive) {
@@ -466,5 +474,19 @@ export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<
         const disk = createBlockDisk(options);
 
         return this.setBlockVolume(drive, disk);
+    }
+
+    getBinary(drive: number): MassStorageData {
+        drive = drive - 1;
+        const blocks = this._sectors[drive];
+        const data = new Uint8Array(blocks.length * 512);
+        for (let idx = 0; idx < blocks.length; idx++) {
+            data.set(blocks[idx], idx * 512);
+        }
+        return {
+            name: this._name[drive],
+            ext: this._ext[drive],
+            data,
+        };
     }
 }

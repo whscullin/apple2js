@@ -937,7 +937,16 @@ export default class DiskII implements Card<State> {
             }
         }
 
-        return data;
+        const {
+            name,
+            format,
+        } = cur;
+
+        return {
+            ext: format,
+            name,
+            data
+        };
     }
 
     // TODO(flan): Does not work with WOZ disks

@@ -250,4 +250,8 @@ export class SmartStorageBroker implements MassStorage<unknown> {
         }
         return true;
     }
+
+    getBinary(_drive: number) {
+        return null;
+    }
 }
