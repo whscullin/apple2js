@@ -336,6 +336,11 @@ export default class DiskII implements Card<State> {
             dirty: false,
         }];
 
+    /**
+     * When `1`, the next nibble will be available for read; when `0`,
+     * the drive is pretending to wait for data to be shifted in by the
+     * sequencer.
+     */
     private skip = 0;
     /** Last data written by the CPU to card softswitch 0x8D. */
     private bus = 0;
@@ -495,18 +500,7 @@ export default class DiskII implements Card<State> {
                 }
 
                 if (this.writeMode) {
-                    // In UtA2e, p. 9-23, column 1, Sather says:
-                    //   At State 7, if QA is set, sequencing up the
-                    //   states continues, but if QA is reset, the
-                    //   sequencer loops back to State 0.
-                    // 
-                    // QA is the most significant bit of the data
-                    // register (UtA2e, p. 9:-14, column 1).
-                    // 
-                    // The upshot is that if the MSB of the data
-                    // register is not set, then the sequencer never
-                    // activates the WRITE signal.
-                    if (!this.cur.readOnly && (this.bus & 0x80)) {
+                    if (!this.cur.readOnly) {
                         track[this.cur.head] = this.bus;
                         if (!this.cur.dirty) {
                             this.updateDirty(this.drive, true);

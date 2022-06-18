@@ -377,7 +377,8 @@ describe('DiskII', () => {
             }
             expect(nibble).toBe(0xD5);
             nibble = diskII.ioSwitch(0x8c);  // read data
-            // expect next read to be a zero
+            // expect next read to be a zero because the sequencer is waiting
+            // for data
             expect(nibble).toBe(0x00);
         });
 
@@ -417,7 +418,7 @@ describe('DiskII', () => {
     });
 
     describe('writing nibble-based disks', () => {
-        it('writes a nibble to the disk when the high bit set', () => {
+        it('writes a nibble to the disk', () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
             diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
             let track0 = diskII.getState().drives[0].tracks[0];
@@ -429,20 +430,6 @@ describe('DiskII', () => {
 
             track0 = diskII.getState().drives[0].tracks[0];
             expect(track0[0]).toBe(0x80);
-        });
-
-        it('does not write a nibble to the disk when the high bit is clear', () => {
-            const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
-            let track0 = diskII.getState().drives[0].tracks[0];
-            expect(track0[0]).toBe(0xFF);
-
-            diskII.ioSwitch(0x89);        // turn on the motor
-            diskII.ioSwitch(0x8F, 0x00);  // write
-            diskII.ioSwitch(0x8C);        // shift
-
-            track0 = diskII.getState().drives[0].tracks[0];
-            expect(track0[0]).toBe(0xff);
         });
 
         it('writes two nibbles to the disk', () => {
