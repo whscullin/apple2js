@@ -499,5 +499,24 @@ describe('DiskII', () => {
             expect(track0[0]).toBe(0x80);
             expect(track0[1]).toBe(0x81);
         });
+
+        it('sets disk state to dirty and calls the dirty callback when written', () => {
+            const diskII = new DiskII(mockApple2IO, callbacks);
+            diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+            let state = diskII.getState();
+            state.drives[0].dirty = false;
+            diskII.setState(state);
+            jest.resetAllMocks();
+
+            diskII.ioSwitch(0x89);        // turn on the motor
+            diskII.ioSwitch(0x8F, 0x80);  // write
+            diskII.ioSwitch(0x8C);        // shift
+
+            expect(callbacks.dirty).toHaveBeenCalledTimes(1);
+            expect(callbacks.dirty).toHaveBeenCalledWith(1, true);
+
+            state = diskII.getState();
+            expect(state.drives[0].dirty).toBeTruthy();
+        });
     });
 });
