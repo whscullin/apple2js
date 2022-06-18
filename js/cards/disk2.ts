@@ -338,7 +338,7 @@ export default class DiskII implements Card<State> {
 
     /**
      * When `1`, the next nibble will be available for read; when `0`,
-     * the drive is pretending to wait for data to be shifted in by the
+     * the card is pretending to wait for data to be shifted in by the
      * sequencer.
      */
     private skip = 0;
@@ -742,6 +742,9 @@ export default class DiskII implements Card<State> {
     }
 
     getState(): State {
+        // TODO(flan): This does not accurately save state. It's missing
+        // all of the state for WOZ disks and the current status of the
+        // bus.
         const result = {
             drives: [] as DriveState[],
             skip: this.skip,

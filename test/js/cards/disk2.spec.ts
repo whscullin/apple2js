@@ -4,7 +4,7 @@ import DiskII, { Callbacks } from 'js/cards/disk2';
 import CPU6502 from 'js/cpu6502';
 import { VideoModes } from 'js/videomodes';
 import { mocked } from 'ts-jest/utils';
-import { BYTES_BY_TRACK_IMAGE } from '../formats/testdata/16sector';
+import { BYTES_BY_SECTOR_IMAGE, BYTES_BY_TRACK_IMAGE } from '../formats/testdata/16sector';
 
 jest.mock('js/apple2io');
 jest.mock('js/videomodes');
@@ -42,6 +42,57 @@ describe('DiskII', () => {
     it('is constructable', () => {
         const diskII = new DiskII(mockApple2IO, callbacks);
         expect(diskII).not.toBeNull();
+    });
+
+    it('round-trips the state when there are no changes', () => {
+        const diskII = new DiskII(mockApple2IO, callbacks);
+        diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+
+        const state = diskII.getState();
+        diskII.setState(state);
+
+        expect(diskII.getState()).toEqual(state);
+    });
+
+    it('round-trips the state when there are changes', () => {
+        const diskII = new DiskII(mockApple2IO, callbacks);
+        diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+        diskII.setBinary(2, 'BYTES_BY_SECTOR', 'po', BYTES_BY_SECTOR_IMAGE);
+
+        const state = diskII.getState();
+        // These are just arbitrary changes, not an exhaustive list of fields.
+        state.drive = 2;
+        state.skip = 1;
+        state.latch = 0x42;
+        state.on = true;
+        state.writeMode = true;
+        state.drives[1].tracks[14][12] = 0x80;
+        state.drives[1].head = 1000;
+        state.drives[1].phase = 3;
+        diskII.setState(state);
+
+        expect(diskII.getState()).toEqual(state);
+    });
+
+    it('calls all of the callbacks when state is restored', () => {
+        const diskII = new DiskII(mockApple2IO, callbacks);
+        diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+        jest.resetAllMocks();
+
+        const state = diskII.getState();
+        diskII.setState(state);
+
+        expect(callbacks.driveLight).toHaveBeenCalledTimes(2);
+        expect(callbacks.driveLight).toHaveBeenCalledWith(1, false);
+        expect(callbacks.driveLight).toHaveBeenCalledWith(2, false);
+
+        expect(callbacks.label).toHaveBeenCalledTimes(2);
+        expect(callbacks.label).toHaveBeenCalledWith(1, 'BYTES_BY_TRACK', undefined);
+        expect(callbacks.label).toHaveBeenCalledWith(2, 'Disk 2', undefined);
+
+        expect(callbacks.dirty).toHaveBeenCalledTimes(2);
+        expect(callbacks.dirty).toHaveBeenCalledWith(1, true);
+        expect(callbacks.dirty).toHaveBeenCalledWith(2, false);
     });
 
     describe('drive lights', () => {
