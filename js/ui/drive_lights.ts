@@ -17,9 +17,13 @@ export default class DriveLights implements Callbacks {
 
     public label(drive: DriveNumber, label?: string, side?: string) {
         const labelElement = document.querySelector<HTMLElement>(`#disk-label${drive}`);
-        const labelText = `${label || ''} ${(side ? `- ${side}` : '')}`;
-        if (label && labelElement) {
-            labelElement.innerText = labelText;
+        let labelText = '';
+        if (labelElement) {
+            labelText = labelElement.innerText;
+            if (label) {
+                labelText = `${label || ''} ${(side ? `- ${side}` : '')}`;
+                labelElement.innerText = labelText;
+            }
         }
         return labelText;
     }

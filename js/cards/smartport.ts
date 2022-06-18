@@ -572,7 +572,10 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
         return true;
     }
 
-    getBinary(drive: number): MassStorageData {
+    getBinary(drive: number): MassStorageData | null {
+        if (!this.disks[drive]) {
+            return null;
+        }
         const blocks = this.disks[drive].blocks;
         const data = new Uint8Array(blocks.length * 512);
         for (let idx = 0; idx < blocks.length; idx++) {
@@ -580,8 +583,8 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
         }
         return {
             name: this.disks[drive].name,
-            ext: this.ext[drive],
-            data,
+            ext: 'po',
+            data: data.buffer,
         };
     }
 }
