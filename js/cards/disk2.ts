@@ -336,6 +336,11 @@ export default class DiskII implements Card<State> {
             dirty: false,
         }];
 
+    /**
+     * When `1`, the next nibble will be available for read; when `0`,
+     * the card is pretending to wait for data to be shifted in by the
+     * sequencer.
+     */
     private skip = 0;
     /** Last data written by the CPU to card softswitch 0x8D. */
     private bus = 0;
@@ -520,6 +525,18 @@ export default class DiskII implements Card<State> {
      * tracks by activating two neighboring coils at once.
      */
     private setPhase(phase: Phase, on: boolean) {
+        // According to Sather, UtA2e, p. 9-12, Drive On/Off and Drive
+        // Select:
+        //     Turning a drive on ($C089,X) [...]:
+        //       1. [...]
+        //       5. [...] enables head positioning [...]
+        //
+        // Therefore do nothing if no drive is on.
+        if (!this.on) {
+            this.debug(`ignoring phase ${phase}${on ? ' on' : ' off'}`);
+            return;
+        }
+
         this.debug(`phase ${phase}${on ? ' on' : ' off'}`);
         if (on) {
             this.cur.track += PHASE_DELTA[this.cur.phase][phase] * 2;
@@ -725,6 +742,9 @@ export default class DiskII implements Card<State> {
     }
 
     getState(): State {
+        // TODO(flan): This does not accurately save state. It's missing
+        // all of the state for WOZ disks and the current status of the
+        // bus.
         const result = {
             drives: [] as DriveState[],
             skip: this.skip,
@@ -868,6 +888,10 @@ export default class DiskII implements Card<State> {
     }
 
     initWorker() {
+        if (!window.Worker) {
+            return;
+        }
+
         this.worker = new Worker('dist/format_worker.bundle.js');
 
         this.worker.addEventListener('message', (message: MessageEvent<FormatWorkerResponse>) => {
