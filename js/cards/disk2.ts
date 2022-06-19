@@ -938,14 +938,9 @@ export default class DiskII implements Card<State> {
             }
         }
 
-        const {
-            name,
-            format,
-        } = cur;
-
         return {
-            ext: format,
-            name,
+            ext: 'dsk',
+            name: cur.name,
             data: data.buffer
         };
     }
