@@ -90,9 +90,18 @@ export const Apple2 = (props: Apple2Props) => {
         setShowDebug((on) => !on);
     }, []);
 
+    const removeFocus = useCallback(() => {
+        if (document?.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+    }, []);
+
     return (
         <div className={styles.container}>
-            <div className={cs(styles.outer, { apple2e: e, [styles.ready]: ready })}>
+            <div
+                className={cs(styles.outer, { apple2e: e, [styles.ready]: ready })}
+                onClick={removeFocus}
+            >
                 <Screen screen={screen} />
                 <Slinky io={io} slot={2} />
                 {!e ? <Videoterm io={io} slot={3} /> : null}

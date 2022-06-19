@@ -115,6 +115,9 @@ export const Keyboard = ({ apple2, e }: KeyboardProps) => {
     // Set global keystroke handler
     useEffect(() => {
         const keyDown = (event: KeyboardEvent) => {
+            if (document.activeElement && document.activeElement !== document.body) {
+                return;
+            }
             const key = mapKeyEvent(event, active.includes('LOCK'));
             if (key !== 0xff) {
                 // CTRL-SHIFT-DELETE for reset
