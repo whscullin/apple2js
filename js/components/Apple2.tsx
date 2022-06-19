@@ -48,7 +48,7 @@ export const Apple2 = (props: Apple2Props) => {
     const [cpu, setCPU] = useState<CPU6502>();
     const [error, setError] = useState<unknown>();
     const [ready, setReady] = useState(false);
-    const [showDebug, setShowDebug] = useState(true);
+    const [showDebug, setShowDebug] = useState(false);
     const drivesReady = useMemo(() => new Ready(setError), []);
 
     useEffect(() => {
