@@ -1,7 +1,10 @@
 /** @jest-environment jsdom */
+import fs from 'fs';
+
 import Apple2IO from 'js/apple2io';
 import DiskII, { Callbacks } from 'js/cards/disk2';
 import CPU6502 from 'js/cpu6502';
+import { byte } from 'js/types';
 import { VideoModes } from 'js/videomodes';
 import { mocked } from 'ts-jest/utils';
 import { BYTES_BY_SECTOR_IMAGE, BYTES_BY_TRACK_IMAGE } from '../formats/testdata/16sector';
@@ -248,6 +251,7 @@ describe('DiskII', () => {
             diskII.ioSwitch(0x83);  // coil 1 on
             diskII.ioSwitch(0x80);  // coil 0 off
             diskII.ioSwitch(0x85);  // coil 2 on
+            diskII.ioSwitch(0x82);  // coil 1 off
             diskII.ioSwitch(0x87);  // coil 3 on
             diskII.ioSwitch(0x84);  // coil 2 off
             diskII.ioSwitch(0x81);  // coil 0 on
@@ -517,6 +521,178 @@ describe('DiskII', () => {
 
             state = diskII.getState();
             expect(state.drives[0].dirty).toBeTruthy();
+        });
+    });
+
+    describe('reading WOZ-based disks', () => {
+        const DOS33_SYSTEM_MASTER_IMAGE =
+            fs.readFileSync('test/js/cards/data/DOS 3.3 System Master.woz').buffer;
+
+        it('accepts WOZ-based disks', () => {
+            const diskII = new DiskII(mockApple2IO, callbacks);
+            diskII.setBinary(1, 'DOS 3.3 System Master', 'woz', DOS33_SYSTEM_MASTER_IMAGE);
+
+            expect(true).toBeTruthy();
+        });
+
+        it('stops the head at the end of the image', () => {
+            const diskII = new DiskII(mockApple2IO, callbacks);
+            diskII.setBinary(1, 'DOS 3.3 System Master', 'woz', DOS33_SYSTEM_MASTER_IMAGE);
+            setTrack(diskII, 33);
+
+            diskII.ioSwitch(0x89);  // turn on the motor
+            diskII.ioSwitch(0x85);  // coil 2 on
+            for (let i = 0; i < 5; i++) {
+                diskII.ioSwitch(0x87);  // coil 3 on
+                diskII.ioSwitch(0x84);  // coil 2 off
+                diskII.ioSwitch(0x81);  // coil 0 on
+                diskII.ioSwitch(0x86);  // coil 3 off
+                diskII.ioSwitch(0x83);  // coil 1 on
+                diskII.ioSwitch(0x80);  // coil 0 off
+                diskII.ioSwitch(0x85);  // coil 2 on
+                diskII.ioSwitch(0x82);  // coil 1 off
+            }
+            diskII.ioSwitch(0x84);  // coil 2 off
+
+            const state = diskII.getState();
+            expect(state.drives[0].phase).toBe(2);
+            // For WOZ images, the number of tracks is the number in the image.
+            // The DOS3.3 System Master was imaged on a 40 track drive, so it
+            // has data for all 40 tracks, even though the last few are garbage.
+            expect(state.drives[0].track).toBe(40 * STEPS_PER_TRACK - 1);
+        });
+
+        it('spins the disk when motor is on', () => {
+            let cycles: number = 0;
+            mocked(mockApple2IO).cycles.mockImplementation(() => cycles);
+
+            const diskII = new DiskII(mockApple2IO, callbacks);
+            diskII.setBinary(1, 'DOS 3.3 System Master', 'woz', DOS33_SYSTEM_MASTER_IMAGE);
+
+            let state = diskII.getState();
+            expect(state.drives[0].head).toBe(0);
+
+            diskII.ioSwitch(0x89);  // turn on the motor
+            cycles += 10;
+            diskII.tick();
+
+            state = diskII.getState();
+            expect(state.drives[0].head).toBeGreaterThan(0);
+        });
+
+        it('does not spin the disk when motor is off', () => {
+            let cycles: number = 0;
+            mocked(mockApple2IO).cycles.mockImplementation(() => cycles);
+
+            const diskII = new DiskII(mockApple2IO, callbacks);
+            diskII.setBinary(1, 'DOS 3.3 System Master', 'woz', DOS33_SYSTEM_MASTER_IMAGE);
+
+            let state = diskII.getState();
+            expect(state.drives[0].head).toBe(0);
+
+            cycles += 10;
+            diskII.tick();
+
+            state = diskII.getState();
+            expect(state.drives[0].head).toBe(0);
+        });
+
+        it('reads an FF sync byte from the beginning of the image', () => {
+            let cycles: number = 0;
+            mocked(mockApple2IO).cycles.mockImplementation(() => cycles);
+
+            const diskII = new DiskII(mockApple2IO, callbacks);
+            diskII.setBinary(1, 'DOS 3.3 System Master', 'woz', DOS33_SYSTEM_MASTER_IMAGE);
+
+            diskII.ioSwitch(0x89);  // turn on the motor
+            diskII.ioSwitch(0x8e);  // read mode
+
+            // The initial bytes in the image are: FF 3F CF F3
+            // making the bit stream:
+            //
+            //     1111 1111 0011 1111 1100 1111 1111 0011
+            //
+            // That's three FF sync bytes in a row. Assuming
+            // the sequencer is in state 2, each sync byte takes
+            // 32 clock cycles to read, is held for 8 clock
+            // cycles while the extra zeros are shifted in, then
+            // is held 8 more clock cycles while the sequencer
+            // reads the next two bits.
+            cycles += 40;  // shift 10 bits
+            const nibble = diskII.ioSwitch(0x8c);  // read data
+            expect(nibble).toBe(0xFF);
+        });
+
+        it('reads several FF sync bytes', () => {
+            let cycles: number = 0;
+            mocked(mockApple2IO).cycles.mockImplementation(() => cycles);
+
+            const diskII = new DiskII(mockApple2IO, callbacks);
+            diskII.setBinary(1, 'DOS 3.3 System Master', 'woz', DOS33_SYSTEM_MASTER_IMAGE);
+
+            diskII.ioSwitch(0x89);  // turn on the motor
+            diskII.ioSwitch(0x8e);  // read mode
+
+            // The initial bytes in the image are: FF 3F CF F3
+            // making the bit stream:
+            //
+            //     1111 1111 0011 1111 1100 1111 1111 0011
+            //
+            // That's three FF sync bytes in a row. Assuming
+            // the sequencer is in state 2, each sync byte takes
+            // 32 clock cycles to read, is held for 8 clock
+            // cycles while the extra zeros are shifted in, then
+            // is held 8 more clock cycles while the sequencer
+            // reads the next two bits.  This means that 3 sync
+            // bytes will be available for 3 * 40 + 8 cycles.
+            for (let i = 0; i < 3 * 40 + 8; i++) {
+                cycles++;
+                const nibble = diskII.ioSwitch(0x8c);  // read data
+                if (nibble & 0x80) {
+                    // Nibbles are only valid when the high bit is set.
+                    // eslint-disable-next-line jest/no-conditional-expect
+                    expect(nibble).toBe(0xFF);
+                }
+            }
+        });
+
+        it('reads random garbage on uninitialized tracks', () => {
+            let cycles: number = 0;
+            mocked(mockApple2IO).cycles.mockImplementation(() => cycles);
+
+            const diskII = new DiskII(mockApple2IO, callbacks);
+            diskII.setBinary(1, 'DOS 3.3 System Master', 'woz', DOS33_SYSTEM_MASTER_IMAGE);
+
+            // Step to track 0.5
+            diskII.ioSwitch(0x89);  // turn on the motor
+            diskII.ioSwitch(0x81);  // coil 0 on
+            diskII.ioSwitch(0x83);  // coil 1 on
+            diskII.ioSwitch(0x80);  // coil 0 off
+            diskII.ioSwitch(0x82);  // coil 1 off
+            diskII.ioSwitch(0x8e);  // read mode
+
+            // Read 5 nibbles
+            const nibbles: byte[] = [];
+            let read = false;
+            while (nibbles.length < 5) {
+                cycles++;
+                const nibble = diskII.ioSwitch(0x8c);  // read data
+                const qa = nibble & 0x80;
+                if (qa && !read) {
+                    nibbles.push(nibble);
+                    read = true;
+                }
+                if (!qa && read) {
+                    read = false;
+                }
+            }
+            // Test that the first doesn't equal any of the others.
+            // (Yes, this test could fail with some bad luck.)
+            let equal = false;
+            for (let i = 1; i < 5; i++) {
+                equal ||= nibbles[0] === nibbles[i];
+            }
+            expect(equal).not.toBeTruthy();
         });
     });
 });
