@@ -1,10 +1,11 @@
 import { h } from 'preact';
 import cs from 'classnames';
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Apple2 as Apple2Impl } from '../apple2';
 import Apple2IO from '../apple2io';
 import CPU6502 from '../cpu6502';
 import { ControlStrip } from './ControlStrip';
+import { Debugger } from './Debugger';
 import { ErrorModal } from './ErrorModal';
 import { Inset } from './Inset';
 import { Keyboard } from './Keyboard';
@@ -47,6 +48,7 @@ export const Apple2 = (props: Apple2Props) => {
     const [cpu, setCPU] = useState<CPU6502>();
     const [error, setError] = useState<unknown>();
     const [ready, setReady] = useState(false);
+    const [showDebug, setShowDebug] = useState(true);
     const drivesReady = useMemo(() => new Ready(setError), []);
 
     useEffect(() => {
@@ -84,21 +86,28 @@ export const Apple2 = (props: Apple2Props) => {
         }
     }, [props, drivesReady]);
 
+    const toggleDebugger = useCallback(() => {
+        setShowDebug((on) => !on);
+    }, []);
+
     return (
-        <div className={cs(styles.outer, { apple2e: e, [styles.ready]: ready })}>
-            <Screen screen={screen} />
-            <Slinky io={io} slot={2} />
-            {!e ? <Videoterm io={io} slot={3} /> : null}
-            <Mouse cpu={cpu} screen={screen} io={io} slot={4} />
-            <ThunderClock io={io} slot={5} />
-            <Inset>
-                <Drives cpu={cpu} io={io} sectors={sectors} enhanced={enhanced} ready={drivesReady} />
-            </Inset>
-            <ControlStrip apple2={apple2} e={e} />
-            <Inset>
-                <Keyboard apple2={apple2} e={e} />
-            </Inset>
-            <ErrorModal error={error} setError={setError} />
+        <div className={styles.container}>
+            <div className={cs(styles.outer, { apple2e: e, [styles.ready]: ready })}>
+                <Screen screen={screen} />
+                <Slinky io={io} slot={2} />
+                {!e ? <Videoterm io={io} slot={3} /> : null}
+                <Mouse cpu={cpu} screen={screen} io={io} slot={4} />
+                <ThunderClock io={io} slot={5} />
+                <Inset>
+                    <Drives cpu={cpu} io={io} sectors={sectors} enhanced={enhanced} ready={drivesReady} />
+                </Inset>
+                <ControlStrip apple2={apple2} e={e} toggleDebugger={toggleDebugger} />
+                <Inset>
+                    <Keyboard apple2={apple2} e={e} />
+                </Inset>
+                <ErrorModal error={error} setError={setError} />
+            </div>
+            {showDebug ? <Debugger apple2={apple2} e={e} /> : null}
         </div>
     );
 };

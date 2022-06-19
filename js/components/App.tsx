@@ -1,5 +1,5 @@
 import 'preact/debug';
-import { h, Fragment } from 'preact';
+import { h } from 'preact';
 import { Header } from './Header';
 import { Apple2 } from './Apple2';
 import { usePrefs } from './hooks/usePrefs';
@@ -7,7 +7,7 @@ import { SYSTEM_TYPE_APPLE2E } from '../ui/system';
 import { SCREEN_GL } from '../ui/screen';
 import { defaultSystem, systemTypes } from './util/systems';
 
-import './css/App.module.css';
+import styles from './css/App.module.css';
 
 /**
  * Top level application component, provides the parameters
@@ -26,12 +26,12 @@ export const App = () => {
     };
 
     return (
-        <>
+        <div className={styles.container}>
             <Header e={system.e} />
             <Apple2
                 gl={gl}
                 {...system}
             />
-        </>
+        </div>
     );
 };

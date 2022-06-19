@@ -7,6 +7,7 @@ export interface DebuggerContainer {
     run: () => void;
     stop: () => void;
     getCPU: () => CPU6502;
+    isRunning: () => boolean;
 }
 
 type symbols = { [key: number]: string };
@@ -71,6 +72,9 @@ export default class Debugger {
         this.container.run();
     };
 
+    isRunning = () =>
+        this.container.isRunning();
+
     setVerbose = (verbose: boolean) => {
         this.verbose = verbose;
     };
@@ -79,12 +83,39 @@ export default class Debugger {
         this.maxTrace = maxTrace;
     };
 
-    getTrace = () => {
-        return this.trace.map(this.printDebugInfo).join('\n');
+    getTrace = (count?: number) => {
+        return this.trace.slice(count ? -count : undefined).map(this.printDebugInfo).join('\n');
     };
 
-    printTrace = () => {
-        debug(this.getTrace());
+    printTrace = (count?: number) => {
+        debug(this.getTrace(count));
+    };
+
+    getStack = (size?: number) => {
+        const { sp } = this.cpu.getDebugInfo();
+        const stack = [];
+
+        let max = 255;
+        let min = 0;
+        if (size) {
+            if ((sp - 3) >= (255 - size)) {
+                min = Math.max(255 - size + 1, 0);
+            } else {
+                max = Math.min(sp + size - 4, 255);
+                min = Math.max(sp - 3, 0);
+            }
+        }
+
+        for (let addr = max; addr >= min; addr--) {
+            const isSP = addr === sp ? '*' : ' ';
+            const addrStr = `$${toHex(0x0100 + addr)}`;
+            const valStr = toHex(this.cpu.read(0x01, addr));
+            if (!size || ((sp + size > addr) && (addr > sp - size))) {
+                stack.push(`${isSP} ${addrStr} ${valStr}`);
+            }
+        }
+
+        return stack.join('\n');
     };
 
     setBreakpoint = (addr: word, exp?: breakpointFn) => {
