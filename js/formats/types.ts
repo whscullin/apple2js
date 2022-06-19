@@ -212,9 +212,16 @@ export interface DiskProcessedResponse {
 export type FormatWorkerResponse =
     DiskProcessedResponse;
 
+export interface MassStorageData {
+    name: string;
+    ext: string;
+    data: ArrayBuffer;
+}
+
 /**
  * Block device common interface
  */
 export interface MassStorage<T> {
     setBinary(drive: number, name: string, ext: T, data: ArrayBuffer): boolean;
+    getBinary(drive: number): MassStorageData | null;
 }

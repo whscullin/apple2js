@@ -120,14 +120,15 @@ export function openSave(driveString: string, event: MouseEvent) {
     const drive = parseInt(driveString, 10) as DriveNumber;
 
     const mimeType = 'application/octet-stream';
-    const data = _disk2.getBinary(drive);
+    const storageData = _disk2.getBinary(drive);
     const a = document.querySelector<HTMLAnchorElement>('#local_save_link')!;
 
-    if (!data) {
+    if (!storageData) {
         alert(`No data from drive ${drive}`);
         return;
     }
 
+    const { data } = storageData;
     const blob = new Blob([data], { 'type': mimeType });
     a.href = window.URL.createObjectURL(blob);
     a.download = driveLights.label(drive) + '.dsk';

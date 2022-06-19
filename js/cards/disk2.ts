@@ -20,6 +20,7 @@ import {
     PROCESS_JSON_DISK,
     PROCESS_JSON,
     ENCODING_BITSTREAM,
+    MassStorageData,
 } from '../formats/types';
 
 import {
@@ -914,7 +915,7 @@ export default class DiskII implements Card<State> {
     }
 
     // TODO(flan): Does not work with WOZ disks
-    getBinary(drive: DriveNumber) {
+    getBinary(drive: DriveNumber): MassStorageData | null {
         const cur = this.drives[drive - 1];
         if (!isNibbleDrive(cur)) {
             return null;
@@ -937,7 +938,11 @@ export default class DiskII implements Card<State> {
             }
         }
 
-        return data;
+        return {
+            ext: 'dsk',
+            name: cur.name,
+            data: data.buffer
+        };
     }
 
     // TODO(flan): Does not work with WOZ disks

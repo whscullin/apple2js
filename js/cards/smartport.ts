@@ -1,7 +1,7 @@
 import { debug, toHex } from '../util';
 import { rom as smartPortRom } from '../roms/cards/smartport';
 import { Card, Restorable, byte, word, rom } from '../types';
-import { MassStorage, BlockDisk, ENCODING_BLOCK, BlockFormat } from '../formats/types';
+import { MassStorage, BlockDisk, ENCODING_BLOCK, BlockFormat, MassStorageData } from '../formats/types';
 import CPU6502, { CpuState, flags } from '../cpu6502';
 import { read2MGHeader } from '../formats/2mg';
 import createBlockDisk from '../formats/block';
@@ -131,6 +131,7 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
     private disks: BlockDisk[] = [];
     private busy: boolean[] = [];
     private busyTimeout: ReturnType<typeof setTimeout>[] = [];
+    private ext: string[] = [];
 
     constructor(
         private cpu: CPU6502,
@@ -561,6 +562,7 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
             volume,
         };
 
+        this.ext[drive] = fmt;
         this.disks[drive] = createBlockDisk(options);
         this.callbacks?.label(drive, name);
 
@@ -568,5 +570,21 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
         dump(prodos);
 
         return true;
+    }
+
+    getBinary(drive: number): MassStorageData | null {
+        if (!this.disks[drive]) {
+            return null;
+        }
+        const blocks = this.disks[drive].blocks;
+        const data = new Uint8Array(blocks.length * 512);
+        for (let idx = 0; idx < blocks.length; idx++) {
+            data.set(blocks[idx], idx * 512);
+        }
+        return {
+            name: this.disks[drive].name,
+            ext: 'po',
+            data: data.buffer,
+        };
     }
 }
