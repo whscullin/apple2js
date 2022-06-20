@@ -1,5 +1,6 @@
 import type { byte, memory, MemberOf, word } from '../types';
 import type { GamepadConfiguration } from '../ui/types';
+import { InfoChunk } from './woz';
 
 export const DRIVE_NUMBERS = [1, 2] as const;
 export type DriveNumber = MemberOf<typeof DRIVE_NUMBERS>;
@@ -70,6 +71,7 @@ export interface WozDisk extends FloppyDisk {
     encoding: typeof ENCODING_BITSTREAM;
     trackMap: number[];
     rawTracks: Uint8Array[];
+    info: InfoChunk | undefined;
 }
 
 export interface BlockDisk extends Disk {

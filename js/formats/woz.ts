@@ -155,6 +155,9 @@ export class TrksChunk2 extends TrksChunk {
             const end = start + trk.blockCount * 512;
             const slice = bits.slice(start, end);
             const trackData = new Uint8Array(slice);
+            if (trackNo === 0) {
+                // debug(`First bytes: ${toHex(trackData[0])} ${toHex(trackData[1])} ${toHex(trackData[2])} ${toHex(trackData[3])}`);
+            }
             for (let jdx = 0; jdx < trk.bitCount; jdx++) {
                 const byteIndex = jdx >> 3;
                 const bitIndex = 7 - (jdx & 0x07);
@@ -284,9 +287,9 @@ export default function createDiskFromWoz(options: DiskOptions): WozDisk {
         debug('Invalid woz header');
     }
 
-    debug(chunks);
+    // debug(chunks);
 
-    const { meta, tmap, trks } = chunks;
+    const { meta, tmap, trks, info } = chunks;
 
     const disk: WozDisk = {
         encoding: ENCODING_BITSTREAM,
@@ -296,6 +299,7 @@ export default function createDiskFromWoz(options: DiskOptions): WozDisk {
         readOnly: true, //chunks.info.writeProtected === 1;
         name: meta?.values['title'] || options.name,
         side: meta?.values['side_name'] || meta?.values['side'],
+        info
     };
 
     return disk;

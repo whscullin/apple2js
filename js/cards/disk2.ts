@@ -1,4 +1,4 @@
-import { base64_encode} from '../base64';
+import { base64_encode } from '../base64';
 import type {
     byte,
     Card,
@@ -28,7 +28,7 @@ import {
     createDiskFromJsonDisk
 } from '../formats/create_disk';
 
-import { debug, toHex } from '../util';
+import { toHex } from '../util';
 import { jsonDecode, jsonEncode, readSector } from '../formats/format_utils';
 
 import { BOOTSTRAP_ROM_16, BOOTSTRAP_ROM_13 } from '../roms/cards/disk2';
@@ -201,7 +201,7 @@ interface NibbleDrive extends BaseDrive {
 
 type Drive = WozDrive | NibbleDrive;
 
-function isNibbleDrive(drive: Drive): drive is NibbleDrive  {
+function isNibbleDrive(drive: Drive): drive is NibbleDrive {
     return drive.encoding === ENCODING_NIBBLE;
 }
 
@@ -395,12 +395,18 @@ export default class DiskII implements Card<State> {
         this.lastCycles = this.io.cycles();
         this.bootstrapRom = this.sectors === 16 ? BOOTSTRAP_ROM_16 : BOOTSTRAP_ROM_13;
         this.sequencerRom = this.sectors === 16 ? SEQUENCER_ROM_16 : SEQUENCER_ROM_13;
+        // From the example in UtA2e, p. 9-29, col. 1, para. 1., this is
+        // essentially the start of the sequencer loop and produces
+        // correctly synced nibbles immediately.  Starting at state 0
+        // would introduce a spurrious 1 in the latch at the beginning,
+        // which requires reading several more sync bytes to sync up.
+        this.state = 2;
 
         this.initWorker();
     }
 
     private debug(..._args: unknown[]) {
-        // debug.apply(this, arguments);
+        // debug(..._args);
     }
 
     // Only used for WOZ disks
@@ -422,7 +428,7 @@ export default class DiskII implements Card<State> {
             if (this.clock === 4) {
                 pulse = track[this.cur.head];
                 if (!pulse) {
-                    // More that 2 zeros can not be read reliably.
+                    // More than 2 zeros can not be read reliably.
                     if (++this.zeros > 2) {
                         pulse = Math.random() >= 0.5 ? 1 : 0;
                     }
@@ -440,9 +446,7 @@ export default class DiskII implements Card<State> {
 
             const command = this.sequencerRom[idx];
 
-            if (this.on && this.q7) {
-                debug('clock:', this.clock, 'command:', toHex(command), 'q6:', this.q6);
-            }
+            this.debug(`clock: ${this.clock} state: ${toHex(this.state)} pulse: ${pulse} command: ${toHex(command)} q6: ${this.q6} latch: ${toHex(this.latch)}`);
 
             switch (command & 0xf) {
                 case 0x0: // CLR
@@ -461,11 +465,13 @@ export default class DiskII implements Card<State> {
                     break;
                 case 0xB: // LD
                     this.latch = this.bus;
-                    debug('Loading', toHex(this.latch), 'from bus');
+                    this.debug('Loading', toHex(this.latch), 'from bus');
                     break;
                 case 0xD: // SL1
                     this.latch = ((this.latch << 1) | 0x01) & 0xff;
                     break;
+                default:
+                    this.debug(`unknown command: ${toHex(command & 0xf)}`);
             }
             this.state = (command >> 4 & 0xF) as nibble;
 
@@ -473,7 +479,7 @@ export default class DiskII implements Card<State> {
                 if (this.on) {
                     if (this.q7) {
                         track[this.cur.head] = this.state & 0x8 ? 0x01 : 0x00;
-                        debug('Wrote', this.state & 0x8 ? 0x01 : 0x00);
+                        this.debug('Wrote', this.state & 0x8 ? 0x01 : 0x00);
                     }
 
                     if (++this.cur.head >= track.length) {
@@ -544,6 +550,10 @@ export default class DiskII implements Card<State> {
             this.cur.phase = phase;
         }
 
+        // The emulator clamps the track to the valid track range available
+        // in the image, but real Disk II drives can seek past track 34 by
+        // at least a half track, usually a full track. Some 3rd party
+        // drives can seek to track 39.
         const maxTrack = isNibbleDrive(this.cur)
             ? this.cur.tracks.length * 4 - 1
             : this.cur.trackMap.length - 1;
