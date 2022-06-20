@@ -217,6 +217,10 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
         this.runAnimationFrame = null;
     }
 
+    isRunning() {
+        return !this.paused;
+    }
+
     getState(): State {
         const state: State = {
             cpu: this.cpu.getState(),

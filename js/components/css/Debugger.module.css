@@ -1,0 +1,56 @@
+.debugger pre {
+    font-size: 9px;
+    background: white;
+    color: black;
+    padding: 3px;
+    margin: 2px;
+    border: 1px inset;
+}
+
+.debugger input {
+    border: 1px inset;
+    font-size: 12px;
+}
+
+.inset {
+    margin: 5px 10px;
+    width: auto;
+}
+
+.heading {
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.controls {
+    padding: 3px 0;
+    margin: 2px 0;
+}
+
+.subHeading {
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.row {
+    display: flex;
+    flex-direction: row;
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+}
+
+.zeroPage {
+    width: 50em;
+}
+
+.trace {
+    width: 50em;
+}
+
+.stack {
+    width: 10em;
+}

@@ -36,3 +36,8 @@ button:focus, a[role="button"]:focus  {
 a[role="button"] {
     text-decoration: none;
 }
+
+.container {
+    display: flex;
+    flex-direction: column;
+}

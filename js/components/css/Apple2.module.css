@@ -1,5 +1,8 @@
-.outer {
+.container {
+    display: flex;
     margin: auto;
+}
+.outer {
     width: 620px;
     display: none;
 }
