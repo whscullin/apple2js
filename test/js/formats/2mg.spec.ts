@@ -184,7 +184,6 @@ describe('2mg format', () => {
     describe('create2MGFromBlockDisk', () => {
         it('can create a 2mg disk', () => {
             const header = read2MGHeader(VALID_PRODOS_IMAGE.buffer);
-            console.log(BYTES_BY_SECTOR_IMAGE.length);
             const blocks = [];
             for (let idx = 0; idx < BYTES_BY_SECTOR_IMAGE.length; idx += 512) {
                 blocks.push(BYTES_BY_SECTOR_IMAGE.slice(idx, idx + 512));

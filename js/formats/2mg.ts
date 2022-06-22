@@ -3,7 +3,6 @@ import Nibble from './nib';
 import ProDOS from './po';
 import { BlockDisk, DiskOptions } from './types';
 
-import { numToString, stringToNum } from '../util';
 import { byte, ReadonlyUint8Array } from 'js/types';
 
 /**
@@ -92,15 +91,16 @@ export interface HeaderData {
 
 export function read2MGHeader(rawData: ArrayBuffer): HeaderData {
     const prefix = new DataView(rawData);
-    const signature = numToString(prefix.getInt32(OFFSETS.SIGNATURE, true));
+    const decoder = new TextDecoder('ascii');
+    const signature = decoder.decode(rawData.slice(OFFSETS.SIGNATURE, OFFSETS.SIGNATURE + 4));
     if (signature !== '2IMG') {
         throw new Error(`Unrecognized 2mg signature: ${signature}`);
     }
+    const creator = decoder.decode(rawData.slice(OFFSETS.CREATOR, OFFSETS.CREATOR + 4));
     const headerLength = prefix.getInt16(OFFSETS.HEADER_LENGTH, true);
     if (headerLength !== 64) {
         throw new Error(`2mg header length is incorrect ${headerLength} !== 64`);
     }
-    const creator = numToString(prefix.getInt32(OFFSETS.CREATOR, true));
     const format = prefix.getInt32(OFFSETS.FORMAT, true);
     const flags = prefix.getInt32(OFFSETS.FLAGS, true);
     const blocks = prefix.getInt32(OFFSETS.BLOCKS, true);
@@ -221,8 +221,10 @@ export const create2MGFragments = (headerData: HeaderData | null, { blocks } : {
         creatorDataLength = headerData.creatorData.length;
     }
 
-    prefixView.setInt32(OFFSETS.SIGNATURE, stringToNum('2IMG'), true);
-    prefixView.setInt32(OFFSETS.CREATOR, stringToNum(headerData.creator), true);
+    const encoder = new TextEncoder();
+
+    prefix.set(encoder.encode('2IMG'), OFFSETS.SIGNATURE);
+    prefix.set(encoder.encode(headerData.creator.slice(0, 4)), OFFSETS.CREATOR);
     prefixView.setInt32(OFFSETS.HEADER_LENGTH, 64, true);
     prefixView.setInt16(OFFSETS.VERSION, 1, true);
     prefixView.setInt32(OFFSETS.FORMAT, headerData.format, true);

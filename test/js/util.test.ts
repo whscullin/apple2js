@@ -1,6 +1,6 @@
 /** @fileoverview Test for utils.ts. */
 
-import { allocMem, allocMemPages, numToString, stringToNum, testables, toBinary, toHex } from '../../js/util';
+import { allocMem, allocMemPages, testables, toBinary, toHex } from '../../js/util';
 
 describe('garbage', () => {
     it('returns 0 <= x <= 255', () => {
@@ -80,40 +80,3 @@ describe('hup', () => {
     // untestable due to direct reference to window.location
 });
 
-describe('numToString', () => {
-    it('packs a zero byte into a string of all zeros', () => {
-        expect(numToString(0x00)).toEqual('\0\0\0\0');
-    });
-    it('packs a byte in the printable ASCII range into a zero-padded string',
-        () => {
-            expect(numToString(0x41)).toEqual('A\0\0\0');
-        });
-    it('packs a word into a string', () => {
-        expect(numToString(0x4142)).toEqual('BA\0\0');
-    });
-    it('packs a 32-bit value into a string', () => {
-        expect(numToString(0x41424344)).toEqual('DCBA');
-    });
-    it('ignores more than 32 bits', () => {
-        expect(numToString(0x4142434445)).toEqual('EDCB');
-    });
-});
-
-describe('stringToNum', () => {
-    it('packs a zero byte into a string of all zeros', () => {
-        expect(stringToNum('\0\0\0\0')).toEqual(0x00);
-    });
-    it('packs a byte in the printable ASCII range into a zero-padded string',
-        () => {
-            expect(stringToNum('A\0\0\0')).toEqual(0x41);
-        });
-    it('packs a word into a string', () => {
-        expect(stringToNum('BA\0\0')).toEqual(0x4142);
-    });
-    it('packs a 32-bit value into a string', () => {
-        expect(stringToNum('DCBA')).toEqual(0x41424344);
-    });
-    it('ignores more than 4 character', () => {
-        expect(stringToNum('EDCBA')).toEqual(0x42434445);
-    });
-});
