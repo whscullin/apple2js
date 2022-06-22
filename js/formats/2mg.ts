@@ -141,7 +141,6 @@ export function read2MGHeader(rawData: ArrayBuffer): HeaderData {
 
     const extras: { comment?: string; creatorData?: ReadonlyUint8Array } = {};
     if (commentOffset) {
-
         extras.comment = new TextDecoder('utf-8').decode(
             new Uint8Array(rawData, commentOffset, commentLength));
     }
