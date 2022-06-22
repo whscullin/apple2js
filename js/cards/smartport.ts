@@ -582,8 +582,10 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
             return null;
         }
         const disk = this.disks[drive];
+        const ext = this.ext[drive];
+        const { name } = disk;
         let data: ArrayBuffer;
-        if (this.ext[drive] === '2mg') {
+        if (ext === '2mg') {
             data = create2MGFromBlockDisk(this.metadata[drive], disk);
         } else {
             const { blocks } = disk;
@@ -594,8 +596,8 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
             data = byteArray.buffer;
         }
         return {
-            name: this.disks[drive].name,
-            ext: 'po',
+            name,
+            ext,
             data,
         };
     }
