@@ -1,16 +1,15 @@
 import DOS from './do';
 import Nibble from './nib';
 import ProDOS from './po';
-import { DiskOptions } from './types';
+import { BlockDisk, DiskOptions } from './types';
 
-import { numToString } from '../util';
-import { ReadonlyUint8Array } from 'js/types';
+import { byte, ReadonlyUint8Array } from 'js/types';
 
 /**
  * Offsets in bytes to the various header fields. All number fields are
  * in little-endian order (least significant byte first). These values
  * come from the spec at:
- * 
+ *
  * https://apple2.org.za/gswv/a2zine/Docs/DiskImage_2MG_Info.txt
  */
 const OFFSETS = {
@@ -73,23 +72,35 @@ const FLAGS = {
     VOLUME_MASK:  0x000000FF
 } as const;
 
-enum FORMAT {
+export enum FORMAT {
     DOS = 0,
     ProDOS = 1,
     NIB = 2,
 }
 
-export function read2MGHeader(rawData: ArrayBuffer) {
+export interface HeaderData {
+    bytes: number;
+    creator: string;
+    format: FORMAT;
+    offset: number;
+    readOnly: boolean;
+    volume: byte;
+    comment?: string;
+    creatorData?: ReadonlyUint8Array;
+}
+
+export function read2MGHeader(rawData: ArrayBuffer): HeaderData {
     const prefix = new DataView(rawData);
-    const signature = numToString(prefix.getInt32(OFFSETS.SIGNATURE, true));
+    const decoder = new TextDecoder('ascii');
+    const signature = decoder.decode(rawData.slice(OFFSETS.SIGNATURE, OFFSETS.SIGNATURE + 4));
     if (signature !== '2IMG') {
         throw new Error(`Unrecognized 2mg signature: ${signature}`);
     }
+    const creator = decoder.decode(rawData.slice(OFFSETS.CREATOR, OFFSETS.CREATOR + 4));
     const headerLength = prefix.getInt16(OFFSETS.HEADER_LENGTH, true);
     if (headerLength !== 64) {
-        throw new Error(`2mg header length is incorrect ${headerLength} !== 63`);
+        throw new Error(`2mg header length is incorrect ${headerLength} !== 64`);
     }
-    const creator = numToString(prefix.getInt32(OFFSETS.CREATOR, true));
     const format = prefix.getInt32(OFFSETS.FORMAT, true);
     const flags = prefix.getInt32(OFFSETS.FLAGS, true);
     const blocks = prefix.getInt32(OFFSETS.BLOCKS, true);
@@ -138,7 +149,7 @@ export function read2MGHeader(rawData: ArrayBuffer) {
     }
 
     const readOnly = (flags & FLAGS.READ_ONLY) !== 0;
-    let volume = 254;
+    let volume = format === FORMAT.DOS ? 254 : 0;
     if (flags & FLAGS.VOLUME_VALID) {
         volume = flags & FLAGS.VOLUME_MASK;
     }
@@ -153,6 +164,107 @@ export function read2MGHeader(rawData: ArrayBuffer) {
         ...extras
     };
 }
+
+/**
+ * Creates the prefix and suffix parts of a 2mg file. Will use
+ * default header values if headerData is null.
+ *
+ * Currently only supports blocks disks but should be adaptable
+ * for nibble formats.
+ *
+ * @param headerData 2mg header data
+ * @param blocks The number of blocks in a block volume
+ * @returns 2mg prefix and suffix for creating a 2mg disk image
+ */
+
+export const create2MGFragments = (headerData: HeaderData | null, { blocks } : { blocks: number }) => {
+    if (!headerData) {
+        headerData = {
+            bytes: blocks * 512,
+            creator: 'A2JS',
+            format: FORMAT.ProDOS,
+            offset: 64,
+            readOnly: false,
+            volume: 0,
+        };
+    }
+    if (headerData.format !== FORMAT.ProDOS) {
+        throw new Error('Nibble formats not supported yet');
+    }
+    if (headerData.bytes !== blocks * 512) {
+        throw new Error('Byte count does not match block count');
+    }
+    const prefix = new Uint8Array(64);
+    const prefixView = new DataView(prefix.buffer);
+
+    const volumeFlags = headerData.volume ? headerData.volume | FLAGS.VOLUME_VALID : 0;
+    const readOnlyFlag = headerData.readOnly ? FLAGS.READ_ONLY : 0;
+    const flags = volumeFlags | readOnlyFlag;
+    const prefixLength = prefix.length;
+    const dataLength = blocks * 512;
+
+    let commentOffset = 0;
+    let commentLength = 0;
+    let commentData = new Uint8Array(0);
+    if (headerData.comment) {
+        commentData = new TextEncoder().encode(headerData.comment);
+        commentOffset = prefixLength + dataLength;
+        commentLength = commentData.length;
+    }
+    let creatorDataOffset = 0;
+    let creatorDataLength = 0;
+    let creatorData = new Uint8Array(0);
+    if (headerData.creatorData) {
+        creatorData = new Uint8Array(headerData.creatorData);
+        creatorDataOffset = prefixLength + dataLength + commentLength;
+        creatorDataLength = headerData.creatorData.length;
+    }
+
+    const encoder = new TextEncoder();
+
+    prefix.set(encoder.encode('2IMG'), OFFSETS.SIGNATURE);
+    prefix.set(encoder.encode(headerData.creator.slice(0, 4)), OFFSETS.CREATOR);
+    prefixView.setInt32(OFFSETS.HEADER_LENGTH, 64, true);
+    prefixView.setInt16(OFFSETS.VERSION, 1, true);
+    prefixView.setInt32(OFFSETS.FORMAT, headerData.format, true);
+    prefixView.setInt32(OFFSETS.FLAGS, flags, true);
+    prefixView.setInt32(OFFSETS.BLOCKS, blocks, true);
+    prefixView.setInt32(OFFSETS.DATA_OFFSET, prefixLength, true);
+    prefixView.setInt32(OFFSETS.DATA_LENGTH, dataLength, true);
+    prefixView.setInt32(OFFSETS.COMMENT, commentOffset, true);
+    prefixView.setInt32(OFFSETS.COMMENT_LENGTH, commentLength, true);
+    prefixView.setInt32(OFFSETS.CREATOR_DATA, creatorDataOffset, true);
+    prefixView.setInt32(OFFSETS.CREATOR_DATA_LENGTH, creatorDataLength, true);
+
+    const suffix = new Uint8Array(commentLength + creatorDataLength);
+    suffix.set(commentData);
+    suffix.set(creatorData, commentLength);
+
+    return { prefix, suffix };
+};
+
+/**
+ * Creates a 2MG image from stored 2MG header data and a block disk. Will use
+ * default header values if headerData is null.
+ *
+ * @param headerData 2MG style header data
+ * @param blocks Prodos volume blocks
+ * @returns 2MS
+ */
+
+export const create2MGFromBlockDisk = (headerData: HeaderData | null, { blocks }: BlockDisk): ArrayBuffer => {
+    const { prefix, suffix } = create2MGFragments(headerData, { blocks: blocks.length });
+
+    const imageLength = prefix.length + blocks.length * 512 + suffix.length;
+    const byteArray = new Uint8Array(imageLength);
+    byteArray.set(prefix);
+    for (let idx = 0; idx < blocks.length; idx++) {
+        byteArray.set(blocks[idx], prefix.length + idx * 512);
+    }
+    byteArray.set(suffix, prefix.length + blocks.length * 512);
+
+    return byteArray.buffer;
+};
 
 /**
  * Returns a `Disk` object from a 2mg image.

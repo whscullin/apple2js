@@ -3,6 +3,12 @@
     margin: auto;
 }
 
+@media all and (display-mode: minimal-ui) {
+    .header {
+        display: none;
+    }
+}
+
 .header img {
     border: none;
 }

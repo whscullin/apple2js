@@ -90,13 +90,3 @@ export function toBinary(v: byte) {
     }
     return result;
 }
-
-/** Packs a 32-bit integer into a string in little-endian order. */
-export function numToString(num: number) {
-    let result = '';
-    for (let idx = 0; idx < 4; idx++) {
-        result += String.fromCharCode(num & 0xff);
-        num >>= 8;
-    }
-    return result;
-}

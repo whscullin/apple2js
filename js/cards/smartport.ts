@@ -3,7 +3,7 @@ import { rom as smartPortRom } from '../roms/cards/smartport';
 import { Card, Restorable, byte, word, rom } from '../types';
 import { MassStorage, BlockDisk, ENCODING_BLOCK, BlockFormat, MassStorageData } from '../formats/types';
 import CPU6502, { CpuState, flags } from '../cpu6502';
-import { read2MGHeader } from '../formats/2mg';
+import { create2MGFromBlockDisk, HeaderData, read2MGHeader } from '../formats/2mg';
 import createBlockDisk from '../formats/block';
 import { ProDOSVolume } from '../formats/prodos';
 import { dump } from '../formats/prodos/utils';
@@ -132,6 +132,7 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
     private busy: boolean[] = [];
     private busyTimeout: ReturnType<typeof setTimeout>[] = [];
     private ext: string[] = [];
+    private metadata: Array<HeaderData|null> = [];
 
     constructor(
         private cpu: CPU6502,
@@ -552,8 +553,12 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
         const volume = 254;
         const readOnly = false;
         if (fmt === '2mg') {
-            const { bytes, offset } = read2MGHeader(rawData);
+            const header = read2MGHeader(rawData);
+            this.metadata[drive] = header;
+            const { bytes, offset } = header;
             rawData = rawData.slice(offset, offset + bytes);
+        } else {
+            this.metadata[drive] = null;
         }
         const options = {
             rawData,
@@ -576,15 +581,24 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
         if (!this.disks[drive]) {
             return null;
         }
-        const blocks = this.disks[drive].blocks;
-        const data = new Uint8Array(blocks.length * 512);
-        for (let idx = 0; idx < blocks.length; idx++) {
-            data.set(blocks[idx], idx * 512);
+        const disk = this.disks[drive];
+        const ext = this.ext[drive];
+        const { name } = disk;
+        let data: ArrayBuffer;
+        if (ext === '2mg') {
+            data = create2MGFromBlockDisk(this.metadata[drive], disk);
+        } else {
+            const { blocks } = disk;
+            const byteArray = new Uint8Array(blocks.length * 512);
+            for (let idx = 0; idx < blocks.length; idx++) {
+                byteArray.set(blocks[idx], idx * 512);
+            }
+            data = byteArray.buffer;
         }
         return {
-            name: this.disks[drive].name,
-            ext: 'po',
-            data: data.buffer,
+            name,
+            ext,
+            data,
         };
     }
 }
