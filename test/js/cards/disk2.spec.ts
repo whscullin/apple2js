@@ -732,17 +732,17 @@ describe('DiskII', () => {
 
             // emulate STA $C08F,X (5 CPU cycles)
             reader.cycles += 4;           // op + load address + work
-            diskII.ioSwitch(0x89);        // nop
+            diskII.tick();
             reader.cycles += 1;
             diskII.ioSwitch(0x8F, 0x80);  // write
             // read $C08C,X
             reader.cycles += 4;           // op + load address + work
-            diskII.ioSwitch(0x89);        // nop
+            diskII.tick();
             reader.cycles += 1;
             diskII.ioSwitch(0x8C);        // shift
 
             reader.cycles += 29;          // wait
-            diskII.ioSwitch(0x89);        // nop (make sure the change is applied)
+            diskII.tick();                // nop (make sure the change is applied)
 
             const after = reader.rawTracks();
             expect(before).not.toEqual(after);
@@ -763,19 +763,15 @@ class TestDiskReader {
     }
 
     readNibble(): byte {
-        let result: number;
-        let found = false;
+        let result: number = 0;
         for (let i = 0; i < 100; i++) {
             this.cycles++;
             const nibble = this.diskII.ioSwitch(0x8c);  // read data
             if (nibble & 0x80) {
                 result = nibble;
-                found = true;
-            } else if (found) {
+            } else if (result & 0x80) {
                 this.nibbles++;
-                // Result is always set when found === true.
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                return result!;
+                return result;
             }
         }
         throw new Error('Did not find a nibble in 100 clock cycles');
@@ -802,13 +798,18 @@ class TestDiskReader {
         throw new Error(`Did not find an address field in 500 nibbles: ${s}`);
     }
 
+    nextSector() {
+        this.findAddressField();
+        const volume = (this.readNibble() << 1 | 1) & this.readNibble();
+        const track = (this.readNibble() << 1 | 1) & this.readNibble();
+        const sector = (this.readNibble() << 1 | 1) & this.readNibble();
+        // console.log(`vol: ${volume} trk: ${track} sec: ${thisSector} ${this.diskII.head()} ${this.nibbles}`);
+        return { volume, track, sector };
+    }
+
     findSector(sector: byte) {
         for (let i = 0; i < 32; i++) {
-            this.findAddressField();
-            const volume = (this.readNibble() << 1 | 1) & this.readNibble();
-            const track = (this.readNibble() << 1 | 1) & this.readNibble();
-            const thisSector = (this.readNibble() << 1 | 1) & this.readNibble();
-            console.log(`vol: ${volume} trk: ${track} sec: ${thisSector} ${this.diskII.head()} ${this.nibbles}`);
+            const { sector: thisSector } = this.nextSector();
             if (sector === thisSector) {
                 return;
             }
@@ -823,7 +824,7 @@ class TestDiskReader {
         for (let i = 0; i < disk.cur.rawTracks.length; i++) {
             result[i] = disk.cur.rawTracks[i].slice(0);
         }
-        
+
         return result;
     }
 }

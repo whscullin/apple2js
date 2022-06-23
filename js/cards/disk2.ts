@@ -429,7 +429,7 @@ export default class DiskII implements Card<State> {
      * *   The length (in bits) of each track of the WOZ image
      *     represents one full rotation of the disk and that each
      *     bit is evenly spaced.
-     * *   Writing will not change the track length.  This means
+     * *   Writing will not change the track length. This means
      *     that short tracks stay short.
      * *   The read head picks up the next bit when the sequencer
      *     clock === 4.
@@ -438,10 +438,14 @@ export default class DiskII implements Card<State> {
      *     spec.)
      * *   Unspecified tracks contain a single zero bit. (A very
      *     short track, indeed!)
-     * *   Two bits is sufficient to cause the MC3470 to freak out.
-     *     When freaking out, it returns 0 and 1 with equal
+     * *   Two zero bits are sufficient to cause the MC3470 to freak
+     *     out. When freaking out, it returns 0 and 1 with equal
      *     probability.
-     * *   Any softswitch changes happen before moveHead.
+     * *   Any softswitch changes happen before `moveHead`. This is
+     *     important because it means that if the clock is ever
+     *     advanced more than one cycle between calls, the
+     *     softswitch changes will appear to happen at the very
+     *     beginning, not just before the last cycle.
      */
     private moveHead() {
         // TODO(flan): Short-circuit if the drive is not on.
