@@ -4,7 +4,9 @@ import fs from 'fs';
 import Apple2IO from 'js/apple2io';
 import DiskII, { Callbacks } from 'js/cards/disk2';
 import CPU6502 from 'js/cpu6502';
+import { DriveNumber } from 'js/formats/types';
 import { byte } from 'js/types';
+import { toHex } from 'js/util';
 import { VideoModes } from 'js/videomodes';
 import { mocked } from 'ts-jest/utils';
 import { BYTES_BY_SECTOR_IMAGE, BYTES_BY_TRACK_IMAGE } from '../formats/testdata/16sector';
@@ -694,5 +696,135 @@ describe('DiskII', () => {
             }
             expect(equal).not.toBeTruthy();
         });
+
+        it('disk spins at a consistent speed', () => {
+            const reader = new TestDiskReader(1, 'DOS 3.3 System Master', DOS33_SYSTEM_MASTER_IMAGE, mockApple2IO, callbacks);
+
+            reader.diskII.ioSwitch(0x89);  // turn on the motor
+            reader.diskII.ioSwitch(0x8e);  // read mode
+
+            // Find track 0, sector 0
+            reader.findSector(0);
+            // Save the start cycles
+            let lastCycles = mockApple2IO.cycles();
+            // Find track 0, sector 0 again
+            reader.findSector(0);
+            let currentCycles = reader.cycles;
+            expect(currentCycles - lastCycles).toBe(201216);
+            lastCycles = currentCycles;
+            // Find track 0, sector 0 once again
+            reader.findSector(0);
+            currentCycles = reader.cycles;
+            expect(currentCycles - lastCycles).toBe(201216);
+        });
+    });
+
+    describe('writing WOZ-based disks', () => {
+        const DOS33_SYSTEM_MASTER_IMAGE =
+            fs.readFileSync('test/js/cards/data/DOS 3.3 System Master.woz').buffer;
+
+        it('can write something', () => {
+            const reader = new TestDiskReader(1, 'DOS 3.3 System Master', DOS33_SYSTEM_MASTER_IMAGE, mockApple2IO, callbacks);
+            const diskII = reader.diskII;
+            const before = reader.rawTracks();
+
+            diskII.ioSwitch(0x89);  // turn on the motor
+
+            // emulate STA $C08F,X (5 CPU cycles)
+            reader.cycles += 4;           // op + load address + work
+            diskII.tick();
+            reader.cycles += 1;
+            diskII.ioSwitch(0x8F, 0x80);  // write
+            // read $C08C,X
+            reader.cycles += 4;           // op + load address + work
+            diskII.tick();
+            reader.cycles += 1;
+            diskII.ioSwitch(0x8C);        // shift
+
+            reader.cycles += 29;          // wait
+            diskII.tick();                // nop (make sure the change is applied)
+
+            const after = reader.rawTracks();
+            expect(before).not.toEqual(after);
+        });
     });
 });
+
+class TestDiskReader {
+    cycles: number = 0;
+    nibbles = 0;
+    diskII: DiskII;
+
+    constructor(drive: DriveNumber, label: string, image: ArrayBufferLike, apple2IO: Apple2IO, callbacks: Callbacks) {
+        mocked(apple2IO).cycles.mockImplementation(() => this.cycles);
+
+        this.diskII = new DiskII(apple2IO, callbacks);
+        this.diskII.setBinary(drive, label, 'woz', image);
+    }
+
+    readNibble(): byte {
+        let result: number = 0;
+        for (let i = 0; i < 100; i++) {
+            this.cycles++;
+            const nibble = this.diskII.ioSwitch(0x8c);  // read data
+            if (nibble & 0x80) {
+                result = nibble;
+            } else if (result & 0x80) {
+                this.nibbles++;
+                return result;
+            }
+        }
+        throw new Error('Did not find a nibble in 100 clock cycles');
+    }
+
+    findAddressField() {
+        let s = '';
+        for (let i = 0; i < 600; i++) {
+            let nibble = this.readNibble();
+            if (nibble !== 0xD5) {
+                s += ` ${toHex(nibble)}`;
+                continue;
+            }
+            nibble = this.readNibble();
+            if (nibble !== 0xAA) {
+                continue;
+            }
+            nibble = this.readNibble();
+            if (nibble !== 0x96) {
+                continue;
+            }
+            return;
+        }
+        throw new Error(`Did not find an address field in 500 nibbles: ${s}`);
+    }
+
+    nextSector() {
+        this.findAddressField();
+        const volume = (this.readNibble() << 1 | 1) & this.readNibble();
+        const track = (this.readNibble() << 1 | 1) & this.readNibble();
+        const sector = (this.readNibble() << 1 | 1) & this.readNibble();
+        // console.log(`vol: ${volume} trk: ${track} sec: ${thisSector} ${this.diskII.head()} ${this.nibbles}`);
+        return { volume, track, sector };
+    }
+
+    findSector(sector: byte) {
+        for (let i = 0; i < 32; i++) {
+            const { sector: thisSector } = this.nextSector();
+            if (sector === thisSector) {
+                return;
+            }
+        }
+        throw new Error(`Did not find sector ${sector} in 32 sectors`);
+    }
+
+    rawTracks() {
+        // NOTE(flan): Hack to access private properties.
+        const disk = this.diskII as unknown as { cur: { rawTracks: Uint8Array[] } };
+        const result: Uint8Array[] = [];
+        for (let i = 0; i < disk.cur.rawTracks.length; i++) {
+            result[i] = disk.cur.rawTracks[i].slice(0);
+        }
+
+        return result;
+    }
+}

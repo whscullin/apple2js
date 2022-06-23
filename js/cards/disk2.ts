@@ -409,8 +409,46 @@ export default class DiskII implements Card<State> {
         // debug(..._args);
     }
 
-    // Only used for WOZ disks
+    public head(): number {
+        return this.cur.head;
+    }
+
+    /**
+     * Spin the disk under the read/write head for WOZ images.
+     * 
+     * This implementation emulates every clock cycle of the 2 MHz
+     * sequencer since the last time it was called in order to
+     * determine the current state. Because this is called on
+     * every access to the softswitches, the data in the latch
+     * will be correct on every read.
+     * 
+     * The emulation of the disk makes a few simplifying assumptions:
+     * 
+     * *   The motor turns on instantly.
+     * *   The head moves tracks instantly.
+     * *   The length (in bits) of each track of the WOZ image
+     *     represents one full rotation of the disk and that each
+     *     bit is evenly spaced.
+     * *   Writing will not change the track length. This means
+     *     that short tracks stay short.
+     * *   The read head picks up the next bit when the sequencer
+     *     clock === 4.
+     * *   Head position X on track T is equivalent to head position
+     *     X on track T′. (This is not the recommendation in the WOZ
+     *     spec.)
+     * *   Unspecified tracks contain a single zero bit. (A very
+     *     short track, indeed!)
+     * *   Two zero bits are sufficient to cause the MC3470 to freak
+     *     out. When freaking out, it returns 0 and 1 with equal
+     *     probability.
+     * *   Any softswitch changes happen before `moveHead`. This is
+     *     important because it means that if the clock is ever
+     *     advanced more than one cycle between calls, the
+     *     softswitch changes will appear to happen at the very
+     *     beginning, not just before the last cycle.
+     */
     private moveHead() {
+        // TODO(flan): Short-circuit if the drive is not on.
         const cycles = this.io.cycles();
 
         // Spin the disk the number of elapsed cycles since last call
@@ -685,7 +723,7 @@ export default class DiskII implements Card<State> {
                 break;
             case LOC.DRIVEWRITEMODE: // 0x0f (Q7H)
                 this.debug('Write Mode');
-                this.q7 = false;
+                this.q7 = true;
                 this.writeMode = true;
                 break;
 
