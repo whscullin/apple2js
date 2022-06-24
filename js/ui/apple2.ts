@@ -3,24 +3,28 @@ import MicroModal from 'micromodal';
 import { base64_json_parse, base64_json_stringify } from '../base64';
 import { Audio, SOUND_ENABLED_OPTION } from './audio';
 import DriveLights from './drive_lights';
-import { byte, includes, word } from '../types';
-import { BLOCK_FORMATS, MassStorage, NIBBLE_FORMATS } from '../formats/types';
+import { includes, word } from '../types';
 import {
+    BLOCK_FORMATS,
     DISK_FORMATS,
+    DiskDescriptor,
     DriveNumber,
     DRIVE_NUMBERS,
-    JSONDisk
+    MassStorage,
+    NIBBLE_FORMATS,
+    JSONBinaryImage,
+    JSONDisk,
+    BlockFormat
 } from '../formats/types';
 import { initGamepad } from './gamepad';
 import KeyBoard from './keyboard';
 import Tape, { TAPE_TYPES } from './tape';
-import type { GamepadConfiguration } from './types';
 
 import ApplesoftDecompiler from '../applesoft/decompiler';
 import ApplesoftCompiler from '../applesoft/compiler';
 
 import { debug } from '../util';
-import { Apple2, Stats } from '../apple2';
+import { Apple2, Stats, State as Apple2State } from '../apple2';
 import DiskII from '../cards/disk2';
 import CPU6502 from '../cpu6502';
 import { VideoModes } from '../videomodes';
@@ -31,6 +35,7 @@ import { OptionsModal } from './options_modal';
 import { Screen, SCREEN_FULL_PAGE } from './screen';
 import { JoyStick } from './joystick';
 import { System } from './system';
+import { Options } from '../options';
 
 let paused = false;
 
@@ -41,18 +46,11 @@ let lastRenderedFrames = 0;
 
 let hashtag = document.location.hash;
 
-const optionsModal = new OptionsModal();
-
-interface DiskDescriptor {
-    name: string;
-    disk?: number;
-    filename: string;
-    e?: boolean;
-    category: string;
-}
+const options = new Options();
+const optionsModal = new OptionsModal(options);
 
 type DiskCollection = {
-    [name: string]: DiskDescriptor[]
+    [name: string]: DiskDescriptor[];
 };
 
 const CIDERPRESS_EXTENSION = /#([0-9a-f]{2})([0-9a-f]{4})$/i;
@@ -77,7 +75,7 @@ let stats: Stats;
 let vm: VideoModes;
 let tape: Tape;
 let _disk2: DiskII;
-let _massStorage: MassStorage;
+let _massStorage: MassStorage<BlockFormat>;
 let _printer: Printer;
 let audio: Audio;
 let screen: Screen;
@@ -125,14 +123,15 @@ export function openSave(driveString: string, event: MouseEvent) {
     const drive = parseInt(driveString, 10) as DriveNumber;
 
     const mimeType = 'application/octet-stream';
-    const data = _disk2.getBinary(drive);
+    const storageData = _disk2.getBinary(drive);
     const a = document.querySelector<HTMLAnchorElement>('#local_save_link')!;
 
-    if (!data) {
-        alert('No data from drive ' + drive);
+    if (!storageData) {
+        alert(`No data from drive ${drive}`);
         return;
     }
 
+    const { data } = storageData;
     const blob = new Blob([data], { 'type': mimeType });
     a.href = window.URL.createObjectURL(blob);
     a.download = driveLights.label(drive) + '.dsk';
@@ -187,10 +186,10 @@ export function handleDrop(drive: number, event: DragEvent) {
         }
     }
     const dt = event.dataTransfer!;
-    if (dt.files.length == 1) {
+    if (dt.files.length === 1) {
         const runOnLoad = event.shiftKey;
         doLoadLocal(drive as DriveNumber, dt.files[0], { runOnLoad });
-    } else if (dt.files.length == 2) {
+    } else if (dt.files.length === 2) {
         doLoadLocal(1, dt.files[0]);
         doLoadLocal(2, dt.files[1]);
     } else {
@@ -217,7 +216,7 @@ function loadingProgress(current: number, total: number) {
         const meter = document.querySelector<HTMLDivElement>('#loading-modal .meter')!;
         const progress = document.querySelector<HTMLDivElement>('#loading-modal .progress')!;
         meter.style.display = 'block';
-        progress.style.width = current / total * meter.clientWidth + 'px';
+        progress.style.width = `${current / total * meter.clientWidth}px`;
     }
 }
 
@@ -231,14 +230,6 @@ function loadingStop() {
     }
 }
 
-interface JSONBinaryImage {
-    type: 'binary',
-    start: word,
-    length: word,
-    data: byte[],
-    gamepad?: GamepadConfiguration,
-}
-
 export function loadAjax(drive: DriveNumber, url: string) {
     loadingStart();
 
@@ -250,13 +241,13 @@ export function loadAjax(drive: DriveNumber, url: string) {
         }
     }).then(function (data: JSONDisk | JSONBinaryImage) {
         if (data.type === 'binary') {
-            loadBinary(data as JSONBinaryImage);
+            loadBinary(data );
         } else if (includes(DISK_FORMATS, data.type)) {
             loadDisk(drive, data);
         }
         initGamepad(data.gamepad);
         loadingStop();
-    }).catch(function (error) {
+    }).catch(function (error: Error) {
         loadingStop();
         openAlert(error.message);
         console.error(error);
@@ -269,7 +260,7 @@ export function doLoad(event: MouseEvent|KeyboardEvent) {
     const urls = select.value;
     let url;
     if (urls && urls.length) {
-        if (typeof (urls) == 'string') {
+        if (typeof (urls) === 'string') {
             url = urls;
         } else {
             url = urls[0];
@@ -278,15 +269,15 @@ export function doLoad(event: MouseEvent|KeyboardEvent) {
 
     const localFile = document.querySelector<HTMLInputElement>('#local_file')!;
     const files = localFile.files;
-    if (files && files.length == 1) {
+    if (files && files.length === 1) {
         const runOnLoad = event.shiftKey;
         doLoadLocal(_currentDrive, files[0], { runOnLoad });
     } else if (url) {
         let filename;
         MicroModal.close('load-modal');
-        if (url.substr(0, 6) == 'local:') {
-            filename = url.substr(6);
-            if (filename == '__manage') {
+        if (url.slice(0, 6) === 'local:') {
+            filename = url.slice(6);
+            if (filename === '__manage') {
                 openManage();
             } else {
                 loadLocalStorage(_currentDrive, filename);
@@ -320,8 +311,8 @@ export function doDelete(name: string) {
 }
 
 interface LoadOptions {
-    address?: word,
-    runOnLoad?: boolean,
+    address?: word;
+    runOnLoad?: boolean;
 }
 
 function doLoadLocal(drive: DriveNumber, file: File, options: Partial<LoadOptions> = {}) {
@@ -337,8 +328,8 @@ function doLoadLocal(drive: DriveNumber, file: File, options: Partial<LoadOption
     } else if (includes(TAPE_TYPES, ext)) {
         tape.doLoadLocalTape(file);
     } else if (BIN_TYPES.includes(ext) || type === '06' || options.address) {
-        const address = aux !== undefined ? parseInt(aux, 16) : undefined;
-        doLoadBinary(file, { address, ...options });
+        const auxAddress = aux !== undefined ? { address: parseInt(aux, 16) } : {};
+        doLoadBinary(file, { ...options, ...auxAddress });
     } else {
         const addressInput = document.querySelector<HTMLInputElement>('#local_file_address');
         const addressStr = addressInput?.value;
@@ -428,7 +419,7 @@ export function doLoadHTTP(drive: DriveNumber, url?: string) {
     if (url) {
         fetch(url).then(function (response) {
             if (response.ok) {
-                const reader = response!.body!.getReader();
+                const reader = response.body!.getReader();
                 let received = 0;
                 const chunks: Uint8Array[] = [];
                 const contentLength = parseInt(response.headers.get('content-length')!, 10);
@@ -464,10 +455,8 @@ export function doLoadHTTP(drive: DriveNumber, url?: string) {
             const name = decodeURIComponent(fileParts.join('.'));
             if (includes(DISK_FORMATS, ext)) {
                 if (data.byteLength >= 800 * 1024) {
-                    if (
-                        includes(BLOCK_FORMATS, ext) &&
-                        _massStorage.setBinary(drive, name, ext, data)
-                    ) {
+                    if (includes(BLOCK_FORMATS, ext)) {
+                        _massStorage.setBinary(drive, name, ext, data);
                         initGamepad();
                     }
                 } else {
@@ -482,7 +471,7 @@ export function doLoadHTTP(drive: DriveNumber, url?: string) {
                 throw new Error(`Extension ${ext} not recognized.`);
             }
             loadingStop();
-        }).catch(function (error) {
+        }).catch((error: Error) => {
             loadingStop();
             openAlert(error.message);
             console.error(error);
@@ -513,19 +502,19 @@ export function updateKHz() {
         case 0: {
             delta = cycles - lastCycles;
             khz = Math.trunc(delta / ms);
-            kHzElement.innerText = khz + ' kHz';
+            kHzElement.innerText = `${khz} kHz`;
             break;
         }
         case 1: {
             delta = stats.renderedFrames - lastRenderedFrames;
             fps = Math.trunc(delta / (ms / 1000));
-            kHzElement.innerText = fps + ' rps';
+            kHzElement.innerText = `${fps} rps`;
             break;
         }
         default: {
             delta = stats.frames - lastFrames;
             fps = Math.trunc(delta / (ms / 1000));
-            kHzElement.innerText = fps + ' fps';
+            kHzElement.innerText = `${fps} fps`;
         }
     }
 
@@ -541,7 +530,7 @@ export function toggleShowFPS() {
 
 export function toggleSound() {
     const on = !audio.isEnabled();
-    optionsModal.setOption(SOUND_ENABLED_OPTION, on);
+    options.setOption(SOUND_ENABLED_OPTION, on);
     updateSoundButton(on);
 }
 
@@ -593,7 +582,7 @@ export function selectCategory() {
             const file = cat[idx];
             let name = file.name;
             if (file.disk) {
-                name += ' - ' + file.disk;
+                name += ` - ${file.disk}`;
             }
             const option = document.createElement('option');
             option.value = file.filename;
@@ -636,7 +625,7 @@ function loadDisk(drive: DriveNumber, disk: JSONDisk) {
  */
 
 function updateLocalStorage() {
-    const diskIndex = JSON.parse(window.localStorage.diskIndex || '{}');
+    const diskIndex = JSON.parse(window.localStorage.getItem('diskIndex') || '{}') as LocalDiskIndex;
     const names = Object.keys(diskIndex);
 
     const cat: DiskDescriptor[] = disk_categories['Local Saves'] = [];
@@ -664,16 +653,16 @@ function updateLocalStorage() {
 }
 
 type LocalDiskIndex = {
-    [name: string]: string,
-}
+    [name: string]: string;
+};
 
 function saveLocalStorage(drive: DriveNumber, name: string) {
-    const diskIndex = JSON.parse(window.localStorage.diskIndex || '{}') as LocalDiskIndex;
+    const diskIndex = JSON.parse(window.localStorage.getItem('diskIndex') || '{}') as LocalDiskIndex;
 
     const json = _disk2.getJSON(drive);
     diskIndex[name] = json;
 
-    window.localStorage.diskIndex = JSON.stringify(diskIndex);
+    window.localStorage.setItem('diskIndex',  JSON.stringify(diskIndex));
 
     driveLights.label(drive, name);
     driveLights.dirty(drive, false);
@@ -681,17 +670,17 @@ function saveLocalStorage(drive: DriveNumber, name: string) {
 }
 
 function deleteLocalStorage(name: string) {
-    const diskIndex = JSON.parse(window.localStorage.diskIndex || '{}') as LocalDiskIndex;
+    const diskIndex = JSON.parse(window.localStorage.getItem('diskIndex') || '{}') as LocalDiskIndex;
     if (diskIndex[name]) {
         delete diskIndex[name];
         openAlert('Deleted');
     }
-    window.localStorage.diskIndex = JSON.stringify(diskIndex);
+    window.localStorage.setItem('diskIndex',  JSON.stringify(diskIndex));
     updateLocalStorage();
 }
 
 function loadLocalStorage(drive: DriveNumber, name: string) {
-    const diskIndex = JSON.parse(window.localStorage.diskIndex || '{}') as LocalDiskIndex;
+    const diskIndex = JSON.parse(window.localStorage.getItem('diskIndex') || '{}') as LocalDiskIndex;
     if (diskIndex[name]) {
         _disk2.setJSON(drive, diskIndex[name]);
         driveLights.label(drive, name);
@@ -725,7 +714,7 @@ function buildDiskIndex() {
         if (file.e && !_e) {
             continue;
         }
-        if (cat != oldCat) {
+        if (cat !== oldCat) {
             option = document.createElement('option');
             option.value = cat;
             option.innerText = cat;
@@ -765,7 +754,7 @@ function processHash(hash: string) {
         if (file.indexOf('://') > 0) {
             const parts = file.split('.');
             const ext = parts[parts.length - 1].toLowerCase();
-            if (ext == 'json') {
+            if (ext === 'json') {
                 loadAjax(drive, file);
             } else {
                 doLoadHTTP(drive, file);
@@ -777,7 +766,7 @@ function processHash(hash: string) {
 }
 
 export function updateUI() {
-    if (document.location.hash != hashtag) {
+    if (document.location.hash !== hashtag) {
         hashtag = document.location.hash;
         const hash = hup();
         if (hash) {
@@ -856,7 +845,12 @@ function hup() {
         return results[1];
 }
 
-function onLoaded(apple2: Apple2, disk2: DiskII, massStorage: MassStorage, printer: Printer, e: boolean) {
+function onLoaded(
+    apple2: Apple2,
+    disk2: DiskII,
+    massStorage: MassStorage<BlockFormat>,
+    printer: Printer, e: boolean
+) {
     _apple2 = apple2;
     cpu = _apple2.getCPU();
     io = _apple2.getIO();
@@ -869,16 +863,16 @@ function onLoaded(apple2: Apple2, disk2: DiskII, massStorage: MassStorage, print
     _e = e;
 
     system = new System(io, e);
-    optionsModal.addOptions(system);
+    options.addOptions(system);
 
     joystick = new JoyStick(io);
-    optionsModal.addOptions(joystick);
+    options.addOptions(joystick);
 
     screen = new Screen(vm);
-    optionsModal.addOptions(screen);
+    options.addOptions(screen);
 
     audio = new Audio(io);
-    optionsModal.addOptions(audio);
+    options.addOptions(audio);
     initSoundToggle();
 
     ready = Promise.all([audio.ready, apple2.ready]);
@@ -890,9 +884,9 @@ function onLoaded(apple2: Apple2, disk2: DiskII, massStorage: MassStorage, print
     keyboard.setFunction('F1', () => cpu.reset());
     keyboard.setFunction('F2', (event) => {
         if (event.shiftKey) { // Full window, but not full screen
-            optionsModal.setOption(
+            options.setOption(
                 SCREEN_FULL_PAGE,
-                !optionsModal.getOption(SCREEN_FULL_PAGE)
+                !options.getOption(SCREEN_FULL_PAGE)
             );
         } else {
             screen.enterFullScreen();
@@ -901,11 +895,12 @@ function onLoaded(apple2: Apple2, disk2: DiskII, massStorage: MassStorage, print
     keyboard.setFunction('F3', () => io.keyDown(0x1b)); // Escape
     keyboard.setFunction('F4', optionsModal.openModal);
     keyboard.setFunction('F6', () => {
-        window.localStorage.state = base64_json_stringify(_apple2.getState());
+        window.localStorage.setItem('state', base64_json_stringify(_apple2.getState()));
     });
     keyboard.setFunction('F9', () => {
-        if (window.localStorage.state) {
-            _apple2.setState(base64_json_parse(window.localStorage.state));
+        const localState = window.localStorage.getItem('state');
+        if (localState) {
+            _apple2.setState(base64_json_parse(localState) as Apple2State);
         }
     });
 
@@ -963,7 +958,11 @@ function onLoaded(apple2: Apple2, disk2: DiskII, massStorage: MassStorage, print
     );
 }
 
-export function initUI(apple2: Apple2, disk2: DiskII, massStorage: MassStorage, printer: Printer, e: boolean) {
+export function initUI(
+    apple2: Apple2,
+    disk2: DiskII,
+    massStorage: MassStorage<BlockFormat>,
+    printer: Printer, e: boolean) {
     window.addEventListener('load', () => {
         onLoaded(apple2, disk2, massStorage, printer, e);
     });

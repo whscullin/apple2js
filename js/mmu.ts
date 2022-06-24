@@ -101,11 +101,11 @@ class AuxRom implements Memory {
         private readonly rom: ROM) { }
 
     _access(page: byte, off: byte) {
-        if (page == 0xc3) {
+        if (page === 0xc3) {
             this.mmu._setIntc8rom(true);
             this.mmu._updateBanks();
         }
-        if (page == 0xcf && off == 0xff) {
+        if (page === 0xcf && off === 0xff) {
             this.mmu._setIntc8rom(false);
             this.mmu._updateBanks();
         }
@@ -122,29 +122,29 @@ class AuxRom implements Memory {
 }
 
 export interface MMUState {
-    bank1: boolean
-    readbsr: boolean
-    writebsr: boolean
-    prewrite: boolean
+    bank1: boolean;
+    readbsr: boolean;
+    writebsr: boolean;
+    prewrite: boolean;
 
-    intcxrom: boolean
-    slot3rom: boolean
-    intc8rom: boolean
+    intcxrom: boolean;
+    slot3rom: boolean;
+    intc8rom: boolean;
 
-    auxRamRead: boolean
-    auxRamWrite: boolean
-    altzp: boolean
+    auxRamRead: boolean;
+    auxRamWrite: boolean;
+    altzp: boolean;
 
-    _80store: boolean
-    page2: boolean
-    hires: boolean
+    _80store: boolean;
+    page2: boolean;
+    hires: boolean;
 
-    mem00_01: [RAMState, RAMState]
-    mem02_03: [RAMState, RAMState]
-    mem0C_1F: [RAMState, RAMState]
-    mem60_BF: [RAMState, RAMState]
-    memD0_DF: [ROMState, RAMState, RAMState, RAMState, RAMState]
-    memE0_FF: [ROMState, RAMState, RAMState]
+    mem00_01: [RAMState, RAMState];
+    mem02_03: [RAMState, RAMState];
+    mem0C_1F: [RAMState, RAMState];
+    mem60_BF: [RAMState, RAMState];
+    memD0_DF: [ROMState, RAMState, RAMState, RAMState, RAMState];
+    memE0_FF: [ROMState, RAMState, RAMState];
 }
 
 export default class MMU implements Memory, Restorable<MMUState> {
@@ -310,7 +310,7 @@ export default class MMU implements Memory, Restorable<MMUState> {
         this._iouDisable = true;
     }
 
-    _debug(..._args: any[]) {
+    _debug(..._args: unknown[]) {
         // debug.apply(this, _args);
     }
 
@@ -525,19 +525,19 @@ export default class MMU implements Memory, Restorable<MMUState> {
 
         switch(off) {
             case LOC.BSRBANK2:
-                this._debug('Bank 2 Read ' + !this._bank1);
+                this._debug(`Bank 2 Read ${!this._bank1 ? 'true' : 'false'}`);
                 result = !this._bank1 ? 0x80 : 0x00;
                 break;
             case LOC.BSRREADRAM:
-                this._debug('Bank SW RAM Read ' + this._readbsr);
+                this._debug(`Bank SW RAM Read ${this._readbsr ? 'true' : 'false'}`);
                 result = this._readbsr ? 0x80 : 0x00;
                 break;
             case LOC.RAMRD: // 0xC013
-                this._debug('Aux RAM Read ' + this._auxRamRead);
+                this._debug(`Aux RAM Read ${this._auxRamRead ? 'true' : 'false'}`);
                 result = this._auxRamRead ? 0x80 : 0x0;
                 break;
             case LOC.RAMWRT: // 0xC014
-                this._debug('Aux RAM Write ' + this._auxRamWrite);
+                this._debug(`Aux RAM Write ${this._auxRamWrite ? 'true' : 'false'}`);
                 result = this._auxRamWrite ? 0x80 : 0x0;
                 break;
             case LOC.INTCXROM: // 0xC015
@@ -545,15 +545,15 @@ export default class MMU implements Memory, Restorable<MMUState> {
                 result = this._intcxrom ? 0x80 : 0x00;
                 break;
             case LOC.ALTZP: // 0xC016
-                this._debug('Alt ZP ' + this._altzp);
+                this._debug(`Alt ZP ${this._altzp ? 'true' : 'false'}`);
                 result = this._altzp ? 0x80 : 0x0;
                 break;
             case LOC.SLOTC3ROM: // 0xC017
-                this._debug('Slot C3 ROM ' + this._slot3rom);
+                this._debug(`Slot C3 ROM ${this._slot3rom ? 'true' : 'false'}`);
                 result = this._slot3rom ? 0x80 : 0x00;
                 break;
             case LOC._80STORE: // 0xC018
-                this._debug('80 Store ' + this._80store);
+                this._debug(`80 Store ${this._80store ? 'true' : 'false'}`);
                 result = this._80store ? 0x80 : 0x00;
                 break;
             case LOC.VERTBLANK: // 0xC019

@@ -1,7 +1,7 @@
 import type { byte, Card, Restorable } from '../types';
 import { debug, toHex } from '../util';
 import { rom as readOnlyRom } from '../roms/cards/cffa';
-import { read2MGHeader } from '../formats/2mg';
+import { create2MGFromBlockDisk, HeaderData, read2MGHeader } from '../formats/2mg';
 import { ProDOSVolume } from '../formats/prodos';
 import createBlockDisk from '../formats/block';
 import { dump } from '../formats/prodos/utils';
@@ -10,6 +10,7 @@ import {
     BlockFormat,
     ENCODING_BLOCK,
     MassStorage,
+    MassStorageData,
 } from 'js/formats/types';
 
 const rom = new Uint8Array(readOnlyRom);
@@ -82,10 +83,10 @@ const IDENTITY = {
 };
 
 export interface CFFAState {
-    disks: Array<BlockDisk | null>
+    disks: Array<BlockDisk | null>;
 }
 
-export default class CFFA implements Card, MassStorage, Restorable<CFFAState> {
+export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<CFFAState> {
 
     // CFFA internal Flags
 
@@ -136,6 +137,9 @@ export default class CFFA implements Card, MassStorage, Restorable<CFFAState> {
         []
     ];
 
+    private _name: string[] = [];
+    private _metadata: Array<HeaderData|null> = [];
+
     constructor() {
         debug('CFFA');
 
@@ -152,7 +156,7 @@ export default class CFFA implements Card, MassStorage, Restorable<CFFAState> {
 
     // Verbose debug method
 
-    private _debug(..._args: any[]) {
+    private _debug(..._args: unknown[]) {
         // debug.apply(this, arguments);
     }
 
@@ -412,6 +416,8 @@ export default class CFFA implements Card, MassStorage, Restorable<CFFAState> {
         drive = drive - 1;
 
         this._sectors[drive] = [];
+        this._name[drive] = '';
+        this._metadata[drive] = null;
 
         this._identity[drive][IDENTITY.SectorCountHigh] = 0;
         this._identity[drive][IDENTITY.SectorCountLow] = 0;
@@ -437,6 +443,7 @@ export default class CFFA implements Card, MassStorage, Restorable<CFFAState> {
         const prodos = new ProDOSVolume(disk);
         dump(prodos);
 
+        this._name[drive] = disk.name;
         this._partitions[drive] = prodos;
 
         if (drive) {
@@ -454,8 +461,12 @@ export default class CFFA implements Card, MassStorage, Restorable<CFFAState> {
         const readOnly = false;
 
         if (ext === '2mg') {
-            const { bytes, offset } = read2MGHeader(rawData);
+            const headerData = read2MGHeader(rawData);
+            const { bytes, offset } = headerData;
+            this._metadata[drive - 1] = headerData;
             rawData = rawData.slice(offset, offset + bytes);
+        } else {
+            this._metadata[drive - 1] = null;
         }
         const options = {
             rawData,
@@ -466,5 +477,32 @@ export default class CFFA implements Card, MassStorage, Restorable<CFFAState> {
         const disk = createBlockDisk(options);
 
         return this.setBlockVolume(drive, disk);
+    }
+
+    getBinary(drive: number): MassStorageData | null {
+        drive = drive - 1;
+        const blockDisk = this._partitions[drive]?.disk();
+        if (!blockDisk) {
+            return null;
+        }
+        const { name, blocks } = blockDisk;
+        let ext;
+        let data: ArrayBuffer;
+        if (this._metadata[drive]) {
+            ext = '2mg';
+            data = create2MGFromBlockDisk(this._metadata[drive - 1], blockDisk);
+        } else {
+            ext = 'po';
+            const dataArray = new Uint8Array(blocks.length * 512);
+            for (let idx = 0; idx < blocks.length; idx++) {
+                dataArray.set(blocks[idx], idx * 512);
+            }
+            data = dataArray.buffer;
+        }
+        return {
+            name,
+            ext,
+            data,
+        };
     }
 }

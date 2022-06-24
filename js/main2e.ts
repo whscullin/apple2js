@@ -42,6 +42,7 @@ switch (romVersion) {
 
 const options = {
     gl: prefs.readPref('gl_canvas', 'true') === 'true',
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     canvas: document.querySelector<HTMLCanvasElement>('#screen')!,
     rom,
     characterRom,
@@ -56,13 +57,13 @@ apple2.ready.then(() => {
     const cpu = apple2.getCPU();
 
     const printer = new Printer('#printer-modal .paper');
-    const mouseUI = new MouseUI('#screen');
+    const mouseUI = new MouseUI(options.canvas);
 
     const parallel = new Parallel(printer);
     const slinky = new RAMFactor(1024 * 1024);
     const disk2 = new DiskII(io, driveLights);
     const clock = new Thunderclock();
-    const smartport = new SmartPort(cpu, { block: !enhanced });
+    const smartport = new SmartPort(cpu, null, { block: !enhanced });
     const mouse = new Mouse(cpu, mouseUI);
 
     io.setSlot(1, parallel);

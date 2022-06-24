@@ -86,7 +86,7 @@ export interface MemoryPages extends Memory {
 }
 
 /* An interface card */
-export interface Card extends Memory, Restorable {
+export interface Card<StateT = unknown> extends Memory, Restorable<StateT> {
     /* Reset the card */
     reset?(): void;
 
@@ -102,7 +102,7 @@ export interface Card extends Memory, Restorable {
 
 export type TapeData = Array<[duration: number, high: boolean]>;
 
-export interface Restorable<T = any> {
+export interface Restorable<T = unknown> {
     getState(): T;
     setState(state: T): void;
 }
@@ -110,7 +110,7 @@ export interface Restorable<T = any> {
 // Read-only typed arrays for constants
 export type TypedArrayMutableProperties = 'copyWithin' | 'fill' | 'reverse' | 'set' | 'sort';
 export interface ReadonlyUint8Array extends Omit<Uint8Array, TypedArrayMutableProperties> {
-    readonly [n: number]: number
+    readonly [n: number]: number;
 }
 
 // Readonly RGB color value

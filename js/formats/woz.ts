@@ -19,10 +19,10 @@ const WOZ_INTEGRITY_CHECK = 0x0a0d0aff;
  * @returns ASCII string
  */
 function stringFromBytes(data: DataView, start: number, end: number): string {
-    return String.fromCharCode.apply(
-        null,
-        new Uint8Array(data.buffer.slice(data.byteOffset + start, data.byteOffset + end))
+    const byteArray = new Uint8Array(
+        data.buffer.slice(data.byteOffset + start, data.byteOffset + end)
     );
+    return String.fromCharCode(...byteArray);
 }
 
 export class InfoChunk {
@@ -118,9 +118,9 @@ export class TrksChunk1 extends TrksChunk {
 }
 
 export interface Trk {
-    startBlock: word
-    blockCount: word
-    bitCount: number
+    startBlock: word;
+    blockCount: word;
+    bitCount: number;
 }
 
 export class TrksChunk2 extends TrksChunk {
@@ -155,6 +155,9 @@ export class TrksChunk2 extends TrksChunk {
             const end = start + trk.blockCount * 512;
             const slice = bits.slice(start, end);
             const trackData = new Uint8Array(slice);
+            if (trackNo === 0) {
+                // debug(`First bytes: ${toHex(trackData[0])} ${toHex(trackData[1])} ${toHex(trackData[2])} ${toHex(trackData[3])}`);
+            }
             for (let jdx = 0; jdx < trk.bitCount; jdx++) {
                 const byteIndex = jdx >> 3;
                 const bitIndex = 7 - (jdx & 0x07);
@@ -191,11 +194,11 @@ export class MetaChunk  {
 }
 
 interface Chunks {
-    [key: string]: any
-    info?: InfoChunk
-    tmap?: TMapChunk
-    trks?: TrksChunk
-    meta?: MetaChunk
+    [key: string]: unknown;
+    info?: InfoChunk;
+    tmap?: TMapChunk;
+    trks?: TrksChunk;
+    meta?: MetaChunk;
 }
 
 /**
@@ -284,9 +287,9 @@ export default function createDiskFromWoz(options: DiskOptions): WozDisk {
         debug('Invalid woz header');
     }
 
-    debug(chunks);
+    // debug(chunks);
 
-    const { meta, tmap, trks } = chunks;
+    const { meta, tmap, trks, info } = chunks;
 
     const disk: WozDisk = {
         encoding: ENCODING_BITSTREAM,
@@ -296,6 +299,7 @@ export default function createDiskFromWoz(options: DiskOptions): WozDisk {
         readOnly: true, //chunks.info.writeProtected === 1;
         name: meta?.values['title'] || options.name,
         side: meta?.values['side_name'] || meta?.values['side'],
+        info
     };
 
     return disk;

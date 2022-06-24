@@ -44,7 +44,7 @@ const ENTRIES = {
 interface MouseState {
     clampXMin: word;
     clampYMin: word;
-    clampXMax: word
+    clampXMax: word;
     clampYMax: word;
     x: word;
     y: word;
@@ -94,8 +94,8 @@ export default class Mouse implements Card, Restorable<MouseState> {
     constructor(
         private cpu: CPU6502,
         private cbs: {
-            setMouse: (mouse: Mouse) => void,
-            mouseMode: (on: boolean) => void
+            setMouse: (mouse: Mouse) => void;
+            mouseMode: (on: boolean) => void;
         }
     ) {
         this.cbs.setMouse(this);
@@ -217,7 +217,9 @@ export default class Mouse implements Card, Restorable<MouseState> {
         return rom[off];
     }
 
-    write() {}
+    write() {
+        // not writable
+    }
 
     /**
      * Triggers interrupts based on activity since the last tick

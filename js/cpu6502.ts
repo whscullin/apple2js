@@ -18,24 +18,24 @@ export const FLAVORS = [
 export type Flavor = MemberOf<typeof FLAVORS>;
 
 export interface CpuOptions {
-    flavor?: Flavor
+    flavor?: Flavor;
 }
 
 export interface CpuState {
     /** Accumulator */
-    a: byte,
+    a: byte;
     /** X index */
-    x: byte,
+    x: byte;
     /** Y index */
-    y: byte,
+    y: byte;
     /** Status register */
-    s: byte,
+    s: byte;
     /** Program counter */
-    pc: word,
+    pc: word;
     /** Stack pointer */
-    sp: byte,
+    sp: byte;
     /** Elapsed cycles */
-    cycles: number
+    cycles: number;
 }
 
 export type Mode =
@@ -90,19 +90,19 @@ export type flag = 0x80 | 0x40 | 0x20 | 0x10 | 0x08 | 0x04 | 0x02 | 0x01;
  */
 export type DebugInfo = {
     /** Program counter */
-    pc: word,
+    pc: word;
     /** Accumulator */
-    ar: byte,
+    ar: byte;
     /** X index */
-    xr: byte,
+    xr: byte;
     /** Y index */
-    yr: byte,
+    yr: byte;
     /** Status register */
-    sr: byte,
+    sr: byte;
     /** Stack pointer */
-    sp: byte,
+    sp: byte;
     /** Current command */
-    cmd: byte[],
+    cmd: byte[];
 };
 
 /** Flags to status byte mask. */
@@ -135,7 +135,7 @@ function isResettablePageHandler(pageHandler: MemoryPages | ResettablePageHandle
 
 const BLANK_PAGE: Memory = {
     read: function () { return 0; },
-    write: function () { }
+    write: function () { /* not writable */ }
 };
 
 interface Opts {
@@ -145,13 +145,13 @@ interface Opts {
 type ReadFn = () => byte;
 type WriteFn = (val: byte) => void;
 type ReadAddrFn = (opts?: Opts) => word;
-type ImpliedFn = () => void
+type ImpliedFn = () => void;
 
-interface Instruction<T = any> {
-    name: string
-    mode: Mode
-    op: (fn: T) => void
-    modeFn: T
+interface Instruction<T = unknown> {
+    name: string;
+    mode: Mode;
+    op: (fn: T) => void;
+    modeFn: T;
 }
 
 type StrictInstruction =
@@ -161,9 +161,9 @@ type StrictInstruction =
     Instruction<ImpliedFn> |
     Instruction<flag> |
     Instruction<flag|0> |
-    Instruction<byte>
+    Instruction<byte>;
 
-type Instructions = Record<byte, StrictInstruction>
+type Instructions = Record<byte, StrictInstruction>;
 
 type callback = (cpu: CPU6502) => boolean | void;
 
@@ -196,7 +196,7 @@ export default class CPU6502 {
     private addr: word = 0;
 
     /** Filled array of memory handlers by address page */
-    private memPages: Memory[] = new Array(0x100);
+    private memPages: Memory[] = new Array<Memory>(0x100);
     /** Callbacks invoked on reset signal */
     private resetHandlers: ResettablePageHandler[] = [];
     /** Elapsed cycles */
@@ -246,7 +246,7 @@ export default class CPU6502 {
         }
 
         // Certain browsers benefit from using arrays over maps
-        this.opary = new Array(0x100);
+        this.opary = new Array<Instruction>(0x100);
 
         for (let idx = 0; idx < 0x100; idx++) {
             this.opary[idx] = ops[idx] || this.unknown(idx);

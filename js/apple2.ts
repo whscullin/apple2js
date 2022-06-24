@@ -28,36 +28,37 @@ import RAM, { RAMState } from './ram';
 import SYMBOLS from './symbols';
 import Debugger, { DebuggerContainer } from './debugger';
 
-import { Restorable, rom } from './types';
+import { ReadonlyUint8Array, Restorable, rom } from './types';
 import { processGamepad } from './ui/gamepad';
 
 export interface Apple2Options {
     characterRom: string;
-    enhanced: boolean,
-    e: boolean,
-    gl: boolean,
-    rom: string,
-    canvas: HTMLCanvasElement,
-    tick: () => void,
+    enhanced: boolean;
+    e: boolean;
+    gl: boolean;
+    rom: string;
+    canvas: HTMLCanvasElement;
+    tick: () => void;
 }
 
 export interface Stats {
-    frames: number,
-    renderedFrames: number,
+    cycles: number;
+    frames: number;
+    renderedFrames: number;
 }
 
-interface State {
-    cpu: CpuState,
-    vm: VideoModesState,
-    io: Apple2IOState,
-    mmu?: MMUState,
-    ram?: RAMState[],
+export interface State {
+    cpu: CpuState;
+    vm: VideoModesState;
+    io: Apple2IOState;
+    mmu: MMUState | undefined;
+    ram: RAMState[] | undefined;
 }
 
 export class Apple2 implements Restorable<State>, DebuggerContainer {
     private paused = false;
 
-    private theDebugger?: Debugger;
+    private theDebugger: Debugger | undefined;
 
     private runTimer: number | null = null;
     private runAnimationFrame: number | null = null;
@@ -78,6 +79,7 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
     private tick: () => void;
 
     private stats: Stats = {
+        cycles: 0,
         frames: 0,
         renderedFrames: 0
     };
@@ -89,8 +91,8 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
     }
 
     async init(options: Apple2Options) {
-        const romImportPromise = import(`./roms/system/${options.rom}`);
-        const characterRomImportPromise = import(`./roms/character/${options.characterRom}`);
+        const romImportPromise = import(`./roms/system/${options.rom}`) as Promise<{ default: new () => ROM }>;
+        const characterRomImportPromise = import(`./roms/character/${options.characterRom}`) as Promise<{ default: ReadonlyUint8Array }>;
 
         const LoresPage = options.gl ? LoresPageGL : LoresPage2D;
         const HiresPage = options.gl ? HiresPageGL : HiresPage2D;
@@ -186,6 +188,7 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
                     this.stats.renderedFrames++;
                 }
             }
+            this.stats.cycles = this.cpu.getCycles();
             this.stats.frames++;
             this.io.tick();
             this.tick();
@@ -212,6 +215,10 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
         }
         this.runTimer = null;
         this.runAnimationFrame = null;
+    }
+
+    isRunning() {
+        return !this.paused;
     }
 
     getState(): State {

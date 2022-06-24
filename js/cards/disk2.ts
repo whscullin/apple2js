@@ -1,4 +1,4 @@
-import { base64_encode} from '../base64';
+import { base64_encode } from '../base64';
 import type {
     byte,
     Card,
@@ -20,6 +20,7 @@ import {
     PROCESS_JSON_DISK,
     PROCESS_JSON,
     ENCODING_BITSTREAM,
+    MassStorageData,
 } from '../formats/types';
 
 import {
@@ -27,7 +28,7 @@ import {
     createDiskFromJsonDisk
 } from '../formats/create_disk';
 
-import { debug, toHex } from '../util';
+import { toHex } from '../util';
 import { jsonDecode, jsonEncode, readSector } from '../formats/format_utils';
 
 import { BOOTSTRAP_ROM_16, BOOTSTRAP_ROM_13 } from '../roms/cards/disk2';
@@ -161,29 +162,29 @@ export interface Callbacks {
 
 interface BaseDrive {
     /** Current disk format. */
-    format: NibbleFormat,
+    format: NibbleFormat;
     /** Current disk volume number. */
-    volume: byte,
+    volume: byte;
     /** Displayed disk name */
-    name: string,
+    name: string;
     /** (Optional) Disk side (Front/Back, A/B) */
-    side?: string,
+    side?: string | undefined;
     /** Quarter track position of read/write head. */
-    track: byte,
+    track: byte;
     /** Position of the head on the track. */
-    head: byte,
+    head: byte;
     /** Current active coil in the head stepper motor. */
-    phase: Phase,
+    phase: Phase;
     /** Whether the drive write protect is on. */
-    readOnly: boolean,
+    readOnly: boolean;
     /** Whether the drive has been written to since it was loaded. */
-    dirty: boolean,
+    dirty: boolean;
 }
 
 /** WOZ format track data from https://applesaucefdc.com/woz/reference2/. */
 interface WozDrive extends BaseDrive {
     /** Woz encoding */
-    encoding: typeof ENCODING_BITSTREAM
+    encoding: typeof ENCODING_BITSTREAM;
     /** Maps quarter tracks to data in rawTracks; `0xFF` = random garbage. */
     trackMap: byte[];
     /** Unique track bitstreams. The index is arbitrary; it is NOT the track number. */
@@ -193,14 +194,14 @@ interface WozDrive extends BaseDrive {
 /** Nibble format track data. */
 interface NibbleDrive extends BaseDrive {
     /** Nibble encoding */
-    encoding: typeof ENCODING_NIBBLE
+    encoding: typeof ENCODING_NIBBLE;
     /** Nibble data. The index is the track number. */
     tracks: memory[];
 }
 
 type Drive = WozDrive | NibbleDrive;
 
-function isNibbleDrive(drive: Drive): drive is NibbleDrive  {
+function isNibbleDrive(drive: Drive): drive is NibbleDrive {
     return drive.encoding === ENCODING_NIBBLE;
 }
 
@@ -209,19 +210,19 @@ function isWozDrive(drive: Drive): drive is WozDrive {
 }
 
 interface DriveState {
-    format: NibbleFormat,
-    encoding: typeof ENCODING_BITSTREAM | typeof ENCODING_NIBBLE
-    volume: byte,
-    name: string,
-    side?: string,
-    tracks: memory[],
-    track: byte,
-    head: byte,
-    phase: Phase,
-    readOnly: boolean,
-    dirty: boolean,
-    trackMap: number[],
-    rawTracks: Uint8Array[],
+    format: NibbleFormat;
+    encoding: typeof ENCODING_BITSTREAM | typeof ENCODING_NIBBLE;
+    volume: byte;
+    name: string;
+    side?: string | undefined;
+    tracks: memory[];
+    track: byte;
+    head: byte;
+    phase: Phase;
+    readOnly: boolean;
+    dirty: boolean;
+    trackMap: number[];
+    rawTracks: Uint8Array[];
 }
 
 interface State {
@@ -308,7 +309,7 @@ function setDriveState(state: DriveState) {
 /**
  * Emulates the 16-sector and 13-sector versions of the Disk ][ drive and controller.
  */
-export default class DiskII implements Card {
+export default class DiskII implements Card<State> {
 
     private drives: Drive[] = [
         {   // Drive 1
@@ -336,6 +337,11 @@ export default class DiskII implements Card {
             dirty: false,
         }];
 
+    /**
+     * When `1`, the next nibble will be available for read; when `0`,
+     * the card is pretending to wait for data to be shifted in by the
+     * sequencer.
+     */
     private skip = 0;
     /** Last data written by the CPU to card softswitch 0x8D. */
     private bus = 0;
@@ -387,18 +393,62 @@ export default class DiskII implements Card {
         this.debug('Disk ][');
 
         this.lastCycles = this.io.cycles();
-        this.bootstrapRom = this.sectors == 16 ? BOOTSTRAP_ROM_16 : BOOTSTRAP_ROM_13;
-        this.sequencerRom = this.sectors == 16 ? SEQUENCER_ROM_16 : SEQUENCER_ROM_13;
+        this.bootstrapRom = this.sectors === 16 ? BOOTSTRAP_ROM_16 : BOOTSTRAP_ROM_13;
+        this.sequencerRom = this.sectors === 16 ? SEQUENCER_ROM_16 : SEQUENCER_ROM_13;
+        // From the example in UtA2e, p. 9-29, col. 1, para. 1., this is
+        // essentially the start of the sequencer loop and produces
+        // correctly synced nibbles immediately.  Starting at state 0
+        // would introduce a spurrious 1 in the latch at the beginning,
+        // which requires reading several more sync bytes to sync up.
+        this.state = 2;
 
         this.initWorker();
     }
 
-    private debug(..._args: any[]) {
-        // debug.apply(this, arguments);
+    private debug(..._args: unknown[]) {
+        // debug(..._args);
     }
 
-    // Only used for WOZ disks
+    public head(): number {
+        return this.cur.head;
+    }
+
+    /**
+     * Spin the disk under the read/write head for WOZ images.
+     * 
+     * This implementation emulates every clock cycle of the 2 MHz
+     * sequencer since the last time it was called in order to
+     * determine the current state. Because this is called on
+     * every access to the softswitches, the data in the latch
+     * will be correct on every read.
+     * 
+     * The emulation of the disk makes a few simplifying assumptions:
+     * 
+     * *   The motor turns on instantly.
+     * *   The head moves tracks instantly.
+     * *   The length (in bits) of each track of the WOZ image
+     *     represents one full rotation of the disk and that each
+     *     bit is evenly spaced.
+     * *   Writing will not change the track length. This means
+     *     that short tracks stay short.
+     * *   The read head picks up the next bit when the sequencer
+     *     clock === 4.
+     * *   Head position X on track T is equivalent to head position
+     *     X on track T′. (This is not the recommendation in the WOZ
+     *     spec.)
+     * *   Unspecified tracks contain a single zero bit. (A very
+     *     short track, indeed!)
+     * *   Two zero bits are sufficient to cause the MC3470 to freak
+     *     out. When freaking out, it returns 0 and 1 with equal
+     *     probability.
+     * *   Any softswitch changes happen before `moveHead`. This is
+     *     important because it means that if the clock is ever
+     *     advanced more than one cycle between calls, the
+     *     softswitch changes will appear to happen at the very
+     *     beginning, not just before the last cycle.
+     */
     private moveHead() {
+        // TODO(flan): Short-circuit if the drive is not on.
         const cycles = this.io.cycles();
 
         // Spin the disk the number of elapsed cycles since last call
@@ -413,10 +463,10 @@ export default class DiskII implements Card {
 
         while (workCycles-- > 0) {
             let pulse: number = 0;
-            if (this.clock == 4) {
+            if (this.clock === 4) {
                 pulse = track[this.cur.head];
                 if (!pulse) {
-                    // More that 2 zeros can not be read reliably.
+                    // More than 2 zeros can not be read reliably.
                     if (++this.zeros > 2) {
                         pulse = Math.random() >= 0.5 ? 1 : 0;
                     }
@@ -434,9 +484,7 @@ export default class DiskII implements Card {
 
             const command = this.sequencerRom[idx];
 
-            if (this.on && this.q7) {
-                debug('clock:', this.clock, 'command:', toHex(command), 'q6:', this.q6);
-            }
+            this.debug(`clock: ${this.clock} state: ${toHex(this.state)} pulse: ${pulse} command: ${toHex(command)} q6: ${this.q6} latch: ${toHex(this.latch)}`);
 
             switch (command & 0xf) {
                 case 0x0: // CLR
@@ -455,19 +503,21 @@ export default class DiskII implements Card {
                     break;
                 case 0xB: // LD
                     this.latch = this.bus;
-                    debug('Loading', toHex(this.latch), 'from bus');
+                    this.debug('Loading', toHex(this.latch), 'from bus');
                     break;
                 case 0xD: // SL1
                     this.latch = ((this.latch << 1) | 0x01) & 0xff;
                     break;
+                default:
+                    this.debug(`unknown command: ${toHex(command & 0xf)}`);
             }
             this.state = (command >> 4 & 0xF) as nibble;
 
-            if (this.clock == 4) {
+            if (this.clock === 4) {
                 if (this.on) {
                     if (this.q7) {
                         track[this.cur.head] = this.state & 0x8 ? 0x01 : 0x00;
-                        debug('Wrote', this.state & 0x8 ? 0x01 : 0x00);
+                        this.debug('Wrote', this.state & 0x8 ? 0x01 : 0x00);
                     }
 
                     if (++this.cur.head >= track.length) {
@@ -488,7 +538,7 @@ export default class DiskII implements Card {
             return;
         }
         if (this.on && (this.skip || this.writeMode)) {
-            const track = this.cur.tracks![this.cur.track >> 2];
+            const track = this.cur.tracks[this.cur.track >> 2];
             if (track && track.length) {
                 if (this.cur.head >= track.length) {
                     this.cur.head = 0;
@@ -520,12 +570,28 @@ export default class DiskII implements Card {
      * tracks by activating two neighboring coils at once.
      */
     private setPhase(phase: Phase, on: boolean) {
-        this.debug('phase ' + phase + (on ? ' on' : ' off'));
+        // According to Sather, UtA2e, p. 9-12, Drive On/Off and Drive
+        // Select:
+        //     Turning a drive on ($C089,X) [...]:
+        //       1. [...]
+        //       5. [...] enables head positioning [...]
+        //
+        // Therefore do nothing if no drive is on.
+        if (!this.on) {
+            this.debug(`ignoring phase ${phase}${on ? ' on' : ' off'}`);
+            return;
+        }
+
+        this.debug(`phase ${phase}${on ? ' on' : ' off'}`);
         if (on) {
             this.cur.track += PHASE_DELTA[this.cur.phase][phase] * 2;
             this.cur.phase = phase;
         }
 
+        // The emulator clamps the track to the valid track range available
+        // in the image, but real Disk II drives can seek past track 34 by
+        // at least a half track, usually a full track. Some 3rd party
+        // drives can seek to track 39.
         const maxTrack = isNibbleDrive(this.cur)
             ? this.cur.tracks.length * 4 - 1
             : this.cur.trackMap.length - 1;
@@ -657,7 +723,7 @@ export default class DiskII implements Card {
                 break;
             case LOC.DRIVEWRITEMODE: // 0x0f (Q7H)
                 this.debug('Write Mode');
-                this.q7 = false;
+                this.q7 = true;
                 this.writeMode = true;
                 break;
 
@@ -682,7 +748,7 @@ export default class DiskII implements Card {
         } else {
             // It's not explicitly stated, but writes to any address set the
             // data register.
-            this.bus = val!;
+            this.bus = val;
         }
 
         return result;
@@ -703,7 +769,9 @@ export default class DiskII implements Card {
         return this.bootstrapRom[off];
     }
 
-    write() { }
+    write() {
+        // not writable
+    }
 
     reset() {
         if (this.on) {
@@ -722,7 +790,10 @@ export default class DiskII implements Card {
         this.moveHead();
     }
 
-    getState() {
+    getState(): State {
+        // TODO(flan): This does not accurately save state. It's missing
+        // all of the state for WOZ disks and the current status of the
+        // bus.
         const result = {
             drives: [] as DriveState[],
             skip: this.skip,
@@ -866,6 +937,10 @@ export default class DiskII implements Card {
     }
 
     initWorker() {
+        if (!window.Worker) {
+            return;
+        }
+
         this.worker = new Worker('dist/format_worker.bundle.js');
 
         this.worker.addEventListener('message', (message: MessageEvent<FormatWorkerResponse>) => {
@@ -888,7 +963,7 @@ export default class DiskII implements Card {
     }
 
     // TODO(flan): Does not work with WOZ disks
-    getBinary(drive: DriveNumber) {
+    getBinary(drive: DriveNumber): MassStorageData | null {
         const cur = this.drives[drive - 1];
         if (!isNibbleDrive(cur)) {
             return null;
@@ -911,7 +986,11 @@ export default class DiskII implements Card {
             }
         }
 
-        return data;
+        return {
+            ext: 'dsk',
+            name: cur.name,
+            data: data.buffer
+        };
     }
 
     // TODO(flan): Does not work with WOZ disks

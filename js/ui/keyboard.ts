@@ -202,7 +202,7 @@ type Key2e = DeepMemberOf<typeof keys2e>;
 
 type Key = Key2 | Key2e;
 
-type KeyFunction = (key: KeyboardEvent) => void
+type KeyFunction = (key: KeyboardEvent) => void;
 
 export default class KeyBoard {
     private kb: HTMLElement;
@@ -240,7 +240,7 @@ export default class KeyBoard {
         } else if (isKeyboardCode(code)) {
             key = keymap[code][evt.shiftKey ? 2 : (evt.ctrlKey ? 1 : 0)];
 
-            if (code != 20 && this.capslockKeyUsed) {
+            if (code !== 20 && this.capslockKeyUsed) {
                 this.capslockKey(evt.getModifierState('CapsLock'));
             }
 
@@ -251,7 +251,7 @@ export default class KeyBoard {
             debug('Unhandled key = ' + toHex(code));
         }
 
-        if (key == 0x7F && evt.shiftKey && evt.ctrlKey) {
+        if (key === 0x7F && evt.shiftKey && evt.ctrlKey) {
             this.cpu.reset();
             key = 0xff;
         }
@@ -321,7 +321,7 @@ export default class KeyBoard {
     capslockKey(down?: boolean | undefined) {
         const capsLock = this.kb.querySelector('.key-LOCK');
 
-        if (arguments.length == 0) {
+        if (arguments.length === 0) {
             if (this.capslockKeyUsed) {
                 this.capslocked = !this.capslocked;
             } else {
@@ -354,7 +354,7 @@ export default class KeyBoard {
         const buildLabel = (k: string) => {
             const span = document.createElement('span');
             span.innerHTML = k;
-            if (k.length > 1 && k.substr(0, 1) != '&')
+            if (k.length > 1 && k.slice(0, 1) !== '&')
                 span.classList.add('small');
             return span;
         };
@@ -362,7 +362,7 @@ export default class KeyBoard {
         for (y = 0; y < 5; y++) {
             row = document.createElement('div');
             row.classList.add('row');
-            row.classList.add('row' + y);
+            row.classList.add(`row${y}`);
             this.kb.append(row);
             for (x = 0; x < this.keys[0][y].length; x++) {
                 const key1 = this.keys[0][y][x];
@@ -377,17 +377,17 @@ export default class KeyBoard {
                 key.classList.add('key-' + key1.replace(/[&#;]/g, ''));
 
                 if (key1.length > 1) {
-                    if (key1 == 'LOCK')
+                    if (key1 === 'LOCK')
                         key.classList.add('v-center2');
                     else
                         key.classList.add('v-center');
                 }
-                if (key1 != key2) {
+                if (key1 !== key2) {
                     key.classList.add('key-' + key2.replace(/[&;]/g, ''));
                     label.append(label2);
                     label.append(document.createElement('br'));
                 }
-                if (key1 == 'LOCK') {
+                if (key1 === 'LOCK') {
                     key.classList.add('active');
                 }
 

@@ -1,0 +1,17 @@
+.inset {
+    border-radius: 6px;
+    border: 3px inset #f0edd0;
+    padding: 6px;
+    margin: 0 auto;
+    display: flex;
+    width: 604px;
+}
+
+:global(.full-page) .inset {
+    display: none;
+}
+
+.inset button {
+    min-width: 36px;
+    margin: 0 2px;
+}

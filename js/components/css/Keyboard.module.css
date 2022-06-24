@@ -1,0 +1,211 @@
+.keyboard {
+    margin-left: 15px;
+    user-select: none;
+}
+
+:global(.apple2e) .keyboard {
+    margin-left: 0;
+}
+
+.row {
+    display: block;
+    margin: 0;
+    padding: 0;
+    height: 42px;
+    font-family: Helvetica;
+    width: 570px;
+}
+
+:global(.apple2e) .row {
+    width: 610px;
+}
+
+.row0 {
+    margin-left: 20px;
+}
+
+.row2 {
+    margin-left: 10px;
+}
+
+.row3 {
+    margin-left: 10px;
+}
+
+.row4 {
+    margin-left: 10px;
+}
+
+:global(.apple2e) .row0 {
+    margin-left: 0;
+}
+
+:global(.apple2e) .row2 {
+    margin-left: 0;
+}
+
+:global(.apple2e) .row3 {
+    margin-left: 0;
+}
+
+:global(.apple2e) .row4 {
+    margin-left: 0;
+}
+
+.key {
+    display: inline-block;
+    margin: 0;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    background-color: #44372C;
+    color: white;
+    text-align: center;
+    position: relative;
+    border-left: 5px solid #65594D;
+    border-top: 5px solid #65594D;
+    border-right: 5px solid #110E0D;
+    border-bottom: 5px solid #110E0D;
+    /* border: 5px outset #66594E; */
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.pressed {
+    background-color: #22150A;
+    border-left: 5px solid #44372C;
+    border-top: 5px solid #44372C;
+    border-right: 5px solid #000000;
+    border-bottom: 5px solid #000000;
+    /* border: 5px outset #44372C; */
+}
+
+.key div {
+    border-radius: 3px;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    text-align: center;
+}
+
+.vCenter div {
+    bottom: 10px;
+}
+
+.vCenter2 div {
+    bottom: 5px;
+    line-height: 10px;
+}
+
+.key span {
+    font-size: 13px;
+}
+
+.key .small {
+    font-size: 7px;
+}
+
+.key-SHIFT {
+    width: 53px;
+}
+
+.active {
+    color: #4f4;
+}
+
+.key-RETURN {
+    width: 52px;
+}
+
+.key-DELETE {
+    width: 47px;
+}
+
+.key-TAB {
+    width: 47px;
+}
+
+.key-POWER {
+    width: 38px;
+    height: 38px;
+    border: 2px groove black;
+    background-color: #ffd;
+    color: black;
+    border-radius: 2px;
+}
+
+.key-POWER div {
+    bottom: 15px;
+}
+
+.key-nbsp {
+    margin-left: 62px;
+    width: 330px;
+}
+
+:global(.apple2e) .key-CTRL {
+    width: 60px;
+}
+
+:global(.apple2e) .key-RETURN {
+    width: 60px;
+}
+
+:global(.apple2e) .key-SHIFT {
+    width: 81px;
+}
+
+:global(.apple2e) .key-nbsp {
+    margin-left: 0;
+    width: 215px;
+}
+
+.key-POW {
+    width: 38px;
+    height: 38px;
+    border: 2px groove black;
+    background-color: #ffd;
+    color: black;
+    border-radius: 2px;
+}
+
+.key-POW div {
+    bottom: 15px;
+}
+
+.key-POW span {
+    background: #4f4;
+    color: #4f4;
+}
+
+.key-OPEN_APPLE div {
+    background-image: url(../../../img/open-apple24.png);
+    width: 24px;
+    height: 24px;
+    bottom: 1px;
+    left: 4px;
+}
+
+.key-OPEN_APPLE span {
+    display: none;
+}
+
+.key-OPEN_APPLE.active div {
+    background-image: url(../../../img/open-apple24-green.png);
+}
+
+.key-CLOSED_APPLE div {
+    background-image: url(../../../img/closed-apple24.png);
+    width: 24px;
+    height: 24px;
+    bottom: 1px;
+    left: 4px;
+}
+
+.key-CLOSED_APPLE.active div {
+    background-image: url(../../../img/closed-apple24-green.png);
+}
+
+.key-CLOSED_APPLE span {
+    display: none;
+}

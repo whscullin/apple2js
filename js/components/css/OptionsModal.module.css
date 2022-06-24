@@ -1,0 +1,11 @@
+.optionsModal {
+    width: 300px;
+}
+
+.optionsModal h3 {
+    font-size: 13px;
+}
+
+.optionsModal li {
+    list-style-type: none;
+}

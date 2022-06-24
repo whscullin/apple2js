@@ -1,5 +1,5 @@
 import Apple2IO from '../apple2io';
-import { BOOLEAN_OPTION, OptionHandler } from './options_modal';
+import { BOOLEAN_OPTION, OptionHandler } from '../options';
 
 const JOYSTICK_DISABLE = 'disable_mouse';
 const JOYSTICK_FLIP_X_AXIS = 'flip_x';
@@ -24,13 +24,13 @@ export class JoyStick implements OptionHandler {
         document.querySelectorAll('canvas').forEach((canvas) => {
             canvas.addEventListener('mousedown', (evt) => {
                 if (!this.gamepad && !mouseMode) {
-                    io.buttonDown(evt.which == 1 ? 0 : 1);
+                    io.buttonDown(evt.which === 1 ? 0 : 1);
                 }
                 evt.preventDefault();
             });
             canvas.addEventListener('mouseup', (evt) => {
                 if (!this.gamepad && !mouseMode) {
-                    io.buttonUp(evt.which == 1 ? 0 : 1);
+                    io.buttonUp(evt.which === 1 ? 0 : 1);
                 }
             });
             canvas.addEventListener('contextmenu', (evt) => {
@@ -93,7 +93,7 @@ export class JoyStick implements OptionHandler {
             return;
         }
 
-        const s = document.querySelector<HTMLDivElement>('#screen')!;
+        const s = document.querySelector<HTMLDivElement>('canvas')!;
         const offset = s.getBoundingClientRect();
         let x = (evt.pageX - offset.left) / s.clientWidth;
         let y = (evt.pageY - offset.top) / s.clientHeight;

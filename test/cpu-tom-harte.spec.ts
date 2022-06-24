@@ -25,45 +25,45 @@ const detail = !!process.env.JEST_DETAIL;
 /**
  * Memory address and value
  */
-type MemoryValue = [address: word, value: byte]
+type MemoryValue = [address: word, value: byte];
 
 /**
  * Represents initial and final CPU and memory states
  */
  interface TestState {
     /** Program counter */
-    pc: word
+    pc: word;
     /** Stack register */
-    s: byte
+    s: byte;
     /** Accumulator */
-    a: byte
+    a: byte;
     /** X index */
-    x: byte
+    x: byte;
     /** Y index */
-    y: byte
+    y: byte;
     /** Processor status register */
-    p: byte
+    p: byte;
     /** M */
-    ram: MemoryValue[]
+    ram: MemoryValue[];
 }
 
 /**
  * CPU cycle memory operation
  */
-type Cycle = [address: word, value: byte, type: 'read'|'write']
+type Cycle = [address: word, value: byte, type: 'read'|'write'];
 
 /**
  * One test record
  */
 interface Test {
     /** Test name */
-    name: string
+    name: string;
     /** Initial CPU register and memory state */
-    initial: TestState
+    initial: TestState;
     /**  Final CPU register and memory state */
-    final: TestState
+    final: TestState;
     /** Detailed CPU cycles */
-    cycles: Cycle[]
+    cycles: Cycle[];
 }
 
 /**
@@ -145,9 +145,9 @@ function expectState(cpu: CPU6502, memory: TestMemory, test: Test) {
 }
 
 interface OpTest {
-    op: string
-    name: string
-    mode: string
+    op: string;
+    name: string;
+    mode: string;
 }
 
 const testPath = process.env.TOM_HARTE_TEST_PATH;

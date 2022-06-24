@@ -1,9 +1,9 @@
-import { BOOLEAN_OPTION, SELECT_OPTION, OptionHandler } from './options_modal';
+import { BOOLEAN_OPTION, SELECT_OPTION, OptionHandler } from '../options';
 import Apple2IO from '../apple2io';
 
-const SYSTEM_TYPE_APPLE2E = 'computer_type2e';
-const SYSTEM_TYPE_APPLE2 = 'computer_type2';
-const SYSTEM_CPU_ACCELERATED = 'accelerator_toggle';
+export const SYSTEM_TYPE_APPLE2E = 'computer_type2e';
+export const SYSTEM_TYPE_APPLE2 = 'computer_type2';
+export const SYSTEM_CPU_ACCELERATED = 'accelerator_toggle';
 
 export class System implements OptionHandler {
     constructor(private io: Apple2IO, private e: boolean) {}

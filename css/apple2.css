@@ -122,6 +122,10 @@ body {
     height: 16px;
 }
 
+.disk-light.on {
+    background-image: url(red-on-16.png);
+}
+
 .disk-label {
     color: #000;
     font-family: sans-serif;
@@ -160,9 +164,6 @@ th {
 
 .inset button {
     min-width: 36px;
-}
-
-.inset button {
     margin: 0 2px;
 }
 
@@ -193,6 +194,7 @@ canvas {
 
 .scanlines:after {
     display: block;
+    pointer-events: none;
     background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 1px, rgba(0,0,0,0.5) 1px, rgba(0,0,0,0.5) 2px);
     content: '';
     position: absolute;
@@ -213,6 +215,8 @@ canvas {
     image-rendering: optimizeSpeed;
     width: 592px;
     height: 416px;
+    touch-action: manipulation;
+    user-select: none;
 }
 
 #screen.mouseMode {
@@ -583,6 +587,7 @@ button:focus {
 
 #reset-row .inset {
     margin: 0;
+    width: 604px;
 }
 
 #reset {
@@ -599,6 +604,9 @@ button:focus {
     padding: 0;
     margin-left: 10px;
     width: 42px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 #reset:hover {
@@ -607,8 +615,11 @@ button:focus {
 }
 
 #reset:active {
-  background: #22150A;
-  border: 5px outset #44372C;
+    background-color: #22150A;
+    border-left: 3px solid #44372C;
+    border-top: 3px solid #44372C;
+    border-right: 3px solid #000000;
+    border-bottom: 3px solid #000000;
 }
 
 #keyboard .key-OPEN_APPLE.active div {
@@ -650,7 +661,6 @@ button:focus {
 
 #options-modal {
     width: 300px;
-    line-height: 1.75em;
 }
 
 #options-modal h3 {

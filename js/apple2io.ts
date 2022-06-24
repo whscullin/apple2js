@@ -3,21 +3,16 @@ import { Card, Memory, MemoryPages, TapeData, byte, Restorable } from './types';
 import { debug, garbage } from './util';
 import { VideoModes } from './videomodes';
 
-type slot = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
-type button = 0 | 1 | 2;
-type paddle = 0 | 1 | 2 | 3;
-type annunciator = 0 | 1 | 2 | 3;
+export type slot = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+export type button = 0 | 1 | 2;
+export type paddle = 0 | 1 | 2 | 3;
+export type annunciator = 0 | 1 | 2 | 3;
 
-interface Annunciators {
-    0: boolean,
-    1: boolean,
-    2: boolean,
-    3: boolean,
-}
+type Annunciators = Record<annunciator, boolean>;
 
 export interface Apple2IOState {
     annunciators: Annunciators;
-    cards: Array<any | null>
+    cards: Array<unknown | null>;
 }
 
 export type SampleListener = (sample: number[]) => void;
@@ -57,7 +52,7 @@ const LOC = {
 };
 
 export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> {
-    private _slot: Array<Card | null> = new Array(7).fill(null);
+    private _slot: Array<Card | null> = new Array<Card | null>(7).fill(null);
     private _auxRom: Memory | null = null;
 
     private _khz = 1023;
@@ -86,7 +81,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
     private _annunciators: Annunciators = [false, false, false, false];
 
     private _tape: TapeData = [];
-    private _tapeOffset = 0;
+    private _tapeOffset: number = 0;
     private _tapeNext: number = 0;
     private _tapeCurrent = false;
 
@@ -98,7 +93,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
         this._calcSampleRate();
     }
 
-    _debug(..._args: any[]) {
+    _debug(..._args: unknown[]) {
         // debug.apply(this, arguments);
     }
 
@@ -111,7 +106,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
                 if (this._audioListener) {
                     this._audioListener(this._sample);
                 }
-                this._sample = new Array(this._sample_size);
+                this._sample = new Array<number>(this._sample_size);
                 this._sampleIdx = 0;
             }
         }
@@ -222,7 +217,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
                 }
                 break;
             case LOC.TAPEIN:
-                if (this._tapeOffset == -1) {
+                if (this._tapeOffset === -1) {
                     this._tapeOffset = 0;
                     this._tapeNext = now;
                 }
@@ -231,7 +226,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
                     this._tapeCurrent = this._tape[this._tapeOffset][1];
                     while (now >= this._tapeNext) {
                         if ((this._tapeOffset % 1000) === 0) {
-                            debug('Read ' + (this._tapeOffset / 1000));
+                            debug(`Read ${this._tapeOffset / 1000}`);
                         }
                         this._tapeCurrent = this._tape[this._tapeOffset][1];
                         this._tapeNext += this._tape[this._tapeOffset++][0];
@@ -253,7 +248,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
                         }
                         if (this._buffer.length > 0) {
                             let val = this._buffer.shift() as string;
-                            if (val == '\n') {
+                            if (val === '\n') {
                                 val = '\r';
                             }
                             this._key = val.charCodeAt(0) | 0x80;
@@ -348,7 +343,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
             case 0xc7:
                 slot = page & 0x0f;
                 card = this._slot[slot];
-                if (this._auxRom != card) {
+                if (this._auxRom !== card) {
                 // _debug('Setting auxRom to slot', slot);
                     this._auxRom = card;
                 }
@@ -384,7 +379,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
             case 0xc7:
                 slot = page & 0x0f;
                 card = this._slot[slot];
-                if (this._auxRom != card) {
+                if (this._auxRom !== card) {
                 // _debug('Setting auxRom to slot', slot);
                     this._auxRom = card;
                 }
@@ -426,8 +421,8 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
         this._keyDown = false;
     }
 
-    buttonDown(b: button) {
-        this._button[b] = true;
+    buttonDown(b: button, state = true) {
+        this._button[b] = state;
     }
 
     buttonUp(b: button) {
@@ -456,7 +451,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
     }
 
     setTape(tape: TapeData) {
-        debug('Tape length: ' + tape.length);
+        debug(`Tape length: ${tape.length}`);
         this._tape = tape;
         this._tapeOffset = -1;
     }
@@ -464,7 +459,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
     sampleRate(rate: number, sample_size: number) {
         this._rate = rate;
         this._sample_size = sample_size;
-        this._sample = new Array(this._sample_size);
+        this._sample = new Array<number>(this._sample_size);
         this._sampleIdx = 0;
         this._calcSampleRate();
     }

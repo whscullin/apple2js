@@ -179,7 +179,7 @@ export default class IntBasicDump
                 }
                 else if (val > 0x80)
                     str += LETTERS[val - 0x80];
-            } while (val != 0x01);
+            } while (val !== 0x01);
             str += '\n';
         } while (addr < himem);
 

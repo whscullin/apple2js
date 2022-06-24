@@ -7,10 +7,11 @@ export interface DebuggerContainer {
     run: () => void;
     stop: () => void;
     getCPU: () => CPU6502;
+    isRunning: () => boolean;
 }
 
 type symbols = { [key: number]: string };
-type breakpointFn = (info: DebugInfo) => boolean
+type breakpointFn = (info: DebugInfo) => boolean;
 
 const alwaysBreak = (_info: DebugInfo) => { return true; };
 
@@ -71,6 +72,9 @@ export default class Debugger {
         this.container.run();
     };
 
+    isRunning = () =>
+        this.container.isRunning();
+
     setVerbose = (verbose: boolean) => {
         this.verbose = verbose;
     };
@@ -79,12 +83,39 @@ export default class Debugger {
         this.maxTrace = maxTrace;
     };
 
-    getTrace = () => {
-        return this.trace.map(this.printDebugInfo).join('\n');
+    getTrace = (count?: number) => {
+        return this.trace.slice(count ? -count : undefined).map(this.printDebugInfo).join('\n');
     };
 
-    printTrace = () => {
-        debug(this.getTrace());
+    printTrace = (count?: number) => {
+        debug(this.getTrace(count));
+    };
+
+    getStack = (size?: number) => {
+        const { sp } = this.cpu.getDebugInfo();
+        const stack = [];
+
+        let max = 255;
+        let min = 0;
+        if (size) {
+            if ((sp - 3) >= (255 - size)) {
+                min = Math.max(255 - size + 1, 0);
+            } else {
+                max = Math.min(sp + size - 4, 255);
+                min = Math.max(sp - 3, 0);
+            }
+        }
+
+        for (let addr = max; addr >= min; addr--) {
+            const isSP = addr === sp ? '*' : ' ';
+            const addrStr = `$${toHex(0x0100 + addr)}`;
+            const valStr = toHex(this.cpu.read(0x01, addr));
+            if (!size || ((sp + size > addr) && (addr > sp - size))) {
+                stack.push(`${isSP} ${addrStr} ${valStr}`);
+            }
+        }
+
+        return stack.join('\n');
     };
 
     setBreakpoint = (addr: word, exp?: breakpointFn) => {
@@ -128,7 +159,7 @@ export default class Debugger {
 
         result += this.padWithSymbol(pc);
 
-        const cmd = new Array(size);
+        const cmd = new Array<number>(size);
         for (let idx = 0, jdx = pc; idx < size; idx++, jdx++) {
             cmd[idx] = this.cpu.read(jdx);
         }
@@ -238,13 +269,13 @@ export default class Debugger {
             case 'implied':
                 break;
             case 'immediate':
-                result += '#' + toHexOrSymbol(lsb);
+                result += `#${toHexOrSymbol(lsb)}`;
                 break;
             case 'absolute':
-                result += '' + toHexOrSymbol(addr, 4);
+                result += `${toHexOrSymbol(addr, 4)}`;
                 break;
             case 'zeroPage':
-                result += '' + toHexOrSymbol(lsb);
+                result += `${toHexOrSymbol(lsb)}`;
                 break;
             case 'relative':
                 {
@@ -253,38 +284,38 @@ export default class Debugger {
                         off -= 256;
                     }
                     pc += off + 2;
-                    result += '' + toHexOrSymbol(pc, 4) + ' (' + off + ')';
+                    result += `${toHexOrSymbol(pc, 4)} (${off})`;
                 }
                 break;
             case 'absoluteX':
-                result += '' + toHexOrSymbol(addr, 4)+ ',X';
+                result += `${toHexOrSymbol(addr, 4)},X`;
                 break;
             case 'absoluteY':
-                result += '' + toHexOrSymbol(addr, 4) + ',Y';
+                result += `${toHexOrSymbol(addr, 4)},Y`;
                 break;
             case 'zeroPageX':
-                result += '' + toHexOrSymbol(lsb) + ',X';
+                result += `${toHexOrSymbol(lsb)},X`;
                 break;
             case 'zeroPageY':
-                result += '' + toHexOrSymbol(lsb) + ',Y';
+                result += `${toHexOrSymbol(lsb)},Y`;
                 break;
             case 'absoluteIndirect':
-                result += '(' + toHexOrSymbol(addr, 4) + ')';
+                result += `(${toHexOrSymbol(addr, 4)})`;
                 break;
             case 'zeroPageXIndirect':
-                result += '(' + toHexOrSymbol(lsb) + ',X)';
+                result += `(${toHexOrSymbol(lsb)},X)`;
                 break;
             case 'zeroPageIndirectY':
-                result += '(' + toHexOrSymbol(lsb) + '),Y';
+                result += `(${toHexOrSymbol(lsb)},),Y`;
                 break;
             case 'accumulator':
                 result += 'A';
                 break;
             case 'zeroPageIndirect':
-                result += '(' + toHexOrSymbol(lsb) + ')';
+                result += `(${toHexOrSymbol(lsb)})`;
                 break;
             case 'absoluteXIndirect':
-                result += '(' + toHexOrSymbol(addr, 4) + ',X)';
+                result += `(${toHexOrSymbol(addr, 4)},X)`;
                 break;
             case 'zeroPage_relative':
                 val = lsb;
@@ -293,7 +324,7 @@ export default class Debugger {
                     off -= 256;
                 }
                 pc += off + 2;
-                result += '' + toHexOrSymbol(val) + ',' + toHexOrSymbol(pc, 4) + ' (' + off + ')';
+                result += `${toHexOrSymbol(val)},${toHexOrSymbol(pc, 4)} (${off})`;
                 break;
             default:
                 break;

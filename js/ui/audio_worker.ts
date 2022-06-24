@@ -9,7 +9,11 @@ declare global {
         new(options?: AudioWorkletNodeOptions): AudioWorkletProcessor;
     };
 
-    function registerProcessor(name: string, ctor :{ new(): AudioWorkletProcessor; }): void
+    function registerProcessor(name: string, ctor :{ new(): AudioWorkletProcessor }): void;
+}
+
+export interface AppleAudioMessageEvent extends MessageEvent {
+    data: Float32Array;
 }
 
 export class AppleAudioProcessor extends AudioWorkletProcessor {
@@ -18,7 +22,7 @@ export class AppleAudioProcessor extends AudioWorkletProcessor {
     constructor() {
         super();
         console.info('AppleAudioProcessor constructor');
-        this.port.onmessage = (ev: MessageEvent) => {
+        this.port.onmessage = (ev: AppleAudioMessageEvent) => {
             this.samples.push(ev.data);
             if (this.samples.length > 256) {
                 this.samples.shift();
