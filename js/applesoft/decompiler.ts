@@ -30,7 +30,7 @@ export default class ApplesoftDecompiler {
 
     /**
      * Returns a decompiler for the program in the given memory.
-     * 
+     *
      * The memory is assumed to have set `TXTTAB` and `PRGEND` correctly.
      */
     static decompilerFromMemory(ram: Memory): ApplesoftDecompiler {
@@ -50,9 +50,9 @@ export default class ApplesoftDecompiler {
      * assumed to be a dump of memory beginning at `base`. If the data
      * does not cover the whole program, attempting to decompile will
      * fail.
-     * 
+     *
      * @param program The program bytes.
-     * @param base 
+     * @param base
      */
     constructor(private readonly program: ReadonlyUint8Array,
         private readonly base: word = 0x801) {
@@ -66,8 +66,8 @@ export default class ApplesoftDecompiler {
     /**
      * Iterates through the lines of the given program in the order of
      * the linked list of lines, starting from the first line. This
-     * does _not_ mean that all lines in memory will 
-     * 
+     * does _not_ mean that all lines in memory will
+     *
      * @param from First line for which to call the callback.
      * @param to Last line for which to call the callback.
      * @param callback A function to call for each line. The first parameter
@@ -79,12 +79,12 @@ export default class ApplesoftDecompiler {
         let offset = 0;
         let nextLineAddr = this.wordAt(offset);
         let nextLineNo = this.wordAt(offset + 2);
-        while (nextLineAddr != 0 && nextLineNo < from) {
+        while (nextLineAddr !== 0 && nextLineNo < from) {
             offset = nextLineAddr;
             nextLineAddr = this.wordAt(offset);
             nextLineNo = this.wordAt(offset + 2);
         }
-        while (nextLineAddr != 0 && nextLineNo <= to) {
+        while (nextLineAddr !== 0 && nextLineNo <= to) {
             callback(offset + 2);
             offset = nextLineAddr - this.base;
             nextLineAddr = this.wordAt(offset);
@@ -105,14 +105,14 @@ export default class ApplesoftDecompiler {
         if (options.apple2 === 'e') {
             line += ' '; // D6F9: JSR SPCLIN
         }
-        line += lineNo + ' '; // D6FC, always 1 space after line number
+        line += `${lineNo} `; // D6FC, always 1 space after line number
         offset += 2;
 
         // In the original ROM, the line length is checked immediately
         // after the line number is printed. For simplicity, this method
         // always assumes that there is space for one token—which would
         // have been the case on a realy Apple.
-        while (this.program[offset] != 0) {
+        while (this.program[offset] !== 0) {
             const token = this.program[offset];
             if (token >= 0x80 && token <= 0xea) {
                 line += ' '; // D750, always put a space in front of token
@@ -158,13 +158,13 @@ export default class ApplesoftDecompiler {
     /**
      * Lists the program in the same format that an Apple II prints to the
      * screen.
-     * 
+     *
      * This method also accepts a starting and ending line number. Like on
      * an Apple II, this will print all of the lines between `from` and `to`
      * (inclusive) regardless of the actual line numbers between them.
-     * 
+     *
      * To list a single line, pass the same number for both `from` and `to`.
-     * 
+     *
      * @param options The options for formatting the output.
      * @param from The first line to print (default 0).
      * @param to The last line to print (default end of program).
@@ -193,7 +193,7 @@ export default class ApplesoftDecompiler {
         spaceIf = (nextToken: string) => /^\d/.test(nextToken);
         offset += 2;
 
-        while (this.program[offset] != 0) {
+        while (this.program[offset] !== 0) {
             const token = this.program[offset];
             let tokenString: string;
             if (token >= 0x80 && token <= 0xea) {
@@ -235,10 +235,10 @@ export default class ApplesoftDecompiler {
         let spaceIf: (char: byte) => boolean = () => false;
 
         const lineNo = this.wordAt(offset);
-        result += lineNo + ' ';
+        result += `${lineNo} `;
         offset += 2;
 
-        while (this.program[offset] != 0) {
+        while (this.program[offset] !== 0) {
             const token = this.program[offset];
             let tokenString: string;
             if (token >= 0x80 && token <= 0xea) {

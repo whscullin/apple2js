@@ -61,7 +61,7 @@ class LineBuffer implements IterableIterator<string> {
         return new LineBuffer(this.line, this.curChar);
     }
 
-    next(): IteratorResult<string> {
+    next(): IteratorResult<string, string | undefined> {
         if (this.atEnd()) {
             return { done: true, value: undefined };
         }
@@ -74,10 +74,10 @@ class LineBuffer implements IterableIterator<string> {
      * the token matches, the current buffer location is advanced passed
      * the token and this method returns `true`. Otherwise, this method
      * returns `false`.
-     * 
+     *
      * The input is assumed to be an all-uppercase string and the tokens
      * in the buffer are uppercased before the comparison.
-     * 
+     *
      * @param token An all-uppercase string to match.
      */
     lookingAtToken(token: string): boolean {
@@ -123,11 +123,9 @@ class LineBuffer implements IterableIterator<string> {
 export default class ApplesoftCompiler {
     private lines: Map<number, byte[]> = new Map();
 
-    constructor() { }
-
     /**
      * Loads an AppleSoft BASIC program into memory.
-     * 
+     *
      * @param mem Memory, including zero page, into which the program is
      *     loaded.
      * @param program A string with a BASIC program to compile (tokenize).
@@ -197,7 +195,7 @@ export default class ApplesoftCompiler {
                         // Backup to before the token
                         lineBuffer.backup();
                         // and emit the 'A' (upper- or lower-case)
-                        return lineBuffer.next().value.charCodeAt(0);
+                        return lineBuffer.next().value?.charCodeAt(0) ?? 0;
                     }
                 }
                 return STRING_TO_TOKEN[possibleToken];
@@ -205,7 +203,7 @@ export default class ApplesoftCompiler {
         }
 
         // If not a token, output the character upper-cased
-        return lineBuffer.next().value.toUpperCase().charCodeAt(0);
+        return lineBuffer.next().value?.toUpperCase().charCodeAt(0) ?? 0;
     }
 
     private compileLine(line: string | null | undefined) {
@@ -306,7 +304,7 @@ export default class ApplesoftCompiler {
         const lineNumbers = [...this.lines.keys()].sort();
 
         for (const lineNo of lineNumbers) {
-            const lineBytes = this.lines.get(lineNo)!;
+            const lineBytes = this.lines.get(lineNo) || [];
             const nextLineAddr = programStart + result.length + 4
                 + lineBytes.length + 1; // +1 for the zero at end of line
             result.push(nextLineAddr & 0xff, nextLineAddr >> 8);
