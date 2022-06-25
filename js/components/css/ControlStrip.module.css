@@ -1,13 +1,14 @@
 .reset {
-    background: #44372C;
-    border-left: 3px solid #65594D;
-    border-top: 3px solid #65594D;
-    border-right: 3px solid #110E0D;
-    border-bottom: 3px solid #110E0D;
+    background: #44372c;
+    border-left: 3px solid #65594d;
+    border-top: 3px solid #65594d;
+    border-right: 3px solid #110e0d;
+    border-bottom: 3px solid #110e0d;
+
     /* border: 5px outset #66594E; */
     border-radius: 3px;
     color: white;
-    font: 9px Helvetica;
+    font: 9px Helvetica, sans-serif;
     height: 36px;
     padding: 0;
     margin-left: 10px;
@@ -18,16 +19,16 @@
 }
 
 .reset:hover {
-  background: #44372C;
-  border: 3px outset #66594E;
+    background: #44372c;
+    border: 3px outset #66594e;
 }
 
 .reset:active {
-    background-color: #22150A;
-    border-left: 3px solid #44372C;
-    border-top: 3px solid #44372C;
-    border-right: 3px solid #000000;
-    border-bottom: 3px solid #000000;
+    background-color: #22150a;
+    border-left: 3px solid #44372c;
+    border-top: 3px solid #44372c;
+    border-right: 3px solid #000;
+    border-bottom: 3px solid #000;
 }
 
 :global(.full-page) .reset {

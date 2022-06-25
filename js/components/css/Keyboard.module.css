@@ -12,7 +12,7 @@
     margin: 0;
     padding: 0;
     height: 42px;
-    font-family: Helvetica;
+    font-family: Helvetica, sans-serif;
     width: 570px;
 }
 
@@ -58,25 +58,27 @@
     padding: 0;
     width: 32px;
     height: 32px;
-    background-color: #44372C;
+    background-color: #44372c;
     color: white;
     text-align: center;
     position: relative;
-    border-left: 5px solid #65594D;
-    border-top: 5px solid #65594D;
-    border-right: 5px solid #110E0D;
-    border-bottom: 5px solid #110E0D;
+    border-left: 5px solid #65594d;
+    border-top: 5px solid #65594d;
+    border-right: 5px solid #110e0d;
+    border-bottom: 5px solid #110e0d;
+
     /* border: 5px outset #66594E; */
     border-radius: 5px;
     cursor: pointer;
 }
 
 .pressed {
-    background-color: #22150A;
-    border-left: 5px solid #44372C;
-    border-top: 5px solid #44372C;
-    border-right: 5px solid #000000;
-    border-bottom: 5px solid #000000;
+    background-color: #22150a;
+    border-left: 5px solid #44372c;
+    border-top: 5px solid #44372c;
+    border-right: 5px solid #000;
+    border-bottom: 5px solid #000;
+
     /* border: 5px outset #44372C; */
 }
 
@@ -179,7 +181,15 @@
 }
 
 .key-OPEN_APPLE div {
-    background-image: url(../../../img/open-apple24.png);
+    background-image: url("../../../img/open-apple24.png");
+    width: 24px;
+    height: 24px;
+    bottom: 1px;
+    left: 4px;
+}
+
+.key-CLOSED_APPLE div {
+    background-image: url("../../../img/closed-apple24.png");
     width: 24px;
     height: 24px;
     bottom: 1px;
@@ -190,22 +200,14 @@
     display: none;
 }
 
-.key-OPEN_APPLE.active div {
-    background-image: url(../../../img/open-apple24-green.png);
+.key-CLOSED_APPLE span {
+    display: none;
 }
 
-.key-CLOSED_APPLE div {
-    background-image: url(../../../img/closed-apple24.png);
-    width: 24px;
-    height: 24px;
-    bottom: 1px;
-    left: 4px;
+.key-OPEN_APPLE.active div {
+    background-image: url("../../../img/open-apple24-green.png");
 }
 
 .key-CLOSED_APPLE.active div {
-    background-image: url(../../../img/closed-apple24-green.png);
-}
-
-.key-CLOSED_APPLE span {
-    display: none;
+    background-image: url("../../../img/closed-apple24-green.png");
 }
