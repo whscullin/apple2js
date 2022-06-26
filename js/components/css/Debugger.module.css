@@ -7,19 +7,31 @@
     border: 1px inset;
 }
 
-.debugger input {
-    border: 1px inset;
+.debugger {
     font-size: 12px;
 }
 
+.debugger button,
+.debugger input {
+    font-size: 12px;
+}
+
+.debugger input[type="text"] {
+    border: 1px inset;
+}
+
+.debugger hr {
+    color: #c4c1a0;
+}
+
 .inset {
-    margin: 5px 10px;
+    margin: 5px 10px 0;
     width: auto;
 }
 
 .heading {
     font-weight: bold;
-    font-size: 16px;
+    font-size: 18px;
     margin-bottom: 10px;
 }
 
@@ -53,4 +65,8 @@
 
 .stack {
     width: 10em;
+}
+
+.fileChooser {
+    padding: 5px 0;
 }

@@ -1,4 +1,4 @@
-import { includes } from 'js/types';
+import { includes, word } from 'js/types';
 import { initGamepad } from 'js/ui/gamepad';
 import {
     BlockFormat,
@@ -12,6 +12,7 @@ import {
 } from 'js/formats/types';
 import Disk2 from 'js/cards/disk2';
 import SmartPort from 'js/cards/smartport';
+import Debugger from 'js/debugger';
 
 type ProgressCallback = (current: number, total: number) => void;
 
@@ -255,3 +256,25 @@ export class SmartStorageBroker implements MassStorage<unknown> {
         return null;
     }
 }
+
+/**
+ * Load binary file into memory.
+ *
+ * @param file File object to read into memory
+ * @param address Address at which to start load
+ * @param debug Debugger object
+ * @returns resolves to true if successful
+ */
+
+export const loadLocalBinaryFile = (file: File, address: word, debug: Debugger) => {
+    return new Promise((resolve, _reject) => {
+        const fileReader = new FileReader();
+        fileReader.onload = function () {
+            const result = this.result as ArrayBuffer;
+            const bytes = new Uint8Array(result);
+            debug.setMemory(address, bytes);
+            resolve(true);
+        };
+        fileReader.readAsArrayBuffer(file);
+    });
+};

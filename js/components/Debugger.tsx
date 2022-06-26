@@ -1,10 +1,15 @@
 import { h, JSX } from 'preact';
+import cs from 'classnames';
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { Apple2 as Apple2Impl } from '../apple2';
+import { ControlButton } from './ControlButton';
+import { FileChooser } from './FileChooser';
 import { Inset } from './Inset';
+import { loadLocalBinaryFile } from './util/files';
 
 import styles from './css/Debugger.module.css';
-import { ControlButton } from './ControlButton';
+import { spawn } from './util/promises';
+import { toHex } from 'js/util';
 
 export interface DebuggerProps {
     apple2: Apple2Impl | undefined;
@@ -20,10 +25,14 @@ interface DebugData {
     zeroPage: string;
 }
 
+const CIDERPRESS_EXTENSION = /#([0-9a-f]{2})([0-9a-f]{4})$/i;
+
 export const Debugger = ({ apple2 }: DebuggerProps) => {
     const debug = apple2?.getDebugger();
     const [data, setData] = useState<DebugData>();
     const [memoryPage, setMemoryPage] = useState('08');
+    const [loadAddress, setLoadAddress] = useState('0800');
+    const [run, setRun] = useState(true);
     const animationRef = useRef<number>(0);
 
     const animate = useCallback(() => {
@@ -57,9 +66,37 @@ export const Debugger = ({ apple2 }: DebuggerProps) => {
         debug?.step();
     }, [debug]);
 
-    const doMemoryPage = useCallback((event: JSX.TargetedMouseEvent<HTMLInputElement>) => {
+    const doLoadAddress = useCallback((event: JSX.TargetedEvent<HTMLInputElement>) => {
+        setLoadAddress(event.currentTarget.value);
+    }, []);
+    const doRunCheck = useCallback((event: JSX.TargetedEvent<HTMLInputElement>) => {
+        setRun(event.currentTarget.checked);
+    }, []);
+
+    const doMemoryPage = useCallback((event: JSX.TargetedEvent<HTMLInputElement>) => {
         setMemoryPage(event.currentTarget.value);
     }, []);
+
+    const doChooseFile = useCallback((handles: FileSystemFileHandle[]) => {
+        if (debug && handles.length === 1) {
+            spawn(async () => {
+                const file = await handles[0].getFile();
+                let atAddress = parseInt(loadAddress, 16) || 0x800;
+
+                const matches = file.name.match(CIDERPRESS_EXTENSION);
+                if (matches && matches.length === 3) {
+                    const [, , aux] = matches;
+                    atAddress = parseInt(aux, 16);
+                }
+
+                await loadLocalBinaryFile(file, atAddress, debug);
+                setLoadAddress(toHex(atAddress, 4));
+                if (run) {
+                    debug?.runAt(atAddress);
+                }
+            });
+        }
+    }, [debug, loadAddress, run]);
 
     if (!data) {
         return null;
@@ -76,7 +113,7 @@ export const Debugger = ({ apple2 }: DebuggerProps) => {
 
     return (
         <Inset className={styles.inset}>
-            <div className={styles.debugger}>
+            <div className={cs(styles.debugger, styles.column)}>
                 <div className={styles.heading}>Debugger</div>
                 <span className={styles.subHeading}>Controls</span>
                 <div className={styles.controls}>
@@ -125,10 +162,9 @@ export const Debugger = ({ apple2 }: DebuggerProps) => {
                     </div>
                 </div>
                 <div>
-                    <span className={styles.subHeading}>Memory Page: $</span>
+                    <hr />
+                    <span className={styles.subHeading}>Memory Page: $ </span>
                     <input
-                        min={0x00}
-                        max={0xff}
                         value={memoryPage}
                         onChange={doMemoryPage}
                         maxLength={2}
@@ -136,6 +172,21 @@ export const Debugger = ({ apple2 }: DebuggerProps) => {
                     <pre className={styles.zp}>
                         {memory}
                     </pre>
+                </div>
+                <div>
+                    <hr />
+                    <span className={styles.subHeading}>Load File: $ </span>
+                    <input
+                        type="text"
+                        value={loadAddress}
+                        maxLength={4}
+                        onChange={doLoadAddress}
+                    />
+                    {' '}
+                    <input type="checkbox" checked={run} onChange={doRunCheck} />Run
+                    <div className={styles.fileChooser}>
+                        <FileChooser onChange={doChooseFile} />
+                    </div>
                 </div>
             </div>
         </Inset>
