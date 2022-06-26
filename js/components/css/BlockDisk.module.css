@@ -6,7 +6,7 @@
 
 .diskLight {
     margin: 5px;
-    background-image: url(../../../css/green-off-16.png);
+    background-image: url("../../../css/green-off-16.png");
     background-size: 16px 16px;
     flex-shrink: 0;
     width: 16px;
@@ -14,7 +14,7 @@
 }
 
 .diskLight.on {
-    background-image: url(../../../css/green-on-16.png);
+    background-image: url("../../../css/green-on-16.png");
 }
 
 .diskLabel {
@@ -30,9 +30,10 @@
 
 @media only screen and (min-resolution: 1.25dppx) {
     .diskLight {
-        background-image: url(../../../css/green-off-32.png);
+        background-image: url("../../../css/green-off-32.png");
     }
+
     .diskLight.on {
-        background-image: url(../../../css/green-on-32.png);
+        background-image: url("../../../css/green-on-32.png");
     }
 }

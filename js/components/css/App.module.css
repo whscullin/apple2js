@@ -9,13 +9,17 @@ body {
     background: black;
 }
 
+a[role="button"] {
+    text-decoration: none;
+}
+
 button,
 a[role="button"],
 input[type="file"]::file-selector-button {
-    background: #44372C;
+    background: #44372c;
     color: #fff;
     padding: 2px 8px;
-    border: 1px outset #66594E;
+    border: 1px outset #66594e;
     border-radius: 3px;
     font-size: 15px;
     min-width: 75px;
@@ -24,25 +28,21 @@ input[type="file"]::file-selector-button {
 button:hover,
 a[role="button"]:hover,
 input[type="file"]::file-selector-button {
-    background-color: #55473D;
-    border: 1px outset #66594E;
+    background-color: #55473d;
+    border: 1px outset #66594e;
 }
 
 button:active,
 a[role="button"]:active,
 input[type="file"]::file-selector-button {
-    background-color: #22150A;
-    border: 1px outset #44372C;
+    background-color: #22150a;
+    border: 1px outset #44372c;
 }
 
 button:focus,
 a[role="button"]:focus,
 input[type="file"]::file-selector-button {
     outline: none;
-}
-
-a[role="button"] {
-    text-decoration: none;
 }
 
 .container {

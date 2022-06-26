@@ -1,10 +1,9 @@
-
 :global(.mono) {
-    filter: url('#green');
+    filter: url("#green");
 }
 
 .display {
-    margin: 5px auto 10px auto;
+    margin: 5px auto 10px;
 }
 
 :global(.full-page) .display {
@@ -15,26 +14,13 @@
     padding: 0;
     border: 0;
     position: fixed;
-    top:0;
+    top: 0;
     bottom: 0;
     left: 0;
     right: 0;
     justify-content: center;
     align-items: center;
     margin: auto !important;
-}
-
-:global(.full-page) .overscan {
-    margin: initial;
-    padding: 0;
-    width: initial;
-    height: 384px;
-    border: 0;
-    border-radius: 0;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 
 .overscan {
@@ -51,7 +37,6 @@
     margin: initial;
     padding: 0;
     width: initial;
-    height: 384px;
     border: 0;
     border-radius: 0;
     height: 100%;
@@ -60,11 +45,18 @@
     align-items: center;
 }
 
-:global(.scanlines):after {
+:global(.scanlines)::after {
     display: block;
     pointer-events: none;
-    background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 1px, rgba(0,0,0,0.5) 1px, rgba(0,0,0,0.5) 2px);
-    content: '';
+    background-image:
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0,
+            transparent 1px,
+            rgb(0 0 0 / 50%) 1px,
+            rgb(0 0 0 / 50%) 2px
+        );
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
@@ -72,15 +64,20 @@
     right: 0;
 }
 
-:global(.full-page) :global(.scanlines):after {
-    background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 0.25vh, rgba(0,0,0,0.5) 0.25vh, rgba(0,0,0,0.5) 0.5vh);
+:global(.full-page) :global(.scanlines)::after {
+    background-image:
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0,
+            transparent 0.25vh,
+            rgb(0 0 0 / 50%) 0.25vh,
+            rgb(0 0 0 / 50%) 0.5vh
+        );
 }
 
 .screen {
     cursor: crosshair;
-    -moz-image-rendering: -moz-crisp-edges;
-    -webkit-image-rendering: -webkit-optimize-contrast;
-    image-rendering: optimizeSpeed;
+    image-rendering: crisp-edges;
     width: 592px;
     height: 416px;
     touch-action: manipulation;
@@ -89,14 +86,6 @@
 
 .screen:global(.mouseMode) {
     cursor: none;
-}
-
-.screen:-webkit-full-screen {
-    background-color: black;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
 }
 
 :global(.full-page) .screen {

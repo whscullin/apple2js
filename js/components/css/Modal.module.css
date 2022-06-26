@@ -7,7 +7,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0,0,0,0.6);
+    background: rgb(0 0 0 / 60%);
     z-index: 1;
 }
 
@@ -30,10 +30,10 @@
     font-size: 14px;
     justify-content: space-between;
     align-items: center;
-    background: #44372C;
+    background: #44372c;
     color: #fff;
     padding: 5px 11px;
-    border: 1px outset #66594E;
+    border: 1px outset #66594e;
     border-radius: 3px;
     user-select: none;
 }
@@ -64,7 +64,8 @@
     user-select: none;
 }
 
-.modalFooter a[role="button"], .modalFooter button {
+.modalFooter a[role="button"],
+.modalFooter button {
     margin: 0 0 0 5px;
     min-width: 75px;
 }

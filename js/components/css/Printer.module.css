@@ -1,6 +1,6 @@
 .printer {
     background: white;
-    font: fixed;
+    font: monospace;
     width: 60em;
     padding: 5em;
     height: 60vh;
