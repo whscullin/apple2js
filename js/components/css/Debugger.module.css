@@ -70,3 +70,18 @@
 .fileChooser {
     padding: 5px 0;
 }
+
+.invalid {
+    color: #f00;
+}
+
+div.invalid {
+    position: relative;
+    display: inline-block;
+}
+
+div.invalid i {
+    position: absolute;
+    top: -9px;
+    left: -16px;
+}

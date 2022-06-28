@@ -265,7 +265,6 @@ export class SmartStorageBroker implements MassStorage<unknown> {
  * @param debug Debugger object
  * @returns resolves to true if successful
  */
-
 export const loadLocalBinaryFile = (file: File, address: word, debug: Debugger) => {
     return new Promise((resolve, _reject) => {
         const fileReader = new FileReader();

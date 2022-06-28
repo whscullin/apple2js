@@ -26,6 +26,17 @@ interface DebugData {
 }
 
 const CIDERPRESS_EXTENSION = /#([0-9a-f]{2})([0-9a-f]{4})$/i;
+const VALID_PAGE = /^[0-9A-F]{1,2}$/i;
+const VALID_ADDRESS = /^[0-9A-F]{1,4}$/i;
+
+const ERROR_ICON = (
+    <div className={styles.invalid}>
+        <i
+            className="fa-solid fa-triangle-exclamation"
+            title="Invalid hex address"
+        />
+    </div>
+);
 
 export const Debugger = ({ apple2 }: DebuggerProps) => {
     const debug = apple2?.getDebugger();
@@ -111,6 +122,9 @@ export const Debugger = ({ apple2 }: DebuggerProps) => {
         zeroPage
     } = data;
 
+    const memoryPageValid = VALID_PAGE.test(memoryPage);
+    const loadAddressValid = VALID_ADDRESS.test(loadAddress);
+
     return (
         <Inset className={styles.inset}>
             <div className={cs(styles.debugger, styles.column)}>
@@ -168,7 +182,9 @@ export const Debugger = ({ apple2 }: DebuggerProps) => {
                         value={memoryPage}
                         onChange={doMemoryPage}
                         maxLength={2}
+                        className={cs({ [styles.invalid]: !memoryPageValid })}
                     />
+                    {memoryPageValid ? null : ERROR_ICON}
                     <pre className={styles.zp}>
                         {memory}
                     </pre>
@@ -181,7 +197,9 @@ export const Debugger = ({ apple2 }: DebuggerProps) => {
                         value={loadAddress}
                         maxLength={4}
                         onChange={doLoadAddress}
+                        className={cs({ [styles.invalid]: !loadAddressValid })}
                     />
+                    {loadAddressValid ? null : ERROR_ICON}
                     {' '}
                     <input type="checkbox" checked={run} onChange={doRunCheck} />Run
                     <div className={styles.fileChooser}>
