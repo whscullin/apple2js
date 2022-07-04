@@ -230,7 +230,6 @@ export default class Debugger {
      * @param length Length of memory to read.
      * @returns Byte array containing memory
      */
-
     getMemory(address: word, length: word) {
         const bytes = new Uint8Array(length);
         for (let idx = 0; idx < length; idx++) {
@@ -246,7 +245,6 @@ export default class Debugger {
      * @param address Starting address to write memory
      * @param bytes Data to write
      */
-
     setMemory(address: word, bytes: Uint8Array) {
         for (const byte of bytes) {
             address &= 0xffff;
