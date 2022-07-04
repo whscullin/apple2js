@@ -93,7 +93,9 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
             for (const drive of [1, 2] as DriveNumber[]) {
                 if (hashParts && hashParts[drive]) {
                     const hashPart = decodeURIComponent(hashParts[drive]);
-                    if (hashPart.match(/^https?:/)) {
+                    const isHttp = hashPart.match(/^https?:/i);
+                    const isJson = hashPart.match(/\.json$/i);
+                    if (isHttp && !isJson) {
                         loading++;
                         controllers.push(spawn(async (signal) => {
                             try {
@@ -113,7 +115,7 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
                             setTotal(0);
                         }));
                     } else {
-                        const url = `/json/disks/${hashPart}.json`;
+                        const url = isHttp ? hashPart : `/json/disks/${hashPart}.json`;
                         loadJSON(disk2, drive, url).catch((e) => setError(e));
                     }
                 }
