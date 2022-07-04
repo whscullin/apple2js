@@ -72,6 +72,17 @@ export default class Debugger {
         this.container.run();
     };
 
+    /**
+     * Restart at a given memory address.
+     *
+     * @param address Address to start execution
+     */
+
+    runAt = (address: word) => {
+        this.cpu.reset();
+        this.cpu.setPC(address);
+    };
+
     isRunning = () =>
         this.container.isRunning();
 
@@ -211,6 +222,35 @@ export default class Debugger {
         }
         return result;
     };
+
+    /**
+     * Reads a range of memory. Will wrap at memory limit.
+     *
+     * @param address Starting address to read memory
+     * @param length Length of memory to read.
+     * @returns Byte array containing memory
+     */
+    getMemory(address: word, length: word) {
+        const bytes = new Uint8Array(length);
+        for (let idx = 0; idx < length; idx++) {
+            address &= 0xffff;
+            bytes[idx] = this.cpu.read(address++);
+        }
+        return bytes;
+    }
+
+    /**
+     * Writes a range of memory. Will wrap at memory limit.
+     *
+     * @param address Starting address to write memory
+     * @param bytes Data to write
+     */
+    setMemory(address: word, bytes: Uint8Array) {
+        for (const byte of bytes) {
+            address &= 0xffff;
+            this.cpu.write(address++, byte);
+        }
+    }
 
     list = (pc: word) => {
         const results = [];

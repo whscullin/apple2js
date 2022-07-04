@@ -49,3 +49,29 @@ input[type="file"]::file-selector-button {
     display: flex;
     flex-direction: column;
 }
+
+input[type="checkbox"] {
+    appearance: none;
+    background-color: #65594d;
+    border: 1px inset #65594d;
+    padding: 7px;
+    top: 7px;
+    border-radius: 3px;
+    display: inline-block;
+    position: relative;
+}
+
+input[type="checkbox"]:checked {
+    background-color: #65594d;
+    border: 1px inset #65594d;
+    color: #0d0;
+}
+
+input[type="checkbox"]:checked::after {
+    content: "\2716";
+    font-size: 12px;
+    position: absolute;
+    top: 0;
+    left: 2px;
+    color: #0d0;
+}
