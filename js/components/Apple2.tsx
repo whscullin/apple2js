@@ -2,8 +2,6 @@ import { h } from 'preact';
 import cs from 'classnames';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Apple2 as Apple2Impl } from '../apple2';
-import Apple2IO from '../apple2io';
-import CPU6502 from '../cpu6502';
 import { ControlStrip } from './ControlStrip';
 import { Debugger } from './Debugger';
 import { ErrorModal } from './ErrorModal';
@@ -18,6 +16,12 @@ import { Videoterm } from './Videoterm';
 import { spawn, Ready } from './util/promises';
 
 import styles from './css/Apple2.module.css';
+
+declare global {
+    interface Window {
+        apple2: Apple2Impl;
+    }
+}
 
 /**
  * Interface for the Apple2 component.
@@ -44,12 +48,31 @@ export const Apple2 = (props: Apple2Props) => {
     const { e, enhanced, sectors } = props;
     const screen = useRef<HTMLCanvasElement>(null);
     const [apple2, setApple2] = useState<Apple2Impl>();
-    const [io, setIO] = useState<Apple2IO>();
-    const [cpu, setCPU] = useState<CPU6502>();
     const [error, setError] = useState<unknown>();
     const [ready, setReady] = useState(false);
     const [showDebug, setShowDebug] = useState(false);
     const drivesReady = useMemo(() => new Ready(setError), []);
+
+    const io = apple2?.getIO();
+    const cpu = apple2?.getCPU();
+    const vm = apple2?.getVideoModes();
+
+    const doPaste = useCallback((event: Event) => {
+        if (io) {
+            const paste = (event.clipboardData || window.clipboardData)?.getData('text');
+            if (paste) {
+                io.setKeyBuffer(paste);
+            }
+        }
+        event.preventDefault();
+    }, [io]);
+
+    const doCopy = useCallback((event: Event) => {
+        if (vm) {
+            event.clipboardData?.setData('text/plain', vm.getText());
+        }
+        event.preventDefault();
+    }, [vm]);
 
     useEffect(() => {
         if (screen.current) {
@@ -66,13 +89,9 @@ export const Apple2 = (props: Apple2Props) => {
                         return;
                     }
                     setApple2(apple2);
-                    setIO(apple2.getIO());
-                    setCPU(apple2.getCPU());
                     await drivesReady.ready;
                     if (signal.aborted) {
                         setApple2(undefined);
-                        setIO(undefined);
-                        setCPU(undefined);
                         return;
                     }
                     apple2.reset();
@@ -82,9 +101,22 @@ export const Apple2 = (props: Apple2Props) => {
                 }
                 setReady(true);
             });
+
+            window.apple2 = apple2;
+
             return () => controller.abort();
         }
     }, [props, drivesReady]);
+
+    useEffect(() => {
+        window.addEventListener('paste', doPaste);
+        window.addEventListener('copy', doCopy);
+
+        return () => {
+            window.removeEventListener('paste', doPaste);
+            window.removeEventListener('copy', doCopy);
+        };
+    }, [doCopy, doPaste]);
 
     const toggleDebugger = useCallback(() => {
         setShowDebug((on) => !on);
