@@ -7,6 +7,7 @@ import { Debugger } from './Debugger';
 import { ErrorModal } from './ErrorModal';
 import { Inset } from './Inset';
 import { Keyboard } from './Keyboard';
+import { LanguageCard } from './LanguageCard';
 import { Mouse } from './Mouse';
 import { Screen } from './Screen';
 import { Drives } from './Drives';
@@ -56,6 +57,7 @@ export const Apple2 = (props: Apple2Props) => {
     const io = apple2?.getIO();
     const cpu = apple2?.getCPU();
     const vm = apple2?.getVideoModes();
+    const rom = apple2?.getROM();
 
     const doPaste = useCallback((event: Event) => {
         if (io) {
@@ -135,6 +137,7 @@ export const Apple2 = (props: Apple2Props) => {
                 onClick={removeFocus}
             >
                 <Screen screen={screen} />
+                {!e ? <LanguageCard cpu={cpu} io={io} rom={rom} slot={0} /> : null}
                 <Slinky io={io} slot={2} />
                 {!e ? <Videoterm io={io} slot={3} /> : null}
                 <Mouse cpu={cpu} screen={screen} io={io} slot={4} />
