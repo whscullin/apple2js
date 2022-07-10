@@ -1535,10 +1535,10 @@ export default class CPU6502 {
     public read(a: number, b?: number): byte {
         let page, off;
         if (b !== undefined) {
-            page = a;
-            off = b;
+            page = a & 0xff;
+            off = b & 0xff;
         } else {
-            page = a >> 8;
+            page = (a >> 8) & 0xff;
             off = a & 0xff;
         }
         return this.memPages[page].read(page, off);
@@ -1551,13 +1551,13 @@ export default class CPU6502 {
         let page, off, val;
 
         if (c !== undefined ) {
-            page = a;
-            off = b;
-            val = c;
+            page = a & 0xff;
+            off = b & 0xff;
+            val = c & 0xff;
         } else {
-            page = a >> 8;
+            page = (a >> 8) & 0xff;
             off = a & 0xff;
-            val = b;
+            val = b & 0xff;
         }
         this.memPages[page].write(page, off, val);
     }

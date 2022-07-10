@@ -1,0 +1,23 @@
+.tab {
+    border-top: 2px groove;
+    border-left: 2px groove;
+    border-right: 2px groove;
+    margin: 0 2px;
+    font-weight: bold;
+    padding: 4px;
+    border-radius: 4px 4px 0 0;
+}
+
+.tab.selected {
+    background-color: #c4c1a0;
+    border-bottom: none;
+    margin-bottom: -2px;
+    color: #080;
+}
+
+.tabs {
+    display: flex;
+    flex-direction: row;
+    border-bottom: 2px groove;
+    margin-bottom: 6px;
+}

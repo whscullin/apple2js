@@ -18,10 +18,10 @@ export default class LanguageCard implements Card, Restorable<LanguageCardState>
     private bank2: RAM;
     private ram: RAM;
 
-    private readbsr = false;
-    private writebsr = false;
-    private bsr2 = false;
-    private prewrite = false;
+    private _readbsr = false;
+    private _writebsr = false;
+    private _bsr2 = false;
+    private _prewrite = false;
 
     private read1: Memory;
     private read2: Memory;
@@ -48,16 +48,16 @@ export default class LanguageCard implements Card, Restorable<LanguageCardState>
     }
 
     private updateBanks() {
-        if (this.readbsr) {
-            this.read1 = this.bsr2 ? this.bank2 : this.bank1;
+        if (this._readbsr) {
+            this.read1 = this._bsr2 ? this.bank2 : this.bank1;
             this.read2 = this.ram;
         } else {
             this.read1 = this.rom;
             this.read2 = this.rom;
         }
 
-        if (this.writebsr) {
-            this.write1 = this.bsr2 ? this.bank2 : this.bank1;
+        if (this._writebsr) {
+            this.write1 = this._bsr2 ? this.bank2 : this.bank1;
             this.write2 = this.ram;
         } else {
             this.write1 = this.rom;
@@ -90,35 +90,35 @@ export default class LanguageCard implements Card, Restorable<LanguageCardState>
 
         if (writeSwitch) { // $C081, $C083, $C089, $C08B
             if (readMode) {
-                this.writebsr = this.prewrite;
+                this._writebsr = this._prewrite;
             }
-            this.prewrite = readMode;
+            this._prewrite = readMode;
 
             if (offSwitch) { // $C083, $C08B
-                this.readbsr = true;
+                this._readbsr = true;
                 rwStr = 'Read/Write';
             } else { // $C081, $C089
-                this.readbsr = false;
+                this._readbsr = false;
                 rwStr = 'Write';
             }
         } else { // $C080, $C082, $C088, $C08A
-            this.writebsr = false;
-            this.prewrite = false;
+            this._writebsr = false;
+            this._prewrite = false;
 
             if (offSwitch) { // $C082, $C08A
-                this.readbsr = false;
+                this._readbsr = false;
                 rwStr = 'Off';
             } else { // $C080, $C088
-                this.readbsr = true;
+                this._readbsr = true;
                 rwStr = 'Read';
             }
         }
 
         if (bank1Switch) { // C08[8-C]
-            this.bsr2 = false;
+            this._bsr2 = false;
             bankStr = 'Bank 1';
         } else { // C08[0-3]
-            this.bsr2 = true;
+            this._bsr2 = true;
             bankStr = 'Bank 2';
         }
 
@@ -158,12 +158,24 @@ export default class LanguageCard implements Card, Restorable<LanguageCardState>
         }
     }
 
+    public get bsr2() {
+        return this._bsr2;
+    }
+
+    public get readbsr() {
+        return this._readbsr;
+    }
+
+    public get writebsr() {
+        return this._writebsr;
+    }
+
     getState() {
         return {
             readbsr: this.readbsr,
             writebsr: this.writebsr,
             bsr2: this.bsr2,
-            prewrite: this.prewrite,
+            prewrite: this._prewrite,
             ram: this.ram.getState(),
             bank1: this.bank1.getState(),
             bank2: this.bank2.getState()
@@ -171,10 +183,10 @@ export default class LanguageCard implements Card, Restorable<LanguageCardState>
     }
 
     setState(state: LanguageCardState) {
-        this.readbsr = state.readbsr;
-        this.writebsr = state.writebsr;
-        this.bsr2 = state.bsr2;
-        this.prewrite = state.prewrite;
+        this._readbsr = state.readbsr;
+        this._writebsr = state.writebsr;
+        this._bsr2 = state.bsr2;
+        this._prewrite = state.prewrite;
         this.ram.setState(state.ram);
         this.bank1.setState(state.bank1);
         this.bank2.setState(state.bank2);

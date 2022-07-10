@@ -1,0 +1,154 @@
+.memory {
+    width: auto;
+    box-sizing: border-box;
+}
+
+.bank {
+    width: 128px;
+    border-right: 1px solid #000;
+}
+
+.bank,
+.bank div,
+.io,
+.rom,
+.intcxrom {
+    text-align: center;
+    justify-content: center;
+}
+
+.upperMemory {
+    height: 96px;
+    width: 385px;
+    border-bottom: 1px solid #000;
+    border-left: 1px solid #000;
+    border-top: 1px solid #000;
+}
+
+.upperMemory .bank {
+    height: 96px;
+}
+
+.rom {
+    display: flex;
+    align-items: center;
+    height: 96px;
+    width: 128px;
+}
+
+.intcxrom {
+    display: flex;
+    align-items: center;
+    height: 32px;
+    width: 128px;
+    border-right: 1px solid #000;
+    border-bottom: 1px solid #000;
+}
+
+.languageCard {
+    width: 256px;
+    height: 96px;
+    border: 1px solid #000;
+}
+
+.lc {
+    display: flex;
+    align-items: center;
+    position: relative;
+    width: 127px;
+    height: 63px;
+}
+
+.lcbanks {
+    width: 127px;
+    display: flex;
+    flex-direction: row;
+}
+
+.lcbank {
+    display: flex;
+    align-items: center;
+    width: 64px;
+    height: 31px;
+    border-top: 1px solid #000;
+}
+
+.lcbank0 {
+    border-right: 1px solid #000;
+}
+
+.io {
+    display: flex;
+    align-items: center;
+    width: 255px;
+    height: 32px;
+    border-left: 1px solid #000;
+    border-right: 1px solid #000;
+    border-bottom: 1px solid #000;
+}
+
+.hires {
+    display: flex;
+    align-items: center;
+    height: 64px;
+    width: 127px;
+    position: absolute;
+    bottom: 64px;
+    border-top: 1px solid #000;
+    border-bottom: 1px solid #000;
+}
+
+.text {
+    display: flex;
+    align-items: center;
+    height: 16px;
+    width: 127px;
+    position: absolute;
+    bottom: 24px;
+    border-top: 1px solid #000;
+    border-bottom: 1px solid #000;
+}
+
+.zp {
+    display: flex;
+    align-items: center;
+    height: 16px;
+    width: 127px;
+    position: absolute;
+    bottom: 0;
+    border-top: 1px solid #000;
+}
+
+.lowerMemory {
+    border-left: 1px solid #000;
+    border-bottom: 1px solid #000;
+    width: 256px;
+}
+
+.lowerMemory .bank {
+    height: 256px;
+    position: relative;
+}
+
+div.read {
+    background-color: #8f8;
+}
+
+div.write {
+    background-color: #f88;
+}
+
+div.read.write {
+    background-color: #88f;
+}
+
+div.inactive {
+    background-color: #bbb;
+}
+
+.legend {
+    width: 1em;
+    height: 1em;
+    display: inline-block;
+    border: 1px solid #000;
+}

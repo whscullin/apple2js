@@ -67,7 +67,9 @@ export interface VideoModes extends Restorable<VideoModesState> {
     reset(): void;
 
     setLoresPage(page: pageNo, lores: LoresPage): void;
+    getLoresPage(page: pageNo): LoresPage;
     setHiresPage(page: pageNo, lores: HiresPage): void;
+    getHiresPage(page: pageNo): HiresPage;
 
     _80col(on: boolean): void;
     altChar(on: boolean): void;

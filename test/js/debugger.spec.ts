@@ -18,12 +18,11 @@ describe('Debugger', () => {
         cpu.addPageHandler(bios);
 
         debuggerContainer = {
-            getCPU: () => cpu,
             run: jest.fn(),
             stop: jest.fn(),
             isRunning: jest.fn(),
         };
-        theDebugger = new Debugger(debuggerContainer);
+        theDebugger = new Debugger(cpu, debuggerContainer);
     });
 
     describe('#utility', () => {

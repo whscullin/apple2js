@@ -412,6 +412,10 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
         this._slot[slot] = card;
     }
 
+    getSlot(slot: slot): Card | null {
+        return this._slot[slot];
+    }
+
     keyDown(ascii: byte) {
         this._keyDown = true;
         this._key = ascii | 0x80;

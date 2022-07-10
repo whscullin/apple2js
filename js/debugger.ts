@@ -6,7 +6,6 @@ import CPU6502, { DebugInfo, flags, sizes } from './cpu6502';
 export interface DebuggerContainer {
     run: () => void;
     stop: () => void;
-    getCPU: () => CPU6502;
     isRunning: () => boolean;
 }
 
@@ -28,16 +27,13 @@ export const dumpStatusRegister = (sr: byte) =>
     ].join('');
 
 export default class Debugger {
-    private cpu: CPU6502;
     private verbose = false;
     private maxTrace = 256;
     private trace: DebugInfo[] = [];
     private breakpoints: Map<word, breakpointFn> = new Map();
     private symbols: symbols = {};
 
-    constructor(private container: DebuggerContainer) {
-        this.cpu = container.getCPU();
-    }
+    constructor(private cpu: CPU6502, private container: DebuggerContainer) {}
 
     stepCycles(cycles: number) {
         this.cpu.stepCyclesDebug(this.verbose ? 1 : cycles, () => {

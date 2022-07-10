@@ -3,7 +3,7 @@ import cs from 'classnames';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Apple2 as Apple2Impl } from '../apple2';
 import { ControlStrip } from './ControlStrip';
-import { Debugger } from './Debugger';
+import { Debugger } from './debugger/Debugger';
 import { ErrorModal } from './ErrorModal';
 import { Inset } from './Inset';
 import { Keyboard } from './Keyboard';
@@ -151,7 +151,7 @@ export const Apple2 = (props: Apple2Props) => {
                 </Inset>
                 <ErrorModal error={error} setError={setError} />
             </div>
-            {showDebug ? <Debugger apple2={apple2} e={e} /> : null}
+            {showDebug ? <Debugger apple2={apple2} /> : null}
         </div>
     );
 };

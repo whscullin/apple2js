@@ -152,7 +152,7 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
             return; // already running
         }
 
-        this.theDebugger = new Debugger(this);
+        this.theDebugger = new Debugger(this.cpu, this);
         this.theDebugger.addSymbols(SYMBOLS);
 
         const interval = 30;
