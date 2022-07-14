@@ -14,6 +14,12 @@ export const VARTAB = 0x69;
 export const ARYTAB = 0x6B;
 /** End of strings (word). (Strings are allocated down from HIMEM.) */
 export const STREND = 0x6D;
+/** Current line */
+export const CURLINE = 0x75;
+/** Floating Point accumulator (float) */
+export const FAC = 0x9D;
+/** Floating Point arguments (float) */
+export const ARG = 0xA5;
 /**
  * End of program (word). This is actually 1 or 2 bytes past the three
  * zero bytes that end the program.

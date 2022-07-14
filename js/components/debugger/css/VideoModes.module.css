@@ -1,0 +1,10 @@
+.pages canvas {
+    border: 1px inset;
+    width: 280px;
+    height: 192px;
+    margin: 5px;
+}
+
+.active canvas {
+    border: 1px inset #00f;
+}

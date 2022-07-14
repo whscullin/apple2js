@@ -124,13 +124,13 @@ export default class ApplesoftCompiler {
     private lines: Map<number, byte[]> = new Map();
 
     /**
-     * Loads an AppleSoft BASIC program into memory.
+     * Loads an Applesoft BASIC program into memory.
      *
      * @param mem Memory, including zero page, into which the program is
      *     loaded.
      * @param program A string with a BASIC program to compile (tokenize).
      * @param programStart Optional start address of the program. Defaults to
-     *     standard AppleSoft program address, 0x801.
+     *     standard Applesoft program address, 0x801.
      */
     static compileToMemory(mem: Memory, program: string, programStart: word = PROGRAM_START) {
         const compiler = new ApplesoftCompiler();
@@ -179,7 +179,7 @@ export default class ApplesoftCompiler {
         for (const possibleToken in STRING_TO_TOKEN) {
             if (lineBuffer.lookingAtToken(possibleToken)) {
                 // NOTE(flan): This special token-preference
-                // logic is straight from the AppleSoft BASIC
+                // logic is straight from the Applesoft BASIC
                 // code (D5BE-D5CA in the Apple //e ROM).
 
                 // Found a token

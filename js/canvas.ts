@@ -593,7 +593,7 @@ export class HiresPage2D implements HiresPage {
 
         const data = this.imageData.data;
         let dx, dy;
-        if ((rowa < 24) && (col < 40) && this.vm.hiresMode) {
+        if ((rowa < 24) && (col < 40) && (this.vm.hiresMode || this._refreshing)) {
             let y = rowa << 4 | rowb << 1;
             if (y < this.dirty.top) { this.dirty.top = y; }
             y += 1;
@@ -914,6 +914,14 @@ export class VideoModes2D implements VideoModes {
 
     setHiresPage(page: pageNo, hires: HiresPage) {
         this._hgrs[page - 1] = hires;
+    }
+
+    getLoresPage(page: pageNo) {
+        return this._grs[page - 1];
+    }
+
+    getHiresPage(page: pageNo) {
+        return this._hgrs[page - 1];
     }
 
     text(on: boolean) {

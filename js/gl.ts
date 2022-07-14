@@ -662,6 +662,14 @@ export class VideoModesGL implements VideoModes {
         this._hgrs[page - 1] = hires;
     }
 
+    getLoresPage(page: pageNo) {
+        return this._grs[page - 1];
+    }
+
+    getHiresPage(page: pageNo) {
+        return this._hgrs[page - 1];
+    }
+
     text(on: boolean) {
         const old = this.textMode;
         this.textMode = on;

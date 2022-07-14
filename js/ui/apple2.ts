@@ -22,6 +22,7 @@ import Tape, { TAPE_TYPES } from './tape';
 
 import ApplesoftDecompiler from '../applesoft/decompiler';
 import ApplesoftCompiler from '../applesoft/compiler';
+import { TXTTAB } from 'js/applesoft/zeropage';
 
 import { debug } from '../util';
 import { Apple2, Stats, State as Apple2State } from '../apple2';
@@ -90,18 +91,15 @@ let ready: Promise<[void, void]>;
 
 export const driveLights = new DriveLights();
 
-/** Start of program (word) */
-const TXTTAB = 0x67;
-
-export function dumpAppleSoftProgram() {
+export function dumpApplesoftProgram() {
     const decompiler = ApplesoftDecompiler.decompilerFromMemory(cpu);
     debug(decompiler.list({apple2: _e ? 'e' : 'plus'}));
 }
 
-export function compileAppleSoftProgram(program: string) {
+export function compileApplesoftProgram(program: string) {
     const start = cpu.read(TXTTAB) + (cpu.read(TXTTAB + 1) << 8);
     ApplesoftCompiler.compileToMemory(cpu, program, start);
-    dumpAppleSoftProgram();
+    dumpApplesoftProgram();
 }
 
 export function openLoad(driveString: string, event: MouseEvent) {

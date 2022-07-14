@@ -1,4 +1,5 @@
 import { byte, word, ReadonlyUint8Array, Memory } from '../types';
+import { toHex } from 'js/util';
 import { TOKEN_TO_STRING, STRING_TO_TOKEN } from './tokens';
 import { TXTTAB, PRGEND } from './zeropage';
 
@@ -7,6 +8,24 @@ const LETTERS =
     ' !"#$%&\'()*+,-./0123456789:;<=>?' +
     '@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_' +
     '`abcdefghijklmnopqrstuvwxyz{|}~ ';
+
+/**
+ * Resolves a token value to a token string or character.
+ *
+ * @param token
+ * @returns string representing token
+ */
+const resolveToken = (token: byte) => {
+    let tokenString;
+    if (token >= 0x80 && token <= 0xea) {
+        tokenString = TOKEN_TO_STRING[token];
+    } else if (LETTERS[token] !== undefined) {
+        tokenString = LETTERS[token];
+    } else {
+        tokenString = `[${toHex(token)}]`;
+    }
+    return tokenString;
+};
 
 interface ListOptions {
     apple2: 'e' | 'plus';
@@ -26,6 +45,8 @@ const DEFAULT_DECOMPILE_OPTIONS: DecompileOptions = {
     style: 'pretty',
 };
 
+const MAX_LINES = 32768;
+
 export default class ApplesoftDecompiler {
 
     /**
@@ -38,6 +59,9 @@ export default class ApplesoftDecompiler {
 
         const start = ram.read(0x00, TXTTAB) + (ram.read(0x00, TXTTAB + 1) << 8);
         const end = ram.read(0x00, PRGEND) + (ram.read(0x00, PRGEND + 1) << 8);
+        if (start >= 0xc000 || end >= 0xc000) {
+            throw new Error(`Program memory ${toHex(start, 4)}-${toHex(end, 4)} out of range`);
+        }
         for (let addr = start; addr <= end; addr++) {
             program.push(ram.read(addr >> 8, addr & 0xff));
         }
@@ -73,18 +97,26 @@ export default class ApplesoftDecompiler {
      * @param callback A function to call for each line. The first parameter
      *     is the offset of the line number of the line; the tokens follow.
      */
-    private forEachLine(from: number, to: number,
-        callback: (offset: word) => void): void {
-
+    private forEachLine(
+        from: number, to: number,
+        callback: (offset: word) => void): void
+    {
+        let count = 0;
         let offset = 0;
         let nextLineAddr = this.wordAt(offset);
         let nextLineNo = this.wordAt(offset + 2);
         while (nextLineAddr !== 0 && nextLineNo < from) {
+            if (++count > MAX_LINES) {
+                throw new Error('Loop detected in listing');
+            }
             offset = nextLineAddr;
             nextLineAddr = this.wordAt(offset);
             nextLineNo = this.wordAt(offset + 2);
         }
         while (nextLineAddr !== 0 && nextLineNo <= to) {
+            if (++count > MAX_LINES) {
+                throw new Error('Loop detected in listing');
+            }
             callback(offset + 2);
             offset = nextLineAddr - this.base;
             nextLineAddr = this.wordAt(offset);
@@ -113,13 +145,17 @@ export default class ApplesoftDecompiler {
         // always assumes that there is space for one token—which would
         // have been the case on a realy Apple.
         while (this.program[offset] !== 0) {
+            if (offset >= this.program.length) {
+                lines.unshift('Unterminated line: ');
+                break;
+            }
             const token = this.program[offset];
             if (token >= 0x80 && token <= 0xea) {
                 line += ' '; // D750, always put a space in front of token
-                line += TOKEN_TO_STRING[token];
+                line += resolveToken(token);
                 line += ' '; // D762, always put a trailing space
             } else {
-                line += LETTERS[token];
+                line += resolveToken(token);
             }
             offset++;
 
@@ -194,17 +230,14 @@ export default class ApplesoftDecompiler {
         offset += 2;
 
         while (this.program[offset] !== 0) {
-            const token = this.program[offset];
-            let tokenString: string;
-            if (token >= 0x80 && token <= 0xea) {
-                tokenString = TOKEN_TO_STRING[token];
-                if (tokenString === 'PRINT') {
-                    tokenString = '?';
-                }
-            } else {
-                tokenString = LETTERS[token];
+            if (offset >= this.program.length) {
+                return 'Unterminated line: ' + result;
             }
-
+            const token = this.program[offset];
+            let tokenString = resolveToken(token);
+            if (tokenString === 'PRINT') {
+                tokenString = '?';
+            }
             if (spaceIf(tokenString)) {
                 result += ' ';
             }
@@ -239,13 +272,11 @@ export default class ApplesoftDecompiler {
         offset += 2;
 
         while (this.program[offset] !== 0) {
-            const token = this.program[offset];
-            let tokenString: string;
-            if (token >= 0x80 && token <= 0xea) {
-                tokenString = TOKEN_TO_STRING[token];
-            } else {
-                tokenString = LETTERS[token];
+            if (offset >= this.program.length) {
+                return 'Unterminated line: ' + result;
             }
+            const token = this.program[offset];
+            const tokenString = resolveToken(token);
             if (tokenString === '"') {
                 inString = !inString;
             }
