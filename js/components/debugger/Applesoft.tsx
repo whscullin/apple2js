@@ -47,7 +47,7 @@ const Variable = ({ variable }: { variable: ApplesoftVariable }) => {
         <tr>
             <td>{name}{TYPE_SYMBOL[type]}{arrayStr}</td>
             <td>{TYPE_NAME[type]}{isArray ? ' Array' : ''}</td>
-            <td>{isArray ? formatArray(value) : value}</td>
+            <td><pre tabIndex={-1}>{isArray ? formatArray(value) : value}</pre></td>
         </tr>
     );
 };
@@ -103,7 +103,7 @@ export const Applesoft = ({ apple2 }: ApplesoftProps) => {
     return (
         <div className={styles.column}>
             <span className={debuggerStyles.subHeading}>Listing</span>
-            <pre className={styles.listing}>{listing}</pre>
+            <pre className={styles.listing} tabIndex={-1}>{listing}</pre>
             <span className={debuggerStyles.subHeading}>Variables</span>
             <div className={styles.variables}>
                 <table>

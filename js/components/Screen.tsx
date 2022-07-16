@@ -6,7 +6,7 @@ import styles from './css/Screen.module.css';
  * Screen properties
  */
 export interface ScreenProps {
-    screen: Ref<HTMLCanvasElement>;
+    screenRef: Ref<HTMLCanvasElement>;
 }
 
 /**
@@ -16,7 +16,7 @@ export interface ScreenProps {
  * @param screen Canvas element reference
  * @returns
  */
-export const Screen = ({ screen }: ScreenProps) => {
+export const Screen = ({ screenRef }: ScreenProps) => {
     return (
         <div className={styles.display}>
             <div className={styles.overscan}>
@@ -24,7 +24,7 @@ export const Screen = ({ screen }: ScreenProps) => {
                     className={styles.screen}
                     width="592"
                     height="416"
-                    ref={screen}
+                    ref={screenRef}
                 />
             </div>
         </div>

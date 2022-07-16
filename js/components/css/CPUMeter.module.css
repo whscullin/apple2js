@@ -11,4 +11,5 @@
     color: #0f0;
     border: 2px inset #888;
     border-radius: 4px;
+    user-select: none;
 }

@@ -908,15 +908,39 @@ function onLoaded(
      * Input Handling
      */
 
-    window.addEventListener('paste', (event: Event) => {
+    const screenElement = document.querySelector('#screen')!;
+
+    const doPaste = (event: Event) => {
         const paste = (event.clipboardData || window.clipboardData)!.getData('text');
         io.setKeyBuffer(paste);
         event.preventDefault();
+    };
+
+    const doCopy = (event: Event) => {
+        event.clipboardData!.setData('text/plain', vm.getText());
+        event.preventDefault();
+    };
+
+    window.addEventListener('paste', (event: Event) => {
+        if (document.activeElement && document.activeElement !== document.body) {
+            return;
+        }
+        doPaste(event);
     });
 
     window.addEventListener('copy', (event: Event) => {
-        event.clipboardData!.setData('text/plain', vm.getText());
-        event.preventDefault();
+        if (document.activeElement && document.activeElement !== document.body) {
+            return;
+        }
+        doCopy(event);
+    });
+
+    screenElement.addEventListener('copy', (event: Event) => {
+        doCopy(event);
+    });
+
+    screenElement.addEventListener('paste', (event: Event) => {
+        doPaste(event);
     });
 
     if (navigator.standalone) {

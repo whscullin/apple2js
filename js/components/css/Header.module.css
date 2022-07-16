@@ -19,6 +19,7 @@
 
 .badge {
     cursor: pointer;
+    user-select: none;
 }
 
 .subtitle {
@@ -28,4 +29,5 @@
     font-family: "Adobe Garamond Pro", Garamond, Times, serif;
     font-size: 13px;
     font-weight: normal;
+    user-select: none;
 }

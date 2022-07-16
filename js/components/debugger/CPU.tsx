@@ -156,21 +156,21 @@ export const CPU = ({ apple2 }: CPUProps) => {
             <div className={debuggerStyles.row}>
                 <div className={debuggerStyles.column}>
                     <span className={debuggerStyles.subHeading}>Registers</span>
-                    <pre>
+                    <pre tabIndex={-1}>
                         {registers}
                     </pre>
                     <span className={debuggerStyles.subHeading}>Trace</span>
-                    <pre className={styles.trace}>
+                    <pre className={styles.trace} tabIndex={-1}>
                         {trace}
                     </pre>
                     <span className={debuggerStyles.subHeading}>ZP</span>
-                    <pre className={styles.zeroPage}>
+                    <pre className={styles.zeroPage} tabIndex={-1}>
                         {zeroPage}
                     </pre>
                 </div>
                 <div className={debuggerStyles.column}>
                     <span className={debuggerStyles.subHeading}>Stack</span>
-                    <pre className={styles.stack}>
+                    <pre className={styles.stack} tabIndex={-1}>
                         {stack}
                     </pre>
                 </div>
@@ -185,7 +185,7 @@ export const CPU = ({ apple2 }: CPUProps) => {
                     className={cs({ [styles.invalid]: !memoryPageValid })}
                 />
                 {memoryPageValid ? null : ERROR_ICON}
-                <pre className={styles.zp}>
+                <pre className={styles.zp} tabIndex={-1}>
                     {memory}
                 </pre>
             </div>
