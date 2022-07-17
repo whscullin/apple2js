@@ -47,7 +47,7 @@ export interface Apple2Props {
  */
 export const Apple2 = (props: Apple2Props) => {
     const { e, enhanced, sectors } = props;
-    const screen = useRef<HTMLCanvasElement>(null);
+    const screenRef = useRef<HTMLCanvasElement>(null);
     const [apple2, setApple2] = useState<Apple2Impl>();
     const [error, setError] = useState<unknown>();
     const [ready, setReady] = useState(false);
@@ -60,6 +60,12 @@ export const Apple2 = (props: Apple2Props) => {
     const rom = apple2?.getROM();
 
     const doPaste = useCallback((event: Event) => {
+        if (
+            (document.activeElement !== screenRef.current) &&
+            (document.activeElement !== document.body)
+        ) {
+            return;
+        }
         if (io) {
             const paste = (event.clipboardData || window.clipboardData)?.getData('text');
             if (paste) {
@@ -70,6 +76,12 @@ export const Apple2 = (props: Apple2Props) => {
     }, [io]);
 
     const doCopy = useCallback((event: Event) => {
+        if (
+            (document.activeElement !== screenRef.current) &&
+            (document.activeElement !== document.body)
+        ) {
+            return;
+        }
         if (vm) {
             event.clipboardData?.setData('text/plain', vm.getText());
         }
@@ -77,9 +89,9 @@ export const Apple2 = (props: Apple2Props) => {
     }, [vm]);
 
     useEffect(() => {
-        if (screen.current) {
+        if (screenRef.current) {
             const options = {
-                canvas: screen.current,
+                canvas: screenRef.current,
                 tick: () => { /* do nothing */ },
                 ...props,
             };
@@ -111,12 +123,20 @@ export const Apple2 = (props: Apple2Props) => {
     }, [props, drivesReady]);
 
     useEffect(() => {
+        const { current } = screenRef;
+
         window.addEventListener('paste', doPaste);
         window.addEventListener('copy', doCopy);
+
+        current?.addEventListener('paste', doPaste);
+        current?.addEventListener('copy', doCopy);
 
         return () => {
             window.removeEventListener('paste', doPaste);
             window.removeEventListener('copy', doCopy);
+
+            current?.removeEventListener('paste', doPaste);
+            current?.removeEventListener('copy', doCopy);
         };
     }, [doCopy, doPaste]);
 
@@ -124,23 +144,16 @@ export const Apple2 = (props: Apple2Props) => {
         setShowDebug((on) => !on);
     }, []);
 
-    const removeFocus = useCallback(() => {
-        if (document?.activeElement instanceof HTMLElement) {
-            document.activeElement.blur();
-        }
-    }, []);
-
     return (
         <div className={styles.container}>
             <div
                 className={cs(styles.outer, { apple2e: e, [styles.ready]: ready })}
-                onClick={removeFocus}
             >
-                <Screen screen={screen} />
+                <Screen screenRef={screenRef} />
                 {!e ? <LanguageCard cpu={cpu} io={io} rom={rom} slot={0} /> : null}
                 <Slinky io={io} slot={2} />
                 {!e ? <Videoterm io={io} slot={3} /> : null}
-                <Mouse cpu={cpu} screen={screen} io={io} slot={4} />
+                <Mouse cpu={cpu} screenRef={screenRef} io={io} slot={4} />
                 <ThunderClock io={io} slot={5} />
                 <Inset>
                     <Drives cpu={cpu} io={io} sectors={sectors} enhanced={enhanced} ready={drivesReady} />

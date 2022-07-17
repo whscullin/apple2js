@@ -26,6 +26,7 @@
     overflow: hidden;
     white-space: nowrap;
     flex-grow: 1;
+    user-select: none;
 }
 
 @media only screen and (min-resolution: 1.25dppx) {

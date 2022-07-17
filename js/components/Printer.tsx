@@ -80,7 +80,7 @@ export const Printer = ({ io, slot }: PrinterProps) => {
         <>
             <Modal isOpen={isOpen} onClose={onClose} title="Printer">
                 <ModalContent>
-                    <pre className={styles.printer}>
+                    <pre className={styles.printer} tabIndex={-1} >
                         {content}
                     </pre>
                 </ModalContent>
