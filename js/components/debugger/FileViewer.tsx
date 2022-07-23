@@ -18,7 +18,7 @@ export interface FileViewerProps {
 
 const HiresPreview = ({ binary }: { binary: Uint8Array }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    if (binary.byteLength < 8187 || binary.byteLength > 8197) {
+    if (binary.byteLength < 8184 || binary.byteLength > 8192) {
         return null;
     }
 
@@ -41,7 +41,7 @@ const HiresPreview = ({ binary }: { binary: Uint8Array }) => {
         vm.blit();
     }
 
-    return <canvas ref={canvasRef} width={560} height={192} className={styles.hiresPreview} />;
+    return <canvas ref={canvasRef} width={560} height={384} className={styles.hiresPreview} />;
 };
 
 
