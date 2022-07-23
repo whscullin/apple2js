@@ -2,15 +2,16 @@ import { ProDOSVolume } from '.';
 import type { BitMap } from './bit_map';
 import { BLOCK_SIZE, STORAGE_TYPES } from './constants';
 import { FileEntry } from './file_entry';
+import { ProDOSFile } from './base_file';
 
-export class SaplingFile {
+export class SaplingFile extends ProDOSFile {
     blocks: Uint8Array[];
     bitMap: BitMap;
 
-    constructor(private volume: ProDOSVolume, private fileEntry: FileEntry) {
+    constructor(volume: ProDOSVolume, private fileEntry: FileEntry) {
+        super(volume);
         this.blocks = this.volume.blocks();
         this.bitMap = this.volume.bitMap();
-
     }
 
     getBlockPointers() {
@@ -19,7 +20,9 @@ export class SaplingFile {
 
         const pointers = [this.fileEntry.keyPointer];
         for (let idx = 0; idx < 256; idx++) {
-            const seedlingPointer = seedlingPointers.getUint16(idx * 2);
+            const seedlingPointer =
+                seedlingPointers.getUint8(idx) |
+                (seedlingPointers.getUint8(0x100 + idx) << 8);
             if (seedlingPointer) {
                 pointers.push(seedlingPointer);
             }
@@ -27,16 +30,19 @@ export class SaplingFile {
         return pointers;
     }
 
+    // TODO(whscullin): Why did I not use getBlockPointers for these...
     read() {
         const saplingBlock = this.blocks[this.fileEntry.keyPointer];
-        const seedlingPointers = new DataView(saplingBlock);
+        const seedlingPointers = new DataView(saplingBlock.buffer);
 
         let remainingLength = this.fileEntry.eof;
         const data = new Uint8Array(remainingLength);
         let offset = 0;
         let idx = 0;
         while (remainingLength > 0) {
-            const seedlingPointer = seedlingPointers.getUint16(idx * 2);
+            const seedlingPointer =
+                seedlingPointers.getUint8(idx) |
+                (seedlingPointers.getUint8(0x100 + idx) << 8);
             if (seedlingPointer) {
                 const seedlingBlock = this.blocks[seedlingPointer];
                 const bytes = seedlingBlock.slice(0, Math.min(BLOCK_SIZE, remainingLength));
@@ -63,7 +69,8 @@ export class SaplingFile {
 
         while (remainingLength > 0) {
             const seedlingPointer = this.bitMap.allocBlock();
-            seedlingPointers.setUint16(idx * 2, seedlingPointer, true);
+            seedlingPointers.setUint8(idx, seedlingPointer & 0xff);
+            seedlingPointers.setUint8(0x100 + idx, seedlingPointer >> 8);
             const seedlingBlock = this.blocks[seedlingPointer];
             seedlingBlock.set(data.slice(offset, Math.min(BLOCK_SIZE, remainingLength)));
             idx++;

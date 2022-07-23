@@ -34,6 +34,15 @@ describe('ApplesoftDecompiler', () => {
         expect(program).toEqual(' 10  PRINT "Hello, World!"\n');
     });
 
+    it('correctly computes the base address when 0 is passed in', () => {
+        const compiler = new ApplesoftCompiler();
+        compiler.compile('10 PRINT "Hello, World!"\n20 GOTO 10');
+
+        const decompiler = new ApplesoftDecompiler(compiler.program(), 0);
+        const program = decompiler.list();
+        expect(program).toEqual(' 10  PRINT "Hello, World!"\n 20  GOTO 10\n');
+    });
+
     it('lists a program with a long line', () => {
         const compiler = new ApplesoftCompiler();
         compiler.compile('10 PRINT "Hello, World!"\n'

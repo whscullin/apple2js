@@ -47,6 +47,7 @@ export class Directory {
     constructor(private volume: ProDOSVolume, private fileEntry: FileEntry) {
         this.blocks = this.volume.blocks();
         this.vdh = this.volume.vdh();
+        this.read();
     }
 
     read(fileEntry?: FileEntry) {

@@ -1,3 +1,5 @@
+import { byte } from 'js/types';
+
 export const BLOCK_SIZE = 512;
 
 export const STORAGE_TYPES = {
@@ -5,6 +7,8 @@ export const STORAGE_TYPES = {
     SEEDLING: 0x1,
     SAPLING: 0x2,
     TREE: 0x3,
+    PASCAL: 0x4,
+    EXTENDED: 0x5,
     DIRECTORY: 0xD,
     SUBDIRECTORY_HEADER: 0xE,
     VDH_HEADER: 0xF
@@ -19,7 +23,7 @@ export const ACCESS_TYPES = {
     ALL: 0xE3
 } as const;
 
-export const FILE_TYPES = {
+export const FILE_TYPES: Record<byte, string> = {
     0x00: 'UNK', // Typeless file (SOS and ProDOS)
     0x01: 'BAD', // Bad block file
     0x02: 'PDC', // Pascal code file

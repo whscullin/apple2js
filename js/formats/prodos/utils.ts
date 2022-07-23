@@ -1,4 +1,3 @@
-import { debug } from '../../util';
 import { STORAGE_TYPES } from './constants';
 import { Directory } from './directory';
 import type { byte, word } from 'js/types';
@@ -19,7 +18,7 @@ export function uint32ToDate(val: word) {
         const hour = hourMinute >> 8;
         const min = hourMinute & 0xff;
 
-        return new Date(1900 + year, month - 1, day, hour, min);
+        return new Date(year < 70 ? 2000 + year : 1900 + year, month - 1, day, hour, min);
     }
     return new Date(0);
 }
@@ -50,9 +49,13 @@ export function readFileName(block: DataView, offset: word, nameLength: byte, ca
     if (!(caseBits & 0x8000)) {
         caseBits = 0;
     }
+    // File is deleted, brute force old name
+    if (nameLength === 0) {
+        nameLength = 15;
+    }
     for (let idx = 0; idx < nameLength; idx++) {
         caseBits <<= 1;
-        const char = String.fromCharCode(block.getUint8(offset + idx));
+        const char = String.fromCharCode(block.getUint8(offset + idx) & 0x7f);
         name += caseBits & 0x8000 ? char.toLowerCase() : char;
     }
     return name;
@@ -74,27 +77,29 @@ export function writeFileName(block: DataView, offset: word, name: string) {
 
 export function dumpDirectory(volume: ProDOSVolume, dirEntry: FileEntry, depth: string) {
     const dir = new Directory(volume, dirEntry);
-    dir.read();
+    let str = '';
 
     for (let idx = 0; idx < dir.entries.length; idx++) {
         const fileEntry = dir.entries[idx];
         if (fileEntry.storageType !== STORAGE_TYPES.DELETED) {
-            debug(depth, fileEntry.name);
+            str += depth + fileEntry.name + '\n';
             if (fileEntry.storageType === STORAGE_TYPES.DIRECTORY) {
-                dumpDirectory(volume, fileEntry, depth + '  ');
+                str += dumpDirectory(volume, fileEntry, depth + '  ');
             }
         }
     }
+    return str;
 }
 
 export function dump(volume: ProDOSVolume) {
     const vdh = volume.vdh();
-    debug(vdh.name);
+    let str = vdh.name;
     for (let idx = 0; idx < vdh.entries.length; idx++) {
         const fileEntry = vdh.entries[idx];
-        debug(fileEntry.name);
+        str += fileEntry.name + '\n';
         if (fileEntry.storageType === STORAGE_TYPES.DIRECTORY) {
-            dumpDirectory(volume, fileEntry, '  ');
+            str += dumpDirectory(volume, fileEntry, '  ');
         }
     }
+    return str;
 }

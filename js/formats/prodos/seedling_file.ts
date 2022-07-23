@@ -1,13 +1,15 @@
 import type { ProDOSVolume } from '.';
+import { ProDOSFile } from './base_file';
 import { BitMap } from './bit_map';
 import { STORAGE_TYPES } from './constants';
 import { FileEntry } from './file_entry';
 
-export class SeedlingFile {
+export class SeedlingFile extends ProDOSFile {
     blocks: Uint8Array[];
     bitMap: BitMap;
 
     constructor(volume: ProDOSVolume, private fileEntry: FileEntry) {
+        super(volume);
         this.blocks = volume.blocks();
         this.bitMap = volume.bitMap();
     }

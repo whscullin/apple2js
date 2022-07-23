@@ -319,8 +319,14 @@ export function explodeSector13(volume: byte, track: byte, sector: byte, data: m
     return buf;
 }
 
+export interface TrackNibble {
+    track: byte;
+    sector: byte;
+    nibble: byte;
+}
+
 /**
- * Reads a sector of data from a nibblized disk
+ * Finds a sector of data from a nibblized disk
  *
  * TODO(flan): Does not work on WOZ disks
  *
@@ -329,7 +335,7 @@ export function explodeSector13(volume: byte, track: byte, sector: byte, data: m
  * @param sector sector number to read
  * @returns An array of sector data bytes.
  */
-export function readSector(disk: NibbleDisk, track: byte, sector: byte): memory {
+export function findSector(disk: NibbleDisk, track: byte, sector: byte): TrackNibble | null {
     const _sector = disk.format === 'po' ? _PO[sector] : _DO[sector];
     let val, state = 0;
     let idx = 0;
@@ -352,7 +358,6 @@ export function readSector(disk: NibbleDisk, track: byte, sector: byte): memory 
         }
     }
     let t = 0, s = 0, v = 0, checkSum;
-    const data = new Uint8Array(256);
     while (retry < 4) {
         switch (state) {
             case 0:
@@ -380,38 +385,7 @@ export function readSector(disk: NibbleDisk, track: byte, sector: byte): memory 
                 break;
             case 4: // Data
                 if (s === _sector && t === track) {
-                    const data2 = [];
-                    let last = 0;
-                    for (let jdx = 0x55; jdx >= 0; jdx--) {
-                        val = detrans62[_readNext() - 0x80] ^ last;
-                        data2[jdx] = val;
-                        last = val;
-                    }
-                    for (let jdx = 0; jdx < 0x100; jdx++) {
-                        val = detrans62[_readNext() - 0x80] ^ last;
-                        data[jdx] = val;
-                        last = val;
-                    }
-                    checkSum = detrans62[_readNext() - 0x80] ^ last;
-                    if (checkSum) {
-                        debug('Invalid data checksum:', toHex(v), toHex(t), toHex(s), toHex(checkSum));
-                    }
-                    for (let kdx = 0, jdx = 0x55; kdx < 0x100; kdx++) {
-                        data[kdx] <<= 1;
-                        if ((data2[jdx] & 0x01) !== 0) {
-                            data[kdx] |= 0x01;
-                        }
-                        data2[jdx] >>= 1;
-
-                        data[kdx] <<= 1;
-                        if ((data2[jdx] & 0x01) !== 0) {
-                            data[kdx] |= 0x01;
-                        }
-                        data2[jdx] >>= 1;
-
-                        if (--jdx < 0) jdx = 0x55;
-                    }
-                    return data;
+                    return { track, sector, nibble: idx };
                 }
                 else
                     _skipBytes(0x159); // Skip data, checksum and footer
@@ -421,7 +395,92 @@ export function readSector(disk: NibbleDisk, track: byte, sector: byte): memory 
                 break;
         }
     }
-    return new Uint8Array();
+    return null;
+}
+
+/**
+ * Reads a sector of data from a nibblized disk
+ *
+ * TODO(flan): Does not work on WOZ disks
+ *
+ * @param disk Nibble disk
+ * @param track track number to read
+ * @param sector sector number to read
+ * @returns An array of sector data bytes.
+ */
+export function readSector(disk: NibbleDisk, track: byte, sector: byte): Uint8Array {
+    const trackNibble = findSector(disk, track, sector);
+    if (!trackNibble) {
+        return new Uint8Array(0);
+    }
+    const { nibble } = trackNibble;
+    const cur = disk.tracks[track];
+
+    let idx = nibble;
+    function _readNext() {
+        const result = cur[idx++];
+        if (nibble >= cur.length) {
+            idx = 0;
+        }
+        return result;
+    }
+
+    const data = new Uint8Array(256);
+    const data2 = [];
+    let last = 0;
+    let val;
+
+    for (let jdx = 0x55; jdx >= 0; jdx--) {
+        val = detrans62[_readNext() - 0x80] ^ last;
+        data2[jdx] = val;
+        last = val;
+    }
+    for (let jdx = 0; jdx < 0x100; jdx++) {
+        val = detrans62[_readNext() - 0x80] ^ last;
+        data[jdx] = val;
+        last = val;
+    }
+    const checkSum = detrans62[_readNext() - 0x80] ^ last;
+    if (checkSum) {
+        debug('Invalid data checksum:', toHex(last), toHex(track), toHex(sector), toHex(checkSum));
+    }
+    for (let kdx = 0, jdx = 0x55; kdx < 0x100; kdx++) {
+        data[kdx] <<= 1;
+        if ((data2[jdx] & 0x01) !== 0) {
+            data[kdx] |= 0x01;
+        }
+        data2[jdx] >>= 1;
+
+        data[kdx] <<= 1;
+        if ((data2[jdx] & 0x01) !== 0) {
+            data[kdx] |= 0x01;
+        }
+        data2[jdx] >>= 1;
+
+        if (--jdx < 0) jdx = 0x55;
+    }
+    return data;
+}
+
+/**
+ * Reads a sector of data from a nibblized disk
+ *
+ * TODO(flan): Does not work on WOZ disks
+ *
+ * @param disk Nibble disk
+ * @param track track number to read
+ * @param sector sector number to read
+ * @returns An array of sector data bytes.
+ */
+export function writeSector(disk: NibbleDisk, track: byte, sector: byte, _data: Uint8Array): boolean {
+    const trackNibble = findSector(disk, track, sector);
+    if (!trackNibble) {
+        return false;
+    }
+
+    // Todo
+
+    return true;
 }
 
 /**
@@ -497,7 +556,7 @@ export function jsonDecode(data: string): NibbleDisk {
  */
 
 export function analyseDisk(disk: NibbleDisk) {
-    for (let track = 0; track < 35; track++) {
+    for (let track = 0; track < disk.tracks.length; track++) {
         let outStr = `${toHex(track)}: `;
         let val, state = 0;
         let idx = 0;

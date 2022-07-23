@@ -100,7 +100,7 @@ export const BLOCK_FORMATS = [
     'po',
 ] as const;
 
-export const DISK_FORMATS = [...NIBBLE_FORMATS, ...BLOCK_FORMATS ] as const;
+export const DISK_FORMATS = [...NIBBLE_FORMATS, ...BLOCK_FORMATS] as const;
 
 export type NibbleFormat = MemberOf<typeof NIBBLE_FORMATS>;
 export type BlockFormat = MemberOf<typeof BLOCK_FORMATS>;
@@ -217,6 +217,8 @@ export type FormatWorkerResponse =
 export interface MassStorageData {
     name: string;
     ext: string;
+    readOnly: boolean;
+    volume?: byte;
     data: ArrayBuffer;
 }
 
@@ -225,5 +227,5 @@ export interface MassStorageData {
  */
 export interface MassStorage<T> {
     setBinary(drive: number, name: string, ext: T, data: ArrayBuffer): boolean;
-    getBinary(drive: number): MassStorageData | null;
+    getBinary(drive: number, ext?: T): MassStorageData | null;
 }
