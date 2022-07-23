@@ -51,7 +51,7 @@ export const Apple2 = (props: Apple2Props) => {
     const [apple2, setApple2] = useState<Apple2Impl>();
     const [error, setError] = useState<unknown>();
     const [ready, setReady] = useState(false);
-    const [showDebug, setShowDebug] = useState(true);
+    const [showDebug, setShowDebug] = useState(false);
     const drivesReady = useMemo(() => new Ready(setError), []);
 
     const io = apple2?.getIO();
