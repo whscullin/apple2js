@@ -18,7 +18,7 @@ export interface FileViewerProps {
 
 const HiresPreview = ({ binary }: { binary: Uint8Array }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    if (binary.byteLength < 8187 || binary.byteLength > 8192) {
+    if (binary.byteLength < 8187 || binary.byteLength > 8197) {
         return null;
     }
 
