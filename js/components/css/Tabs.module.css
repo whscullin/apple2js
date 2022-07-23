@@ -20,4 +20,5 @@
     flex-direction: row;
     border-bottom: 2px groove;
     margin-bottom: 6px;
+    user-select: none;
 }

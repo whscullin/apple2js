@@ -4,7 +4,6 @@ import { rom as readOnlyRom } from '../roms/cards/cffa';
 import { create2MGFromBlockDisk, HeaderData, read2MGHeader } from '../formats/2mg';
 import { ProDOSVolume } from '../formats/prodos';
 import createBlockDisk from '../formats/block';
-import { dump } from '../formats/prodos/utils';
 import {
     BlockDisk,
     BlockFormat,
@@ -441,7 +440,6 @@ export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<
         this._identity[drive][IDENTITY.SectorCountLow] = this._sectors[0].length >> 16;
 
         const prodos = new ProDOSVolume(disk);
-        dump(prodos);
 
         this._name[drive] = disk.name;
         this._partitions[drive] = prodos;
@@ -485,7 +483,7 @@ export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<
         if (!blockDisk) {
             return null;
         }
-        const { name, blocks } = blockDisk;
+        const { name, blocks, readOnly } = blockDisk;
         let ext;
         let data: ArrayBuffer;
         if (this._metadata[drive]) {
@@ -503,6 +501,7 @@ export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<
             name,
             ext,
             data,
+            readOnly,
         };
     }
 }

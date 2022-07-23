@@ -1,0 +1,10 @@
+.fileViewer {
+    background: white;
+    font: monospace;
+    width: 60em;
+    padding: 1em;
+    height: 60vh;
+    overflow-y: auto;
+    border: 2px inset #f0edd0;
+    white-space: pre-wrap;
+}

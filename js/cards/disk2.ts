@@ -20,6 +20,7 @@ import {
     PROCESS_JSON_DISK,
     PROCESS_JSON,
     ENCODING_BITSTREAM,
+    MassStorage,
     MassStorageData,
 } from '../formats/types';
 
@@ -309,7 +310,7 @@ function setDriveState(state: DriveState) {
 /**
  * Emulates the 16-sector and 13-sector versions of the Disk ][ drive and controller.
  */
-export default class DiskII implements Card<State> {
+export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
 
     private drives: Drive[] = [
         {   // Drive 1
@@ -415,15 +416,15 @@ export default class DiskII implements Card<State> {
 
     /**
      * Spin the disk under the read/write head for WOZ images.
-     * 
+     *
      * This implementation emulates every clock cycle of the 2 MHz
      * sequencer since the last time it was called in order to
      * determine the current state. Because this is called on
      * every access to the softswitches, the data in the latch
      * will be correct on every read.
-     * 
+     *
      * The emulation of the disk makes a few simplifying assumptions:
-     * 
+     *
      * *   The motor turns on instantly.
      * *   The head moves tracks instantly.
      * *   The length (in bits) of each track of the WOZ image
@@ -962,24 +963,27 @@ export default class DiskII implements Card<State> {
         });
     }
 
-    // TODO(flan): Does not work with WOZ disks
-    getBinary(drive: DriveNumber): MassStorageData | null {
+    // TODO(flan): Does not work with WOZ or D13 disks
+    getBinary(drive: DriveNumber, ext?: NibbleFormat): MassStorageData | null {
         const cur = this.drives[drive - 1];
         if (!isNibbleDrive(cur)) {
             return null;
         }
-        // TODO(flan): Assumes 16-sectors
-        const len = (16 * cur.tracks.length * 256);
+        const { format, name, readOnly, tracks, volume } = cur;
+        const len = format === 'nib' ?
+            tracks.reduce((acc, track) => acc + track.length, 0) :
+            this.sectors * tracks.length * 256;
         const data = new Uint8Array(len);
 
+        ext = ext ?? format;
         let idx = 0;
-        for (let t = 0; t < cur.tracks.length; t++) {
-            if (cur.format === 'nib') {
-                data.set(cur.tracks[t], idx);
-                idx += cur.tracks[t].length;
+        for (let t = 0; t < tracks.length; t++) {
+            if (ext === 'nib') {
+                data.set(tracks[t], idx);
+                idx += tracks[t].length;
             } else {
                 for (let s = 0; s < 0x10; s++) {
-                    const sector = readSector(cur, t, s);
+                    const sector = readSector({ ...cur, format: ext }, t, s);
                     data.set(sector, idx);
                     idx += sector.length;
                 }
@@ -987,13 +991,15 @@ export default class DiskII implements Card<State> {
         }
 
         return {
-            ext: 'dsk',
-            name: cur.name,
-            data: data.buffer
+            ext,
+            name,
+            data: data.buffer,
+            readOnly,
+            volume,
         };
     }
 
-    // TODO(flan): Does not work with WOZ disks
+    // TODO(flan): Does not work with WOZ or D13 disks
     getBase64(drive: DriveNumber) {
         const cur = this.drives[drive - 1];
         if (!isNibbleDrive(cur)) {

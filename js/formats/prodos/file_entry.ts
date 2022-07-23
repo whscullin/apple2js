@@ -1,9 +1,15 @@
 import { dateToUint32, readFileName, writeFileName, uint32ToDate } from './utils';
 import { STORAGE_TYPES, ACCESS_TYPES } from './constants';
 import type { byte, word } from 'js/types';
+import { toHex } from 'js/util';
 import { ProDOSVolume } from '.';
 import { VDH } from './vdh';
 import { Directory } from './directory';
+import { ProDOSFile } from './base_file';
+import { SaplingFile } from './sapling_file';
+import { SeedlingFile } from './seedling_file';
+import { TreeFile } from './tree_file';
+import ApplesoftDump from 'js/applesoft/decompiler';
 
 const ENTRY_OFFSETS = {
     STORAGE_TYPE: 0x00,
@@ -38,6 +44,8 @@ export class FileEntry {
     lastMod: Date = new Date();
     keyPointer: word = 0;
     headerPointer: word = 0;
+
+    constructor(public volume: ProDOSVolume) { }
 
     read(block: DataView, offset: word) {
         this.block = block;
@@ -81,6 +89,60 @@ export class FileEntry {
         this.block.setUint32(this.offset + ENTRY_OFFSETS.LAST_MOD, dateToUint32(this.lastMod), true);
         this.block.setUint16(this.offset + ENTRY_OFFSETS.HEADER_POINTER, this.headerPointer, true);
     }
+
+    getFileData() {
+        let file: ProDOSFile | null = null;
+
+        switch (this.storageType) {
+            case STORAGE_TYPES.SEEDLING:
+                file = new SeedlingFile(this.volume, this);
+                break;
+            case STORAGE_TYPES.SAPLING:
+                file = new SaplingFile(this.volume, this);
+                break;
+            case STORAGE_TYPES.TREE:
+                file = new TreeFile(this.volume, this);
+                break;
+        }
+
+        if (file) {
+            return file.read();
+        }
+    }
+
+    getFileText() {
+        const data = this.getFileData();
+        let result: string | null = null;
+        let address = 0;
+
+        if (data) {
+            if (this.fileType === 0xFC) { // BAS
+                result = new ApplesoftDump(data, 0).decompile();
+            } else {
+                if (this.fileType === 0x06) { // BIN
+                    address = this.auxType;
+                }
+                result = '';
+                let hex = '';
+                let ascii = '';
+                for (let idx = 0; idx < data.length; idx++) {
+                    const val = data[idx];
+                    if (idx % 16 === 0) {
+                        if (idx !== 0) {
+                            result += `${hex}    ${ascii}\n`;
+                        }
+                        hex = '';
+                        ascii = '';
+                        result += `${toHex(address + idx, 4)}:`;
+                    }
+                    hex += ` ${toHex(val)}`;
+                    ascii += (val & 0x7f) >= 0x20 ? String.fromCharCode(val & 0x7f) : '.';
+                }
+                result += '\n';
+            }
+        }
+        return result;
+    }
 }
 
 export function readEntries(volume: ProDOSVolume, block: DataView, header: VDH | Directory) {
@@ -90,17 +152,20 @@ export function readEntries(volume: ProDOSVolume, block: DataView, header: VDH |
     let count = 2;
     let next = header.next;
 
-    for (let idx = 0; idx < header.fileCount; idx++) {
-        const fileEntry = new FileEntry();
+    for (let idx = 0; idx < header.fileCount;) {
+        const fileEntry = new FileEntry(volume);
         fileEntry.read(block, offset);
         entries.push(fileEntry);
+        if (fileEntry.storageType !== STORAGE_TYPES.DELETED) {
+            idx++;
+        }
         offset += header.entryLength;
         count++;
-        if (count >= header.entriesPerBlock) {
+        if (count > header.entriesPerBlock) {
             block = new DataView(blocks[next].buffer);
             next = block.getUint16(0x02, true);
             offset = 0x4;
-            count = 0;
+            count = 1;
         }
     }
 

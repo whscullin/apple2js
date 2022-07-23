@@ -11,7 +11,7 @@ import { NibbleDisk, DiskOptions, ENCODING_NIBBLE } from './types';
 export default function createDiskFromProDOS(options: DiskOptions) {
     const { data, name, side, rawData, volume, readOnly } = options;
     const disk: NibbleDisk = {
-        format: 'nib',
+        format: 'po',
         encoding: ENCODING_NIBBLE,
         name,
         side,

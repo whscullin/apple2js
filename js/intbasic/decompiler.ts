@@ -1,12 +1,14 @@
-import { byte, Memory, word } from 'js/types';
+import { byte, word } from 'js/types';
 
 const LETTERS =
-'                                ' +
-' !"#$%&\'()*+,-./0123456789:;<=>?' +
-'@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_' +
-'`abcdefghijklmnopqrstuvwxyz{|}~ ';
+    '                                ' +
+    ' !"#$%&\'()*+,-./0123456789:;<=>?' +
+    '@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_' +
+    '`abcdefghijklmnopqrstuvwxyz{|}~ ';
 
 const TOKENS: Record<byte, string> = {
+    0x00: 'HIMEM:',
+    0x01: '$01',
     0x02: '_',
     0x03: ':',
     0x04: 'LOAD',
@@ -45,8 +47,8 @@ const TOKENS: Record<byte, string> = {
     0x25: 'THEN',
     0x26: ',',
     0x27: ',',
-    0x28: '\'',
-    0x29: '\'',
+    0x28: '"',
+    0x29: '"',
     0x2A: '(',
     0x2B: '!',
     0x2C: '!',
@@ -114,6 +116,7 @@ const TOKENS: Record<byte, string> = {
     0x6A: ',',
     0x6B: 'AT',
     0x6C: 'VLIN',
+    0x6D: ',',
     0x6E: 'AT',
     0x6F: 'VTAB',
     0x70: '=',
@@ -121,6 +124,7 @@ const TOKENS: Record<byte, string> = {
     0x72: ')',
     0x73: ')',
     0x74: 'LIST',
+    0x75: ',',
     0x76: 'LIST',
     0x77: 'POP',
     0x78: 'NODSP',
@@ -133,15 +137,11 @@ const TOKENS: Record<byte, string> = {
     0x7F: 'IN#'
 };
 
-export default class IntBasicDump
-{
-    constructor(private mem: Memory) {}
+export default class IntBasicDump {
+    constructor(private data: Uint8Array) { }
 
     private readByte(addr: word) {
-        const page = addr >> 8,
-            off = addr & 0xff;
-
-        return this.mem.read(page, off);
+        return this.data[addr];
     }
 
     private readWord(addr: word) {
@@ -151,12 +151,14 @@ export default class IntBasicDump
         return (msb << 8) | lsb;
     }
 
-    toString () {
+    toString() {
         let str = '';
-        let addr = this.readWord(0xca); // Start
-        const himem = this.readWord(0x4c);
+        let addr = 0;
+        const himem = this.data.length;
         do {
-            /*var len = */this.readByte(addr++);
+            let inRem = false;
+            let inQuote = false;
+            /* const length = */ this.readByte(addr++);
             const lineno = this.readWord(addr);
             addr += 2;
 
@@ -165,20 +167,18 @@ export default class IntBasicDump
             let val = 0;
             do {
                 val = this.readByte(addr++);
-                if (val >= 0xB0 && val <= 0xB9) {
+                if (!inRem && !inQuote && val >= 0xB0 && val <= 0xB9) {
                     str += this.readWord(addr);
                     addr += 2;
-                }
-                else if (val < 0x80 && val > 0x01) {
+                } else if (val < 0x80 && val > 0x01) {
                     const t = TOKENS[val];
-                    if (t.length > 1)
-                        str += ' ';
+                    if (t.length > 1) { str += ' '; }
                     str += t;
-                    if (t.length > 1)
-                        str += ' ';
-                }
-                else if (val > 0x80)
-                    str += LETTERS[val - 0x80];
+                    if (t.length > 1) { str += ' '; }
+                    if (val === 0x28) { inQuote = true; }
+                    if (val === 0x29) { inQuote = false; }
+                    if (val === 0x5d) { inRem = true; }
+                } else if (val > 0x80) { str += LETTERS[val - 0x80]; }
             } while (val !== 0x01);
             str += '\n';
         } while (addr < himem);

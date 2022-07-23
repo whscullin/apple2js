@@ -1,0 +1,50 @@
+.volume {
+    font-family: monospace;
+    width: 100%;
+    border: 1px inset;
+    background-color: white;
+    overflow-y: auto;
+    height: 320px;
+}
+
+.volume table {
+    border-spacing: 0;
+    width: 100%;
+}
+
+.volume tfoot td {
+    border-top: 1px solid black;
+}
+
+.volume thead th {
+    border-bottom: 1px solid black;
+    padding: 2px;
+}
+
+.volume tbody {
+    line-height: 0.8em;
+}
+
+.filename {
+    width: 16em;
+    max-width: 16em;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.deleted {
+    text-decoration: line-through;
+}
+
+.type {
+    width: 2em;
+}
+
+.sectors {
+    width: 2em;
+}
+
+.aux {
+    width: 3em;
+}

@@ -76,10 +76,29 @@ export default class ApplesoftDecompiler {
      * fail.
      *
      * @param program The program bytes.
-     * @param base
+     * @param base Address of start of program, or 0 to compute start
      */
-    constructor(private readonly program: ReadonlyUint8Array,
-        private readonly base: word = 0x801) {
+    constructor(
+        private readonly program: ReadonlyUint8Array,
+        private readonly base: word = 0x801
+    ) {
+        if (this.base === 0) {
+            // Signals that we're loading a file from disk, and
+            // addresses are arbitrarily absolute, so we compute
+            // base by taking the next line address and adjusting it to
+            // the actual beginning of the next line.
+            const nextLine = this.wordAt(0);
+            // Start at beginning of first line
+            let nextLineIndex = 4;
+            // Find 0 at end of line
+            while (program[nextLineIndex]) {
+                nextLineIndex++;
+            }
+            // Move to beginning of next line
+            nextLineIndex++;
+            // Adjust base
+            this.base = nextLine - nextLineIndex;
+        }
     }
 
     /** Returns the 2-byte word at the given offset. */
@@ -99,8 +118,7 @@ export default class ApplesoftDecompiler {
      */
     private forEachLine(
         from: number, to: number,
-        callback: (offset: word) => void): void
-    {
+        callback: (offset: word) => void): void {
         let count = 0;
         let offset = 0;
         let nextLineAddr = this.wordAt(offset);
