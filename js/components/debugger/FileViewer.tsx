@@ -1,5 +1,6 @@
+import { HiresPage2D, LoresPage2D, VideoModes2D } from 'js/canvas';
 import { h, Fragment } from 'preact';
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { Modal, ModalContent, ModalFooter } from '../Modal';
 
 import styles from './css/FileViewer.module.css';
@@ -14,6 +15,35 @@ export interface FileViewerProps {
     fileData: FileData | null;
     onClose: () => void;
 }
+
+const HiresPreview = ({ binary }: { binary: Uint8Array }) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    if (binary.byteLength < 8187 || binary.byteLength > 8192) {
+        return null;
+    }
+
+    if (canvasRef.current) {
+        const vm = new VideoModes2D(canvasRef.current, true);
+        const lores = new LoresPage2D(vm, 1, new Uint8Array(), false);
+        const hires = new HiresPage2D(vm, 1);
+        vm.setLoresPage(1, lores);
+        vm.setHiresPage(1, hires);
+        vm.text(false);
+        vm.hires(true);
+        vm.doubleHires(false);
+        vm.page(1);
+
+        for (let idx = 0; idx < 0x20; idx++) {
+            for (let jdx = 0; jdx < 0x100; jdx++) {
+                hires.write(idx + 0x20, jdx, binary[idx * 0x100 + jdx]);
+            }
+        }
+        vm.blit();
+    }
+
+    return <canvas ref={canvasRef} width={560} height={192} className={styles.hiresPreview} />;
+};
+
 
 export const FileViewer = ({ fileData, onClose }: FileViewerProps) => {
     const [binaryHref, setBinaryHref] = useState('');
@@ -41,15 +71,18 @@ export const FileViewer = ({ fileData, onClose }: FileViewerProps) => {
         return null;
     }
 
-    const { fileName, text } = fileData;
+    const { fileName, text, binary } = fileData;
 
     return (
         <>
             <Modal isOpen={true} onClose={onClose} title={fileName}>
                 <ModalContent>
-                    <pre className={styles.fileViewer} tabIndex={-1} >
-                        {text}
-                    </pre>
+                    <div className={styles.fileViewer}>
+                        <HiresPreview binary={binary} />
+                        <pre className={styles.textViewer} tabIndex={-1} >
+                            {text}
+                        </pre>
+                    </div>
                 </ModalContent>
                 <ModalFooter>
                     <a

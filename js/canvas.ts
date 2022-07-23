@@ -113,7 +113,7 @@ export class LoresPage2D implements LoresPage {
 
     private highColorTextMode = false;
 
-    dirty: Region = {...notDirty};
+    dirty: Region = { ...notDirty };
     imageData: ImageData;
 
     constructor(
@@ -485,7 +485,7 @@ export class LoresPage2D implements LoresPage {
 
 export class HiresPage2D implements HiresPage {
     public imageData: ImageData;
-    dirty: Region = {...notDirty};
+    dirty: Region = { ...notDirty };
 
     private _buffer: memory[] = [];
     private _refreshing = false;
@@ -604,7 +604,7 @@ export class HiresPage2D implements HiresPage {
             if (x > this.dirty.right) { this.dirty.right = x; }
 
             dy = rowa << 4 | rowb << 1;
-            let bz, b0, b1, b2, b3, b4, c, hb;
+            let bz, b0, b1, b2, b3, b4, c;
             if (this.oneSixtyMode && !this.vm.monoMode) {
                 // 1 byte = two pixels, but 3:4 ratio
                 const c3 = val & 0xf;
@@ -643,8 +643,8 @@ export class HiresPage2D implements HiresPage {
                     ((b2 & 0x40) >> 6) | ((b3 & 0x07) << 1), // 5
                     ((b3 & 0x78) >> 3), // 6
                     0
-                ], // 7
-                hb = [
+                ]; // 7
+                const hb = [
                     0,
                     b0 & 0x80, // 0
                     b0 & 0x80, // 1
@@ -1092,8 +1092,8 @@ export class VideoModes2D implements VideoModes {
                 gr.imageData, gr.dirty
             );
         }
-        hgr.dirty = {...notDirty};
-        gr.dirty = {...notDirty};
+        hgr.dirty = { ...notDirty };
+        gr.dirty = { ...notDirty };
 
         return blitted;
     }
