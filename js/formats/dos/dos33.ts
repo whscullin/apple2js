@@ -58,6 +58,7 @@ export const CATALOG_ENTRY_OFFSETS = {
     SECTOR_LIST_SECTOR: 0x01,
     FILE_TYPE: 0x02,
     FILE_NAME: 0x03,
+    DELETED_FILE_TRACK: 0x20,
     FILE_LENGTH_LOW: 0x21,
     FILE_LENGTH_HIGH: 0x22,
 } as const;
@@ -600,7 +601,7 @@ export class DOS33 {
 
                 if (file.trackSectorList.track === 0xff) {
                     file.deleted = true;
-                    file.trackSectorList.track = entry[CATALOG_ENTRY_OFFSETS.FILE_NAME + 0x20];
+                    file.trackSectorList.track = entry[CATALOG_ENTRY_OFFSETS.DELETED_FILE_TRACK];
                 }
 
                 // Locked
