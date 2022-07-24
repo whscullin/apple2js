@@ -1,17 +1,18 @@
 import { h, Fragment, JSX } from 'preact';
-import { useCallback, useState } from 'preact/hooks';
+import { useCallback, useEffect, useState } from 'preact/hooks';
 import { DiskDescriptor, DriveNumber, NibbleFormat, NIBBLE_FORMATS } from '../formats/types';
 import { Modal, ModalContent, ModalFooter } from './Modal';
 import { loadLocalNibbleFile, loadJSON, getHashParts, setHashParts } from './util/files';
 import DiskII from '../cards/disk2';
 import { ErrorModal } from './ErrorModal';
 
-import index from 'json/disks/index.json';
-import { noAwait } from './util/promises';
+import { noAwait, spawn } from './util/promises';
 import { useHash } from './hooks/useHash';
 import { FileChooser, FilePickerAcceptType } from './FileChooser';
 
 import styles from './css/FileModal.module.css';
+
+const indexJSON = import('json/disks/index.json');
 
 const DISK_TYPES: FilePickerAcceptType[] = [
     {
@@ -19,21 +20,6 @@ const DISK_TYPES: FilePickerAcceptType[] = [
         accept: { 'application/octet-stream': NIBBLE_FORMATS.map(x => '.' + x) },
     }
 ];
-
-const categories = index.reduce<Record<string, DiskDescriptor[]>>(
-    (
-        acc: Record<string, DiskDescriptor[]>,
-        disk: DiskDescriptor
-    ) => {
-        const category = disk.category || 'Misc';
-        acc[category] = [disk, ...(acc[category] || [])];
-
-        return acc;
-    },
-    {}
-);
-
-const categoryNames = Object.keys(categories).sort();
 
 export type NibbleFileCallback = (
     name: string,
@@ -48,6 +34,12 @@ interface FileModalProps {
     onClose: (closeBox?: boolean) => void;
 }
 
+interface IndexEntry {
+    filename: string;
+    name: string;
+    category: string;
+}
+
 export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) => {
     const [busy, setBusy] = useState<boolean>(false);
     const [empty, setEmpty] = useState<boolean>(true);
@@ -55,7 +47,15 @@ export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) =>
     const [handles, setHandles] = useState<FileSystemFileHandle[]>();
     const [filename, setFilename] = useState<string>();
     const [error, setError] = useState<unknown>();
+    const [index, setIndex] = useState<IndexEntry[]>();
     const hash = useHash();
+
+    useEffect(() => {
+        spawn(async () => {
+            const index = (await indexJSON).default;
+            setIndex(index);
+        });
+    }, []);
 
     const doCancel = useCallback(() => onClose(true), [onClose]);
 
@@ -101,6 +101,24 @@ export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) =>
             setFilename(event.currentTarget.value);
         }, []
     );
+
+    if (!index) {
+        return null;
+    }
+
+    const categories = index.reduce<Record<string, DiskDescriptor[]>>(
+        (
+            acc: Record<string, DiskDescriptor[]>,
+            disk: DiskDescriptor
+        ) => {
+            const category = disk.category || 'Misc';
+            acc[category] = [disk, ...(acc[category] || [])];
+
+            return acc;
+        },
+        {}
+    );
+    const categoryNames = Object.keys(categories).sort();
 
     const disks = category ? categories[category] : [];
 
