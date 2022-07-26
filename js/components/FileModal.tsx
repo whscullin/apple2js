@@ -12,8 +12,6 @@ import { FileChooser, FilePickerAcceptType } from './FileChooser';
 
 import styles from './css/FileModal.module.css';
 
-const indexJSON = import('json/disks/index.json');
-
 const DISK_TYPES: FilePickerAcceptType[] = [
     {
         description: 'Disk Images',
@@ -52,8 +50,15 @@ export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) =>
 
     useEffect(() => {
         spawn(async () => {
-            const index = (await indexJSON).default;
-            setIndex(index);
+            try {
+                const indexRequest = fetch('/json/disks/index.json');
+                const indexResponse = await indexRequest;
+                const index = await indexResponse.json() as IndexEntry[];
+                setIndex(index);
+            } catch (error) {
+                setIndex([]);
+                setError(error);
+            }
         });
     }, []);
 
