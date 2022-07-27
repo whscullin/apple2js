@@ -158,6 +158,7 @@ export default class IntBasicDump {
         do {
             let inRem = false;
             let inQuote = false;
+            let isAlphaNum = false;
             /* const length = */ this.readByte(addr++);
             const lineno = this.readWord(addr);
             addr += 2;
@@ -167,7 +168,7 @@ export default class IntBasicDump {
             let val = 0;
             do {
                 val = this.readByte(addr++);
-                if (!inRem && !inQuote && val >= 0xB0 && val <= 0xB9) {
+                if (!inRem && !inQuote && !isAlphaNum && val >= 0xB0 && val <= 0xB9) {
                     str += this.readWord(addr);
                     addr += 2;
                 } else if (val < 0x80 && val > 0x01) {
@@ -178,7 +179,12 @@ export default class IntBasicDump {
                     if (val === 0x28) { inQuote = true; }
                     if (val === 0x29) { inQuote = false; }
                     if (val === 0x5d) { inRem = true; }
-                } else if (val > 0x80) { str += LETTERS[val - 0x80]; }
+                    isAlphaNum = false;
+                } else if (val > 0x80) {
+                    const char = LETTERS[val - 0x80];
+                    str += char;
+                    isAlphaNum = /[A-Z0-9]/.test(char);
+                }
             } while (val !== 0x01);
             str += '\n';
         } while (addr < himem);
