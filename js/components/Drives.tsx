@@ -115,7 +115,7 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
                             setTotal(0);
                         }));
                     } else {
-                        const url = isHttp ? hashPart : `/json/disks/${hashPart}.json`;
+                        const url = isHttp ? hashPart : `json/disks/${hashPart}.json`;
                         loadJSON(disk2, drive, url).catch((e) => setError(e));
                     }
                 }
@@ -132,7 +132,7 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
         const setSmartData = [setSmartData1, setSmartData2];
         const callbacks: Callbacks = {
             driveLight: (drive, on) => {
-                setData[drive - 1]?.(data => ({...data, on }));
+                setData[drive - 1]?.(data => ({ ...data, on }));
             },
             label: (drive, name, side) => {
                 setData[drive - 1]?.(data => ({
@@ -148,7 +148,7 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
 
         const smartPortCallbacks: Callbacks = {
             driveLight: (drive, on) => {
-                setSmartData[drive - 1]?.(data => ({...data, on }));
+                setSmartData[drive - 1]?.(data => ({ ...data, on }));
             },
             label: (drive, name, side) => {
                 setSmartData[drive - 1]?.(data => ({
@@ -157,7 +157,7 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
                     side,
                 }));
             },
-            dirty: () => {/* Unused */}
+            dirty: () => {/* Unused */ }
         };
 
         if (cpu && io) {

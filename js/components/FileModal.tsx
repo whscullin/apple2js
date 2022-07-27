@@ -51,8 +51,7 @@ export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) =>
     useEffect(() => {
         spawn(async () => {
             try {
-                const indexRequest = fetch('json/disks/index.json');
-                const indexResponse = await indexRequest;
+                const indexResponse = await fetch('json/disks/index.json');
                 const index = await indexResponse.json() as IndexEntry[];
                 setIndex(index);
             } catch (error) {
@@ -125,7 +124,7 @@ export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) =>
     );
     const categoryNames = Object.keys(categories).sort();
 
-    const disks = category ? categories[category] : [];
+    const disks = category ? categories[category].sort() : [];
 
     return (
         <>
