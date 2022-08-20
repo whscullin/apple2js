@@ -335,7 +335,7 @@ export interface TrackNibble {
  * @param sector sector number to read
  * @returns An array of sector data bytes.
  */
-export function findSector(disk: NibbleDisk, track: byte, sector: byte): TrackNibble | null {
+export function findSector(disk: NibbleDisk, track: byte, sector: byte): TrackNibble {
     const _sector = disk.format === 'po' ? _PO[sector] : _DO[sector];
     let val, state = 0;
     let idx = 0;
@@ -385,7 +385,22 @@ export function findSector(disk: NibbleDisk, track: byte, sector: byte): TrackNi
                 break;
             case 4: // Data
                 if (s === _sector && t === track) {
-                    return { track, sector, nibble: idx };
+                    // Save start of data
+                    const nibble = idx;
+
+                    // Do checksum on data
+                    let last = 0;
+                    for (let jdx = 0; jdx < 0x156; jdx++) {
+                        last = detrans62[_readNext() - 0x80] ^ last;
+                    }
+                    const checkSum = detrans62[_readNext() - 0x80] ^ last;
+                    // Validate checksum before returning
+                    if (!checkSum) {
+                        return { track, sector, nibble };
+                    } else {
+                        debug('Invalid data checksum:', toHex(last), toHex(track), toHex(sector), toHex(checkSum));
+                    }
+                    _skipBytes(3); // Skip footer
                 }
                 else
                     _skipBytes(0x159); // Skip data, checksum and footer
@@ -395,7 +410,7 @@ export function findSector(disk: NibbleDisk, track: byte, sector: byte): TrackNi
                 break;
         }
     }
-    return null;
+    throw new Error(`Unable to locate track ${track}, sector ${sector}`);
 }
 
 /**
@@ -410,20 +425,17 @@ export function findSector(disk: NibbleDisk, track: byte, sector: byte): TrackNi
  */
 export function readSector(disk: NibbleDisk, track: byte, sector: byte): Uint8Array {
     const trackNibble = findSector(disk, track, sector);
-    if (!trackNibble) {
-        return new Uint8Array(0);
-    }
     const { nibble } = trackNibble;
     const cur = disk.tracks[track];
 
     let idx = nibble;
-    function _readNext() {
+    const _readNext = () => {
         const result = cur[idx++];
-        if (nibble >= cur.length) {
+        if (idx >= cur.length) {
             idx = 0;
         }
         return result;
-    }
+    };
 
     const data = new Uint8Array(256);
     const data2 = [];
@@ -443,6 +455,7 @@ export function readSector(disk: NibbleDisk, track: byte, sector: byte): Uint8Ar
     const checkSum = detrans62[_readNext() - 0x80] ^ last;
     if (checkSum) {
         debug('Invalid data checksum:', toHex(last), toHex(track), toHex(sector), toHex(checkSum));
+        throw new Error(`Unable to read track ${track}, sector ${sector}`);
     }
     for (let kdx = 0, jdx = 0x55; kdx < 0x100; kdx++) {
         data[kdx] <<= 1;
