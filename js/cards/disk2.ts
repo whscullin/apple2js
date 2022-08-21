@@ -942,25 +942,29 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
             return;
         }
 
-        this.worker = new Worker('dist/format_worker.bundle.js');
+        try {
+            this.worker = new Worker('dist/format_worker.bundle.js');
 
-        this.worker.addEventListener('message', (message: MessageEvent<FormatWorkerResponse>) => {
-            const { data } = message;
-            switch (data.type) {
-                case DISK_PROCESSED:
-                    {
-                        const { drive, disk } = data.payload;
-                        if (disk) {
-                            const cur = this.drives[drive - 1];
-                            Object.assign(cur, disk);
-                            const { name, side } = cur;
-                            this.updateDirty(drive, true);
-                            this.callbacks.label(drive, name, side);
+            this.worker.addEventListener('message', (message: MessageEvent<FormatWorkerResponse>) => {
+                const { data } = message;
+                switch (data.type) {
+                    case DISK_PROCESSED:
+                        {
+                            const { drive, disk } = data.payload;
+                            if (disk) {
+                                const cur = this.drives[drive - 1];
+                                Object.assign(cur, disk);
+                                const { name, side } = cur;
+                                this.updateDirty(drive, true);
+                                this.callbacks.label(drive, name, side);
+                            }
                         }
-                    }
-                    break;
-            }
-        });
+                        break;
+                }
+            });
+        } catch (e: unknown) {
+            console.error(e);
+        }
     }
 
     // TODO(flan): Does not work with WOZ or D13 disks

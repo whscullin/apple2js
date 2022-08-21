@@ -37,8 +37,8 @@ export class Audio implements OptionHandler {
         });
 
         if (window.AudioWorklet) {
-            this.ready = this.audioContext.audioWorklet.addModule('./dist/audio_worker.bundle.js');
-            this.ready
+            const workletReady = this.audioContext.audioWorklet.addModule('./dist/audio_worker.bundle.js');
+            this.ready = workletReady
                 .then(() => {
                     this.workletNode = new AudioWorkletNode(this.audioContext, 'audio_worker');
 
