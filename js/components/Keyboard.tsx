@@ -5,9 +5,9 @@ import { Apple2 as Apple2Impl } from '../apple2';
 import {
     keys2,
     keys2e,
-    mapKeyEvent,
     mapMouseEvent,
-    keysAsTuples
+    keysAsTuples,
+    mapKeyboardEvent
 } from './util/keyboard';
 
 import styles from './css/Keyboard.module.css';
@@ -115,22 +115,55 @@ export const Keyboard = ({ apple2, e }: KeyboardProps) => {
     // Set global keystroke handler
     useEffect(() => {
         const keyDown = (event: KeyboardEvent) => {
+            if (!apple2) {
+                return;
+            }
+
             if (document.activeElement && document.activeElement !== document.body) {
                 return;
             }
+
             event.preventDefault();
-            const key = mapKeyEvent(event, active.includes('LOCK'));
-            if (key !== 0xff) {
-                // CTRL-SHIFT-DELETE for reset
-                if (key === 0x7F && event.shiftKey && event.ctrlKey) {
-                    apple2?.reset();
-                } else {
-                    apple2?.getIO().keyDown(key);
-                }
+
+            const {key, keyCode, keyLabel} = mapKeyboardEvent(event, active.includes('LOCK'), active.includes('CTRL'));
+            setPressed(pressed => pressed.concat([keyLabel]));
+            setActive(active => active.concat([keyLabel]));
+
+            if (key === 'RESET') {
+                apple2.reset();
+                return;
+            }
+
+            const io = apple2.getIO();
+            if (key === 'OPEN_APPLE') {
+                io.buttonDown(0, true);
+                return;
+            }
+            if (key === 'CLOSED_APPLE') {
+                io.buttonDown(1, true);
+                return;
+            }
+
+            if (keyCode !== 0xff) {
+                apple2.getIO().keyDown(keyCode);
             }
         };
-        const keyUp = () => {
-            apple2?.getIO().keyUp();
+        const keyUp = (event: KeyboardEvent) => {
+            if (!apple2) {
+                return;
+            }
+            const {key, keyLabel} = mapKeyboardEvent(event);
+            setPressed(pressed => pressed.filter(k => k !== keyLabel));
+            setActive(active => active.filter(k => k !== keyLabel));
+
+            const io = apple2.getIO();
+            if (key === 'OPEN_APPLE') {
+                io.buttonDown(0, false);
+            }
+            if (key === 'CLOSED_APPLE') {
+                io.buttonDown(1, false);
+            }
+            apple2.getIO().keyUp();
         };
         document.addEventListener('keydown', keyDown);
         document.addEventListener('keyup', keyUp);
@@ -146,6 +179,8 @@ export const Keyboard = ({ apple2, e }: KeyboardProps) => {
             if (!apple2) {
                 return;
             }
+            // Sometimes control-clicking will open a menu, so don't do that.
+            event.preventDefault();
             const toggleActive = (key: string) => {
                 if (!active.includes(key)) {
                     setActive([...active, key]);
@@ -212,7 +247,7 @@ export const Keyboard = ({ apple2, e }: KeyboardProps) => {
             lower={lower}
             upper={upper}
             active={active.includes(lower)}
-            pressed={pressed.includes(upper)}
+            pressed={pressed.includes(lower)}
             onMouseDown={onMouseDown}
             onMouseUp={onMouseUp}
         />;
