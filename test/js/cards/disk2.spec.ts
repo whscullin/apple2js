@@ -21,14 +21,14 @@ const PHASES_PER_TRACK = 2;
 
 function setTrack(diskII: DiskII, track: number) {
     const initialState = diskII.getState();
-    initialState.drives[0].track = track * STEPS_PER_TRACK;
-    initialState.drives[0].phase = (track * PHASES_PER_TRACK) % 4 as Phase;
+    initialState.drives[1].track = track * STEPS_PER_TRACK;
+    initialState.drives[1].phase = (track * PHASES_PER_TRACK) % 4 as Phase;
     diskII.setState(initialState);
 }
 
 function setWriteProtected(diskII: DiskII, isWriteProtected: boolean) {
     const initialState = diskII.getState();
-    initialState.drives[0].readOnly = isWriteProtected;
+    initialState.drives[1].readOnly = isWriteProtected;
     diskII.setState(initialState);
 }
 
@@ -71,9 +71,9 @@ describe('DiskII', () => {
         state.latch = 0x42;
         state.on = true;
         state.writeMode = true;
-        state.drives[1].tracks[14][12] = 0x80;
-        state.drives[1].head = 1000;
-        state.drives[1].phase = 3;
+        state.drives[2].tracks[14][12] = 0x80;
+        state.drives[2].head = 1000;
+        state.drives[2].phase = 3;
         diskII.setState(state);
 
         expect(diskII.getState()).toEqual(state);
@@ -175,8 +175,8 @@ describe('DiskII', () => {
             diskII.ioSwitch(0x84);  // coil 2 off
 
             const state = diskII.getState();
-            expect(state.drives[0].phase).toBe(0);
-            expect(state.drives[0].track).toBe(0);
+            expect(state.drives[1].phase).toBe(0);
+            expect(state.drives[1].track).toBe(0);
         });
 
         it('allows head positioning when the drive is on', () => {
@@ -192,8 +192,8 @@ describe('DiskII', () => {
             diskII.ioSwitch(0x84);  // coil 2 off
 
             const state = diskII.getState();
-            expect(state.drives[0].phase).toBe(2);
-            expect(state.drives[0].track).toBe(4);
+            expect(state.drives[1].phase).toBe(2);
+            expect(state.drives[1].track).toBe(4);
         });
 
         it('moves the head to track 2 from track 0 when all phases are cycled', () => {
@@ -213,8 +213,8 @@ describe('DiskII', () => {
             diskII.ioSwitch(0x80);  // coil 0 off
 
             const state = diskII.getState();
-            expect(state.drives[0].phase).toBe(0);
-            expect(state.drives[0].track).toBe(2 * STEPS_PER_TRACK);
+            expect(state.drives[1].phase).toBe(0);
+            expect(state.drives[1].track).toBe(2 * STEPS_PER_TRACK);
         });
 
         it('moves the head to track 10 from track 8 when all phases are cycled', () => {
@@ -235,8 +235,8 @@ describe('DiskII', () => {
             diskII.ioSwitch(0x80);  // coil 0 off
 
             const state = diskII.getState();
-            expect(state.drives[0].phase).toBe(0);
-            expect(state.drives[0].track).toBe(10 * STEPS_PER_TRACK);
+            expect(state.drives[1].phase).toBe(0);
+            expect(state.drives[1].track).toBe(10 * STEPS_PER_TRACK);
         });
 
         it('stops the head at track 34', () => {
@@ -261,14 +261,14 @@ describe('DiskII', () => {
             diskII.ioSwitch(0x80);  // coil 0 off
 
             const state = diskII.getState();
-            expect(state.drives[0].phase).toBe(0);
+            expect(state.drives[1].phase).toBe(0);
             // The emulated Disk II puts data for track n on the
             // 4 quarter-tracks starting with n * STEPS_PER_TRACK.
             // On a real Disk II, the data would likely be on 3
             // quarter-tracks starting with n * STEPS_PER_TRACK - 1,
             // leaving 1 essentially blank quarter track at the
             // half-track.
-            expect(state.drives[0].track).toBe(35 * STEPS_PER_TRACK - 1);
+            expect(state.drives[1].track).toBe(35 * STEPS_PER_TRACK - 1);
         });
 
         it('moves a half track when only one phase is activated', () => {
@@ -283,8 +283,8 @@ describe('DiskII', () => {
             diskII.ioSwitch(0x86);  // coil 3 off
 
             const state = diskII.getState();
-            expect(state.drives[0].phase).toBe(3);
-            expect(state.drives[0].track).toBe(15 * STEPS_PER_TRACK + 2);
+            expect(state.drives[1].phase).toBe(3);
+            expect(state.drives[1].track).toBe(15 * STEPS_PER_TRACK + 2);
         });
 
         it('moves backward one track when phases are cycled in reverse', () => {
@@ -301,8 +301,8 @@ describe('DiskII', () => {
             diskII.ioSwitch(0x80);  // coil 0 off
 
             const state = diskII.getState();
-            expect(state.drives[0].phase).toBe(0);
-            expect(state.drives[0].track).toBe(14 * STEPS_PER_TRACK);
+            expect(state.drives[1].phase).toBe(0);
+            expect(state.drives[1].track).toBe(14 * STEPS_PER_TRACK);
         });
 
         it('moves backward two tracks when all phases are cycled in reverse', () => {
@@ -323,8 +323,8 @@ describe('DiskII', () => {
             diskII.ioSwitch(0x84);  // coil 2 off
 
             const state = diskII.getState();
-            expect(state.drives[0].phase).toBe(2);
-            expect(state.drives[0].track).toBe(13 * STEPS_PER_TRACK);
+            expect(state.drives[1].phase).toBe(2);
+            expect(state.drives[1].track).toBe(13 * STEPS_PER_TRACK);
         });
 
         it('does not move backwards past track 0', () => {
@@ -345,8 +345,8 @@ describe('DiskII', () => {
             diskII.ioSwitch(0x84);  // coil 2 off
 
             const state = diskII.getState();
-            expect(state.drives[0].phase).toBe(2);
-            expect(state.drives[0].track).toBe(0);
+            expect(state.drives[1].phase).toBe(2);
+            expect(state.drives[1].track).toBe(0);
         });
 
         it('moves backward one half track', () => {
@@ -361,8 +361,8 @@ describe('DiskII', () => {
             diskII.ioSwitch(0x82);  // coil 1 off
 
             const state = diskII.getState();
-            expect(state.drives[0].phase).toBe(1);
-            expect(state.drives[0].track).toBe(14.5 * STEPS_PER_TRACK);
+            expect(state.drives[1].phase).toBe(1);
+            expect(state.drives[1].track).toBe(14.5 * STEPS_PER_TRACK);
         });
 
         // The emulated Disk II is not able to step quarter tracks because
@@ -378,8 +378,8 @@ describe('DiskII', () => {
             diskII.ioSwitch(0x87);  // coil 3 on
 
             const state = diskII.getState();
-            expect(state.drives[0].phase).toBe(3);
-            expect(state.drives[0].track).toBe(15 * STEPS_PER_TRACK + 1);
+            expect(state.drives[1].phase).toBe(3);
+            expect(state.drives[1].track).toBe(15 * STEPS_PER_TRACK + 1);
         });
 
         // The emulated Disk II is not able to step quarter tracks because
@@ -395,8 +395,8 @@ describe('DiskII', () => {
             diskII.ioSwitch(0x83);  // coil 1 on
 
             const state = diskII.getState();
-            expect(state.drives[0].phase).toBe(1);
-            expect(state.drives[0].track).toBe(14.25 * STEPS_PER_TRACK);
+            expect(state.drives[1].phase).toBe(1);
+            expect(state.drives[1].track).toBe(14.25 * STEPS_PER_TRACK);
         });
     });
 
@@ -478,21 +478,21 @@ describe('DiskII', () => {
         it('writes a nibble to the disk', () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
             diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
-            let track0 = diskII.getState().drives[0].tracks[0];
+            let track0 = diskII.getState().drives[1].tracks[0];
             expect(track0[0]).toBe(0xFF);
 
             diskII.ioSwitch(0x89);        // turn on the motor
             diskII.ioSwitch(0x8F, 0x80);  // write
             diskII.ioSwitch(0x8C);        // shift
 
-            track0 = diskII.getState().drives[0].tracks[0];
+            track0 = diskII.getState().drives[1].tracks[0];
             expect(track0[0]).toBe(0x80);
         });
 
         it('writes two nibbles to the disk', () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
             diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
-            let track0 = diskII.getState().drives[0].tracks[0];
+            let track0 = diskII.getState().drives[1].tracks[0];
             expect(track0[0]).toBe(0xFF);
 
             diskII.ioSwitch(0x89);        // turn on the motor
@@ -501,7 +501,7 @@ describe('DiskII', () => {
             diskII.ioSwitch(0x8F, 0x81);  // write
             diskII.ioSwitch(0x8C);        // shift
 
-            track0 = diskII.getState().drives[0].tracks[0];
+            track0 = diskII.getState().drives[1].tracks[0];
             expect(track0[0]).toBe(0x80);
             expect(track0[1]).toBe(0x81);
         });
@@ -510,7 +510,7 @@ describe('DiskII', () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
             diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
             let state = diskII.getState();
-            state.drives[0].dirty = false;
+            state.drives[1].dirty = false;
             diskII.setState(state);
             jest.resetAllMocks();
 
@@ -522,7 +522,7 @@ describe('DiskII', () => {
             expect(callbacks.dirty).toHaveBeenCalledWith(1, true);
 
             state = diskII.getState();
-            expect(state.drives[0].dirty).toBeTruthy();
+            expect(state.drives[1].dirty).toBeTruthy();
         });
     });
 
@@ -557,11 +557,11 @@ describe('DiskII', () => {
             diskII.ioSwitch(0x84);  // coil 2 off
 
             const state = diskII.getState();
-            expect(state.drives[0].phase).toBe(2);
+            expect(state.drives[1].phase).toBe(2);
             // For WOZ images, the number of tracks is the number in the image.
             // The DOS3.3 System Master was imaged on a 40 track drive, so it
             // has data for all 40 tracks, even though the last few are garbage.
-            expect(state.drives[0].track).toBe(40 * STEPS_PER_TRACK - 1);
+            expect(state.drives[1].track).toBe(40 * STEPS_PER_TRACK - 1);
         });
 
         it('spins the disk when motor is on', () => {
@@ -572,14 +572,14 @@ describe('DiskII', () => {
             diskII.setBinary(1, 'DOS 3.3 System Master', 'woz', DOS33_SYSTEM_MASTER_IMAGE);
 
             let state = diskII.getState();
-            expect(state.drives[0].head).toBe(0);
+            expect(state.drives[1].head).toBe(0);
 
             diskII.ioSwitch(0x89);  // turn on the motor
             cycles += 10;
             diskII.tick();
 
             state = diskII.getState();
-            expect(state.drives[0].head).toBeGreaterThan(0);
+            expect(state.drives[1].head).toBeGreaterThan(0);
         });
 
         it('does not spin the disk when motor is off', () => {
@@ -590,13 +590,13 @@ describe('DiskII', () => {
             diskII.setBinary(1, 'DOS 3.3 System Master', 'woz', DOS33_SYSTEM_MASTER_IMAGE);
 
             let state = diskII.getState();
-            expect(state.drives[0].head).toBe(0);
+            expect(state.drives[1].head).toBe(0);
 
             cycles += 10;
             diskII.tick();
 
             state = diskII.getState();
-            expect(state.drives[0].head).toBe(0);
+            expect(state.drives[1].head).toBe(0);
         });
 
         it('reads an FF sync byte from the beginning of the image', () => {
