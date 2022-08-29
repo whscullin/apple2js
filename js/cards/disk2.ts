@@ -139,11 +139,10 @@ type Phase = 0 | 1 | 2 | 3;
  * head momentum.
  *
  * Examining the https://computerhistory.org/blog/apple-ii-dos-source-code/,
- * one finds that the SEEK routine on line 4831 of `appdos31.lst`. It uses
- * `ONTABLE` and `OFFTABLE` (each 12 bytes) to know exactly how many
- * microseconds to power on/off each coil as the head accelerates. At the end,
- * the final coil is left powered on 9.5 milliseconds to ensure the head has
- * settled.
+ * one finds the SEEK routine on line 4831 of `appdos31.lst`. It uses `ONTABLE`
+ * and `OFFTABLE` (each 12 bytes) to know exactly how many microseconds to
+ * power on/off each coil as the head accelerates. At the end, the final coil
+ * is left powered on 9.5 milliseconds to ensure the head has settled.
  *
  * https://embeddedmicro.weebly.com/apple-2iie.html shows traces of the boot
  * seek (which is slightly different) and a regular seek.
@@ -154,12 +153,20 @@ const PHASE_DELTA = [
     [-2, -1, 0, 1],
     [1, -2, -1, 0]
 ] as const;
+
+/** Callbacks triggered by events of the drive or controller. */
 export interface Callbacks {
+    /** Called when a drive turns on or off. */
     driveLight: (drive: DriveNumber, on: boolean) => void;
+    /**
+     * Called when a disk has been written to. For performance and integrity,
+     * this is only called when the drive stops spinning or is removed from
+     * the drive.
+     */
     dirty: (drive: DriveNumber, dirty: boolean) => void;
+    /** Called when a disk is inserted or removed from the drive. */
     label: (drive: DriveNumber, name?: string, side?: string) => void;
 }
-
 /** Common information for Nibble and WOZ disks. */
 
 interface BaseDrive {
@@ -228,7 +235,7 @@ interface State {
     drives: DriveState[];
     skip: number;
     latch: number;
-    writeMode: boolean;
+    q7: boolean;
     on: boolean;
     drive: DriveNumber;
 }
@@ -350,8 +357,6 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
     private q6 = 0;
     /** Q7 (Read/Write): Used by WOZ disks. */
     private q7: boolean = false;
-    /** Q7 (Read/Write): Used by Nibble disks. */
-    private writeMode = false;
     /** Whether the selected drive is on. */
     private on = false;
     /** Current drive number (1, 2). */
@@ -534,14 +539,14 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         if (!isNibbleDrive(this.cur)) {
             return;
         }
-        if (this.on && (this.skip || this.writeMode)) {
+        if (this.on && (this.skip || this.q7)) {
             const track = this.cur.tracks[this.cur.track >> 2];
             if (track && track.length) {
                 if (this.cur.head >= track.length) {
                     this.cur.head = 0;
                 }
 
-                if (this.writeMode) {
+                if (this.q7) {
                     if (!this.cur.readOnly) {
                         track[this.cur.head] = this.bus;
                         if (!this.cur.dirty) {
@@ -687,7 +692,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
 
             case LOC.DRIVEREAD: // 0x0c (Q6L) Shift
                 this.q6 = 0;
-                if (this.writeMode) {
+                if (this.q7) {
                     this.debug('clearing _q6/SHIFT');
                 }
                 if (isNibbleDrive(this.cur)) {
@@ -697,11 +702,11 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
 
             case LOC.DRIVEWRITE: // 0x0d (Q6H) LOAD
                 this.q6 = 1;
-                if (this.writeMode) {
+                if (this.q7) {
                     this.debug('setting _q6/LOAD');
                 }
                 if (isNibbleDrive(this.cur)) {
-                    if (readMode && !this.writeMode) {
+                    if (readMode && !this.q7) {
                         if (this.cur.readOnly) {
                             this.latch = 0xff;
                             this.debug('Setting readOnly');
@@ -716,12 +721,10 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
             case LOC.DRIVEREADMODE:  // 0x0e (Q7L)
                 this.debug('Read Mode');
                 this.q7 = false;
-                this.writeMode = false;
                 break;
             case LOC.DRIVEWRITEMODE: // 0x0f (Q7H)
                 this.debug('Write Mode');
                 this.q7 = true;
-                this.writeMode = true;
                 break;
 
             default:
@@ -773,7 +776,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
     reset() {
         if (this.on) {
             this.callbacks.driveLight(this.drive, false);
-            this.writeMode = false;
+            this.q7 = false;
             this.on = false;
             this.drive = 1;
             this.cur = this.drives[this.drive];
@@ -795,7 +798,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
             drives: [] as DriveState[],
             skip: this.skip,
             latch: this.latch,
-            writeMode: this.writeMode,
+            q7: this.q7,
             on: this.on,
             drive: this.drive
         };
@@ -808,7 +811,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
     setState(state: State) {
         this.skip = state.skip;
         this.latch = state.latch;
-        this.writeMode = state.writeMode;
+        this.q7 = state.q7;
         this.on = state.on;
         this.drive = state.drive;
         for (const d of DRIVE_NUMBERS) {
