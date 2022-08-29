@@ -12,12 +12,13 @@ import Thunderclock from './cards/thunderclock';
 import VideoTerm from './cards/videoterm';
 
 import { Apple2 } from './apple2';
+import { SupportedSectors } from './formats/types';
 
 const prefs = new Prefs();
 const romVersion = prefs.readPref('computer_type2');
 let rom: string;
 let characterRom: string;
-let sectors = 16;
+let sectors: SupportedSectors = 16;
 
 switch (romVersion) {
     case 'apple2':

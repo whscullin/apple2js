@@ -4,7 +4,7 @@ import type {
     Card,
     memory,
     nibble,
-    rom,
+    ReadonlyUint8Array,
 } from '../types';
 
 import {
@@ -23,6 +23,7 @@ import {
     MassStorage,
     MassStorageData,
     DiskMetadata,
+    SupportedSectors,
 } from '../formats/types';
 
 import {
@@ -121,6 +122,18 @@ const SEQUENCER_ROM_16 = [
     0xFD, 0xFD, 0xF8, 0xF8, 0x0A, 0x0A, 0x0A, 0x0A, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, // E
     0xDD, 0x4D, 0xE0, 0xE0, 0x0A, 0x0A, 0x0A, 0x0A, 0x88, 0x88, 0x08, 0x08, 0x88, 0x88, 0x08, 0x08  // F
 ] as const;
+
+/** Contents of the P6 sequencer ROM. */
+const SEQUENCER_ROM: Record<SupportedSectors, ReadonlyArray<byte>> = {
+    13: SEQUENCER_ROM_13,
+    16: SEQUENCER_ROM_16,
+};
+
+/** Contents of the P5 ROM at 0xCnXX. */
+const BOOTSTRAP_ROM: Record<SupportedSectors, ReadonlyUint8Array> = {
+    13: BOOTSTRAP_ROM_13,
+    16: BOOTSTRAP_ROM_16,
+};
 
 type LssClockCycle = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 type Phase = 0 | 1 | 2 | 3;
@@ -380,20 +393,13 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
      */
     private zeros = 0;
 
-    /** Contents of the P5 ROM at 0xCnXX. */
-    private bootstrapRom: rom;
-    /** Contents of the P6 ROM. */
-    private sequencerRom: typeof SEQUENCER_ROM_16 | typeof SEQUENCER_ROM_13;
-
     private worker: Worker;
 
     /** Builds a new Disk ][ card. */
-    constructor(private io: Apple2IO, private callbacks: Callbacks, private sectors = 16) {
+    constructor(private io: Apple2IO, private callbacks: Callbacks, private sectors: SupportedSectors = 16) {
         this.debug('Disk ][');
 
         this.lastCycles = this.io.cycles();
-        this.bootstrapRom = this.sectors === 16 ? BOOTSTRAP_ROM_16 : BOOTSTRAP_ROM_13;
-        this.sequencerRom = this.sectors === 16 ? SEQUENCER_ROM_16 : SEQUENCER_ROM_13;
         // From the example in UtA2e, p. 9-29, col. 1, para. 1., this is
         // essentially the start of the sequencer loop and produces
         // correctly synced nibbles immediately.  Starting at state 0
@@ -481,7 +487,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
             idx |= this.q7 ? 0x08 : 0x00;
             idx |= this.state << 4;
 
-            const command = this.sequencerRom[idx];
+            const command = SEQUENCER_ROM[this.sectors][idx];
 
             this.debug(`clock: ${this.clock} state: ${toHex(this.state)} pulse: ${pulse} command: ${toHex(command)} q6: ${this.q6} latch: ${toHex(this.latch)}`);
 
@@ -761,7 +767,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
     }
 
     read(_page: byte, off: byte) {
-        return this.bootstrapRom[off];
+        return BOOTSTRAP_ROM[this.sectors][off];
     }
 
     write() {

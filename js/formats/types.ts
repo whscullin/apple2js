@@ -2,13 +2,15 @@ import type { byte, memory, MemberOf, word } from '../types';
 import type { GamepadConfiguration } from '../ui/types';
 import { InfoChunk } from './woz';
 
+export const SUPPORTED_SECTORS = [13, 16] as const;
+export type SupportedSectors = MemberOf<typeof SUPPORTED_SECTORS>;
+
 export const DRIVE_NUMBERS = [1, 2] as const;
 export type DriveNumber = MemberOf<typeof DRIVE_NUMBERS>;
 
 /**
  * Arguments for the disk format processors.
  */
-
 export interface DiskOptions {
     name: string;
     side?: string | undefined;
@@ -33,7 +35,6 @@ export interface DiskDescriptor {
 /**
  * JSON binary image (not used?)
  */
-
 export interface JSONBinaryImage {
     type: 'binary';
     start: word;
