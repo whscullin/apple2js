@@ -11,8 +11,7 @@ export default function createDiskFromDOS13(options: DiskOptions) {
     const disk: NibbleDisk = {
         format: 'd13',
         encoding: ENCODING_NIBBLE,
-        name,
-        side,
+        metadata: { name, side },
         volume,
         readOnly,
         tracks: []

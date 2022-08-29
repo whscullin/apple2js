@@ -13,8 +13,7 @@ export default function createDiskFromProDOS(options: DiskOptions) {
     const disk: NibbleDisk = {
         format: 'po',
         encoding: ENCODING_NIBBLE,
-        name,
-        side,
+        metadata: { name, side },
         volume: volume || 254,
         tracks: [],
         readOnly: readOnly || false,

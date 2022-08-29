@@ -43,13 +43,23 @@ export interface JSONBinaryImage {
 }
 
 /**
+ * Information about a disk image not directly related to the
+ * disk contents. For example, the name or even a scan of the
+ * disk label are "metadata", but the volume number is not.
+ */
+export interface DiskMetadata {
+    /** Displayed disk name */
+    name: string;
+    /** (Optional) Disk side (Front/Back, A/B) */
+    side?: string | undefined;
+}
+
+/**
  * Return value from disk format processors. Describes raw disk
  * data which the DiskII card can process.
  */
-
 export interface Disk {
-    name: string;
-    side?: string | undefined;
+    metadata: DiskMetadata;
     readOnly: boolean;
 }
 
@@ -215,7 +225,7 @@ export type FormatWorkerResponse =
     DiskProcessedResponse;
 
 export interface MassStorageData {
-    name: string;
+    metadata: DiskMetadata;
     ext: string;
     readOnly: boolean;
     volume?: byte;

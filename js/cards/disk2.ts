@@ -22,6 +22,7 @@ import {
     ENCODING_BITSTREAM,
     MassStorage,
     MassStorageData,
+    DiskMetadata,
 } from '../formats/types';
 
 import {
@@ -166,10 +167,6 @@ interface BaseDrive {
     format: NibbleFormat;
     /** Current disk volume number. */
     volume: byte;
-    /** Displayed disk name */
-    name: string;
-    /** (Optional) Disk side (Front/Back, A/B) */
-    side?: string | undefined;
     /** Quarter track position of read/write head. */
     track: byte;
     /** Position of the head on the track. */
@@ -180,6 +177,8 @@ interface BaseDrive {
     readOnly: boolean;
     /** Whether the drive has been written to since it was loaded. */
     dirty: boolean;
+    /** Metadata about the disk image */
+    metadata: DiskMetadata;
 }
 
 /** WOZ format track data from https://applesaucefdc.com/woz/reference2/. */
@@ -214,8 +213,6 @@ interface DriveState {
     format: NibbleFormat;
     encoding: typeof ENCODING_BITSTREAM | typeof ENCODING_NIBBLE;
     volume: byte;
-    name: string;
-    side?: string | undefined;
     tracks: memory[];
     track: byte;
     head: byte;
@@ -224,6 +221,7 @@ interface DriveState {
     dirty: boolean;
     trackMap: number[];
     rawTracks: Uint8Array[];
+    metadata: DiskMetadata;
 }
 
 interface State {
@@ -240,8 +238,6 @@ function getDriveState(drive: Drive): DriveState {
         format: drive.format,
         encoding: drive.encoding,
         volume: drive.volume,
-        name: drive.name,
-        side: drive.side,
         tracks: [],
         track: drive.track,
         head: drive.head,
@@ -250,6 +246,7 @@ function getDriveState(drive: Drive): DriveState {
         dirty: drive.dirty,
         trackMap: [],
         rawTracks: [],
+        metadata: { ...drive.metadata },
     };
 
     if (isNibbleDrive(drive)) {
@@ -273,14 +270,13 @@ function setDriveState(state: DriveState) {
             format: state.format,
             encoding: ENCODING_NIBBLE,
             volume: state.volume,
-            name: state.name,
-            side: state.side,
             tracks: [],
             track: state.track,
             head: state.head,
             phase: state.phase,
             readOnly: state.readOnly,
             dirty: state.dirty,
+            metadata: { ...state.metadata },
         };
         for (let idx = 0; idx < state.tracks.length; idx++) {
             result.tracks.push(new Uint8Array(state.tracks[idx]));
@@ -290,8 +286,6 @@ function setDriveState(state: DriveState) {
             format: state.format,
             encoding: ENCODING_BITSTREAM,
             volume: state.volume,
-            name: state.name,
-            side: state.side,
             track: state.track,
             head: state.head,
             phase: state.phase,
@@ -299,6 +293,7 @@ function setDriveState(state: DriveState) {
             dirty: state.dirty,
             trackMap: [...state.trackMap],
             rawTracks: [],
+            metadata: { ...state.metadata },
         };
         for (let idx = 0; idx < state.rawTracks.length; idx++) {
             result.rawTracks.push(new Uint8Array(state.rawTracks[idx]));
@@ -317,25 +312,25 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
             format: 'dsk',
             encoding: ENCODING_NIBBLE,
             volume: 254,
-            name: 'Disk 1',
             tracks: [],
             track: 0,
             head: 0,
             phase: 0,
             readOnly: false,
             dirty: false,
+            metadata: { name: 'Disk 1' },
         },
         2: {   // Drive 2
             format: 'dsk',
             encoding: ENCODING_NIBBLE,
             volume: 254,
-            name: 'Disk 2',
             tracks: [],
             track: 0,
             head: 0,
             phase: 0,
             readOnly: false,
             dirty: false,
+            metadata: { name: 'Disk 2' },
         }
     };
 
@@ -818,7 +813,8 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         this.drive = state.drive;
         for (const d of DRIVE_NUMBERS) {
             this.drives[d] = setDriveState(state.drives[d]);
-            const { name, side, dirty } = state.drives[d];
+            const { name, side } = state.drives[d].metadata;
+            const { dirty } = state.drives[d];
             this.callbacks.label(d, name, side);
             this.callbacks.driveLight(d, this.on);
             this.callbacks.dirty(d, dirty);
@@ -867,7 +863,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
                 const cur = this.drives[drive];
                 Object.assign(cur, disk);
                 this.updateDirty(drive, false);
-                this.callbacks.label(drive, disk.name, disk.side);
+                this.callbacks.label(drive, disk.metadata.name, disk.metadata.side);
                 return true;
             }
         }
@@ -925,7 +921,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
             const disk = createDisk(fmt, options);
             if (disk) {
                 const cur = this.drives[drive];
-                const { name, side } = cur;
+                const { name, side } = cur.metadata;
                 Object.assign(cur, disk);
                 this.updateDirty(drive, true);
                 this.callbacks.label(drive, name, side);
@@ -953,7 +949,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
                             if (disk) {
                                 const cur = this.drives[drive];
                                 Object.assign(cur, disk);
-                                const { name, side } = cur;
+                                const { name, side } = cur.metadata;
                                 this.updateDirty(drive, true);
                                 this.callbacks.label(drive, name, side);
                             }
@@ -972,7 +968,8 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         if (!isNibbleDrive(cur)) {
             return null;
         }
-        const { format, name, readOnly, tracks, volume } = cur;
+        const { format, readOnly, tracks, volume } = cur;
+        const { name } = cur.metadata;
         const len = format === 'nib' ?
             tracks.reduce((acc, track) => acc + track.length, 0) :
             this.sectors * tracks.length * 256;
@@ -995,7 +992,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
 
         return {
             ext,
-            name,
+            metadata: { name },
             data: data.buffer,
             readOnly,
             volume,

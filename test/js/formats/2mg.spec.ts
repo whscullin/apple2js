@@ -190,7 +190,7 @@ describe('2mg format', () => {
             }
             const disk: BlockDisk = {
                 blocks,
-                name: 'Good disk',
+                metadata: { name: 'Good disk' },
                 readOnly: false,
                 encoding: ENCODING_BLOCK,
             };

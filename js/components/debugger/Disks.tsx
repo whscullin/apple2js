@@ -254,7 +254,8 @@ const DiskInfo = ({ massStorage, drive, setFileData }: DiskInfoProps) => {
     const disk = useMemo(() => {
         const massStorageData = massStorage.getBinary(drive, 'po');
         if (massStorageData) {
-            const { name, data, readOnly, ext } = massStorageData;
+            const { data, readOnly, ext } = massStorageData;
+            const { name } = massStorageData.metadata;
             let disk: BlockDisk | NibbleDisk | null = null;
             if (ext === '2mg') {
                 disk = createDiskFrom2MG({

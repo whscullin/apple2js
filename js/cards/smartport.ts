@@ -523,7 +523,7 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
                         ),
                         encoding: ENCODING_BLOCK,
                         readOnly: disk.readOnly,
-                        name: disk.name,
+                        metadata: { ...disk.metadata },
                     };
                     return result;
                 }
@@ -540,7 +540,7 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
                     ),
                     encoding: ENCODING_BLOCK,
                     readOnly: disk.readOnly,
-                    name: disk.name,
+                    metadata: { ...disk.metadata },
                 };
                 return result;
             }
@@ -580,7 +580,8 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
         }
         const disk = this.disks[drive];
         const ext = this.ext[drive];
-        const { name, readOnly } = disk;
+        const { readOnly } = disk;
+        const { name } = disk.metadata;
         let data: ArrayBuffer;
         if (ext === '2mg') {
             data = create2MGFromBlockDisk(this.metadata[drive], disk);
@@ -593,7 +594,7 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
             data = byteArray.buffer;
         }
         return {
-            name,
+            metadata: { name },
             ext,
             data,
             readOnly,
