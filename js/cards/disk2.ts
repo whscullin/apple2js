@@ -367,9 +367,6 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
     /** Nibbles read this on cycle */
     private nibbleCount = 0;
 
-    /** Q0-Q3: Coil states. */
-    private q = [false, false, false, false];
-
     /** The 8-cycle LSS clock. */
     private clock: LssClockCycle = 0;
     /** Current CPU cycle count. */
@@ -608,8 +605,6 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         //     'Drive', _drive, 'track', toHex(_cur.track >> 2) + '.' + (_cur.track & 0x3),
         //     '(' + toHex(_cur.track) + ')',
         //     '[' + phase + ':' + (on ? 'on' : 'off') + ']');
-
-        this.q[phase] = on;
     }
 
     private access(off: byte, val?: byte) {
@@ -780,9 +775,6 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
             this.on = false;
             this.drive = 1;
             this.cur = this.drives[this.drive];
-        }
-        for (let idx = 0; idx < 4; idx++) {
-            this.q[idx] = false;
         }
     }
 
