@@ -167,6 +167,35 @@ const PHASE_DELTA = [
     [1, -2, -1, 0]
 ] as const;
 
+/**
+ * State of the controller.
+ */
+ interface ControllerState {
+    /** Sectors supported by the controller. */
+    sectors: SupportedSectors;
+
+    /** Is the active drive powered on? */
+    on: boolean;
+
+    /** The active drive. */
+    drive: DriveNumber;
+
+    /** The 8-cycle LSS clock. */
+    clock: LssClockCycle;
+    /** Current state of the Logic State Sequencer. */
+    state: nibble;
+
+    /** Q6 (Shift/Load) */
+    q6: boolean;
+    /** Q7 (Read/Write) */
+    q7: boolean;
+
+    /** Last data from the disk drive. */
+    latch: byte;
+    /** Last data written by the CPU to card softswitch 0x8D. */
+    bus: byte;
+}
+
 /** Callbacks triggered by events of the drive or controller. */
 export interface Callbacks {
     /** Called when a drive turns on or off. */
@@ -180,8 +209,8 @@ export interface Callbacks {
     /** Called when a disk is inserted or removed from the drive. */
     label: (drive: DriveNumber, name?: string, side?: string) => void;
 }
-/** Common information for Nibble and WOZ disks. */
 
+/** Common information for Nibble and WOZ disks. */
 interface BaseDrive {
     /** Current disk format. */
     format: NibbleFormat;
@@ -244,13 +273,12 @@ interface DriveState {
     metadata: DiskMetadata;
 }
 
+/** State of the controller for saving/restoring. */
+// TODO(flan): It's unclear whether reusing ControllerState here is a good idea.
 interface State {
     drives: DriveState[];
     skip: number;
-    latch: number;
-    q7: boolean;
-    on: boolean;
-    drive: DriveNumber;
+    controllerState: ControllerState;
 }
 
 function getDriveState(drive: Drive): DriveState {
@@ -354,38 +382,24 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         }
     };
 
+    private state: ControllerState;
+
     /**
      * When `1`, the next nibble will be available for read; when `0`,
      * the card is pretending to wait for data to be shifted in by the
      * sequencer.
      */
     private skip = 0;
-    /** Last data written by the CPU to card softswitch 0x8D. */
-    private bus = 0;
-    /** Drive data register. */
-    private latch = 0;
     /** Drive off timeout id or null. */
     private offTimeout: number | null = null;
-    /** Q6 (Shift/Load): Used by WOZ disks. */
-    private q6 = 0;
-    /** Q7 (Read/Write): Used by WOZ disks. */
-    private q7: boolean = false;
-    /** Whether the selected drive is on. */
-    private on = false;
-    /** Current drive number (1, 2). */
-    private drive: DriveNumber = 1;
     /** Current drive object. */
-    private cur = this.drives[this.drive];
+    private cur: Drive;
 
     /** Nibbles read this on cycle */
     private nibbleCount = 0;
 
-    /** The 8-cycle LSS clock. */
-    private clock: LssClockCycle = 0;
     /** Current CPU cycle count. */
     private lastCycles = 0;
-    /** Current state of the Logic State Sequencer. */
-    private state: nibble = 0;
     /**
      * Number of zeros read in a row. The Disk ][ can only read two zeros in a
      * row reliably; above that and the drive starts reporting garbage.  See
@@ -400,12 +414,24 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         this.debug('Disk ][');
 
         this.lastCycles = this.io.cycles();
-        // From the example in UtA2e, p. 9-29, col. 1, para. 1., this is
-        // essentially the start of the sequencer loop and produces
-        // correctly synced nibbles immediately.  Starting at state 0
-        // would introduce a spurrious 1 in the latch at the beginning,
-        // which requires reading several more sync bytes to sync up.
-        this.state = 2;
+        this.state = {
+            sectors,
+            bus: 0,
+            latch: 0,
+            drive: 1,
+            on: false,
+            q6: false,
+            q7: false,
+            clock: 0,
+            // From the example in UtA2e, p. 9-29, col. 1, para. 1., this is
+            // essentially the start of the sequencer loop and produces
+            // correctly synced nibbles immediately.  Starting at state 0
+            // would introduce a spurrious 1 in the latch at the beginning,
+            // which requires reading several more sync bytes to sync up.
+            state: 2,
+        };
+
+        this.cur = this.drives[this.state.drive];
 
         this.initWorker();
     }
@@ -465,10 +491,12 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         }
         const track =
             this.cur.rawTracks[this.cur.trackMap[this.cur.track]] || [0];
+        
+        const state = this.state;
 
         while (workCycles-- > 0) {
             let pulse: number = 0;
-            if (this.clock === 4) {
+            if (state.clock === 4) {
                 pulse = track[this.cur.head];
                 if (!pulse) {
                     // More than 2 zeros can not be read reliably.
@@ -482,47 +510,47 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
 
             let idx = 0;
             idx |= pulse ? 0x00 : 0x01;
-            idx |= this.latch & 0x80 ? 0x02 : 0x00;
-            idx |= this.q6 ? 0x04 : 0x00;
-            idx |= this.q7 ? 0x08 : 0x00;
-            idx |= this.state << 4;
+            idx |= state.latch & 0x80 ? 0x02 : 0x00;
+            idx |= state.q6 ? 0x04 : 0x00;
+            idx |= state.q7 ? 0x08 : 0x00;
+            idx |= state.state << 4;
 
             const command = SEQUENCER_ROM[this.sectors][idx];
 
-            this.debug(`clock: ${this.clock} state: ${toHex(this.state)} pulse: ${pulse} command: ${toHex(command)} q6: ${this.q6} latch: ${toHex(this.latch)}`);
+            this.debug(`clock: ${state.clock} state: ${toHex(state.state)} pulse: ${pulse} command: ${toHex(command)} q6: ${state.q6} latch: ${toHex(state.latch)}`);
 
             switch (command & 0xf) {
                 case 0x0: // CLR
-                    this.latch = 0;
+                    state.latch = 0;
                     break;
                 case 0x8: // NOP
                     break;
                 case 0x9: // SL0
-                    this.latch = (this.latch << 1) & 0xff;
+                    state.latch = (state.latch << 1) & 0xff;
                     break;
                 case 0xA: // SR
-                    this.latch >>= 1;
+                    state.latch >>= 1;
                     if (this.cur.readOnly) {
-                        this.latch |= 0x80;
+                        state.latch |= 0x80;
                     }
                     break;
                 case 0xB: // LD
-                    this.latch = this.bus;
-                    this.debug('Loading', toHex(this.latch), 'from bus');
+                    state.latch = state.bus;
+                    this.debug('Loading', toHex(state.latch), 'from bus');
                     break;
                 case 0xD: // SL1
-                    this.latch = ((this.latch << 1) | 0x01) & 0xff;
+                    state.latch = ((state.latch << 1) | 0x01) & 0xff;
                     break;
                 default:
                     this.debug(`unknown command: ${toHex(command & 0xf)}`);
             }
-            this.state = (command >> 4 & 0xF) as nibble;
+            state.state = (command >> 4 & 0xF) as nibble;
 
-            if (this.clock === 4) {
-                if (this.on) {
-                    if (this.q7) {
-                        track[this.cur.head] = this.state & 0x8 ? 0x01 : 0x00;
-                        this.debug('Wrote', this.state & 0x8 ? 0x01 : 0x00);
+            if (state.clock === 4) {
+                if (state.on) {
+                    if (state.q7) {
+                        track[this.cur.head] = state.state & 0x8 ? 0x01 : 0x00;
+                        this.debug('Wrote', state.state & 0x8 ? 0x01 : 0x00);
                     }
 
                     if (++this.cur.head >= track.length) {
@@ -531,8 +559,8 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
                 }
             }
 
-            if (++this.clock > 7) {
-                this.clock = 0;
+            if (++state.clock > 7) {
+                state.clock = 0;
             }
         }
     }
@@ -542,28 +570,29 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         if (!isNibbleDrive(this.cur)) {
             return;
         }
-        if (this.on && (this.skip || this.q7)) {
+        const state = this.state;
+        if (state.on && (this.skip || state.q7)) {
             const track = this.cur.tracks[this.cur.track >> 2];
             if (track && track.length) {
                 if (this.cur.head >= track.length) {
                     this.cur.head = 0;
                 }
 
-                if (this.q7) {
+                if (state.q7) {
                     if (!this.cur.readOnly) {
-                        track[this.cur.head] = this.bus;
+                        track[this.cur.head] = state.bus;
                         if (!this.cur.dirty) {
-                            this.updateDirty(this.drive, true);
+                            this.updateDirty(state.drive, true);
                         }
                     }
                 } else {
-                    this.latch = track[this.cur.head];
+                    state.latch = track[this.cur.head];
                 }
 
                 ++this.cur.head;
             }
         } else {
-            this.latch = 0;
+            state.latch = 0;
         }
         this.skip = (++this.skip % 2);
     }
@@ -582,7 +611,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         //       5. [...] enables head positioning [...]
         //
         // Therefore do nothing if no drive is on.
-        if (!this.on) {
+        if (!this.state.on) {
             this.debug(`ignoring phase ${phase}${on ? ' on' : ' off'}`);
             return;
         }
@@ -614,6 +643,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
     }
 
     private access(off: byte, val?: byte) {
+        const state = this.state;
         let result = 0;
         const readMode = val === undefined;
 
@@ -645,13 +675,13 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
 
             case LOC.DRIVEOFF: // 0x08
                 if (!this.offTimeout) {
-                    if (this.on) {
+                    if (state.on) {
                         // TODO(flan): This is fragile because it relies on
                         // wall-clock time instead of emulator time.
                         this.offTimeout = window.setTimeout(() => {
                             this.debug('Drive Off');
-                            this.on = false;
-                            this.callbacks.driveLight(this.drive, false);
+                            state.on = false;
+                            this.callbacks.driveLight(state.drive, false);
                             this.debug('nibbles read', this.nibbleCount);
                         }, 1000);
                     }
@@ -663,37 +693,37 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
                     window.clearTimeout(this.offTimeout);
                     this.offTimeout = null;
                 }
-                if (!this.on) {
+                if (!state.on) {
                     this.debug('Drive On');
                     this.nibbleCount = 0;
-                    this.on = true;
+                    state.on = true;
                     this.lastCycles = this.io.cycles();
-                    this.callbacks.driveLight(this.drive, true);
+                    this.callbacks.driveLight(state.drive, true);
                 }
                 break;
 
             case LOC.DRIVE1:  // 0x0a
                 this.debug('Disk 1');
-                this.drive = 1;
-                this.cur = this.drives[this.drive];
-                if (this.on) {
+                state.drive = 1;
+                this.cur = this.drives[state.drive];
+                if (state.on) {
                     this.callbacks.driveLight(2, false);
                     this.callbacks.driveLight(1, true);
                 }
                 break;
             case LOC.DRIVE2:  // 0x0b
                 this.debug('Disk 2');
-                this.drive = 2;
-                this.cur = this.drives[this.drive];
-                if (this.on) {
+                state.drive = 2;
+                this.cur = this.drives[state.drive];
+                if (state.on) {
                     this.callbacks.driveLight(1, false);
                     this.callbacks.driveLight(2, true);
                 }
                 break;
 
             case LOC.DRIVEREAD: // 0x0c (Q6L) Shift
-                this.q6 = 0;
-                if (this.q7) {
+                state.q6 = false;
+                if (state.q7) {
                     this.debug('clearing _q6/SHIFT');
                 }
                 if (isNibbleDrive(this.cur)) {
@@ -702,17 +732,17 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
                 break;
 
             case LOC.DRIVEWRITE: // 0x0d (Q6H) LOAD
-                this.q6 = 1;
-                if (this.q7) {
+                state.q6 = true;
+                if (state.q7) {
                     this.debug('setting _q6/LOAD');
                 }
                 if (isNibbleDrive(this.cur)) {
-                    if (readMode && !this.q7) {
+                    if (readMode && !state.q7) {
                         if (this.cur.readOnly) {
-                            this.latch = 0xff;
+                            state.latch = 0xff;
                             this.debug('Setting readOnly');
                         } else {
-                            this.latch = this.latch >> 1;
+                            state.latch = state.latch >> 1;
                             this.debug('Clearing readOnly');
                         }
                     }
@@ -721,11 +751,11 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
 
             case LOC.DRIVEREADMODE:  // 0x0e (Q7L)
                 this.debug('Read Mode');
-                this.q7 = false;
+                state.q7 = false;
                 break;
             case LOC.DRIVEWRITEMODE: // 0x0f (Q7H)
                 this.debug('Write Mode');
-                this.q7 = true;
+                state.q7 = true;
                 break;
 
             default:
@@ -739,7 +769,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
             // used to read the data register onto the CPU bus, although some
             // also cause conflicts with the disk controller commands.
             if ((off & 0x01) === 0) {
-                result = this.latch;
+                result = state.latch;
                 if (result & 0x80) {
                     this.nibbleCount++;
                 }
@@ -749,7 +779,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         } else {
             // It's not explicitly stated, but writes to any address set the
             // data register.
-            this.bus = val;
+            state.bus = val;
         }
 
         return result;
@@ -775,12 +805,13 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
     }
 
     reset() {
-        if (this.on) {
-            this.callbacks.driveLight(this.drive, false);
-            this.q7 = false;
-            this.on = false;
-            this.drive = 1;
-            this.cur = this.drives[this.drive];
+        const state = this.state;
+        if (state.on) {
+            this.callbacks.driveLight(state.drive, false);
+            state.q7 = false;
+            state.on = false;
+            state.drive = 1;
+            this.cur = this.drives[state.drive];
         }
     }
 
@@ -789,16 +820,10 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
     }
 
     getState(): State {
-        // TODO(flan): This does not accurately save state. It's missing
-        // all of the state for WOZ disks and the current status of the
-        // bus.
         const result = {
             drives: [] as DriveState[],
             skip: this.skip,
-            latch: this.latch,
-            q7: this.q7,
-            on: this.on,
-            drive: this.drive
+            controllerState: { ...this.state },
         };
         result.drives[1] = getDriveState(this.drives[1]);
         result.drives[2] = getDriveState(this.drives[2]);
@@ -808,19 +833,16 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
 
     setState(state: State) {
         this.skip = state.skip;
-        this.latch = state.latch;
-        this.q7 = state.q7;
-        this.on = state.on;
-        this.drive = state.drive;
+        this.state = { ...state.controllerState };
         for (const d of DRIVE_NUMBERS) {
             this.drives[d] = setDriveState(state.drives[d]);
             const { name, side } = state.drives[d].metadata;
             const { dirty } = state.drives[d];
             this.callbacks.label(d, name, side);
-            this.callbacks.driveLight(d, this.on);
+            this.callbacks.driveLight(d, this.state.on);
             this.callbacks.dirty(d, dirty);
         }
-        this.cur = this.drives[this.drive];
+        this.cur = this.drives[this.state.drive];
     }
 
     getMetadata(driveNo: DriveNumber) {
