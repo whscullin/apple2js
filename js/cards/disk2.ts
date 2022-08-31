@@ -24,6 +24,7 @@ import {
     MassStorageData,
     DiskMetadata,
     SupportedSectors,
+    FloppyDisk,
 } from '../formats/types';
 
 import {
@@ -883,10 +884,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         } else {
             const disk = createDiskFromJsonDisk(jsonDisk);
             if (disk) {
-                const cur = this.drives[drive];
-                Object.assign(cur, disk);
-                this.updateDirty(drive, false);
-                this.callbacks.label(drive, disk.metadata.name, disk.metadata.side);
+                this.insertDisk(drive, disk);
                 return true;
             }
         }
@@ -912,8 +910,8 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
             };
             this.worker.postMessage(message);
         } else {
-            const cur = this.drives[drive];
-            Object.assign(cur, jsonDecode(json));
+            const disk = jsonDecode(json);
+            this.insertDisk(drive, disk);
         }
         return true;
     }
@@ -943,12 +941,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         } else {
             const disk = createDisk(fmt, options);
             if (disk) {
-                const cur = this.drives[drive];
-                const { name, side } = cur.metadata;
-                Object.assign(cur, disk);
-                this.updateDirty(drive, true);
-                this.callbacks.label(drive, name, side);
-
+                this.insertDisk(drive, disk);
                 return true;
             }
         }
@@ -970,11 +963,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
                         {
                             const { drive, disk } = data.payload;
                             if (disk) {
-                                const cur = this.drives[drive];
-                                Object.assign(cur, disk);
-                                const { name, side } = cur.metadata;
-                                this.updateDirty(drive, true);
-                                this.callbacks.label(drive, name, side);
+                                this.insertDisk(drive, disk);
                             }
                         }
                         break;
@@ -983,6 +972,14 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         } catch (e: unknown) {
             console.error(e);
         }
+    }
+
+    private insertDisk(drive: DriveNumber, disk: FloppyDisk) {
+        const cur = this.drives[drive];
+        Object.assign(cur, disk);
+        const { name, side } = cur.metadata;
+        this.updateDirty(drive, true);
+        this.callbacks.label(drive, name, side);
     }
 
     // TODO(flan): Does not work with WOZ or D13 disks

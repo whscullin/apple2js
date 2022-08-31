@@ -218,7 +218,7 @@ export interface DiskProcessedResponse {
     type: typeof DISK_PROCESSED;
     payload: {
         drive: DriveNumber;
-        disk: Disk | null;
+        disk: FloppyDisk | null;
     };
 }
 

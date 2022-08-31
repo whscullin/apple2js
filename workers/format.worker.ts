@@ -6,12 +6,12 @@ import {
 } from '../js/formats/create_disk';
 import {
     FormatWorkerMessage,
-    Disk,
     DiskProcessedResponse,
     DISK_PROCESSED,
     PROCESS_BINARY,
     PROCESS_JSON_DISK,
     PROCESS_JSON,
+    FloppyDisk,
 } from '../js/formats/types';
 
 debug('Worker loaded');
@@ -20,7 +20,7 @@ addEventListener('message', (message: MessageEvent<FormatWorkerMessage>) => {
     debug('Worker started', message.type);
     const data = message.data;
     const { drive } = data.payload;
-    let disk: Disk | null = null;
+    let disk: FloppyDisk | null = null;
 
     switch (data.type) {
         case PROCESS_BINARY: {
