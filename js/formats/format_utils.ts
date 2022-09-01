@@ -554,7 +554,7 @@ export function jsonDecode(data: string): NibbleDisk {
         volume: v,
         format: json.type,
         encoding: ENCODING_NIBBLE,
-        name: json.name,
+        metadata: { name: json.name },
         tracks,
         readOnly,
     };

@@ -17,6 +17,7 @@ import { Videoterm } from './Videoterm';
 import { spawn, Ready } from './util/promises';
 
 import styles from './css/Apple2.module.css';
+import { SupportedSectors } from 'js/formats/types';
 
 declare global {
     interface Window {
@@ -33,7 +34,7 @@ export interface Apple2Props {
     e: boolean;
     gl: boolean;
     rom: string;
-    sectors: number;
+    sectors: SupportedSectors;
 }
 
 /**

@@ -66,11 +66,11 @@ describe('DiskII', () => {
 
         const state = diskII.getState();
         // These are just arbitrary changes, not an exhaustive list of fields.
-        state.drive = 2;
         state.skip = 1;
-        state.latch = 0x42;
-        state.on = true;
-        state.writeMode = true;
+        state.controllerState.drive = 2;
+        state.controllerState.latch = 0x42;
+        state.controllerState.on = true;
+        state.controllerState.q7 = true;
         state.drives[2].tracks[14][12] = 0x80;
         state.drives[2].head = 1000;
         state.drives[2].phase = 3;

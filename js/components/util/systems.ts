@@ -14,7 +14,7 @@ export const defaultSystem = {
     e: true,
     enhanced: true,
     sectors: 16,
-};
+} as const;
 
 export const systemTypes: Record<string, Partial<SystemType>> = {
     // Apple //e
@@ -68,4 +68,4 @@ export const systemTypes: Record<string, Partial<SystemType>> = {
         characterRom: 'apple2_char',
         e: false,
     }
-};
+} as const;

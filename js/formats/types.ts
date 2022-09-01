@@ -2,13 +2,15 @@ import type { byte, memory, MemberOf, word } from '../types';
 import type { GamepadConfiguration } from '../ui/types';
 import { InfoChunk } from './woz';
 
+export const SUPPORTED_SECTORS = [13, 16] as const;
+export type SupportedSectors = MemberOf<typeof SUPPORTED_SECTORS>;
+
 export const DRIVE_NUMBERS = [1, 2] as const;
 export type DriveNumber = MemberOf<typeof DRIVE_NUMBERS>;
 
 /**
  * Arguments for the disk format processors.
  */
-
 export interface DiskOptions {
     name: string;
     side?: string | undefined;
@@ -33,7 +35,6 @@ export interface DiskDescriptor {
 /**
  * JSON binary image (not used?)
  */
-
 export interface JSONBinaryImage {
     type: 'binary';
     start: word;
@@ -43,13 +44,23 @@ export interface JSONBinaryImage {
 }
 
 /**
+ * Information about a disk image not directly related to the
+ * disk contents. For example, the name or even a scan of the
+ * disk label are "metadata", but the volume number is not.
+ */
+export interface DiskMetadata {
+    /** Displayed disk name */
+    name: string;
+    /** (Optional) Disk side (Front/Back, A/B) */
+    side?: string | undefined;
+}
+
+/**
  * Return value from disk format processors. Describes raw disk
  * data which the DiskII card can process.
  */
-
 export interface Disk {
-    name: string;
-    side?: string | undefined;
+    metadata: DiskMetadata;
     readOnly: boolean;
 }
 
@@ -207,7 +218,7 @@ export interface DiskProcessedResponse {
     type: typeof DISK_PROCESSED;
     payload: {
         drive: DriveNumber;
-        disk: Disk | null;
+        disk: FloppyDisk | null;
     };
 }
 
@@ -215,7 +226,7 @@ export type FormatWorkerResponse =
     DiskProcessedResponse;
 
 export interface MassStorageData {
-    name: string;
+    metadata: DiskMetadata;
     ext: string;
     readOnly: boolean;
     volume?: byte;

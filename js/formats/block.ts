@@ -21,7 +21,7 @@ export default function createBlockDisk(options: DiskOptions): BlockDisk {
     const disk: BlockDisk = {
         encoding: ENCODING_BLOCK,
         blocks,
-        name,
+        metadata: { name },
         readOnly,
     };
 

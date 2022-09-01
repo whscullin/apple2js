@@ -21,7 +21,7 @@ describe('woz', () => {
 
         const disk = createDiskFromWoz(options);
         expect(disk).toEqual({
-            name: 'Mock Woz 1',
+            metadata: { name: 'Mock Woz 1' },
             readOnly: true,
             encoding: ENCODING_BITSTREAM,
             trackMap: mockTMAP,
@@ -58,8 +58,10 @@ describe('woz', () => {
 
         const disk = createDiskFromWoz(options);
         expect(disk).toEqual({
-            name: 'Mock Woz 2',
-            side: 'B',
+            metadata: {
+                name: 'Mock Woz 2',
+                side: 'B',
+            },
             readOnly: true,
             encoding: ENCODING_BITSTREAM,
             trackMap: mockTMAP,

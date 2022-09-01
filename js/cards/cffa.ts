@@ -390,7 +390,7 @@ export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<
                             ),
                             encoding: ENCODING_BLOCK,
                             readOnly: disk.readOnly,
-                            name: disk.name,
+                            metadata: { ...disk.metadata },
                         };
                     }
                     return result;
@@ -441,7 +441,7 @@ export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<
 
         const prodos = new ProDOSVolume(disk);
 
-        this._name[drive] = disk.name;
+        this._name[drive] = disk.metadata.name;
         this._partitions[drive] = prodos;
 
         if (drive) {
@@ -483,7 +483,8 @@ export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<
         if (!blockDisk) {
             return null;
         }
-        const { name, blocks, readOnly } = blockDisk;
+        const { blocks, readOnly } = blockDisk;
+        const { name } = blockDisk.metadata;
         let ext;
         let data: ArrayBuffer;
         if (this._metadata[drive]) {
@@ -498,7 +499,7 @@ export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<
             data = dataArray.buffer;
         }
         return {
-            name,
+            metadata: { name },
             ext,
             data,
             readOnly,

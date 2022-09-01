@@ -10,7 +10,7 @@ import { ErrorModal } from './ErrorModal';
 import { ProgressModal } from './ProgressModal';
 import { loadHttpUnknownFile, getHashParts, loadJSON, SmartStorageBroker } from './util/files';
 import { useHash } from './hooks/useHash';
-import { DISK_FORMATS, DriveNumber } from 'js/formats/types';
+import { DISK_FORMATS, DriveNumber, SupportedSectors } from 'js/formats/types';
 import { spawn, Ready } from './util/promises';
 
 import styles from './css/Drives.module.css';
@@ -32,7 +32,7 @@ export interface DrivesProps {
     cpu: CPU6502 | undefined;
     io: Apple2IO | undefined;
     enhanced: boolean;
-    sectors: number;
+    sectors: SupportedSectors;
     ready: Ready;
 }
 

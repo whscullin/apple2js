@@ -21,7 +21,8 @@ export const DownloadModal = ({ massStorage, number, onClose, isOpen } : Downloa
         if (isOpen) {
             const storageData = massStorage.getBinary(number);
             if (storageData) {
-                const { name, ext, data } = storageData;
+                const { ext, data } = storageData;
+                const { name } = storageData.metadata;
                 if (data.byteLength) {
                     const blob = new Blob(
                         [data],

@@ -11,8 +11,7 @@ export default function createDiskFromNibble(options: DiskOptions): NibbleDisk {
     const disk: NibbleDisk = {
         format: 'nib',
         encoding: ENCODING_NIBBLE,
-        name,
-        side,
+        metadata: { name, side },
         volume: volume || 254,
         readOnly: readOnly || false,
         tracks: []
