@@ -193,6 +193,7 @@ describe('2mg format', () => {
                 metadata: { name: 'Good disk' },
                 readOnly: false,
                 encoding: ENCODING_BLOCK,
+                format: 'hdv',
             };
             const image = create2MGFromBlockDisk(header, disk);
             expect(VALID_PRODOS_IMAGE.buffer).toEqual(image);

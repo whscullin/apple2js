@@ -1,7 +1,7 @@
 import { debug, toHex } from '../util';
 import { rom as smartPortRom } from '../roms/cards/smartport';
 import { Card, Restorable, byte, word, rom } from '../types';
-import { MassStorage, BlockDisk, ENCODING_BLOCK, BlockFormat, MassStorageData } from '../formats/types';
+import { MassStorage, BlockDisk, ENCODING_BLOCK, BlockFormat, MassStorageData, DiskFormat } from '../formats/types';
 import CPU6502, { CpuState, flags } from '../cpu6502';
 import { create2MGFromBlockDisk, HeaderData, read2MGHeader } from '../formats/2mg';
 import createBlockDisk from '../formats/block';
@@ -129,7 +129,7 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
     private disks: BlockDisk[] = [];
     private busy: boolean[] = [];
     private busyTimeout: ReturnType<typeof setTimeout>[] = [];
-    private ext: string[] = [];
+    private ext: DiskFormat[] = [];
     private metadata: Array<HeaderData | null> = [];
 
     constructor(
@@ -522,6 +522,7 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
                             (block) => new Uint8Array(block)
                         ),
                         encoding: ENCODING_BLOCK,
+                        format: disk.format,
                         readOnly: disk.readOnly,
                         metadata: { ...disk.metadata },
                     };
@@ -539,6 +540,7 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
                         (block) => new Uint8Array(block)
                     ),
                     encoding: ENCODING_BLOCK,
+                    format: disk.format,
                     readOnly: disk.readOnly,
                     metadata: { ...disk.metadata },
                 };
@@ -547,7 +549,7 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
         );
     }
 
-    setBinary(drive: DriveNumber, name: string, fmt: string, rawData: ArrayBuffer) {
+    setBinary(drive: DriveNumber, name: string, fmt: BlockFormat, rawData: ArrayBuffer) {
         let volume = 254;
         let readOnly = false;
         if (fmt === '2mg') {
@@ -568,7 +570,7 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
         };
 
         this.ext[drive] = fmt;
-        this.disks[drive] = createBlockDisk(options);
+        this.disks[drive] = createBlockDisk(fmt, options);
         this.callbacks?.label(drive, name);
 
         return true;

@@ -1,6 +1,6 @@
 import { includes, memory } from '../types';
 import { base64_decode } from '../base64';
-import { DiskOptions, FloppyDisk, JSONDisk, NibbleFormat, NIBBLE_FORMATS } from './types';
+import { BitstreamFormat, DiskOptions, FloppyDisk, FloppyFormat, JSONDisk, NibbleDisk, NibbleFormat, NIBBLE_FORMATS, WozDisk } from './types';
 import createDiskFrom2MG from './2mg';
 import createDiskFromD13 from './d13';
 import createDiskFromDOS from './do';
@@ -8,13 +8,13 @@ import createDiskFromProDOS from './po';
 import createDiskFromWoz from './woz';
 import createDiskFromNibble from './nib';
 
-/**
- *
- * @param fmt Type of
- * @param options
- * @returns A nibblized disk
- */
-export function createDisk(fmt: NibbleFormat, options: DiskOptions): FloppyDisk | null {
+/** Creates a `NibbleDisk` from the given format and options. */
+export function createDisk(fmt: NibbleFormat, options: DiskOptions): NibbleDisk | null;
+/** Creates a `WozDisk` from the given format and options. */
+export function createDisk(fmt: BitstreamFormat, options: DiskOptions): WozDisk | null;
+/** Creates a `FloppyDisk` (either a `NibbleDisk` or a `WozDisk`) from the given format and options. */
+export function createDisk(fmt: FloppyFormat, options: DiskOptions): FloppyDisk | null;
+export function createDisk(fmt: FloppyFormat, options: DiskOptions): FloppyDisk | null {
     let disk: FloppyDisk | null = null;
 
     switch (fmt) {
@@ -42,7 +42,8 @@ export function createDisk(fmt: NibbleFormat, options: DiskOptions): FloppyDisk 
     return disk;
 }
 
-export function createDiskFromJsonDisk(disk: JSONDisk): FloppyDisk | null {
+/** Creates a NibbleDisk from JSON */
+export function createDiskFromJsonDisk(disk: JSONDisk): NibbleDisk | null {
     const fmt = disk.type;
     const readOnly = disk.readOnly;
     const name = disk.name;

@@ -1,7 +1,7 @@
 import { bit, byte, memory } from '../types';
 import { base64_decode, base64_encode } from '../base64';
 import { bytify, debug, toHex } from '../util';
-import { NibbleDisk, ENCODING_NIBBLE, JSONDisk } from './types';
+import { NibbleDisk, ENCODING_NIBBLE, JSONDisk, isNibbleDiskFormat } from './types';
 
 /**
  * DOS 3.3 Physical sector order (index is physical sector, value is DOS sector).
@@ -549,6 +549,9 @@ export function jsonDecode(data: string): NibbleDisk {
             track = track.concat(explodeSector16(v, t, s, d));
         }
         tracks[t] = bytify(track);
+    }
+    if (!isNibbleDiskFormat(json.type)) {
+        throw new Error(`JSON disks of type ${json.type} are not supported`);
     }
     const disk: NibbleDisk = {
         volume: v,

@@ -11,10 +11,10 @@ import {
     DriveNumber,
     DRIVE_NUMBERS,
     MassStorage,
-    NIBBLE_FORMATS,
     JSONBinaryImage,
     JSONDisk,
-    BlockFormat
+    BlockFormat,
+    FLOPPY_FORMATS
 } from '../formats/types';
 import { initGamepad } from './gamepad';
 import KeyBoard from './keyboard';
@@ -392,7 +392,7 @@ function doLoadLocalDisk(drive: DriveNumber, file: File) {
                 }
             } else {
                 if (
-                    includes(NIBBLE_FORMATS, ext) &&
+                    includes(FLOPPY_FORMATS, ext) &&
                     _disk2.setBinary(drive, name, ext, result)
                 ) {
                     initGamepad();
@@ -459,7 +459,7 @@ export function doLoadHTTP(drive: DriveNumber, url?: string) {
                     }
                 } else {
                     if (
-                        includes(NIBBLE_FORMATS, ext) &&
+                        includes(FLOPPY_FORMATS, ext) &&
                         _disk2.setBinary(drive, name, ext, data)
                     ) {
                         initGamepad();

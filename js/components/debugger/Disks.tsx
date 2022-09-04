@@ -2,7 +2,7 @@ import { h, Fragment } from 'preact';
 import { useMemo } from 'preact/hooks';
 import cs from 'classnames';
 import { Apple2 as Apple2Impl } from 'js/apple2';
-import { BlockDisk, DiskFormat, DriveNumber, MassStorage, NibbleDisk } from 'js/formats/types';
+import { BlockDisk, DiskFormat, DriveNumber, FloppyDisk, isBlockDiskFormat, isNibbleDisk, MassStorage } from 'js/formats/types';
 import { slot } from 'js/apple2io';
 import DiskII from 'js/cards/disk2';
 import SmartPort from 'js/cards/smartport';
@@ -38,7 +38,7 @@ const formatDate = (date: Date) => {
  * @param disk NibbleDisk or BlockDisk
  * @returns true if is BlockDisk
  */
-function isBlockDisk(disk: NibbleDisk | BlockDisk): disk is BlockDisk {
+function isBlockDisk(disk: FloppyDisk | BlockDisk): disk is BlockDisk {
     return !!((disk as BlockDisk).blocks);
 }
 
@@ -256,7 +256,7 @@ const DiskInfo = ({ massStorage, drive, setFileData }: DiskInfoProps) => {
         if (massStorageData) {
             const { data, readOnly, ext } = massStorageData;
             const { name } = massStorageData.metadata;
-            let disk: BlockDisk | NibbleDisk | null = null;
+            let disk: BlockDisk | FloppyDisk | null = null;
             if (ext === '2mg') {
                 disk = createDiskFrom2MG({
                     name,
@@ -277,8 +277,8 @@ const DiskInfo = ({ massStorage, drive, setFileData }: DiskInfoProps) => {
                     }
                 }
             }
-            if (!disk) {
-                disk = createBlockDisk({
+            if (!disk && isBlockDiskFormat(ext)) {
+                disk = createBlockDisk(ext, {
                     name,
                     rawData: data,
                     readOnly,
@@ -330,7 +330,7 @@ const DiskInfo = ({ massStorage, drive, setFileData }: DiskInfoProps) => {
                         </div>
                     );
                 }
-            } else {
+            } else if (isNibbleDisk(disk)) {
                 const dos = new DOS33(disk);
                 return (
                     <div className={styles.volume}>

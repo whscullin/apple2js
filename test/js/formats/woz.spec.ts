@@ -24,6 +24,7 @@ describe('woz', () => {
             metadata: { name: 'Mock Woz 1' },
             readOnly: true,
             encoding: ENCODING_BITSTREAM,
+            format: 'woz',
             trackMap: mockTMAP,
             rawTracks: [new Uint8Array([
                 1, 1, 0, 1, 0, 1, 0, 1,
@@ -64,6 +65,7 @@ describe('woz', () => {
             },
             readOnly: true,
             encoding: ENCODING_BITSTREAM,
+            format: 'woz',
             trackMap: mockTMAP,
             rawTracks: [new Uint8Array([
                 1, 1, 0, 1, 0, 1, 0, 1,

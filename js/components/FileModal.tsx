@@ -1,6 +1,6 @@
 import { h, Fragment, JSX } from 'preact';
 import { useCallback, useEffect, useState } from 'preact/hooks';
-import { DiskDescriptor, DriveNumber, NibbleFormat, NIBBLE_FORMATS } from '../formats/types';
+import { DiskDescriptor, DriveNumber, FLOPPY_FORMATS, NibbleFormat } from '../formats/types';
 import { Modal, ModalContent, ModalFooter } from './Modal';
 import { loadLocalNibbleFile, loadJSON, getHashParts, setHashParts } from './util/files';
 import DiskII from '../cards/disk2';
@@ -15,7 +15,7 @@ import styles from './css/FileModal.module.css';
 const DISK_TYPES: FilePickerAcceptType[] = [
     {
         description: 'Disk Images',
-        accept: { 'application/octet-stream': NIBBLE_FORMATS.map(x => '.' + x) },
+        accept: { 'application/octet-stream': FLOPPY_FORMATS.map(x => '.' + x) },
     }
 ];
 
