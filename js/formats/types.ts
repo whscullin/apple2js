@@ -70,13 +70,13 @@ export const ENCODING_BLOCK = 'block';
 
 export interface FloppyDisk extends Disk {
     encoding: typeof ENCODING_NIBBLE | typeof ENCODING_BITSTREAM;
-    tracks: memory[];
 }
 
 export interface NibbleDisk extends FloppyDisk {
     encoding: typeof ENCODING_NIBBLE;
     format: Exclude<NibbleFormat, 'woz'>;
     volume: byte;
+    tracks: memory[];
 }
 
 export interface WozDisk extends FloppyDisk {
@@ -156,6 +156,11 @@ export function isBlockDiskFormat(f: DiskFormat): f is BlockFormat {
 /** Type guard for NibbleDisks */
 export function isNibbleDisk(disk: Disk): disk is NibbleDisk {
     return (disk as NibbleDisk)?.encoding === ENCODING_NIBBLE;
+}
+
+/** Type guard for NibbleDisks */
+export function isWozDisk(disk: Disk): disk is WozDisk {
+    return (disk as WozDisk)?.encoding === ENCODING_BITSTREAM;
 }
 
 /**

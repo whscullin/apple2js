@@ -21,7 +21,7 @@ describe('woz', () => {
 
         const disk = createDiskFromWoz(options);
         expect(disk).toEqual({
-            metadata: { name: 'Mock Woz 1' },
+            metadata: { name: 'Mock Woz 1', side: undefined },
             readOnly: true,
             encoding: ENCODING_BITSTREAM,
             format: 'woz',
@@ -31,7 +31,6 @@ describe('woz', () => {
                 1, 0, 1, 0, 1, 0, 1, 0,
                 1, 0, 0, 1, 0, 1, 1, 0,
             ])],
-            tracks: [new Uint8Array([0xD5, 0xAA, 0x96])],
             info: {
                 bitTiming: 0,
                 bootSector: 0,
@@ -72,7 +71,6 @@ describe('woz', () => {
                 1, 0, 1, 0, 1, 0, 1, 0,
                 1, 0, 0, 1, 0, 1, 1, 0,
             ])],
-            tracks: [new Uint8Array([0xD5, 0xAA, 0x96])],
             info: {
                 bitTiming: 0,
                 bootSector: 0,

@@ -295,7 +295,6 @@ export default function createDiskFromWoz(options: DiskOptions): WozDisk {
         encoding: ENCODING_BITSTREAM,
         format: 'woz',
         trackMap: tmap?.trackMap || [],
-        tracks: trks?.tracks || [],
         rawTracks: trks?.rawTracks || [],
         readOnly: true, //chunks.info.writeProtected === 1;
         metadata: {
