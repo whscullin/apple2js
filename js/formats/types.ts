@@ -64,12 +64,17 @@ export interface Disk {
     readOnly: boolean;
 }
 
+export const NO_DISK = 'empty';
 export const ENCODING_NIBBLE = 'nibble';
 export const ENCODING_BITSTREAM = 'bitstream';
 export const ENCODING_BLOCK = 'block';
 
 export interface FloppyDisk extends Disk {
-    encoding: typeof ENCODING_NIBBLE | typeof ENCODING_BITSTREAM;
+    encoding: typeof ENCODING_NIBBLE | typeof ENCODING_BITSTREAM | typeof NO_DISK;
+}
+
+export interface NoFloppyDisk extends FloppyDisk {
+    encoding: typeof NO_DISK;
 }
 
 export interface NibbleDisk extends FloppyDisk {
@@ -151,6 +156,10 @@ export function isNibbleDiskFormat(f: DiskFormat): f is NibbleFormat {
 /** Type guard for block disk formats. */
 export function isBlockDiskFormat(f: DiskFormat): f is BlockFormat {
     return f in BLOCK_FORMATS;
+}
+
+export function isNoFloppyDisk(disk: Disk): disk is NoFloppyDisk {
+    return (disk as NoFloppyDisk)?.encoding === NO_DISK;
 }
 
 /** Type guard for NibbleDisks */
