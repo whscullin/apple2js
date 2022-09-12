@@ -37,7 +37,7 @@ import {
 } from '../formats/create_disk';
 
 import { toHex } from '../util';
-import { jsonDecode, jsonEncode, readSector } from '../formats/format_utils';
+import { jsonDecode, jsonEncode, readSector, _D13O, _DO, _PO } from '../formats/format_utils';
 
 import { BOOTSTRAP_ROM_16, BOOTSTRAP_ROM_13 } from '../roms/cards/disk2';
 import Apple2IO from '../apple2io';
@@ -842,9 +842,9 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         };
     }
 
-    // TODO(flan): Does not work on WOZ disks
-    rwts(drive: DriveNumber, track: byte, sector: byte) {
-        const curDisk = this.disks[drive];
+    /** Reads the given track and physical sector. */
+    rwts(disk: DriveNumber, track: byte, sector: byte) {
+        const curDisk = this.disks[disk];
         if (!isNibbleDisk(curDisk)) {
             throw new Error('Can\'t read WOZ disks');
         }
@@ -966,8 +966,17 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         this.callbacks.label(drive, name, side);
     }
 
-    // TODO(flan): Does not work with WOZ or D13 disks
-    getBinary(drive: DriveNumber, ext?: Exclude<NibbleFormat, 'woz' | 'd13'>): MassStorageData | null {
+    /**
+     * Returns the binary image of the non-WOZ disk in the given drive.
+     * For WOZ disks, this method returns `null`. If the `ext` parameter
+     * is supplied, the returned data will match that format or an error
+     * will be thrown. If the `ext` parameter is not supplied, the
+     * original image format for the disk in the drive will be used. If
+     * the current data on the disk is no longer readable in that format,
+     * an error will be thrown. Using `ext == 'nib'` will always return
+     * an image.
+     */
+    getBinary(drive: DriveNumber, ext?: Exclude<NibbleFormat, 'woz'>): MassStorageData | null {
         const curDisk = this.disks[drive];
         if (!isNibbleDisk(curDisk)) {
             return null;
@@ -979,15 +988,26 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
             this.sectors * tracks.length * 256;
         const data = new Uint8Array(len);
 
-        const extension = ext ?? format;
+        ext = ext ?? format;
         let idx = 0;
         for (let t = 0; t < tracks.length; t++) {
             if (ext === 'nib') {
                 data.set(tracks[t], idx);
                 idx += tracks[t].length;
             } else {
-                for (let s = 0; s < 0x10; s++) {
-                    const sector = readSector({ ...curDisk, format: extension }, t, s);
+                let maxSector: SupportedSectors;
+                let sectorMap: typeof _PO | typeof _DO | typeof _D13O;
+                if (ext === 'd13') {
+                    maxSector = 13;
+                    sectorMap = _D13O;
+                } else {
+                    maxSector = 16;
+                    sectorMap = format === 'po' ? _PO : _DO;
+                }
+
+                for (let s = 0; s < maxSector; s++) {
+                    const _s = sectorMap[s];
+                    const sector = readSector({ ...curDisk, format: ext }, t, _s);
                     data.set(sector, idx);
                     idx += sector.length;
                 }
@@ -995,7 +1015,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         }
 
         return {
-            ext: extension,
+            ext,
             metadata: { name },
             data: data.buffer,
             readOnly,
