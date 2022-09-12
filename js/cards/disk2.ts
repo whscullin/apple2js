@@ -253,14 +253,15 @@ interface State {
 }
 
 function getDriveState(drive: Drive): DriveState {
+    const { metadata, readOnly, track, head, phase, dirty } = drive;
     return {
         disk: getDiskState(drive.disk),
-        metadata: {...drive.metadata},
-        readOnly: drive.readOnly,
-        track: drive.track,
-        head: drive.head,
-        phase: drive.phase,
-        dirty: drive.dirty,
+        metadata: {...metadata},
+        readOnly,
+        track,
+        head,
+        phase,
+        dirty,
     };
 }
 
@@ -270,40 +271,43 @@ function getDiskState(disk: WozDisk): WozDisk;
 function getDiskState(disk: FloppyDisk): FloppyDisk;
 function getDiskState(disk: FloppyDisk): FloppyDisk {
     if (isNoFloppyDisk(disk)) {
+        const { encoding, metadata, readOnly } = disk;
         return {
-            encoding: disk.encoding,
-            metadata: {...disk.metadata},
-            readOnly: disk.readOnly,
+            encoding,
+            metadata: {...metadata},
+            readOnly,
         };
     }
     if (isNibbleDisk(disk)) {
+        const { format, encoding, metadata, readOnly, volume, tracks } = disk;
         const result: NibbleDisk = {
-            format: disk.format,
-            encoding: disk.encoding,
-            volume: disk.volume,
+            format,
+            encoding,
+            volume,
             tracks: [],
-            readOnly: disk.readOnly,
-            metadata: { ...disk.metadata },
+            readOnly,
+            metadata: { ...metadata },
         };
-        for (let idx = 0; idx < disk.tracks.length; idx++) {
-            result.tracks.push(new Uint8Array(disk.tracks[idx]));
+        for (let idx = 0; idx < tracks.length; idx++) {
+            result.tracks.push(new Uint8Array(tracks[idx]));
         }
         return result;
     }
 
     if (isWozDisk(disk)) {
+        const { format, encoding, metadata, readOnly, trackMap, rawTracks } = disk;
         const result: WozDisk = {
-            format: disk.format,
-            encoding: disk.encoding,
-            readOnly: disk.readOnly,
+            format,
+            encoding,
+            readOnly,
             trackMap: [],
             rawTracks: [],
-            metadata: { ...disk.metadata },
+            metadata: { ...metadata },
             info: disk.info,
         };
-        result.trackMap = [...disk.trackMap];
-        for (let idx = 0; idx < disk.rawTracks.length; idx++) {
-            result.rawTracks.push(new Uint8Array(disk.rawTracks[idx]));
+        result.trackMap = [...trackMap];
+        for (let idx = 0; idx < rawTracks.length; idx++) {
+            result.rawTracks.push(new Uint8Array(rawTracks[idx]));
         }
         return result;
     }
@@ -312,14 +316,15 @@ function getDiskState(disk: FloppyDisk): FloppyDisk {
 }
 
 function setDriveState(state: DriveState) {
+    const { track, head, phase, readOnly, dirty, metadata } = state;
     const result: Drive = {
         disk: getDiskState(state.disk),
-        track: state.track,
-        head: state.head,
-        phase: state.phase,
-        readOnly: state.readOnly,
-        dirty: state.dirty,
-        metadata: { ...state.metadata },
+        track,
+        head,
+        phase,
+        readOnly,
+        dirty,
+        metadata: { ...metadata },
     };
     return result;
 }
@@ -824,13 +829,13 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
     }
 
     getMetadata(driveNo: DriveNumber) {
-        const drive = this.drives[driveNo];
+        const { track, head, phase, readOnly, dirty } = this.drives[driveNo];
         return {
-            track: drive.track,
-            head: drive.head,
-            phase: drive.phase,
-            readOnly: drive.readOnly,
-            dirty: drive.dirty
+            track,
+            head,
+            phase,
+            readOnly,
+            dirty,
         };
     }
 
