@@ -2,7 +2,6 @@ import { base64_encode } from '../base64';
 import type {
     byte,
     Card,
-    memory,
     nibble,
     ReadonlyUint8Array,
 } from '../types';
@@ -15,16 +14,21 @@ import {
     DRIVE_NUMBERS,
     DriveNumber,
     JSONDisk,
-    ENCODING_NIBBLE,
     PROCESS_BINARY,
     PROCESS_JSON_DISK,
     PROCESS_JSON,
-    ENCODING_BITSTREAM,
     MassStorage,
     MassStorageData,
-    DiskMetadata,
     SupportedSectors,
     FloppyDisk,
+    FloppyFormat,
+    WozDisk,
+    NibbleDisk,
+    isNibbleDisk,
+    isWozDisk,
+    NoFloppyDisk,
+    isNoFloppyDisk,
+    NO_DISK,
 } from '../formats/types';
 
 import {
@@ -212,66 +216,26 @@ export interface Callbacks {
 }
 
 /** Common information for Nibble and WOZ disks. */
-interface BaseDrive {
-    /** Current disk format. */
-    format: NibbleFormat;
-    /** Current disk volume number. */
-    volume: byte;
+interface Drive {
+    /** Whether the drive write protect is on. */
+    readOnly: boolean;
     /** Quarter track position of read/write head. */
     track: byte;
     /** Position of the head on the track. */
     head: byte;
     /** Current active coil in the head stepper motor. */
     phase: Phase;
-    /** Whether the drive write protect is on. */
-    readOnly: boolean;
     /** Whether the drive has been written to since it was loaded. */
     dirty: boolean;
-    /** Metadata about the disk image */
-    metadata: DiskMetadata;
-}
-
-/** WOZ format track data from https://applesaucefdc.com/woz/reference2/. */
-interface WozDrive extends BaseDrive {
-    /** Woz encoding */
-    encoding: typeof ENCODING_BITSTREAM;
-    /** Maps quarter tracks to data in rawTracks; `0xFF` = random garbage. */
-    trackMap: byte[];
-    /** Unique track bitstreams. The index is arbitrary; it is NOT the track number. */
-    rawTracks: Uint8Array[];
-}
-
-/** Nibble format track data. */
-interface NibbleDrive extends BaseDrive {
-    /** Nibble encoding */
-    encoding: typeof ENCODING_NIBBLE;
-    /** Nibble data. The index is the track number. */
-    tracks: memory[];
-}
-
-type Drive = WozDrive | NibbleDrive;
-
-function isNibbleDrive(drive: Drive): drive is NibbleDrive {
-    return drive.encoding === ENCODING_NIBBLE;
-}
-
-function isWozDrive(drive: Drive): drive is WozDrive {
-    return drive.encoding === ENCODING_BITSTREAM;
 }
 
 interface DriveState {
-    format: NibbleFormat;
-    encoding: typeof ENCODING_BITSTREAM | typeof ENCODING_NIBBLE;
-    volume: byte;
-    tracks: memory[];
+    disk: FloppyDisk;
+    readOnly: boolean;
     track: byte;
     head: byte;
     phase: Phase;
-    readOnly: boolean;
     dirty: boolean;
-    trackMap: number[];
-    rawTracks: Uint8Array[];
-    metadata: DiskMetadata;
 }
 
 /** State of the controller for saving/restoring. */
@@ -282,73 +246,54 @@ interface State {
     controllerState: ControllerState;
 }
 
-function getDriveState(drive: Drive): DriveState {
-    const result: DriveState = {
-        format: drive.format,
-        encoding: drive.encoding,
-        volume: drive.volume,
-        tracks: [],
-        track: drive.track,
-        head: drive.head,
-        phase: drive.phase,
-        readOnly: drive.readOnly,
-        dirty: drive.dirty,
-        trackMap: [],
-        rawTracks: [],
-        metadata: { ...drive.metadata },
-    };
-
-    if (isNibbleDrive(drive)) {
-        for (let idx = 0; idx < drive.tracks.length; idx++) {
-            result.tracks.push(new Uint8Array(drive.tracks[idx]));
-        }
+function getDiskState(disk: NoFloppyDisk): NoFloppyDisk;
+function getDiskState(disk: NibbleDisk): NibbleDisk;
+function getDiskState(disk: WozDisk): WozDisk;
+function getDiskState(disk: FloppyDisk): FloppyDisk;
+function getDiskState(disk: FloppyDisk): FloppyDisk {
+    if (isNoFloppyDisk(disk)) {
+        const { encoding, metadata, readOnly } = disk;
+        return {
+            encoding,
+            metadata: {...metadata},
+            readOnly,
+        };
     }
-    if (isWozDrive(drive)) {
-        result.trackMap = [...drive.trackMap];
-        for (let idx = 0; idx < drive.rawTracks.length; idx++) {
-            result.rawTracks.push(new Uint8Array(drive.rawTracks[idx]));
-        }
-    }
-    return result;
-}
-
-function setDriveState(state: DriveState) {
-    let result: Drive;
-    if (state.encoding === ENCODING_NIBBLE) {
-        result = {
-            format: state.format,
-            encoding: ENCODING_NIBBLE,
-            volume: state.volume,
+    if (isNibbleDisk(disk)) {
+        const { format, encoding, metadata, readOnly, volume, tracks } = disk;
+        const result: NibbleDisk = {
+            format,
+            encoding,
+            volume,
             tracks: [],
-            track: state.track,
-            head: state.head,
-            phase: state.phase,
-            readOnly: state.readOnly,
-            dirty: state.dirty,
-            metadata: { ...state.metadata },
+            readOnly,
+            metadata: { ...metadata },
         };
-        for (let idx = 0; idx < state.tracks.length; idx++) {
-            result.tracks.push(new Uint8Array(state.tracks[idx]));
+        for (let idx = 0; idx < tracks.length; idx++) {
+            result.tracks.push(new Uint8Array(tracks[idx]));
         }
-    } else {
-        result = {
-            format: state.format,
-            encoding: ENCODING_BITSTREAM,
-            volume: state.volume,
-            track: state.track,
-            head: state.head,
-            phase: state.phase,
-            readOnly: state.readOnly,
-            dirty: state.dirty,
-            trackMap: [...state.trackMap],
-            rawTracks: [],
-            metadata: { ...state.metadata },
-        };
-        for (let idx = 0; idx < state.rawTracks.length; idx++) {
-            result.rawTracks.push(new Uint8Array(state.rawTracks[idx]));
-        }
+        return result;
     }
-    return result;
+
+    if (isWozDisk(disk)) {
+        const { format, encoding, metadata, readOnly, trackMap, rawTracks } = disk;
+        const result: WozDisk = {
+            format,
+            encoding,
+            readOnly,
+            trackMap: [],
+            rawTracks: [],
+            metadata: { ...metadata },
+            info: disk.info,
+        };
+        result.trackMap = [...trackMap];
+        for (let idx = 0; idx < rawTracks.length; idx++) {
+            result.rawTracks.push(new Uint8Array(rawTracks[idx]));
+        }
+        return result;
+    }
+
+    throw new Error('Unknown drive state');
 }
 
 /**
@@ -358,27 +303,30 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
 
     private drives: Record<DriveNumber, Drive> = {
         1: {   // Drive 1
-            format: 'dsk',
-            encoding: ENCODING_NIBBLE,
-            volume: 254,
-            tracks: [],
             track: 0,
             head: 0,
             phase: 0,
             readOnly: false,
             dirty: false,
-            metadata: { name: 'Disk 1' },
         },
         2: {   // Drive 2
-            format: 'dsk',
-            encoding: ENCODING_NIBBLE,
-            volume: 254,
-            tracks: [],
             track: 0,
             head: 0,
             phase: 0,
             readOnly: false,
             dirty: false,
+        }
+    };
+
+    private disks: Record<DriveNumber, FloppyDisk> = {
+        1: {
+            encoding: NO_DISK,
+            readOnly: false,
+            metadata: { name: 'Disk 1' },
+        },
+        2: {
+            encoding: NO_DISK,
+            readOnly: false,
             metadata: { name: 'Disk 2' },
         }
     };
@@ -393,8 +341,10 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
     private skip = 0;
     /** Drive off timeout id or null. */
     private offTimeout: number | null = null;
-    /** Current drive object. */
-    private cur: Drive;
+    /** Current drive object. Must only be set by `updateActiveDrive()`. */
+    private curDrive: Drive;
+    /** Current disk object. Must only be set by `updateActiveDrive()`. */
+    private curDisk: FloppyDisk;
 
     /** Nibbles read this on cycle */
     private nibbleCount = 0;
@@ -432,9 +382,15 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
             state: 2,
         };
 
-        this.cur = this.drives[this.state.drive];
+        this.updateActiveDrive();
 
         this.initWorker();
+    }
+
+    /** Updates the active drive based on the controller state. */
+    private updateActiveDrive() {
+        this.curDrive = this.drives[this.state.drive];
+        this.curDisk = this.disks[this.state.drive];
     }
 
     private debug(..._args: unknown[]) {
@@ -442,7 +398,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
     }
 
     public head(): number {
-        return this.cur.head;
+        return this.curDrive.head;
     }
 
     /**
@@ -487,18 +443,18 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         let workCycles = (cycles - this.lastCycles) * 2;
         this.lastCycles = cycles;
 
-        if (!isWozDrive(this.cur)) {
+        if (!isWozDisk(this.curDisk)) {
             return;
         }
         const track =
-            this.cur.rawTracks[this.cur.trackMap[this.cur.track]] || [0];
+            this.curDisk.rawTracks[this.curDisk.trackMap[this.curDrive.track]] || [0];
         
         const state = this.state;
 
         while (workCycles-- > 0) {
             let pulse: number = 0;
             if (state.clock === 4) {
-                pulse = track[this.cur.head];
+                pulse = track[this.curDrive.head];
                 if (!pulse) {
                     // More than 2 zeros can not be read reliably.
                     if (++this.zeros > 2) {
@@ -531,7 +487,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
                     break;
                 case 0xA: // SR
                     state.latch >>= 1;
-                    if (this.cur.readOnly) {
+                    if (this.curDrive.readOnly) {
                         state.latch |= 0x80;
                     }
                     break;
@@ -550,12 +506,12 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
             if (state.clock === 4) {
                 if (state.on) {
                     if (state.q7) {
-                        track[this.cur.head] = state.state & 0x8 ? 0x01 : 0x00;
+                        track[this.curDrive.head] = state.state & 0x8 ? 0x01 : 0x00;
                         this.debug('Wrote', state.state & 0x8 ? 0x01 : 0x00);
                     }
 
-                    if (++this.cur.head >= track.length) {
-                        this.cur.head = 0;
+                    if (++this.curDrive.head >= track.length) {
+                        this.curDrive.head = 0;
                     }
                 }
             }
@@ -568,29 +524,29 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
 
     // Only called for non-WOZ disks
     private readWriteNext() {
-        if (!isNibbleDrive(this.cur)) {
+        if (!isNibbleDisk(this.curDisk)) {
             return;
         }
         const state = this.state;
         if (state.on && (this.skip || state.q7)) {
-            const track = this.cur.tracks[this.cur.track >> 2];
+            const track = this.curDisk.tracks[this.curDrive.track >> 2];
             if (track && track.length) {
-                if (this.cur.head >= track.length) {
-                    this.cur.head = 0;
+                if (this.curDrive.head >= track.length) {
+                    this.curDrive.head = 0;
                 }
 
                 if (state.q7) {
-                    if (!this.cur.readOnly) {
-                        track[this.cur.head] = state.bus;
-                        if (!this.cur.dirty) {
+                    if (!this.curDrive.readOnly) {
+                        track[this.curDrive.head] = state.bus;
+                        if (!this.curDrive.dirty) {
                             this.updateDirty(state.drive, true);
                         }
                     }
                 } else {
-                    state.latch = track[this.cur.head];
+                    state.latch = track[this.curDrive.head];
                 }
 
-                ++this.cur.head;
+                ++this.curDrive.head;
             }
         } else {
             state.latch = 0;
@@ -619,22 +575,24 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
 
         this.debug(`phase ${phase}${on ? ' on' : ' off'}`);
         if (on) {
-            this.cur.track += PHASE_DELTA[this.cur.phase][phase] * 2;
-            this.cur.phase = phase;
+            this.curDrive.track += PHASE_DELTA[this.curDrive.phase][phase] * 2;
+            this.curDrive.phase = phase;
         }
 
         // The emulator clamps the track to the valid track range available
         // in the image, but real Disk II drives can seek past track 34 by
         // at least a half track, usually a full track. Some 3rd party
         // drives can seek to track 39.
-        const maxTrack = isNibbleDrive(this.cur)
-            ? this.cur.tracks.length * 4 - 1
-            : this.cur.trackMap.length - 1;
-        if (this.cur.track > maxTrack) {
-            this.cur.track = maxTrack;
+        const maxTrack = isNibbleDisk(this.curDisk)
+            ? this.curDisk.tracks.length * 4 - 1
+            : (isWozDisk(this.curDisk)
+                ? this.curDisk.trackMap.length - 1 
+                : 0);
+        if (this.curDrive.track > maxTrack) {
+            this.curDrive.track = maxTrack;
         }
-        if (this.cur.track < 0x0) {
-            this.cur.track = 0x0;
+        if (this.curDrive.track < 0x0) {
+            this.curDrive.track = 0x0;
         }
 
         // debug(
@@ -706,7 +664,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
             case LOC.DRIVE1:  // 0x0a
                 this.debug('Disk 1');
                 state.drive = 1;
-                this.cur = this.drives[state.drive];
+                this.updateActiveDrive();
                 if (state.on) {
                     this.callbacks.driveLight(2, false);
                     this.callbacks.driveLight(1, true);
@@ -715,7 +673,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
             case LOC.DRIVE2:  // 0x0b
                 this.debug('Disk 2');
                 state.drive = 2;
-                this.cur = this.drives[state.drive];
+                this.updateActiveDrive();
                 if (state.on) {
                     this.callbacks.driveLight(1, false);
                     this.callbacks.driveLight(2, true);
@@ -727,7 +685,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
                 if (state.q7) {
                     this.debug('clearing _q6/SHIFT');
                 }
-                if (isNibbleDrive(this.cur)) {
+                if (isNibbleDisk(this.curDisk)) {
                     this.readWriteNext();
                 }
                 break;
@@ -737,9 +695,9 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
                 if (state.q7) {
                     this.debug('setting _q6/LOAD');
                 }
-                if (isNibbleDrive(this.cur)) {
+                if (isNibbleDisk(this.curDisk)) {
                     if (readMode && !state.q7) {
-                        if (this.cur.readOnly) {
+                        if (this.curDrive.readOnly) {
                             state.latch = 0xff;
                             this.debug('Setting readOnly');
                         } else {
@@ -812,12 +770,26 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
             state.q7 = false;
             state.on = false;
             state.drive = 1;
-            this.cur = this.drives[state.drive];
         }
+        this.updateActiveDrive();
     }
 
     tick() {
         this.moveHead();
+    }
+
+    private getDriveState(drive: DriveNumber): DriveState {
+        const curDrive = this.drives[drive];
+        const curDisk = this.disks[drive];
+        const { readOnly, track, head, phase, dirty } = curDrive;
+        return {
+            disk: getDiskState(curDisk),
+            readOnly,
+            track,
+            head,
+            phase,
+            dirty,
+        };    
     }
 
     getState(): State {
@@ -826,46 +798,57 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
             skip: this.skip,
             controllerState: { ...this.state },
         };
-        result.drives[1] = getDriveState(this.drives[1]);
-        result.drives[2] = getDriveState(this.drives[2]);
+        result.drives[1] = this.getDriveState(1);
+        result.drives[2] = this.getDriveState(2);
 
         return result;
     }
+
+    private setDriveState(drive: DriveNumber, state: DriveState) {
+        const { track, head, phase, readOnly, dirty } = state;
+        this.drives[drive] = {
+            track,
+            head,
+            phase,
+            readOnly,
+            dirty,
+        };
+        this.disks[drive] = getDiskState(state.disk);
+    }
+    
 
     setState(state: State) {
         this.skip = state.skip;
         this.state = { ...state.controllerState };
         for (const d of DRIVE_NUMBERS) {
-            this.drives[d] = setDriveState(state.drives[d]);
-            const { name, side } = state.drives[d].metadata;
+            this.setDriveState(d, state.drives[d]);
+            const { name, side } = state.drives[d].disk.metadata;
             const { dirty } = state.drives[d];
             this.callbacks.label(d, name, side);
             this.callbacks.driveLight(d, this.state.on);
             this.callbacks.dirty(d, dirty);
         }
-        this.cur = this.drives[this.state.drive];
+        this.updateActiveDrive();
     }
 
     getMetadata(driveNo: DriveNumber) {
-        const drive = this.drives[driveNo];
+        const { track, head, phase, readOnly, dirty } = this.drives[driveNo];
         return {
-            format: drive.format,
-            volume: drive.volume,
-            track: drive.track,
-            head: drive.head,
-            phase: drive.phase,
-            readOnly: drive.readOnly,
-            dirty: drive.dirty
+            track,
+            head,
+            phase,
+            readOnly,
+            dirty,
         };
     }
 
     // TODO(flan): Does not work on WOZ disks
-    rwts(disk: DriveNumber, track: byte, sector: byte) {
-        const cur = this.drives[disk];
-        if (!isNibbleDrive(cur)) {
+    rwts(drive: DriveNumber, track: byte, sector: byte) {
+        const curDisk = this.disks[drive];
+        if (!isNibbleDisk(curDisk)) {
             throw new Error('Can\'t read WOZ disks');
         }
-        return readSector(cur, track, sector);
+        return readSector(curDisk, track, sector);
     }
 
     /** Sets the data for `drive` from `disk`, which is expected to be JSON. */
@@ -892,11 +875,11 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
     }
 
     getJSON(drive: DriveNumber, pretty: boolean = false) {
-        const cur = this.drives[drive];
-        if (!isNibbleDrive(cur)) {
+        const curDisk = this.disks[drive];
+        if (!isNibbleDisk(curDisk)) {
             throw new Error('Can\'t save WOZ disks to JSON');
         }
-        return jsonEncode(cur, pretty);
+        return jsonEncode(curDisk, pretty);
     }
 
     setJSON(drive: DriveNumber, json: string) {
@@ -916,7 +899,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         return true;
     }
 
-    setBinary(drive: DriveNumber, name: string, fmt: NibbleFormat, rawData: ArrayBuffer) {
+    setBinary(drive: DriveNumber, name: string, fmt: FloppyFormat, rawData: ArrayBuffer) {
         const readOnly = false;
         const volume = 254;
         const options = {
@@ -975,27 +958,28 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
     }
 
     private insertDisk(drive: DriveNumber, disk: FloppyDisk) {
-        const cur = this.drives[drive];
-        Object.assign(cur, disk);
-        const { name, side } = cur.metadata;
+        this.disks[drive] = disk;
+        this.drives[drive].head = 0;
+        this.updateActiveDrive();
+        const { name, side } = disk.metadata;
         this.updateDirty(drive, true);
         this.callbacks.label(drive, name, side);
     }
 
     // TODO(flan): Does not work with WOZ or D13 disks
-    getBinary(drive: DriveNumber, ext?: NibbleFormat): MassStorageData | null {
-        const cur = this.drives[drive];
-        if (!isNibbleDrive(cur)) {
+    getBinary(drive: DriveNumber, ext?: Exclude<NibbleFormat, 'woz' | 'd13'>): MassStorageData | null {
+        const curDisk = this.disks[drive];
+        if (!isNibbleDisk(curDisk)) {
             return null;
         }
-        const { format, readOnly, tracks, volume } = cur;
-        const { name } = cur.metadata;
+        const { format, readOnly, tracks, volume } = curDisk;
+        const { name } = curDisk.metadata;
         const len = format === 'nib' ?
             tracks.reduce((acc, track) => acc + track.length, 0) :
             this.sectors * tracks.length * 256;
         const data = new Uint8Array(len);
 
-        ext = ext ?? format;
+        const extension = ext ?? format;
         let idx = 0;
         for (let t = 0; t < tracks.length; t++) {
             if (ext === 'nib') {
@@ -1003,7 +987,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
                 idx += tracks[t].length;
             } else {
                 for (let s = 0; s < 0x10; s++) {
-                    const sector = readSector({ ...cur, format: ext }, t, s);
+                    const sector = readSector({ ...curDisk, format: extension }, t, s);
                     data.set(sector, idx);
                     idx += sector.length;
                 }
@@ -1011,7 +995,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         }
 
         return {
-            ext,
+            ext: extension,
             metadata: { name },
             data: data.buffer,
             readOnly,
@@ -1021,18 +1005,18 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
 
     // TODO(flan): Does not work with WOZ or D13 disks
     getBase64(drive: DriveNumber) {
-        const cur = this.drives[drive];
-        if (!isNibbleDrive(cur)) {
+        const curDisk = this.disks[drive];
+        if (!isNibbleDisk(curDisk)) {
             return null;
         }
         const data: string[][] | string[] = [];
-        for (let t = 0; t < cur.tracks.length; t++) {
-            if (cur.format === 'nib') {
-                data[t] = base64_encode(cur.tracks[t]);
+        for (let t = 0; t < curDisk.tracks.length; t++) {
+            if (isNibbleDisk(curDisk)) {
+                data[t] = base64_encode(curDisk.tracks[t]);
             } else {
                 const track: string[] = [];
                 for (let s = 0; s < 0x10; s++) {
-                    track[s] = base64_encode(readSector(cur, t, s));
+                    track[s] = base64_encode(readSector(curDisk, t, s));
                 }
                 data[t] = track;
             }

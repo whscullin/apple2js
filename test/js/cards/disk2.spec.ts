@@ -4,7 +4,7 @@ import fs from 'fs';
 import Apple2IO from 'js/apple2io';
 import DiskII, { Callbacks } from 'js/cards/disk2';
 import CPU6502 from 'js/cpu6502';
-import { DriveNumber } from 'js/formats/types';
+import { DriveNumber, NibbleDisk, WozDisk } from 'js/formats/types';
 import { byte } from 'js/types';
 import { toHex } from 'js/util';
 import { VideoModes } from 'js/videomodes';
@@ -71,7 +71,8 @@ describe('DiskII', () => {
         state.controllerState.latch = 0x42;
         state.controllerState.on = true;
         state.controllerState.q7 = true;
-        state.drives[2].tracks[14][12] = 0x80;
+        const disk2 = state.drives[2].disk as NibbleDisk;
+        disk2.tracks[14][12] = 0x80;
         state.drives[2].head = 1000;
         state.drives[2].phase = 3;
         diskII.setState(state);
@@ -478,21 +479,24 @@ describe('DiskII', () => {
         it('writes a nibble to the disk', () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
             diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
-            let track0 = diskII.getState().drives[1].tracks[0];
+            let disk1 = diskII.getState().drives[1].disk as NibbleDisk; 
+            let track0 = disk1.tracks[0];
             expect(track0[0]).toBe(0xFF);
 
             diskII.ioSwitch(0x89);        // turn on the motor
             diskII.ioSwitch(0x8F, 0x80);  // write
             diskII.ioSwitch(0x8C);        // shift
 
-            track0 = diskII.getState().drives[1].tracks[0];
+            disk1 = diskII.getState().drives[1].disk as NibbleDisk; 
+            track0 = disk1.tracks[0];
             expect(track0[0]).toBe(0x80);
         });
 
         it('writes two nibbles to the disk', () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
             diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
-            let track0 = diskII.getState().drives[1].tracks[0];
+            let disk1 = diskII.getState().drives[1].disk as NibbleDisk; 
+            let track0 = disk1.tracks[0];
             expect(track0[0]).toBe(0xFF);
 
             diskII.ioSwitch(0x89);        // turn on the motor
@@ -501,7 +505,8 @@ describe('DiskII', () => {
             diskII.ioSwitch(0x8F, 0x81);  // write
             diskII.ioSwitch(0x8C);        // shift
 
-            track0 = diskII.getState().drives[1].tracks[0];
+            disk1 = diskII.getState().drives[1].disk as NibbleDisk; 
+            track0 = disk1.tracks[0];
             expect(track0[0]).toBe(0x80);
             expect(track0[1]).toBe(0x81);
         });
@@ -819,10 +824,10 @@ class TestDiskReader {
 
     rawTracks() {
         // NOTE(flan): Hack to access private properties.
-        const disk = this.diskII as unknown as { cur: { rawTracks: Uint8Array[] } };
+        const disk = (this.diskII as unknown as { curDisk: WozDisk }).curDisk;
         const result: Uint8Array[] = [];
-        for (let i = 0; i < disk.cur.rawTracks.length; i++) {
-            result[i] = disk.cur.rawTracks[i].slice(0);
+        for (let i = 0; i < disk.rawTracks.length; i++) {
+            result[i] = disk.rawTracks[i].slice(0);
         }
 
         return result;

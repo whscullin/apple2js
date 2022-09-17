@@ -64,22 +64,29 @@ export interface Disk {
     readOnly: boolean;
 }
 
+export const NO_DISK = 'empty';
 export const ENCODING_NIBBLE = 'nibble';
 export const ENCODING_BITSTREAM = 'bitstream';
 export const ENCODING_BLOCK = 'block';
 
 export interface FloppyDisk extends Disk {
-    tracks: memory[];
+    encoding: typeof ENCODING_NIBBLE | typeof ENCODING_BITSTREAM | typeof NO_DISK;
+}
+
+export interface NoFloppyDisk extends FloppyDisk {
+    encoding: typeof NO_DISK;
 }
 
 export interface NibbleDisk extends FloppyDisk {
     encoding: typeof ENCODING_NIBBLE;
-    format: DiskFormat;
+    format: Exclude<NibbleFormat, 'woz'>;
     volume: byte;
+    tracks: memory[];
 }
 
 export interface WozDisk extends FloppyDisk {
     encoding: typeof ENCODING_BITSTREAM;
+    format: 'woz';
     trackMap: number[];
     rawTracks: Uint8Array[];
     info: InfoChunk | undefined;
@@ -87,14 +94,13 @@ export interface WozDisk extends FloppyDisk {
 
 export interface BlockDisk extends Disk {
     encoding: typeof ENCODING_BLOCK;
+    format: BlockFormat;
     blocks: Uint8Array[];
 }
 
 /**
- * File types supported by the disk format processors and
- * block devices.
+ * File types supported by floppy devices in nibble mode.
  */
-
 export const NIBBLE_FORMATS = [
     '2mg',
     'd13',
@@ -102,20 +108,69 @@ export const NIBBLE_FORMATS = [
     'dsk',
     'po',
     'nib',
-    'woz'
 ] as const;
 
+/**
+ * File types supported by floppy devices in bitstream mode.
+ */
+export const BITSTREAM_FORMATS = [
+    'woz',
+] as const;
+
+/**
+ * All file types supported by floppy devices.
+ */
+export const FLOPPY_FORMATS = [
+    ...NIBBLE_FORMATS,
+    ...BITSTREAM_FORMATS,
+] as const;
+
+/**
+ * File types supported by block devices.
+ */
 export const BLOCK_FORMATS = [
     '2mg',
     'hdv',
     'po',
 ] as const;
 
-export const DISK_FORMATS = [...NIBBLE_FORMATS, ...BLOCK_FORMATS] as const;
+/**
+ * All supported disk formats.
+ */
+export const DISK_FORMATS = [
+    ...FLOPPY_FORMATS,
+    ...BLOCK_FORMATS,
+] as const;
 
+export type FloppyFormat = MemberOf<typeof FLOPPY_FORMATS>;
 export type NibbleFormat = MemberOf<typeof NIBBLE_FORMATS>;
+export type BitstreamFormat = 'woz';
 export type BlockFormat = MemberOf<typeof BLOCK_FORMATS>;
 export type DiskFormat = MemberOf<typeof DISK_FORMATS>;
+
+/** Type guard for nibble disk formats. */
+export function isNibbleDiskFormat(f: DiskFormat): f is NibbleFormat {
+    return f in NIBBLE_FORMATS;
+}
+
+/** Type guard for block disk formats. */
+export function isBlockDiskFormat(f: DiskFormat): f is BlockFormat {
+    return f in BLOCK_FORMATS;
+}
+
+export function isNoFloppyDisk(disk: Disk): disk is NoFloppyDisk {
+    return (disk as NoFloppyDisk)?.encoding === NO_DISK;
+}
+
+/** Type guard for NibbleDisks */
+export function isNibbleDisk(disk: Disk): disk is NibbleDisk {
+    return (disk as NibbleDisk)?.encoding === ENCODING_NIBBLE;
+}
+
+/** Type guard for NibbleDisks */
+export function isWozDisk(disk: Disk): disk is WozDisk {
+    return (disk as WozDisk)?.encoding === ENCODING_BITSTREAM;
+}
 
 /**
  * Base format for JSON defined disks
@@ -180,7 +235,7 @@ export interface ProcessBinaryMessage {
     type: typeof PROCESS_BINARY;
     payload: {
         drive: DriveNumber;
-        fmt: NibbleFormat;
+        fmt: FloppyFormat;
         options: DiskOptions;
     };
 }
@@ -227,7 +282,7 @@ export type FormatWorkerResponse =
 
 export interface MassStorageData {
     metadata: DiskMetadata;
-    ext: string;
+    ext: DiskFormat;
     readOnly: boolean;
     volume?: byte;
     data: ArrayBuffer;

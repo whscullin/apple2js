@@ -1,18 +1,18 @@
-import { includes, word } from 'js/types';
-import { initGamepad } from 'js/ui/gamepad';
+import Disk2 from 'js/cards/disk2';
+import SmartPort from 'js/cards/smartport';
+import Debugger from 'js/debugger';
 import {
     BlockFormat,
     BLOCK_FORMATS,
     DISK_FORMATS,
     DriveNumber,
+    FloppyFormat,
+    FLOPPY_FORMATS,
     JSONDisk,
     MassStorage,
-    NibbleFormat,
-    NIBBLE_FORMATS,
 } from 'js/formats/types';
-import Disk2 from 'js/cards/disk2';
-import SmartPort from 'js/cards/smartport';
-import Debugger from 'js/debugger';
+import { includes, word } from 'js/types';
+import { initGamepad } from 'js/ui/gamepad';
 
 type ProgressCallback = (current: number, total: number) => void;
 
@@ -46,8 +46,8 @@ export const getNameAndExtension = (url: string) => {
 };
 
 export const loadLocalFile = (
-    storage: MassStorage<NibbleFormat|BlockFormat>,
-    formats: typeof NIBBLE_FORMATS | typeof BLOCK_FORMATS | typeof DISK_FORMATS,
+    storage: MassStorage<FloppyFormat|BlockFormat>,
+    formats: typeof FLOPPY_FORMATS | typeof BLOCK_FORMATS | typeof DISK_FORMATS,
     number: DriveNumber,
     file: File,
 ) => {
@@ -94,7 +94,7 @@ export const loadLocalBlockFile = (smartPort: SmartPort, number: DriveNumber, fi
  * @returns true if successful
  */
 export const loadLocalNibbleFile = (disk2: Disk2, number: DriveNumber, file: File) => {
-    return loadLocalFile(disk2, NIBBLE_FORMATS, number, file);
+    return loadLocalFile(disk2, FLOPPY_FORMATS, number, file);
 };
 
 /**
@@ -117,7 +117,7 @@ export const loadJSON = async (
         throw new Error(`Error loading: ${response.statusText}`);
     }
     const data = await response.json() as JSONDisk;
-    if (!includes(NIBBLE_FORMATS, data.type)) {
+    if (!includes(FLOPPY_FORMATS, data.type)) {
         throw new Error(`Type "${data.type}" not recognized.`);
     }
     disk2.setDisk(number, data);
@@ -209,7 +209,7 @@ export const loadHttpNibbleFile = async (
         return loadJSON(disk2, number, url);
     }
     const { name, ext } = getNameAndExtension(url);
-    if (!includes(NIBBLE_FORMATS, ext)) {
+    if (!includes(FLOPPY_FORMATS, ext)) {
         throw new Error(`Extension "${ext}" not recognized.`);
     }
     const data = await loadHttpFile(url, signal, onProgress);
@@ -241,7 +241,7 @@ export class SmartStorageBroker implements MassStorage<unknown> {
                 } else {
                     throw new Error(`Unable to load "${name}"`);
                 }
-            } else if (includes(NIBBLE_FORMATS, ext)) {
+            } else if (includes(FLOPPY_FORMATS, ext)) {
                 this.disk2.setBinary(drive, name, ext, data);
             } else {
                 throw new Error(`Unable to load "${name}"`);

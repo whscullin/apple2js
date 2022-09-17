@@ -1,4 +1,4 @@
-import { BLOCK_FORMATS, DISK_FORMATS, DriveNumber, MassStorage, NIBBLE_FORMATS } from 'js/formats/types';
+import { BLOCK_FORMATS, DISK_FORMATS, DriveNumber, FLOPPY_FORMATS, MassStorage } from 'js/formats/types';
 import { h, JSX, RefObject } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
 import {  loadLocalFile } from './util/files';
@@ -7,7 +7,7 @@ import { spawn } from './util/promises';
 export interface DiskDragTargetProps<T> extends JSX.HTMLAttributes<HTMLDivElement> {
     storage: MassStorage<T> | undefined;
     drive?: DriveNumber;
-    formats: typeof NIBBLE_FORMATS
+    formats: typeof FLOPPY_FORMATS
         | typeof BLOCK_FORMATS
         | typeof DISK_FORMATS;
     dropRef?: RefObject<HTMLElement>;
