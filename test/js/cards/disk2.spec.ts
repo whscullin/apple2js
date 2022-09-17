@@ -824,7 +824,7 @@ class TestDiskReader {
 
     rawTracks() {
         // NOTE(flan): Hack to access private properties.
-        const disk = (this.diskII as unknown as { cur: { disk: WozDisk } }).cur.disk;
+        const disk = (this.diskII as unknown as { curDisk: WozDisk }).curDisk;
         const result: Uint8Array[] = [];
         for (let i = 0; i < disk.rawTracks.length; i++) {
             result[i] = disk.rawTracks[i].slice(0);
