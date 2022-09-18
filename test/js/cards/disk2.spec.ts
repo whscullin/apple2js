@@ -66,7 +66,7 @@ describe('DiskII', () => {
 
         const state = diskII.getState();
         // These are just arbitrary changes, not an exhaustive list of fields.
-        state.skip = 1;
+        (state.drives[1].driver as {skip:number}).skip = 1;
         state.controllerState.drive = 2;
         state.controllerState.latch = 0x42;
         state.controllerState.on = true;
@@ -97,7 +97,7 @@ describe('DiskII', () => {
         expect(callbacks.label).toHaveBeenCalledWith(2, 'Disk 2', undefined);
 
         expect(callbacks.dirty).toHaveBeenCalledTimes(2);
-        expect(callbacks.dirty).toHaveBeenCalledWith(1, true);
+        expect(callbacks.dirty).toHaveBeenCalledWith(1, false);
         expect(callbacks.dirty).toHaveBeenCalledWith(2, false);
     });
 
@@ -824,7 +824,7 @@ class TestDiskReader {
 
     rawTracks() {
         // NOTE(flan): Hack to access private properties.
-        const disk = (this.diskII as unknown as { curDisk: WozDisk }).curDisk;
+        const disk = (this.diskII as unknown as { disks: WozDisk[] }).disks[1];
         const result: Uint8Array[] = [];
         for (let i = 0; i < disk.rawTracks.length; i++) {
             result[i] = disk.rawTracks[i].slice(0);
