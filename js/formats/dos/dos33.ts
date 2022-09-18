@@ -3,7 +3,7 @@ import { debug, toHex } from 'js/util';
 import ApplesoftDump from 'js/applesoft/decompiler';
 import IntegerBASICDump from 'js/intbasic/decompiler';
 import { MassStorageData, NibbleDisk } from '../types';
-import { readSector, writeSector } from '../format_utils';
+import { readSector, writeSector, _DO } from '../format_utils';
 
 /** Usual track for VTOC */
 export const DEFAULT_VTOC_TRACK = 0x11;
@@ -135,7 +135,7 @@ export class DOS33 {
 
     /**
      * Method to read or write a sector, could be overloaded to support other
-     * data types.
+     * data types. This uses the DOS logical to physical sector mapping.
      *
      * @param track Track to read/write
      * @param sector Sector to read/write
@@ -146,14 +146,14 @@ export class DOS33 {
     rwts(track: byte, sector: byte, data?: Uint8Array): Uint8Array {
         if (data) {
             if (isNibbleDisk(this.disk)) {
-                writeSector(this.disk, track, sector, data);
+                writeSector(this.disk, track, _DO[sector], data);
             } else {
                 const offset = track * 0x1000 + sector * 0x100;
                 new Uint8Array(this.disk.data).set(data, offset);
             }
         } else {
             if (isNibbleDisk(this.disk)) {
-                data = readSector(this.disk, track, sector);
+                data = readSector(this.disk, track, _DO[sector]);
             } else {
                 const offset = track * 0x1000 + sector * 0x100;
                 // Slice new array so modifications to apply to original track
@@ -741,7 +741,7 @@ export class DOS33 {
 export function isMaybeDOS33(disk: NibbleDisk | MassStorageData) {
     let data;
     if (isNibbleDisk(disk)) {
-        data = readSector(disk, DEFAULT_VTOC_TRACK, DEFAULT_VTOC_SECTOR);
+        data = readSector(disk, DEFAULT_VTOC_TRACK, _DO[DEFAULT_VTOC_SECTOR]);
     } else if (disk.data.byteLength > 0) {
         data = new Uint8Array(
             disk.data,
