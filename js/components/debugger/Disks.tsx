@@ -235,7 +235,7 @@ const Catalog = ({ dos, setFileData }: CatalogProps) => {
  */
 interface DiskInfoProps {
     massStorage: MassStorage<DiskFormat>;
-    drive: DriveNumber;
+    driveNo: DriveNumber;
     setFileData: (fileData: FileData) => void;
 }
 
@@ -250,9 +250,9 @@ interface DiskInfoProps {
  * @param drive The drive number
  * @returns DiskInfo component
  */
-const DiskInfo = ({ massStorage, drive, setFileData }: DiskInfoProps) => {
+const DiskInfo = ({ massStorage, driveNo, setFileData }: DiskInfoProps) => {
     const disk = useMemo(() => {
-        const massStorageData = massStorage.getBinary(drive, 'po');
+        const massStorageData = massStorage.getBinary(driveNo, 'po');
         if (massStorageData) {
             const { data, readOnly, ext } = massStorageData;
             const { name } = massStorageData.metadata;
@@ -265,7 +265,7 @@ const DiskInfo = ({ massStorage, drive, setFileData }: DiskInfoProps) => {
                     volume: 254,
                 });
             } else if (data.byteLength < 800 * 1024) {
-                const doData = massStorage.getBinary(drive, 'do');
+                const doData = massStorage.getBinary(driveNo, 'do');
                 if (doData) {
                     if (isMaybeDOS33(doData)) {
                         disk = createDiskFromDOS({
@@ -288,7 +288,7 @@ const DiskInfo = ({ massStorage, drive, setFileData }: DiskInfoProps) => {
             return disk;
         }
         return null;
-    }, [massStorage, drive]);
+    }, [massStorage, driveNo]);
 
     if (disk) {
         try {
@@ -409,11 +409,11 @@ export const Disks = ({ apple2 }: DisksProps) => {
                     <div className={debuggerStyles.subHeading}>
                         {card.constructor.name} - 1
                     </div>
-                    <DiskInfo massStorage={card} drive={1} setFileData={setFileData} />
+                    <DiskInfo massStorage={card} driveNo={1} setFileData={setFileData} />
                     <div className={debuggerStyles.subHeading}>
                         {card.constructor.name} - 2
                     </div>
-                    <DiskInfo massStorage={card} drive={2} setFileData={setFileData} />
+                    <DiskInfo massStorage={card} driveNo={2} setFileData={setFileData} />
                 </div>
             ))}
             <FileViewer fileData={fileData} onClose={onClose} />

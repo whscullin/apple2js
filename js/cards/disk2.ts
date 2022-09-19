@@ -184,7 +184,7 @@ interface ControllerState {
     on: boolean;
 
     /** The active drive. */
-    drive: DriveNumber;
+    driveNo: DriveNumber;
 
     /** The 8-cycle LSS clock. */
     clock: LssClockCycle;
@@ -219,15 +219,15 @@ type DriverState = EmptyDriverState | NibbleDiskDriverState | WozDiskDriverState
 /** Callbacks triggered by events of the drive or controller. */
 export interface Callbacks {
     /** Called when a drive turns on or off. */
-    driveLight: (drive: DriveNumber, on: boolean) => void;
+    driveLight: (driveNo: DriveNumber, on: boolean) => void;
     /**
      * Called when a disk has been written to. For performance and integrity,
      * this is only called when the drive stops spinning or is removed from
      * the drive.
      */
-    dirty: (drive: DriveNumber, dirty: boolean) => void;
+    dirty: (driveNo: DriveNumber, dirty: boolean) => void;
     /** Called when a disk is inserted or removed from the drive. */
-    label: (drive: DriveNumber, name?: string, side?: string) => void;
+    label: (driveNo: DriveNumber, name?: string, side?: string) => void;
 }
 
 /** Common information for Nibble and WOZ disks. */
@@ -361,7 +361,7 @@ class EmptyDriver implements DiskDriver {
 
 abstract class BaseDiskDriver implements DiskDriver {
     constructor(
-        protected readonly driveNumber: DriveNumber,
+        protected readonly driveNo: DriveNumber,
         protected readonly drive: Drive,
         protected readonly disk: NibbleDisk | WozDisk,
         protected readonly controller: ControllerState) { }
@@ -400,7 +400,7 @@ abstract class BaseDiskDriver implements DiskDriver {
     abstract clampTrack(): void;
 
     isOn(): boolean {
-        return this.controller.on && this.controller.drive === this.driveNumber;
+        return this.controller.on && this.controller.driveNo === this.driveNo;
     }
 
     isWriteProtected(): boolean {
@@ -428,12 +428,12 @@ class NibbleDiskDriver extends BaseDiskDriver {
     private nibbleCount: number = 0;
 
     constructor(
-        driveNumber: DriveNumber,
+        driveNo: DriveNumber,
         drive: Drive,
         readonly disk: NibbleDisk,
         controller: ControllerState,
         private readonly onDirty: () => void) {
-        super(driveNumber, drive, disk, controller);
+        super(driveNo, drive, disk, controller);
     }
 
     tick(): void {
@@ -537,13 +537,13 @@ class WozDiskDriver extends BaseDiskDriver {
     private zeros = 0;
 
     constructor(
-        driveNumber: DriveNumber,
+        driveNo: DriveNumber,
         drive: Drive,
         readonly disk: WozDisk,
         controller: ControllerState,
         private readonly onDirty: () => void,
         private readonly io: Apple2IO) {
-        super(driveNumber, drive, disk, controller);
+        super(driveNo, drive, disk, controller);
 
         // From the example in UtA2e, p. 9-29, col. 1, para. 1., this is
         // essentially the start of the sequencer loop and produces
@@ -794,7 +794,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
             sectors,
             bus: 0,
             latch: 0,
-            drive: 1,
+            driveNo: 1,
             on: false,
             q6: false,
             q7: false,
@@ -814,8 +814,8 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
 
     /** Updates the active drive based on the controller state. */
     private updateActiveDrive() {
-        this.curDrive = this.drives[this.state.drive];
-        this.curDriver = this.driver[this.state.drive];
+        this.curDrive = this.drives[this.state.driveNo];
+        this.curDriver = this.driver[this.state.driveNo];
     }
 
     private debug(..._args: unknown[]) {
@@ -898,7 +898,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
                         this.offTimeout = window.setTimeout(() => {
                             this.debug('Drive Off');
                             state.on = false;
-                            this.callbacks.driveLight(state.drive, false);
+                            this.callbacks.driveLight(state.driveNo, false);
                             this.curDriver.onDriveOff();
                         }, 1000);
                     }
@@ -913,14 +913,14 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
                 if (!state.on) {
                     this.debug('Drive On');
                     state.on = true;
-                    this.callbacks.driveLight(state.drive, true);
+                    this.callbacks.driveLight(state.driveNo, true);
                     this.curDriver.onDriveOn();
                 }
                 break;
 
             case LOC.DRIVE1:  // 0x0a
                 this.debug('Disk 1');
-                state.drive = 1;
+                state.driveNo = 1;
                 this.updateActiveDrive();
                 if (state.on) {
                     this.callbacks.driveLight(2, false);
@@ -929,7 +929,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
                 break;
             case LOC.DRIVE2:  // 0x0b
                 this.debug('Disk 2');
-                state.drive = 2;
+                state.driveNo = 2;
                 this.updateActiveDrive();
                 if (state.on) {
                     this.callbacks.driveLight(1, false);
@@ -980,10 +980,10 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         return result;
     }
 
-    private updateDirty(drive: DriveNumber, dirty: boolean) {
-        this.drives[drive].dirty = dirty;
+    private updateDirty(driveNo: DriveNumber, dirty: boolean) {
+        this.drives[driveNo].dirty = dirty;
         if (this.callbacks.dirty) {
-            this.callbacks.dirty(drive, dirty);
+            this.callbacks.dirty(driveNo, dirty);
         }
     }
 
@@ -1002,10 +1002,10 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
     reset() {
         const state = this.state;
         if (state.on) {
-            this.callbacks.driveLight(state.drive, false);
+            this.callbacks.driveLight(state.driveNo, false);
             state.q7 = false;
             state.on = false;
-            state.drive = 1;
+            state.driveNo = 1;
         }
         this.updateActiveDrive();
     }
@@ -1014,10 +1014,10 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         this.curDriver.tick();
     }
 
-    private getDriveState(drive: DriveNumber): DriveState {
-        const curDrive = this.drives[drive];
-        const curDisk = this.disks[drive];
-        const curDriver = this.driver[drive];
+    private getDriveState(driveNo: DriveNumber): DriveState {
+        const curDrive = this.drives[driveNo];
+        const curDisk = this.disks[driveNo];
+        const curDriver = this.driver[driveNo];
         const { readOnly, track, head, phase, dirty } = curDrive;
         return {
             disk: getDiskState(curDisk),
@@ -1042,9 +1042,9 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         return result;
     }
 
-    private setDriveState(drive: DriveNumber, state: DriveState) {
+    private setDriveState(driveNo: DriveNumber, state: DriveState) {
         const { track, head, phase, readOnly, dirty } = state;
-        this.drives[drive] = {
+        this.drives[driveNo] = {
             track,
             head,
             phase,
@@ -1052,8 +1052,8 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
             dirty,
         };
         const disk = getDiskState(state.disk);
-        this.setDiskInternal(drive, disk);
-        this.driver[drive].setState(state.driver);
+        this.setDiskInternal(driveNo, disk);
+        this.driver[driveNo].setState(state.driver);
     }
 
 
@@ -1082,8 +1082,8 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
     }
 
     /** Reads the given track and physical sector. */
-    rwts(disk: DriveNumber, track: byte, sector: byte) {
-        const curDisk = this.disks[disk];
+    rwts(driveNo: DriveNumber, track: byte, sector: byte) {
+        const curDisk = this.disks[driveNo];
         if (!isNibbleDisk(curDisk)) {
             throw new Error('Can\'t read WOZ disks');
         }
@@ -1092,12 +1092,12 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
 
     /** Sets the data for `drive` from `disk`, which is expected to be JSON. */
     // TODO(flan): This implementation is not very safe.
-    setDisk(drive: DriveNumber, jsonDisk: JSONDisk) {
+    setDisk(driveNo: DriveNumber, jsonDisk: JSONDisk) {
         if (this.worker) {
             const message: FormatWorkerMessage = {
                 type: PROCESS_JSON_DISK,
                 payload: {
-                    drive,
+                    driveNo: driveNo,
                     jsonDisk
                 },
             };
@@ -1106,39 +1106,39 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         } else {
             const disk = createDiskFromJsonDisk(jsonDisk);
             if (disk) {
-                this.insertDisk(drive, disk);
+                this.insertDisk(driveNo, disk);
                 return true;
             }
         }
         return false;
     }
 
-    getJSON(drive: DriveNumber, pretty: boolean = false) {
-        const curDisk = this.disks[drive];
+    getJSON(driveNo: DriveNumber, pretty: boolean = false) {
+        const curDisk = this.disks[driveNo];
         if (!isNibbleDisk(curDisk)) {
             throw new Error('Can\'t save WOZ disks to JSON');
         }
         return jsonEncode(curDisk, pretty);
     }
 
-    setJSON(drive: DriveNumber, json: string) {
+    setJSON(driveNo: DriveNumber, json: string) {
         if (this.worker) {
             const message: FormatWorkerMessage = {
                 type: PROCESS_JSON,
                 payload: {
-                    drive,
+                    driveNo: driveNo,
                     json
                 },
             };
             this.worker.postMessage(message);
         } else {
             const disk = jsonDecode(json);
-            this.insertDisk(drive, disk);
+            this.insertDisk(driveNo, disk);
         }
         return true;
     }
 
-    setBinary(drive: DriveNumber, name: string, fmt: FloppyFormat, rawData: ArrayBuffer) {
+    setBinary(driveNo: DriveNumber, name: string, fmt: FloppyFormat, rawData: ArrayBuffer) {
         const readOnly = false;
         const volume = 254;
         const options = {
@@ -1152,7 +1152,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
             const message: FormatWorkerMessage = {
                 type: PROCESS_BINARY,
                 payload: {
-                    drive,
+                    driveNo: driveNo,
                     fmt,
                     options,
                 }
@@ -1163,7 +1163,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         } else {
             const disk = createDisk(fmt, options);
             if (disk) {
-                this.insertDisk(drive, disk);
+                this.insertDisk(driveNo, disk);
                 return true;
             }
         }
@@ -1183,7 +1183,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
                 switch (data.type) {
                     case DISK_PROCESSED:
                         {
-                            const { drive, disk } = data.payload;
+                            const { driveNo: drive, disk } = data.payload;
                             if (disk) {
                                 this.insertDisk(drive, disk);
                             }
@@ -1196,26 +1196,26 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         }
     }
 
-    private setDiskInternal(drive: DriveNumber, disk: FloppyDisk) {
-        this.disks[drive] = disk;
+    private setDiskInternal(driveNo: DriveNumber, disk: FloppyDisk) {
+        this.disks[driveNo] = disk;
         if (isNoFloppyDisk(disk)) {
-            this.driver[drive] = new EmptyDriver(this.drives[drive]);
+            this.driver[driveNo] = new EmptyDriver(this.drives[driveNo]);
         } else if (isNibbleDisk(disk)) {
-            this.driver[drive] =
+            this.driver[driveNo] =
                 new NibbleDiskDriver(
-                    drive,
-                    this.drives[drive],
+                    driveNo,
+                    this.drives[driveNo],
                     disk,
                     this.state,
-                    () => this.updateDirty(drive, true));
+                    () => this.updateDirty(driveNo, true));
         } else if (isWozDisk(disk)) {
-            this.driver[drive] =
+            this.driver[driveNo] =
                 new WozDiskDriver(
-                    drive,
-                    this.drives[drive],
+                    driveNo,
+                    this.drives[driveNo],
                     disk,
                     this.state,
-                    () => this.updateDirty(drive, true),
+                    () => this.updateDirty(driveNo, true),
                     this.io);
         } else {
             throw new Error(`Unknown disk format ${disk.encoding}`);
@@ -1223,12 +1223,12 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         this.updateActiveDrive();
     }
 
-    private insertDisk(drive: DriveNumber, disk: FloppyDisk) {
-        this.setDiskInternal(drive, disk);
-        this.drives[drive].head = 0;
+    private insertDisk(driveNo: DriveNumber, disk: FloppyDisk) {
+        this.setDiskInternal(driveNo, disk);
+        this.drives[driveNo].head = 0;
         const { name, side } = disk.metadata;
-        this.updateDirty(drive, this.drives[drive].dirty);
-        this.callbacks.label(drive, name, side);
+        this.updateDirty(driveNo, this.drives[driveNo].dirty);
+        this.callbacks.label(driveNo, name, side);
     }
 
     /**
@@ -1241,8 +1241,8 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
      * an error will be thrown. Using `ext == 'nib'` will always return
      * an image.
      */
-    getBinary(drive: DriveNumber, ext?: Exclude<NibbleFormat, 'woz'>): MassStorageData | null {
-        const curDisk = this.disks[drive];
+    getBinary(driveNo: DriveNumber, ext?: Exclude<NibbleFormat, 'woz'>): MassStorageData | null {
+        const curDisk = this.disks[driveNo];
         if (!isNibbleDisk(curDisk)) {
             return null;
         }
@@ -1289,8 +1289,8 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
     }
 
     // TODO(flan): Does not work with WOZ or D13 disks
-    getBase64(drive: DriveNumber) {
-        const curDisk = this.disks[drive];
+    getBase64(driveNo: DriveNumber) {
+        const curDisk = this.disks[driveNo];
         if (!isNibbleDisk(curDisk)) {
             return null;
         }
