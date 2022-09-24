@@ -3,32 +3,14 @@ import type {
     byte,
     Card,
     nibble,
-    ReadonlyUint8Array,
+    ReadonlyUint8Array
 } from '../types';
 
 import {
-    FormatWorkerMessage,
-    FormatWorkerResponse,
-    NibbleFormat,
-    DISK_PROCESSED,
-    DRIVE_NUMBERS,
-    DriveNumber,
-    JSONDisk,
-    PROCESS_BINARY,
-    PROCESS_JSON_DISK,
-    PROCESS_JSON,
-    MassStorage,
-    MassStorageData,
-    SupportedSectors,
-    FloppyDisk,
-    FloppyFormat,
-    WozDisk,
-    NibbleDisk,
-    isNibbleDisk,
-    isWozDisk,
-    NoFloppyDisk,
-    isNoFloppyDisk,
-    NO_DISK,
+    DISK_PROCESSED, DriveNumber, DRIVE_NUMBERS, FloppyDisk,
+    FloppyFormat, FormatWorkerMessage,
+    FormatWorkerResponse, isNibbleDisk, isNoFloppyDisk, isWozDisk, JSONDisk, MassStorage,
+    MassStorageData, NibbleDisk, NibbleFormat, NoFloppyDisk, NO_DISK, PROCESS_BINARY, PROCESS_JSON, PROCESS_JSON_DISK, SupportedSectors, WozDisk
 } from '../formats/types';
 
 import {
@@ -36,11 +18,11 @@ import {
     createDiskFromJsonDisk
 } from '../formats/create_disk';
 
-import { toHex } from '../util';
 import { jsonDecode, jsonEncode, readSector, _D13O, _DO, _PO } from '../formats/format_utils';
+import { toHex } from '../util';
 
-import { BOOTSTRAP_ROM_16, BOOTSTRAP_ROM_13 } from '../roms/cards/disk2';
 import Apple2IO from '../apple2io';
+import { BOOTSTRAP_ROM_13, BOOTSTRAP_ROM_16 } from '../roms/cards/disk2';
 
 /** Softswitch locations */
 const LOC = {
