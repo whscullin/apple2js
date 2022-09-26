@@ -1,0 +1,94 @@
+:global(.mono) {
+    filter: url("#green");
+}
+
+.display {
+    margin: 5px auto 10px;
+}
+
+:global(.full-page) .display {
+    width: 100vw;
+    height: 68.5714vw; /* 384px / 560px * 100% */
+    max-height: 100vh;
+    max-width: 145.83vh; /* 560px / 384px * 100% */
+    padding: 0;
+    border: 0;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    justify-content: center;
+    align-items: center;
+    margin: auto !important;
+}
+
+.overscan {
+    margin: auto;
+    position: relative;
+    background-color: black;
+    width: 592px;
+    height: 416px;
+    border: 6px inset #f0edd0;
+    border-radius: 10px;
+}
+
+:global(.full-page) .overscan {
+    margin: initial;
+    padding: 0;
+    width: initial;
+    border: 0;
+    border-radius: 0;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+:global(.scanlines)::after {
+    display: block;
+    pointer-events: none;
+    background-image:
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0,
+            transparent 1px,
+            rgb(0 0 0 / 50%) 1px,
+            rgb(0 0 0 / 50%) 2px
+        );
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
+
+:global(.full-page) :global(.scanlines)::after {
+    background-image:
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0,
+            transparent 0.25vh,
+            rgb(0 0 0 / 50%) 0.25vh,
+            rgb(0 0 0 / 50%) 0.5vh
+        );
+}
+
+.screen {
+    cursor: crosshair;
+    image-rendering: crisp-edges;
+    width: 592px;
+    height: 416px;
+    touch-action: manipulation;
+    user-select: none;
+}
+
+.screen:global(.mouseMode) {
+    cursor: none;
+}
+
+:global(.full-page) .screen {
+    width: 100%;
+    height: 100%;
+}

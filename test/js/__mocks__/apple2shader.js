@@ -11,7 +11,7 @@ export const screenEmu = (function () {
         DisplayConfiguration: class {},
         Point: class {},
         ScreenView: class {
-            initOpenGL() {}
+            initOpenGL() { return Promise.resolve(); }
         },
         Size: class{},
     };

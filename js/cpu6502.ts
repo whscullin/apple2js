@@ -1,37 +1,41 @@
-/*
- * Copyright 2010-2021 Will Scullin <scullin@scullinsteel.com>
- *
- * Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation.  No representations are made about the suitability of this
- * software for any purpose.  It is provided "as is" without express or
- * implied warranty.
- */
+import { Memory, MemberOf, MemoryPages, byte, word } from './types';
+import { toHex } from './util';
 
-import { Memory, MemoryPages, byte, word } from './types';
-import { debug, toHex } from './util';
+export const FLAVOR_6502 = '6502';
+export const FLAVOR_ROCKWELL_65C02 = 'rockwell65c02';
+export const FLAVOR_WDC_65C02 = 'wdc65c02';
+
+export const FLAVORS_65C02 = [
+    FLAVOR_ROCKWELL_65C02,
+    FLAVOR_WDC_65C02
+];
+
+export const FLAVORS = [
+    FLAVOR_6502,
+    ...FLAVORS_65C02
+];
+
+export type Flavor = MemberOf<typeof FLAVORS>;
 
 export interface CpuOptions {
-    '65C02'?: boolean;
+    flavor?: Flavor;
 }
 
 export interface CpuState {
     /** Accumulator */
-    a: byte,
+    a: byte;
     /** X index */
-    x: byte,
+    x: byte;
     /** Y index */
-    y: byte,
+    y: byte;
     /** Status register */
-    s: byte,
+    s: byte;
     /** Program counter */
-    pc: word,
+    pc: word;
     /** Stack pointer */
-    sp: byte,
+    sp: byte;
     /** Elapsed cycles */
-    cycles: number
+    cycles: number;
 }
 
 export type Mode =
@@ -86,19 +90,19 @@ export type flag = 0x80 | 0x40 | 0x20 | 0x10 | 0x08 | 0x04 | 0x02 | 0x01;
  */
 export type DebugInfo = {
     /** Program counter */
-    pc: word,
+    pc: word;
     /** Accumulator */
-    ar: byte,
+    ar: byte;
     /** X index */
-    xr: byte,
+    xr: byte;
     /** Y index */
-    yr: byte,
+    yr: byte;
     /** Status register */
-    sr: byte,
+    sr: byte;
     /** Stack pointer */
-    sp: byte,
+    sp: byte;
     /** Current command */
-    cmd: byte[],
+    cmd: byte[];
 };
 
 /** Flags to status byte mask. */
@@ -131,7 +135,7 @@ function isResettablePageHandler(pageHandler: MemoryPages | ResettablePageHandle
 
 const BLANK_PAGE: Memory = {
     read: function () { return 0; },
-    write: function () { }
+    write: function () { /* not writable */ }
 };
 
 interface Opts {
@@ -141,13 +145,13 @@ interface Opts {
 type ReadFn = () => byte;
 type WriteFn = (val: byte) => void;
 type ReadAddrFn = (opts?: Opts) => word;
-type ImpliedFn = () => void
+type ImpliedFn = () => void;
 
-interface Instruction<T = any> {
-    name: string
-    mode: Mode
-    op: (fn: T) => void
-    modeFn: T
+interface Instruction<T = unknown> {
+    name: string;
+    mode: Mode;
+    op: (fn: T) => void;
+    modeFn: T;
 }
 
 type StrictInstruction =
@@ -157,13 +161,15 @@ type StrictInstruction =
     Instruction<ImpliedFn> |
     Instruction<flag> |
     Instruction<flag|0> |
-    Instruction<byte>
+    Instruction<byte>;
 
-type Instructions = Record<byte, StrictInstruction>
+type Instructions = Record<byte, StrictInstruction>;
 
 type callback = (cpu: CPU6502) => boolean | void;
 
 export default class CPU6502 {
+    /** flavor */
+    private readonly flavor: Flavor;
     /** 65C02 emulation mode flag */
     private readonly is65C02: boolean;
 
@@ -174,7 +180,7 @@ export default class CPU6502 {
     /** Program counter */
     private pc: word = 0;
     /** Status register */
-    private sr: byte = flags.X
+    private sr: byte = flags.X;
     /** Accumulator */
     private ar: byte = 0;
     /** X index */
@@ -185,12 +191,12 @@ export default class CPU6502 {
     private sp: byte = 0xff;
 
     /** Current instruction */
-    private op: Instruction
+    private op: Instruction;
     /** Last accessed memory address */
     private addr: word = 0;
 
     /** Filled array of memory handlers by address page */
-    private memPages: Memory[] = new Array(0x100);
+    private memPages: Memory[] = new Array<Memory>(0x100);
     /** Callbacks invoked on reset signal */
     private resetHandlers: ResettablePageHandler[] = [];
     /** Elapsed cycles */
@@ -198,11 +204,17 @@ export default class CPU6502 {
     /** Command being fetched signal */
     private sync = false;
 
+    /** Processor is in WAI mode */
+    private wait = false;
+    /** Processor is in STP mode */
+    private stop = false;
+
     /** Filled array of CPU operations */
     private readonly opary: Instruction[];
 
-    constructor(options: CpuOptions = {}) {
-        this.is65C02 = options['65C02'] ? true : false;
+    constructor({ flavor }: CpuOptions = {}) {
+        this.flavor = flavor ?? FLAVOR_6502;
+        this.is65C02 = !!flavor && FLAVORS_65C02.includes(flavor);
 
         this.memPages.fill(BLANK_PAGE);
         this.memPages.fill(BLANK_PAGE);
@@ -210,17 +222,35 @@ export default class CPU6502 {
         // Create this CPU's instruction table
 
         let ops = { ...this.OPS_6502 };
-        if (this.is65C02) {
-            ops = { ...ops, ...this.OPS_65C02 };
+
+        switch (this.flavor) {
+            case FLAVOR_WDC_65C02:
+                ops = {
+                    ...ops,
+                    ...this.OPS_65C02,
+                    ...this.OPS_WDC_65C02,
+                };
+                break;
+            case FLAVOR_ROCKWELL_65C02:
+                ops = {
+                    ...ops,
+                    ...this.OPS_65C02,
+                    ...this.OPS_ROCKWELL_65C02,
+                };
+                break;
+            default:
+                ops = {
+                    ...ops,
+                    ...this.OPS_NMOS_6502,
+                };
         }
 
         // Certain browsers benefit from using arrays over maps
-        const opary: Instruction[] = new Array(0x100);
+        this.opary = new Array<Instruction>(0x100);
 
         for (let idx = 0; idx < 0x100; idx++) {
-            opary[idx] = ops[idx] || this.unknown(idx);
+            this.opary[idx] = ops[idx] || this.unknown(idx);
         }
-        this.opary = opary;
     }
 
     /**
@@ -274,7 +304,11 @@ export default class CPU6502 {
                 n = bin >> 7;
                 z = !bin;
                 if (this.op.mode === 'immediate') {
-                    this.readByte(sub ? 0xB8 : 0x7F);
+                    if (this.flavor === FLAVOR_WDC_65C02) {
+                        this.readByte(sub ? 0xB8 : 0x7F);
+                    } else { // rockwell65c02
+                        this.readByte(sub ? 0xB1 : 0x59);
+                    }
                 } else {
                     this.readByte(this.addr);
                 }
@@ -437,7 +471,7 @@ export default class CPU6502 {
 
     implied = () => {
         this.readByte(this.pc);
-    }
+    };
 
     /*
      * Read functions
@@ -446,17 +480,17 @@ export default class CPU6502 {
     // #$00
     readImmediate = (): byte => {
         return this.readBytePC();
-    }
+    };
 
     // $0000
     readAbsolute = (): byte => {
         return this.readByte(this.readWordPC());
-    }
+    };
 
     // $00
     readZeroPage = (): byte => {
         return this.readByte(this.readBytePC());
-    }
+    };
 
     // $0000,X
     readAbsoluteX = (): byte => {
@@ -465,7 +499,7 @@ export default class CPU6502 {
         const addrIdx = (addr + this.xr) & 0xffff;
         this.workCycleIndexedRead(pc, addr, addrIdx);
         return this.readByte(addrIdx);
-    }
+    };
 
     // $0000,Y
     readAbsoluteY = (): byte => {
@@ -474,21 +508,21 @@ export default class CPU6502 {
         const addrIdx = (addr + this.yr) & 0xffff;
         this.workCycleIndexedRead(pc, addr, addrIdx);
         return this.readByte(addrIdx);
-    }
+    };
 
     // $00,X
     readZeroPageX = (): byte => {
         const zpAddr = this.readBytePC();
         this.readByte(zpAddr);
         return this.readByte((zpAddr + this.xr) & 0xff);
-    }
+    };
 
     // $00,Y
     readZeroPageY = (): byte => {
         const zpAddr = this.readBytePC();
         this.readByte(zpAddr);
         return this.readByte((zpAddr + this.yr) & 0xff);
-    }
+    };
 
     // ($00,X)
     readZeroPageXIndirect = (): byte => {
@@ -496,7 +530,7 @@ export default class CPU6502 {
         this.readByte(zpAddr);
         const addr = this.readZPWord((zpAddr + this.xr) & 0xff);
         return this.readByte(addr);
-    }
+    };
 
     // ($00),Y
     readZeroPageIndirectY = (): byte => {
@@ -506,12 +540,12 @@ export default class CPU6502 {
         const addrIdx = (addr + this.yr) & 0xffff;
         this.workCycleIndexedRead(pc, addr, addrIdx);
         return this.readByte(addrIdx);
-    }
+    };
 
     // ($00) (65C02)
     readZeroPageIndirect = (): byte => {
         return this.readByte(this.readZPWord(this.readBytePC()));
-    }
+    };
 
     /*
      * Write Functions
@@ -520,12 +554,12 @@ export default class CPU6502 {
     // $0000
     writeAbsolute = (val: byte) => {
         this.writeByte(this.readWordPC(), val);
-    }
+    };
 
     // $00
     writeZeroPage = (val: byte) => {
         this.writeByte(this.readBytePC(), val);
-    }
+    };
 
     // $0000,X
     writeAbsoluteX = (val: byte) => {
@@ -534,7 +568,7 @@ export default class CPU6502 {
         const addrIdx = (addr + this.xr) & 0xffff;
         this.workCycleIndexedWrite(pc, addr, addrIdx);
         this.writeByte(addrIdx, val);
-    }
+    };
 
     // $0000,Y
     writeAbsoluteY = (val: byte) => {
@@ -543,21 +577,21 @@ export default class CPU6502 {
         const addrIdx = (addr + this.yr) & 0xffff;
         this.workCycleIndexedWrite(pc, addr, addrIdx);
         this.writeByte(addrIdx, val);
-    }
+    };
 
     // $00,X
     writeZeroPageX = (val: byte) => {
         const zpAddr = this.readBytePC();
         this.readByte(zpAddr);
         this.writeByte((zpAddr + this.xr) & 0xff, val);
-    }
+    };
 
     // $00,Y
     writeZeroPageY = (val: byte) => {
         const zpAddr = this.readBytePC();
         this.readByte(zpAddr);
         this.writeByte((zpAddr + this.yr) & 0xff, val);
-    }
+    };
 
     // ($00,X)
     writeZeroPageXIndirect = (val: byte) => {
@@ -565,7 +599,7 @@ export default class CPU6502 {
         this.readByte(zpAddr);
         const addr = this.readZPWord((zpAddr + this.xr) & 0xff);
         this.writeByte(addr, val);
-    }
+    };
 
     // ($00),Y
     writeZeroPageIndirectY = (val: byte) => {
@@ -575,29 +609,29 @@ export default class CPU6502 {
         const addrIdx = (addr + this.yr) & 0xffff;
         this.workCycleIndexedWrite(pc, addr, addrIdx);
         this.writeByte(addrIdx, val);
-    }
+    };
 
     // ($00) (65C02)
     writeZeroPageIndirect = (val: byte) => {
         this.writeByte(this.readZPWord(this.readBytePC()), val);
-    }
+    };
 
     // $00
     readAddrZeroPage = () => {
         return this.readBytePC();
-    }
+    };
 
     // $00,X
     readAddrZeroPageX = () => {
         const zpAddr = this.readBytePC();
         this.readByte(zpAddr);
         return (zpAddr + this.xr) & 0xff;
-    }
+    };
 
     // $0000 (65C02)
     readAddrAbsolute = (): word => {
         return this.readWordPC();
-    }
+    };
 
     // ($0000) (6502)
     readAddrAbsoluteIndirectBug = (): word => {
@@ -607,14 +641,14 @@ export default class CPU6502 {
         const lsb = this.readByte(addr);
         const msb = this.readByte(page | ((off + 0x01) & 0xff));
         return msb << 8 | lsb;
-    }
+    };
 
     // ($0000) (65C02)
     readAddrAbsoluteIndirect = (): word => {
         const addr = this.readWord(this.readWordPC());
         this.readByte(this.addr);
         return addr;
-    }
+    };
 
     // $0000,X
     readAddrAbsoluteX = (opts?: Opts): word => {
@@ -635,7 +669,35 @@ export default class CPU6502 {
             this.readByte(page | off);
         }
         return addr;
-    }
+    };
+
+    // $0000,Y (NMOS 6502)
+    readAddrAbsoluteY = (): word => {
+        let addr = this.readWordPC();
+        const page = addr & 0xff00;
+        addr = (addr + this.yr) & 0xffff;
+        const off = addr & 0x00ff;
+        this.readByte(page | off);
+        return addr;
+    };
+
+    // ($00,X) (NMOS 6502)
+    readAddrZeroPageXIndirect = () => {
+        const zpAddr = this.readBytePC();
+        this.readByte(zpAddr);
+        return this.readZPWord((zpAddr + this.xr) & 0xff);
+    };
+
+    // ($00),Y (NMOS 6502)
+    readAddrZeroPageIndirectY = () => {
+        const zpAddr = this.readBytePC();
+        const addr = this.readZPWord(zpAddr);
+        const addrIdx = (addr + this.yr) & 0xffff;
+        const oldPage = addr & 0xff00;
+        const off = addrIdx & 0xff;
+        this.readByte(oldPage | off);
+        return addrIdx;
+    };
 
     // $(0000,X) (65C02)
     readAddrAbsoluteXIndirect = (): word => {
@@ -645,13 +707,18 @@ export default class CPU6502 {
         const addr = (((msb << 8) | lsb) + this.xr) & 0xffff;
         this.readByte(pc);
         return this.readWord(addr);
-    }
+    };
 
-    // 5C, DC, FC NOP
+    // 5C, DC, FC NOP (65C02)
     readNop = (): void => {
         this.readWordPC();
         this.readByte(this.addr);
-    }
+    };
+
+    // NOP (65C02)
+    readNopImplied = (): void => {
+        // Op is 1 cycle
+    };
 
     /* Break */
     brk = (readFn: ReadFn) => {
@@ -663,58 +730,72 @@ export default class CPU6502 {
         }
         this.setFlag(flags.I, true);
         this.pc = this.readWord(loc.BRK);
-    }
+    };
+
+    /* Stop (65C02) */
+    stp = () => {
+        this.stop = true;
+        this.readByte(this.pc);
+        this.readByte(this.pc);
+    };
+
+    /* Wait (65C02) */
+    wai = () => {
+        this.wait = true;
+        this.readByte(this.pc);
+        this.readByte(this.pc);
+    };
 
     /* Load Accumulator */
     lda = (readFn: ReadFn) => {
         this.ar = this.testNZ(readFn());
-    }
+    };
 
     /* Load X Register */
     ldx = (readFn: ReadFn) => {
         this.xr = this.testNZ(readFn());
-    }
+    };
 
     /* Load Y Register */
     ldy = (readFn: ReadFn) => {
         this.yr = this.testNZ(readFn());
-    }
+    };
 
     /* Store Accumulator */
     sta = (writeFn: WriteFn) => {
         writeFn(this.ar);
-    }
+    };
 
     /* Store X Register */
     stx = (writeFn: WriteFn) => {
         writeFn(this.xr);
-    }
+    };
 
     /* Store Y Register */
     sty = (writeFn: WriteFn) => {
         writeFn(this.yr);
-    }
+    };
 
     /* Store Zero */
     stz = (writeFn: WriteFn) => {
         writeFn(0);
-    }
+    };
 
     /* Add with Carry */
     adc = (readFn: ReadFn) => {
         this.ar = this.add(this.ar, readFn(), /* sub= */ false);
-    }
+    };
 
     /* Subtract with Carry */
     sbc = (readFn: ReadFn) => {
         this.ar = this.add(this.ar, readFn() ^ 0xff, /* sub= */ true);
-    }
+    };
 
     /* Increment Memory */
     incA = () => {
         this.readByte(this.pc);
         this.ar = this.increment(this.ar);
-    }
+    };
 
     inc = (readAddrFn: ReadAddrFn) => {
         const addr = readAddrFn({ inc: true });
@@ -722,25 +803,25 @@ export default class CPU6502 {
         this.workCycle(addr, oldVal);
         const val = this.increment(oldVal);
         this.writeByte(addr, val);
-    }
+    };
 
     /* Increment X */
     inx = () => {
         this.readByte(this.pc);
         this.xr = this.increment(this.xr);
-    }
+    };
 
     /* Increment Y */
     iny = () => {
         this.readByte(this.pc);
         this.yr = this.increment(this.yr);
-    }
+    };
 
     /* Decrement Memory */
     decA = () => {
         this.readByte(this.pc);
         this.ar = this.decrement(this.ar);
-    }
+    };
 
     dec = (readAddrFn: ReadAddrFn) => {
         const addr = readAddrFn({ inc: true});
@@ -748,30 +829,30 @@ export default class CPU6502 {
         this.workCycle(addr, oldVal);
         const val = this.decrement(oldVal);
         this.writeByte(addr, val);
-    }
+    };
 
     /* Decrement X */
     dex = () => {
         this.readByte(this.pc);
         this.xr = this.decrement(this.xr);
-    }
+    };
 
     /* Decrement Y */
     dey = () => {
         this.readByte(this.pc);
         this.yr = this.decrement(this.yr);
-    }
+    };
 
     shiftLeft = (val: byte) => {
         this.setFlag(flags.C, !!(val & 0x80));
         return this.testNZ((val << 1) & 0xff);
-    }
+    };
 
     /* Arithmetic Shift Left */
     aslA = () => {
         this.readByte(this.pc);
         this.ar = this.shiftLeft(this.ar);
-    }
+    };
 
     asl = (readAddrFn: ReadAddrFn) => {
         const addr = readAddrFn();
@@ -779,18 +860,18 @@ export default class CPU6502 {
         this.workCycle(addr, oldVal);
         const val = this.shiftLeft(oldVal);
         this.writeByte(addr, val);
-    }
+    };
 
     shiftRight = (val: byte) => {
         this.setFlag(flags.C, !!(val & 0x01));
         return this.testNZ(val >> 1);
-    }
+    };
 
     /* Logical Shift Right */
     lsrA = () => {
         this.readByte(this.pc);
         this.ar = this.shiftRight(this.ar);
-    }
+    };
 
     lsr = (readAddrFn: ReadAddrFn) => {
         const addr = readAddrFn();
@@ -798,19 +879,19 @@ export default class CPU6502 {
         this.workCycle(addr, oldVal);
         const val = this.shiftRight(oldVal);
         this.writeByte(addr, val);
-    }
+    };
 
     rotateLeft = (val: byte) => {
         const c = (this.sr & flags.C);
         this.setFlag(flags.C, !!(val & 0x80));
         return this.testNZ(((val << 1) | (c ? 0x01 : 0x00)) & 0xff);
-    }
+    };
 
     /* Rotate Left */
     rolA = () => {
         this.readByte(this.pc);
         this.ar = this.rotateLeft(this.ar);
-    }
+    };
 
     rol = (readAddrFn: ReadAddrFn) => {
         const addr = readAddrFn();
@@ -818,7 +899,7 @@ export default class CPU6502 {
         this.workCycle(addr, oldVal);
         const val = this.rotateLeft(oldVal);
         this.writeByte(addr, val);
-    }
+    };
 
     private rotateRight(a: byte) {
         const c = (this.sr & flags.C);
@@ -830,7 +911,7 @@ export default class CPU6502 {
     rorA = () => {
         this.readByte(this.pc);
         this.ar = this.rotateRight(this.ar);
-    }
+    };
 
     ror = (readAddrFn: ReadAddrFn) => {
         const addr = readAddrFn();
@@ -838,22 +919,22 @@ export default class CPU6502 {
         this.workCycle(addr, oldVal);
         const val = this.rotateRight(oldVal);
         this.writeByte(addr, val);
-    }
+    };
 
     /* Logical And Accumulator */
     and = (readFn: ReadFn) => {
         this.ar = this.testNZ(this.ar & readFn());
-    }
+    };
 
     /* Logical Or Accumulator */
     ora = (readFn: ReadFn) => {
         this.ar = this.testNZ(this.ar | readFn());
-    }
+    };
 
     /* Logical Exclusive Or Accumulator */
     eor = (readFn: ReadFn) => {
         this.ar = this.testNZ(this.ar ^ readFn());
-    }
+    };
 
     /* Reset Bit */
 
@@ -864,7 +945,7 @@ export default class CPU6502 {
         this.readByte(addr);
         val &= bit;
         this.writeByte(addr, val);
-    }
+    };
 
     /* Set Bit */
 
@@ -875,7 +956,7 @@ export default class CPU6502 {
         this.readByte(addr);
         val |= bit;
         this.writeByte(addr, val);
-    }
+    };
 
     /* Test and Reset Bits */
     trb = (readAddrFn: ReadAddrFn) => {
@@ -884,7 +965,7 @@ export default class CPU6502 {
         this.testZ(val & this.ar);
         this.readByte(addr);
         this.writeByte(addr, val & ~this.ar);
-    }
+    };
 
     /* Test and Set Bits */
     tsb = (readAddrFn: ReadAddrFn) => {
@@ -893,7 +974,7 @@ export default class CPU6502 {
         this.testZ(val & this.ar);
         this.readByte(addr);
         this.writeByte(addr, val | this.ar);
-    }
+    };
 
     /* Bit */
     bit = (readFn: ReadFn) => {
@@ -901,13 +982,13 @@ export default class CPU6502 {
         this.setFlag(flags.Z, (val & this.ar) === 0);
         this.setFlag(flags.N, !!(val & 0x80));
         this.setFlag(flags.V, !!(val & 0x40));
-    }
+    };
 
     /* Bit Immediate*/
     bitI = (readFn: ReadFn) => {
         const val = readFn();
         this.setFlag(flags.Z, (val & this.ar) === 0);
-    }
+    };
 
     private compare(a: byte, b: byte) {
         b = (b ^ 0xff);
@@ -918,15 +999,15 @@ export default class CPU6502 {
 
     cmp = (readFn: ReadFn) => {
         this.compare(this.ar, readFn());
-    }
+    };
 
     cpx = (readFn: ReadFn) => {
         this.compare(this.xr, readFn());
-    }
+    };
 
     cpy = (readFn: ReadFn) => {
         this.compare(this.yr, readFn());
-    }
+    };
 
     /* Branches */
     brs = (f: flag) => {
@@ -940,7 +1021,7 @@ export default class CPU6502 {
             const newOff = this.pc & 0xff;
             if (newPage !== oldPage) this.readByte(oldPage | newOff);
         }
-    }
+    };
 
     brc = (f: flag|0) => {
         const off = this.readBytePC(); // changes pc
@@ -953,7 +1034,7 @@ export default class CPU6502 {
             const newOff = this.pc & 0xff;
             if (newPage !== oldPage) this.readByte(oldPage | newOff);
         }
-    }
+    };
 
     /* WDC 65C02 branches */
 
@@ -972,7 +1053,7 @@ export default class CPU6502 {
         if (((1 << b) & val) === 0) {
             this.pc = newPC;
         }
-    }
+    };
 
     bbs = (b: byte) => {
         const zpAddr = this.readBytePC();
@@ -989,41 +1070,41 @@ export default class CPU6502 {
         if (((1 << b) & val) !== 0) {
             this.pc = newPC;
         }
-    }
+    };
 
     /* Transfers and stack */
-    tax = () => { this.readByte(this.pc); this.testNZ(this.xr = this.ar); }
+    tax = () => { this.readByte(this.pc); this.testNZ(this.xr = this.ar); };
 
-    txa = () => { this.readByte(this.pc); this.testNZ(this.ar = this.xr); }
+    txa = () => { this.readByte(this.pc); this.testNZ(this.ar = this.xr); };
 
-    tay = () => { this.readByte(this.pc); this.testNZ(this.yr = this.ar); }
+    tay = () => { this.readByte(this.pc); this.testNZ(this.yr = this.ar); };
 
-    tya = () => { this.readByte(this.pc); this.testNZ(this.ar = this.yr); }
+    tya = () => { this.readByte(this.pc); this.testNZ(this.ar = this.yr); };
 
-    tsx = () => { this.readByte(this.pc); this.testNZ(this.xr = this.sp); }
+    tsx = () => { this.readByte(this.pc); this.testNZ(this.xr = this.sp); };
 
-    txs = () => { this.readByte(this.pc); this.sp = this.xr; }
+    txs = () => { this.readByte(this.pc); this.sp = this.xr; };
 
-    pha = () => { this.readByte(this.pc); this.pushByte(this.ar); }
+    pha = () => { this.readByte(this.pc); this.pushByte(this.ar); };
 
-    pla = () => { this.readByte(this.pc); this.readByte(0x0100 | this.sp); this.testNZ(this.ar = this.pullByte()); }
+    pla = () => { this.readByte(this.pc); this.readByte(0x0100 | this.sp); this.testNZ(this.ar = this.pullByte()); };
 
-    phx = () => { this.readByte(this.pc); this.pushByte(this.xr); }
+    phx = () => { this.readByte(this.pc); this.pushByte(this.xr); };
 
-    plx = () => { this.readByte(this.pc); this.readByte(0x0100 | this.sp); this.testNZ(this.xr = this.pullByte()); }
+    plx = () => { this.readByte(this.pc); this.readByte(0x0100 | this.sp); this.testNZ(this.xr = this.pullByte()); };
 
-    phy = () => { this.readByte(this.pc); this.pushByte(this.yr); }
+    phy = () => { this.readByte(this.pc); this.pushByte(this.yr); };
 
-    ply = () => { this.readByte(this.pc); this.readByte(0x0100 | this.sp); this.testNZ(this.yr = this.pullByte()); }
+    ply = () => { this.readByte(this.pc); this.readByte(0x0100 | this.sp); this.testNZ(this.yr = this.pullByte()); };
 
-    php = () => { this.readByte(this.pc); this.pushByte(this.sr | flags.B); }
+    php = () => { this.readByte(this.pc); this.pushByte(this.sr | flags.B); };
 
-    plp = () => { this.readByte(this.pc); this.readByte(0x0100 | this.sp); this.sr = (this.pullByte() & ~flags.B) | flags.X; }
+    plp = () => { this.readByte(this.pc); this.readByte(0x0100 | this.sp); this.sr = (this.pullByte() & ~flags.B) | flags.X; };
 
     /* Jump */
     jmp = (readAddrFn: ReadAddrFn) => {
         this.pc = readAddrFn();
-    }
+    };
 
     /* Jump Subroutine */
     jsr = () => {
@@ -1032,7 +1113,7 @@ export default class CPU6502 {
         this.pushWord(this.pc);
         const msb = this.readBytePC();
         this.pc = (msb << 8 | lsb) & 0xffff;
-    }
+    };
 
     /* Return from Subroutine */
     rts = () => {
@@ -1041,7 +1122,7 @@ export default class CPU6502 {
         const addr = this.pullWordRaw();
         this.readByte(addr);
         this.pc = (addr + 1) & 0xffff;
-    }
+    };
 
     /* Return from Interrupt */
     rti = () => {
@@ -1049,49 +1130,236 @@ export default class CPU6502 {
         this.readByte(0x0100 | this.sp);
         this.sr = (this.pullByte() & ~flags.B) | flags.X;
         this.pc = this.pullWordRaw();
-    }
+    };
 
     /* Set and Clear */
     set = (flag: flag) => {
         this.readByte(this.pc);
         this.sr |= flag;
-    }
+    };
 
     clr = (flag: flag) => {
         this.readByte(this.pc);
         this.sr &= ~flag;
-    }
+    };
 
     /* No-Op */
     nop = (readFn: ImpliedFn | ReadFn) => {
         readFn();
-    }
+    };
+
+    /* NMOS 6502 Illegal opcodes */
+
+    /* ASO = ASL + ORA */
+    aso = (readAddrFn: ReadAddrFn) => {
+        const addr = readAddrFn();
+        const oldVal = this.readByte(addr);
+        this.workCycle(addr, oldVal);
+        const val = this.shiftLeft(oldVal);
+        this.writeByte(addr, val);
+        this.ar |= val;
+        this.testNZ(this.ar);
+    };
+
+    /* RLA = ROL + AND */
+    rla = (readAddrFn: ReadAddrFn) => {
+        const addr = readAddrFn();
+        const oldVal = this.readByte(addr);
+        this.workCycle(addr, oldVal);
+        const val = this.rotateLeft(oldVal);
+        this.writeByte(addr, val);
+        this.ar &= val;
+        this.testNZ(this.ar);
+    };
+
+    /* LSE = LSR + EOR */
+    lse = (readAddrFn: ReadAddrFn) => {
+        const addr = readAddrFn();
+        const oldVal = this.readByte(addr);
+        this.workCycle(addr, oldVal);
+        const val = this.shiftRight(oldVal);
+        this.writeByte(addr, val);
+        this.ar ^= val;
+        this.testNZ(this.ar);
+    };
+
+    /* RRA = ROR + ADC */
+    rra = (readAddrFn: ReadAddrFn) => {
+        const addr = readAddrFn();
+        const oldVal = this.readByte(addr);
+        this.workCycle(addr, oldVal);
+        const val = this.rotateRight(oldVal);
+        this.writeByte(addr, val);
+        this.ar = this.add(this.ar, val, false);
+    };
+
+    /* AXS = Store A & X */
+    axs = (writeFn: WriteFn) => {
+        writeFn(this.ar & this.xr);
+    };
+
+    /* LAX = Load A & X */
+    lax = (readFn: ReadFn) => {
+        const val = readFn();
+        this.ar = val;
+        this.xr = val;
+        this.testNZ(val);
+    };
+
+    /* DCM = DEC + CMP */
+    dcm = (readAddrFn: ReadAddrFn) => {
+        const addr = readAddrFn({ inc: true});
+        const oldVal = this.readByte(addr);
+        this.workCycle(addr, oldVal);
+        const val = this.decrement(oldVal);
+        this.writeByte(addr, val);
+        this.compare(this.ar, val);
+    };
+
+    /* INS = INC + SBC */
+    ins = (readAddrFn: ReadAddrFn) => {
+        const addr = readAddrFn({ inc: true});
+        const oldVal = this.readByte(addr);
+        this.workCycle(addr, oldVal);
+        const val = this.increment(oldVal);
+        this.writeByte(addr, val);
+        this.ar = this.add(this.ar, val ^ 0xff, true);
+    };
+
+    /* ALR = AND + LSR */
+    alr = (readFn: ReadFn) => {
+        const val = readFn() & this.ar;
+        this.ar = this.shiftRight(val);
+    };
+
+    /* ARR = AND + ROR */
+    arr = (readFn: ReadFn) => {
+        const val = readFn() & this.ar;
+        const ah = val >> 4;
+        const al = val & 0xf;
+        const b7 = val >> 7;
+        const b6 = (val >> 6) & 0x1;
+        this.ar = this.rotateRight(val);
+        let c = !!b7;
+        const v = !!(b7 ^ b6);
+        if (this.sr & flags.D) {
+            if (al + (al & 0x1) > 0x5) {
+                this.ar = (this.ar & 0xf0) | ((this.ar + 0x6) & 0xf);
+            }
+            if (ah + (ah & 0x1) > 5) {
+                c = true;
+                this.ar =((this.ar + 0x60) & 0xff);
+            }
+        }
+        this.setFlag(flags.V, v);
+        this.setFlag(flags.C, c);
+    };
+
+    /* XAA = TAX + AND */
+    xaa = (readFn: ReadFn) => {
+        const val = readFn();
+        this.ar = (this.xr & 0xEE) | (this.xr & this.ar & 0x11);
+        this.ar = this.testNZ(this.ar & val);
+    };
+
+    /** OAL = ORA + AND */
+    oal = (readFn: ReadFn) => {
+        this.ar |= 0xEE;
+        const val = this.testNZ(this.ar & readFn());
+        this.ar = val;
+        this.xr = val;
+    };
+
+    /* SAX = A & X + SBC */
+    sax = (readFn: ReadFn) => {
+        const a = this.xr & this.ar;
+        let b = readFn();
+        b = (b ^ 0xff);
+        const c = a + b + 1;
+        this.setFlag(flags.C, c > 0xff);
+        this.xr = this.testNZ(c & 0xff);
+    };
+
+    /* TAS = X & Y -> S */
+    tas = (readAddrFn: ReadAddrFn) => {
+        const addr = readAddrFn();
+        let val = this.xr & this.ar;
+        this.sp = val;
+        const msb = addr >> 8;
+        val = val & ((msb + 1) & 0xff);
+        this.writeByte(addr, val);
+    };
+
+    /* SAY = Y & AH + 1 */
+    say = (readAddrFn: ReadAddrFn) => {
+        const addr = readAddrFn();
+        const msb = addr >> 8;
+        const val = this.yr & ((msb + 1) & 0xff);
+        this.writeByte(addr, val);
+    };
+
+    /* XAS = X & AH + 1 */
+    xas = (readAddrFn: ReadAddrFn) => {
+        const addr = readAddrFn();
+        const msb = addr >> 8;
+        const val = this.xr & ((msb + 1) & 0xff);
+        this.writeByte(addr, val);
+    };
+
+    /* AXA = X & AH + 1 */
+    axa = (readAddrFn: ReadAddrFn) => {
+        const addr = readAddrFn();
+        let val = this.xr & this.ar;
+        const msb = addr >> 8;
+        val = val & ((msb + 1) & 0xff);
+        this.writeByte(addr, val);
+    };
+
+    /* ANC = AND with carry */
+    anc = (readFn: ReadFn) => {
+        this.ar = this.testNZ(this.ar & readFn());
+        const c = !!(this.ar & 0x80);
+        this.setFlag(flags.C, c);
+    };
+
+    /* LAS = RD & SP -> A, X, S */
+    las = (readFn: ReadFn) => {
+        const val = this.sp & readFn();
+        this.sp = val;
+        this.xr = val;
+        this.ar = this.testNZ(val);
+    };
+
+    /* SKB/SKW */
+    skp = (readFn: ReadFn) => {
+        readFn();
+    };
+
+    /* HLT */
+    hlt = (_impliedFn: ImpliedFn) => {
+        this.readByte(this.pc);
+        this.readByte(this.pc);
+        // PC shouldn't have advanced
+        this.pc = (--this.pc) & 0xffff;
+        this.stop = true;
+    };
 
     private unknown(b: byte) {
         let unk: StrictInstruction;
-
         if (this.is65C02) {
+            // Default behavior is a 1 cycle NOP
             unk = {
                 name: 'NOP',
                 op: this.nop,
-                modeFn: this.implied,
+                modeFn: this.readNopImplied,
                 mode: 'implied',
             };
         } else {
-            const cpu = this;
-            unk = {
-                name: '???',
-                op: function (_impliedFn: ImpliedFn) {
-                    debug('Unknown OpCode: ' + toHex(b) +
-                        ' at ' + toHex(cpu.pc - 1, 4));
-                },
-                modeFn: this.implied,
-                mode: 'implied'
-            };
+            // All 6502 Instructions should be defined
+            throw new Error(`Missing ${toHex(b)}`);
         }
         return unk;
     }
-
 
     public step(cb?: callback) {
         this.sync = true;
@@ -1157,6 +1425,8 @@ export default class CPU6502 {
         this.yr = 0;
         this.xr = 0;
         this.pc = this.readWord(loc.RESET);
+        this.wait = false;
+        this.stop = false;
 
         for (let idx = 0; idx < this.resetHandlers.length; idx++) {
             this.resetHandlers[idx].reset();
@@ -1173,6 +1443,7 @@ export default class CPU6502 {
             }
             this.setFlag(flags.I, true);
             this.pc = this.readWord(loc.BRK);
+            this.wait = false;
         }
     }
 
@@ -1185,6 +1456,7 @@ export default class CPU6502 {
         }
         this.setFlag(flags.I, true);
         this.pc = this.readWord(loc.NMI);
+        this.wait = false;
     }
 
     public getPC() {
@@ -1217,6 +1489,14 @@ export default class CPU6502 {
     }
     public getSync() {
         return this.sync;
+    }
+
+    public getStop() {
+        return this.stop;
+    }
+
+    public getWait() {
+        return this.wait;
     }
 
     public getCycles() {
@@ -1255,10 +1535,10 @@ export default class CPU6502 {
     public read(a: number, b?: number): byte {
         let page, off;
         if (b !== undefined) {
-            page = a;
-            off = b;
+            page = a & 0xff;
+            off = b & 0xff;
         } else {
-            page = a >> 8;
+            page = (a >> 8) & 0xff;
             off = a & 0xff;
         }
         return this.memPages[page].read(page, off);
@@ -1271,13 +1551,13 @@ export default class CPU6502 {
         let page, off, val;
 
         if (c !== undefined ) {
-            page = a;
-            off = b;
-            val = c;
+            page = a & 0xff;
+            off = b & 0xff;
+            val = c & 0xff;
         } else {
-            page = a >> 8;
+            page = (a >> 8) & 0xff;
             off = a & 0xff;
-            val = b;
+            val = b & 0xff;
         }
         this.memPages[page].write(page, off, val);
     }
@@ -1663,5 +1943,172 @@ export default class CPU6502 {
         // TSB
         0x04: { name: 'TSB', op: this.tsb, modeFn: this.readAddrZeroPage, mode: 'zeroPage' },
         0x0C: { name: 'TSB', op: this.tsb, modeFn: this.readAddrAbsolute, mode: 'absolute' }
-    }
+    };
+
+    OPS_NMOS_6502: Instructions = {
+        // ASO
+        0x0F: { name: 'ASO', op: this.aso, modeFn: this.readAddrAbsolute, mode: 'absolute' },
+        0x1F: { name: 'ASO', op: this.aso, modeFn: this.readAddrAbsoluteX, mode: 'absoluteX' },
+        0x1B: { name: 'ASO', op: this.aso, modeFn: this.readAddrAbsoluteY, mode: 'absoluteY' },
+        0x07: { name: 'ASO', op: this.aso, modeFn: this.readAddrZeroPage, mode: 'zeroPage' },
+        0x17: { name: 'ASO', op: this.aso, modeFn: this.readAddrZeroPageX, mode: 'zeroPageX' },
+        0x03: { name: 'ASO', op: this.aso, modeFn: this.readAddrZeroPageXIndirect, mode: 'zeroPageXIndirect' },
+        0x13: { name: 'ASO', op: this.aso, modeFn: this.readAddrZeroPageIndirectY, mode: 'zeroPageIndirectY' },
+
+        // RLA
+        0x2F: { name: 'RLA', op: this.rla, modeFn: this.readAddrAbsolute, mode: 'absolute' },
+        0x3F: { name: 'RLA', op: this.rla, modeFn: this.readAddrAbsoluteX, mode: 'absoluteX' },
+        0x3B: { name: 'RLA', op: this.rla, modeFn: this.readAddrAbsoluteY, mode: 'absoluteY' },
+        0x27: { name: 'RLA', op: this.rla, modeFn: this.readAddrZeroPage, mode: 'zeroPage' },
+        0x37: { name: 'RLA', op: this.rla, modeFn: this.readAddrZeroPageX, mode: 'zeroPageX' },
+        0x23: { name: 'RLA', op: this.rla, modeFn: this.readAddrZeroPageXIndirect, mode: 'zeroPageXIndirect' },
+        0x33: { name: 'RLA', op: this.rla, modeFn: this.readAddrZeroPageIndirectY, mode: 'zeroPageIndirectY' },
+
+        // LSE
+        0x4F: { name: 'LSE', op: this.lse, modeFn: this.readAddrAbsolute, mode: 'absolute' },
+        0x5F: { name: 'LSE', op: this.lse, modeFn: this.readAddrAbsoluteX, mode: 'absoluteX' },
+        0x5B: { name: 'LSE', op: this.lse, modeFn: this.readAddrAbsoluteY, mode: 'absoluteY' },
+        0x47: { name: 'LSE', op: this.lse, modeFn: this.readAddrZeroPage, mode: 'zeroPage' },
+        0x57: { name: 'LSE', op: this.lse, modeFn: this.readAddrZeroPageX, mode: 'zeroPageX' },
+        0x43: { name: 'LSE', op: this.lse, modeFn: this.readAddrZeroPageXIndirect, mode: 'zeroPageXIndirect' },
+        0x53: { name: 'LSE', op: this.lse, modeFn: this.readAddrZeroPageIndirectY, mode: 'zeroPageIndirectY' },
+
+        // RRA
+        0x6F: { name: 'RRA', op: this.rra, modeFn: this.readAddrAbsolute, mode: 'absolute' },
+        0x7F: { name: 'RRA', op: this.rra, modeFn: this.readAddrAbsoluteX, mode: 'absoluteX' },
+        0x7B: { name: 'RRA', op: this.rra, modeFn: this.readAddrAbsoluteY, mode: 'absoluteY' },
+        0x67: { name: 'RRA', op: this.rra, modeFn: this.readAddrZeroPage, mode: 'zeroPage' },
+        0x77: { name: 'RRA', op: this.rra, modeFn: this.readAddrZeroPageX, mode: 'zeroPageX' },
+        0x63: { name: 'RRA', op: this.rra, modeFn: this.readAddrZeroPageXIndirect, mode: 'zeroPageXIndirect' },
+        0x73: { name: 'RRA', op: this.rra, modeFn: this.readAddrZeroPageIndirectY, mode: 'zeroPageIndirectY' },
+
+        // AXS
+        0x8F: { name: 'AXS', op: this.axs, modeFn: this.writeAbsolute, mode: 'absolute'},
+        0x87: { name: 'AXS', op: this.axs, modeFn: this.writeZeroPage, mode: 'zeroPage'},
+        0x97: { name: 'AXS', op: this.axs, modeFn: this.writeZeroPageY, mode: 'zeroPageY'},
+        0x83: { name: 'AXS', op: this.axs, modeFn: this.writeZeroPageXIndirect, mode: 'zeroPageXIndirect'},
+
+        // LAX
+        0xAF: { name: 'LAX', op: this.lax, modeFn: this.readAbsolute, mode: 'absolute'},
+        0xBF: { name: 'LAX', op: this.lax, modeFn: this.readAbsoluteY, mode: 'absoluteY'},
+        0xA7: { name: 'LAX', op: this.lax, modeFn: this.readZeroPage, mode: 'zeroPage'},
+        0xB7: { name: 'LAX', op: this.lax, modeFn: this.readZeroPageY, mode: 'zeroPageY'},
+        0xA3: { name: 'LAX', op: this.lax, modeFn: this.readZeroPageXIndirect, mode: 'zeroPageXIndirect'},
+        0xB3: { name: 'LAX', op: this.lax, modeFn: this.readZeroPageIndirectY, mode: 'zeroPageIndirectY'},
+
+        // DCM
+        0xCF: { name: 'DCM', op: this.dcm, modeFn: this.readAddrAbsolute, mode: 'absolute' },
+        0xDF: { name: 'DCM', op: this.dcm, modeFn: this.readAddrAbsoluteX, mode: 'absoluteX' },
+        0xDB: { name: 'DCM', op: this.dcm, modeFn: this.readAddrAbsoluteY, mode: 'absoluteY' },
+        0xC7: { name: 'DCM', op: this.dcm, modeFn: this.readAddrZeroPage, mode: 'zeroPage' },
+        0xD7: { name: 'DCM', op: this.dcm, modeFn: this.readAddrZeroPageX, mode: 'zeroPageX' },
+        0xC3: { name: 'DCM', op: this.dcm, modeFn: this.readAddrZeroPageXIndirect, mode: 'zeroPageXIndirect' },
+        0xD3: { name: 'DCM', op: this.dcm, modeFn: this.readAddrZeroPageIndirectY, mode: 'zeroPageIndirectY' },
+
+        // INS
+        0xEF: { name: 'INS', op: this.ins, modeFn: this.readAddrAbsolute, mode: 'absolute' },
+        0xFF: { name: 'INS', op: this.ins, modeFn: this.readAddrAbsoluteX, mode: 'absoluteX' },
+        0xFB: { name: 'INS', op: this.ins, modeFn: this.readAddrAbsoluteY, mode: 'absoluteY' },
+        0xE7: { name: 'INS', op: this.ins, modeFn: this.readAddrZeroPage, mode: 'zeroPage' },
+        0xF7: { name: 'INS', op: this.ins, modeFn: this.readAddrZeroPageX, mode: 'zeroPageX' },
+        0xE3: { name: 'INS', op: this.ins, modeFn: this.readAddrZeroPageXIndirect, mode: 'zeroPageXIndirect' },
+        0xF3: { name: 'INS', op: this.ins, modeFn: this.readAddrZeroPageIndirectY, mode: 'zeroPageIndirectY' },
+
+        // ALR
+        0x4B: { name: 'ALR', op: this.alr, modeFn: this.readImmediate, mode: 'immediate' },
+
+        // ARR
+        0x6B: { name: 'ARR', op: this.arr, modeFn: this.readImmediate, mode: 'immediate' },
+
+        // XAA
+        0x8B: { name: 'XAA', op: this.xaa, modeFn: this.readImmediate, mode: 'immediate' },
+
+        // OAL
+        0xAB: { name: 'OAL', op: this.oal, modeFn: this.readImmediate, mode: 'immediate' },
+
+        // SAX
+        0xCB: { name: 'SAX', op: this.sax, modeFn: this.readImmediate, mode: 'immediate' },
+
+        // NOP
+        0x1a: { name: 'NOP', op: this.nop, modeFn: this.implied, mode: 'implied' },
+        0x3a: { name: 'NOP', op: this.nop, modeFn: this.implied, mode: 'implied' },
+        0x5a: { name: 'NOP', op: this.nop, modeFn: this.implied, mode: 'implied' },
+        0x7a: { name: 'NOP', op: this.nop, modeFn: this.implied, mode: 'implied' },
+        0xda: { name: 'NOP', op: this.nop, modeFn: this.implied, mode: 'implied' },
+        0xfa: { name: 'NOP', op: this.nop, modeFn: this.implied, mode: 'implied' },
+
+        // SKB
+        0x80: { name: 'SKB', op: this.skp, modeFn: this.readImmediate, mode: 'immediate' },
+        0x82: { name: 'SKB', op: this.skp, modeFn: this.readImmediate, mode: 'immediate' },
+        0x89: { name: 'SKB', op: this.skp, modeFn: this.readImmediate, mode: 'immediate' },
+        0xC2: { name: 'SKB', op: this.skp, modeFn: this.readImmediate, mode: 'immediate' },
+        0xE2: { name: 'SKB', op: this.skp, modeFn: this.readImmediate, mode: 'immediate' },
+        0x04: { name: 'SKB', op: this.skp, modeFn: this.readZeroPage, mode: 'zeroPage' },
+        0x14: { name: 'SKB', op: this.skp, modeFn: this.readZeroPageX, mode: 'zeroPageX' },
+        0x34: { name: 'SKB', op: this.skp, modeFn: this.readZeroPageX, mode: 'zeroPageX' },
+        0x44: { name: 'SKB', op: this.skp, modeFn: this.readZeroPage, mode: 'zeroPage' },
+        0x54: { name: 'SKB', op: this.skp, modeFn: this.readZeroPageX, mode: 'zeroPageX' },
+        0x64: { name: 'SKB', op: this.skp, modeFn: this.readZeroPage, mode: 'zeroPage' },
+        0x74: { name: 'SKB', op: this.skp, modeFn: this.readZeroPageX, mode: 'zeroPageX' },
+        0xD4: { name: 'SKB', op: this.skp, modeFn: this.readZeroPageX, mode: 'zeroPageX' },
+        0xF4: { name: 'SKB', op: this.skp, modeFn: this.readZeroPageX, mode: 'zeroPageX' },
+
+        // SKW
+        0x0C: { name: 'SKW', op: this.skp, modeFn: this.readAddrAbsolute, mode: 'absolute' },
+        0x1C: { name: 'SKW', op: this.skp, modeFn: this.readAddrAbsoluteX, mode: 'absoluteX' },
+        0x3C: { name: 'SKW', op: this.skp, modeFn: this.readAddrAbsoluteX, mode: 'absoluteX' },
+        0x5C: { name: 'SKW', op: this.skp, modeFn: this.readAddrAbsoluteX, mode: 'absoluteX' },
+        0x7C: { name: 'SKW', op: this.skp, modeFn: this.readAddrAbsoluteX, mode: 'absoluteX' },
+        0xDC: { name: 'SKW', op: this.skp, modeFn: this.readAddrAbsoluteX, mode: 'absoluteX' },
+        0xFC: { name: 'SKW', op: this.skp, modeFn: this.readAddrAbsoluteX, mode: 'absoluteX' },
+
+        // HLT
+        0x02: { name: 'HLT', op: this.hlt, modeFn: this.readNopImplied, mode: 'implied' },
+        0x12: { name: 'HLT', op: this.hlt, modeFn: this.readNopImplied, mode: 'implied' },
+        0x22: { name: 'HLT', op: this.hlt, modeFn: this.readNopImplied, mode: 'implied' },
+        0x32: { name: 'HLT', op: this.hlt, modeFn: this.readNopImplied, mode: 'implied' },
+        0x42: { name: 'HLT', op: this.hlt, modeFn: this.readNopImplied, mode: 'implied' },
+        0x52: { name: 'HLT', op: this.hlt, modeFn: this.readNopImplied, mode: 'implied' },
+        0x62: { name: 'HLT', op: this.hlt, modeFn: this.readNopImplied, mode: 'implied' },
+        0x72: { name: 'HLT', op: this.hlt, modeFn: this.readNopImplied, mode: 'implied' },
+        0x92: { name: 'HLT', op: this.hlt, modeFn: this.readNopImplied, mode: 'implied' },
+        0xB2: { name: 'HLT', op: this.hlt, modeFn: this.readNopImplied, mode: 'implied' },
+        0xD2: { name: 'HLT', op: this.hlt, modeFn: this.readNopImplied, mode: 'implied' },
+        0xF2: { name: 'HLT', op: this.hlt, modeFn: this.readNopImplied, mode: 'implied' },
+
+        // TAS
+        0x9B: { name: 'TAS', op: this.tas, modeFn: this.readAddrAbsoluteY, mode: 'absoluteY'},
+
+        // SAY
+        0x9C: { name: 'SAY', op: this.say, modeFn: this.readAddrAbsoluteX, mode: 'absoluteX'},
+
+        // XAS
+        0x9E: { name: 'XAS', op: this.xas, modeFn: this.readAddrAbsoluteY, mode: 'absoluteY'},
+
+        // AXA
+        0x9F: { name: 'AXA', op: this.axa, modeFn: this.readAddrAbsoluteY, mode: 'absoluteY'},
+        0x93: { name: 'AXA', op: this.axa, modeFn: this.readAddrZeroPageIndirectY, mode: 'zeroPageIndirectY'},
+
+        // ANC
+        0x2b: { name: 'ANC', op: this.anc, modeFn: this.readImmediate, mode: 'immediate' },
+        0x0b: { name: 'ANC', op: this.anc, modeFn: this.readImmediate, mode: 'immediate' },
+
+        // LAS
+        0xBB: { name: 'LAS', op: this.las, modeFn: this.readAbsoluteY, mode: 'absoluteY'},
+
+        // SBC
+        0xEB: { name: 'SBC', op: this.sbc, modeFn: this.readImmediate, mode: 'immediate'}
+    };
+
+    OPS_ROCKWELL_65C02: Instructions = {
+        0xCB: { name: 'NOP', op: this.nop, modeFn: this.implied, mode: 'implied' },
+        0xDB: { name: 'NOP', op: this.nop, modeFn: this.readZeroPageX, mode: 'immediate' },
+    };
+
+    /* WDC 65C02 Instructions */
+
+    OPS_WDC_65C02: Instructions = {
+        0xCB: { name: 'WAI', op: this.wai, modeFn: this.implied, mode: 'implied' },
+        0xDB: { name: 'STP', op: this.stp, modeFn: this.implied, mode: 'implied' }
+    };
 }

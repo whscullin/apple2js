@@ -17,43 +17,48 @@ import {
 } from './gl';
 import ROM from './roms/rom';
 import { Apple2IOState } from './apple2io';
-import CPU6502, { CpuState } from './cpu6502';
+import CPU6502, {
+    CpuState,
+    FLAVOR_6502,
+    FLAVOR_ROCKWELL_65C02,
+} from './cpu6502';
 import MMU, { MMUState } from './mmu';
 import RAM, { RAMState } from './ram';
 
 import SYMBOLS from './symbols';
 import Debugger, { DebuggerContainer } from './debugger';
 
-import { Restorable, rom } from './types';
+import { ReadonlyUint8Array, Restorable, rom } from './types';
 import { processGamepad } from './ui/gamepad';
 
 export interface Apple2Options {
     characterRom: string;
-    enhanced: boolean,
-    e: boolean,
-    gl: boolean,
-    rom: string,
-    canvas: HTMLCanvasElement,
-    tick: () => void,
+    enhanced: boolean;
+    e: boolean;
+    gl: boolean;
+    rom: string;
+    canvas: HTMLCanvasElement;
+    tick: () => void;
 }
 
 export interface Stats {
-    frames: number,
-    renderedFrames: number,
+    cycles: number;
+    frames: number;
+    renderedFrames: number;
 }
 
-interface State {
-    cpu: CpuState,
-    vm: VideoModesState,
-    io: Apple2IOState,
-    mmu?: MMUState,
-    ram?: RAMState[],
+export interface State {
+    cpu: CpuState;
+    vm: VideoModesState;
+    io: Apple2IOState;
+    mmu: MMUState | undefined;
+    ram: RAMState[] | undefined;
 }
 
 export class Apple2 implements Restorable<State>, DebuggerContainer {
     private paused = false;
 
-    private theDebugger?: Debugger;
+    private theDebugger: Debugger | undefined;
 
     private runTimer: number | null = null;
     private runAnimationFrame: number | null = null;
@@ -74,25 +79,28 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
     private tick: () => void;
 
     private stats: Stats = {
+        cycles: 0,
         frames: 0,
         renderedFrames: 0
     };
 
-    public ready: Promise<void>
+    public ready: Promise<void>;
 
     constructor(options: Apple2Options) {
         this.ready = this.init(options);
     }
 
     async init(options: Apple2Options) {
-        const romImportPromise = import(`./roms/system/${options.rom}`);
-        const characterRomImportPromise = import(`./roms/character/${options.characterRom}`);
+        const romImportPromise = import(`./roms/system/${options.rom}`) as Promise<{ default: new () => ROM }>;
+        const characterRomImportPromise = import(`./roms/character/${options.characterRom}`) as Promise<{ default: ReadonlyUint8Array }>;
 
         const LoresPage = options.gl ? LoresPageGL : LoresPage2D;
         const HiresPage = options.gl ? HiresPageGL : HiresPage2D;
         const VideoModes = options.gl ? VideoModesGL : VideoModes2D;
 
-        this.cpu = new CPU6502({ '65C02': options.enhanced });
+        this.cpu = new CPU6502({
+            flavor: options.enhanced ? FLAVOR_ROCKWELL_65C02 : FLAVOR_6502
+        });
         this.vm = new VideoModes(options.canvas, options.e);
 
         const [{ default: Apple2ROM }, { default: characterRom }] = await Promise.all([
@@ -144,7 +152,7 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
             return; // already running
         }
 
-        this.theDebugger = new Debugger(this);
+        this.theDebugger = new Debugger(this.cpu, this);
         this.theDebugger.addSymbols(SYMBOLS);
 
         const interval = 30;
@@ -180,6 +188,7 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
                     this.stats.renderedFrames++;
                 }
             }
+            this.stats.cycles = this.cpu.getCycles();
             this.stats.frames++;
             this.io.tick();
             this.tick();
@@ -206,6 +215,10 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
         }
         this.runTimer = null;
         this.runAnimationFrame = null;
+    }
+
+    isRunning() {
+        return !this.paused;
     }
 
     getState(): State {

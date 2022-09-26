@@ -1,25 +1,14 @@
-/* Copyright 2017 Will Scullin <scullin@scullinsteel.com>
- *
- * Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation.  No representations are made about the suitability of this
- * software for any purpose.  It is provided "as is" without express or
- * implied warranty.
- */
-
 import { allocMemPages, debug } from '../util';
 import { Card, Restorable, byte, Color, memory, word } from '../types';
 import { ROM, VIDEO_ROM } from '../roms/cards/videoterm';
 
 interface VideotermState {
-    curReg: byte,
-    startPos: word,
-    cursorPos: word,
-    bank: byte,
-    buffer: memory,
-    regs: byte[],
+    curReg: byte;
+    startPos: word;
+    cursorPos: word;
+    bank: byte;
+    buffer: memory;
+    regs: byte[];
 }
 
 const LOC = {
@@ -175,7 +164,7 @@ export default class Videoterm implements Card, Restorable<VideotermState> {
         const startPos =
             this.regs[REGS.STARTPOS_HI] << 8 |
             this.regs[REGS.STARTPOS_LO];
-        if (this.startPos != startPos) {
+        if (this.startPos !== startPos) {
             this.startPos = startPos;
             this.shouldRefresh = true;
         }

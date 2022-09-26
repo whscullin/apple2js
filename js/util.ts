@@ -1,14 +1,3 @@
-/* Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
- *
- * Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation.  No representations are made about the suitability of this
- * software for any purpose.  It is provided ' as is'  without express or
- * implied warranty.
- */
-
 import { byte, memory, word } from './types';
 
 /*eslint no-console: 0*/
@@ -55,9 +44,20 @@ export function bytify(ary: number[]): memory {
     return new Uint8Array(ary);
 }
 
+/** Returns a new Uint8Array with the concatenated data from the inputs. */
+export function concat(...arys: Array<byte[] | Uint8Array>) {
+    const result = new Uint8Array(arys.reduce((l, ary) => l + ary.length, 0));
+    let offset = 0;
+    for (let i = 0; i < arys.length; i++) {
+        result.set(arys[i], offset);
+        offset += arys[i].length;
+    }
+    return result;
+}
+
 /** Writes to the console. */
-export function debug(...args: any[]): void {
-    console.log.apply(console, args);
+export function debug(...args: unknown[]): void {
+    console.log(...args);
 }
 
 /**
@@ -87,16 +87,6 @@ export function toBinary(v: byte) {
     for (let idx = 0; idx < 8; idx++) {
         result = bin_digits[v & 0x01] + result;
         v >>= 1;
-    }
-    return result;
-}
-
-/** Packs a 32-bit integer into a string in little-endian order. */
-export function numToString(num: number) {
-    let result = '';
-    for (let idx = 0; idx < 4; idx++) {
-        result += String.fromCharCode(num & 0xff);
-        num >>= 8;
     }
     return result;
 }

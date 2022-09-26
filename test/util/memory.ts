@@ -1,7 +1,7 @@
 import { MemoryPages, byte, word } from 'js/types';
 import { assertByte } from './asserts';
 
-export type Log = [address: word, value: byte, types: 'read'|'write']
+export type Log = [address: word, value: byte, types: 'read'|'write'];
 export class TestMemory implements MemoryPages {
     private data: Buffer;
     private logging: boolean = false;

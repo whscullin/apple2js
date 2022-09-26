@@ -2,12 +2,14 @@ import Prefs from './prefs';
 
 import { driveLights, initUI, updateUI } from './ui/apple2';
 import Printer from './ui/printer';
+import { MouseUI } from './ui/mouse';
 
 import DiskII from './cards/disk2';
 import Parallel from './cards/parallel';
 import RAMFactor from './cards/ramfactor';
 import SmartPort from './cards/smartport';
 import Thunderclock from './cards/thunderclock';
+import Mouse from './cards/mouse';
 
 import { Apple2 } from './apple2';
 
@@ -40,6 +42,7 @@ switch (romVersion) {
 
 const options = {
     gl: prefs.readPref('gl_canvas', 'true') === 'true',
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     canvas: document.querySelector<HTMLCanvasElement>('#screen')!,
     rom,
     characterRom,
@@ -54,15 +57,18 @@ apple2.ready.then(() => {
     const cpu = apple2.getCPU();
 
     const printer = new Printer('#printer-modal .paper');
+    const mouseUI = new MouseUI(options.canvas);
 
     const parallel = new Parallel(printer);
     const slinky = new RAMFactor(1024 * 1024);
     const disk2 = new DiskII(io, driveLights);
     const clock = new Thunderclock();
-    const smartport = new SmartPort(cpu, { block: !enhanced });
+    const smartport = new SmartPort(cpu, null, { block: !enhanced });
+    const mouse = new Mouse(cpu, mouseUI);
 
     io.setSlot(1, parallel);
     io.setSlot(2, slinky);
+    io.setSlot(4, mouse);
     io.setSlot(5, clock);
     io.setSlot(6, disk2);
     io.setSlot(7, smartport);

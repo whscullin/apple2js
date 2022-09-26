@@ -7,11 +7,13 @@ describe('createDiskFromJsonDisk', () => {
         expect(disk).toEqual({
             encoding: 'nibble',
             format: 'dsk',
-            name: 'Test Disk',
+            metadata: {
+                name: 'Test Disk',
+                side: 'Front',
+            },
             readOnly: undefined,
-            side: 'Front',
             volume: 254,
-            tracks: expect.any(Array)
+            tracks: expect.any(Array) as number[][]
         });
     });
 });

@@ -1,28 +1,26 @@
-/* Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
- *
- * Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation.  No representations are made about the suitability of this
- * software for any purpose.  It is provided "as is" without express or
- * implied warranty.
- */
-
 import { debug, toHex } from '../util';
 import { rom as smartPortRom } from '../roms/cards/smartport';
 import { Card, Restorable, byte, word, rom } from '../types';
-import { MassStorage, BlockDisk, ENCODING_BLOCK } from '../formats/types';
+import { MassStorage, BlockDisk, ENCODING_BLOCK, BlockFormat, MassStorageData, DiskFormat } from '../formats/types';
 import CPU6502, { CpuState, flags } from '../cpu6502';
-import { read2MGHeader } from '../formats/2mg';
+import { create2MGFromBlockDisk, HeaderData, read2MGHeader } from '../formats/2mg';
 import createBlockDisk from '../formats/block';
+import { DriveNumber } from '../formats/types';
+
+const ID = 'SMARTPORT.J.S';
 
 export interface SmartPortState {
-    disks: BlockDisk[]
+    disks: BlockDisk[];
 }
 
 export interface SmartPortOptions {
     block: boolean;
+}
+
+export interface Callbacks {
+    driveLight: (drive: DriveNumber, on: boolean) => void;
+    dirty: (drive: DriveNumber, dirty: boolean) => void;
+    label: (drive: DriveNumber, name?: string, side?: string) => void;
 }
 
 class Address {
@@ -107,14 +105,40 @@ const DEVICE_OFFLINE = 0x2F;
 // const BAD_BUFFER_ADDRESS = 0x56;
 // const DUPLICATE_VOLUME_ONLINE = 0x57;
 
-export default class SmartPort implements Card, MassStorage, Restorable<SmartPortState> {
+// Type: Device
+// $00: Memory Expansion Card (RAM disk)
+// $01: 3.5" disk
+// $02: ProFile-type hard disk
+// $03: Generic SCSI
+// $04: ROM disk
+// $05: SCSI CD-ROM
+// $06: SCSI tape or other SCSI sequential device
+// $07: SCSI hard disk
+const DEVICE_TYPE_SCSI_HD = 0x07;
+// $08: Reserved
+// $09: SCSI printer
+// $0A: 5-1/4" disk
+// $0B: Reserved
+// $0C: Reserved
+// $0D: Printer
+// $0E: Clock
+// $0F: Modem
+export default class SmartPort implements Card, MassStorage<BlockFormat>, Restorable<SmartPortState> {
 
     private rom: rom;
     private disks: BlockDisk[] = [];
+    private busy: boolean[] = [];
+    private busyTimeout: ReturnType<typeof setTimeout>[] = [];
+    private ext: DiskFormat[] = [];
+    private metadata: Array<HeaderData | null> = [];
 
-    constructor(private cpu: CPU6502, options: SmartPortOptions) {
+    constructor(
+        private cpu: CPU6502,
+        private callbacks: Callbacks | null,
+        options: SmartPortOptions
+    ) {
         if (options?.block) {
-            const dumbPortRom =  new Uint8Array(smartPortRom);
+            const dumbPortRom = new Uint8Array(smartPortRom);
             dumbPortRom[0x07] = 0x3C;
             this.rom = dumbPortRom;
             debug('DumbPort card');
@@ -124,15 +148,27 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
         }
     }
 
-    private debug(..._args: any[]) {
+    private debug(..._args: unknown[]) {
         // debug.apply(this, arguments);
+    }
+
+    private driveLight(drive: DriveNumber) {
+        if (!this.busy[drive]) {
+            this.busy[drive] = true;
+            this.callbacks?.driveLight(drive, true);
+        }
+        clearTimeout(this.busyTimeout[drive]);
+        this.busyTimeout[drive] = setTimeout(() => {
+            this.busy[drive] = false;
+            this.callbacks?.driveLight(drive, false);
+        }, 100);
     }
 
     /*
      * dumpBlock
      */
 
-    dumpBlock(drive: number, block: number) {
+    dumpBlock(drive: DriveNumber, block: number) {
         let result = '';
         let b;
         let jdx;
@@ -141,7 +177,7 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
             result += toHex(idx << 4, 4) + ': ';
             for (jdx = 0; jdx < 16; jdx++) {
                 b = this.disks[drive].blocks[block][idx * 16 + jdx];
-                if (jdx == 8) {
+                if (jdx === 8) {
                     result += ' ';
                 }
                 result += toHex(b) + ' ';
@@ -149,7 +185,7 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
             result += '        ';
             for (jdx = 0; jdx < 16; jdx++) {
                 b = this.disks[drive].blocks[block][idx * 16 + jdx] & 0x7f;
-                if (jdx == 8) {
+                if (jdx === 8) {
                     result += ' ';
                 }
                 if (b >= 0x20 && b < 0x7f) {
@@ -167,7 +203,7 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
      * getDeviceInfo
      */
 
-    getDeviceInfo(state: CpuState, drive: number) {
+    getDeviceInfo(state: CpuState, drive: DriveNumber) {
         if (this.disks[drive]) {
             const blocks = this.disks[drive].blocks.length;
             state.x = blocks & 0xff;
@@ -185,10 +221,10 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
      * readBlock
      */
 
-    readBlock(state: CpuState, drive: number, block: number, buffer: Address) {
-        this.debug('read drive=' + drive);
-        this.debug('read buffer=' + buffer);
-        this.debug('read block=$' + toHex(block));
+    readBlock(state: CpuState, drive: DriveNumber, block: number, buffer: Address) {
+        this.debug(`read drive=${drive}`);
+        this.debug(`read buffer=${buffer.toString()}`);
+        this.debug(`read block=$${toHex(block)}`);
 
         if (!this.disks[drive]?.blocks.length) {
             debug('Drive', drive, 'is empty');
@@ -198,6 +234,7 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
         }
 
         // debug('read', '\n' + dumpBlock(drive, block));
+        this.driveLight(drive);
 
         for (let idx = 0; idx < 512; idx++) {
             buffer.writeByte(this.disks[drive].blocks[block][idx]);
@@ -212,10 +249,10 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
      * writeBlock
      */
 
-    writeBlock(state: CpuState, drive: number, block: number, buffer: Address) {
-        this.debug('write drive=' + drive);
-        this.debug('write buffer=' + buffer);
-        this.debug('write block=$' + toHex(block));
+    writeBlock(state: CpuState, drive: DriveNumber, block: number, buffer: Address) {
+        this.debug(`write drive=${drive}`);
+        this.debug(`write buffer=${buffer.toString()}`);
+        this.debug(`write block=$${toHex(block)}`);
 
         if (!this.disks[drive]?.blocks.length) {
             debug('Drive', drive, 'is empty');
@@ -232,20 +269,21 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
         }
 
         // debug('write', '\n' + dumpBlock(drive, block));
+        this.driveLight(drive);
 
         for (let idx = 0; idx < 512; idx++) {
             this.disks[drive].blocks[block][idx] = buffer.readByte();
             buffer = buffer.inc(1);
         }
         state.a = 0;
-        state.s &= flags.C;
+        state.s &= ~flags.C;
     }
 
     /*
      * formatDevice
      */
 
-    formatDevice(state: CpuState, drive: number) {
+    formatDevice(state: CpuState, drive: DriveNumber) {
         if (!this.disks[drive]?.blocks.length) {
             debug('Drive', drive, 'is empty');
             state.a = DEVICE_OFFLINE;
@@ -321,11 +359,11 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
             buffer = bufferAddr.readAddress();
             block = blockAddr.readWord();
 
-            this.debug('cmd=' + cmd);
+            this.debug(`cmd=${cmd}`);
             this.debug('unit=$' + toHex(unit));
 
-            this.debug('slot=' + driveSlot + ' drive=' + drive);
-            this.debug('buffer=' + buffer + ' block=$' + toHex(block));
+            this.debug(`slot=${driveSlot} drive=${drive}`);
+            this.debug(`buffer=${buffer.toString()} block=$${toHex(block)}`);
 
             switch (cmd) {
                 case 0: // INFO
@@ -341,47 +379,48 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
                     break;
 
                 case 3: // FORMAT
-                    this.formatDevice(state, unit);
+                    this.formatDevice(state, drive);
                     break;
             }
-        } else if (off == smartOff && this.cpu.getSync()) {
+        } else if (off === smartOff && this.cpu.getSync()) {
             this.debug('smartport entry');
             const stackAddr = new Address(this.cpu, state.sp + 1, 0x01);
             let blocks;
 
             const retVal = stackAddr.readAddress();
 
-            this.debug('return=' + retVal);
+            this.debug(`return=${retVal.toString()}`);
 
             const cmdBlockAddr = retVal.inc(1);
             cmd = cmdBlockAddr.readByte();
             const cmdListAddr = cmdBlockAddr.inc(1).readAddress();
 
-            this.debug('cmd=' + cmd);
-            this.debug('cmdListAddr=' + cmdListAddr);
+            this.debug(`cmd=${cmd}`);
+            this.debug(`cmdListAddr=${cmdListAddr.toString()}`);
 
             stackAddr.writeAddress(retVal.inc(3));
 
             const parameterCount = cmdListAddr.readByte();
             unit = cmdListAddr.inc(1).readByte();
+            const drive = unit ? 2 : 1;
             buffer = cmdListAddr.inc(2).readAddress();
             let status;
 
-            this.debug('parameterCount=' + parameterCount);
+            this.debug(`parameterCount=${parameterCount}`);
             switch (cmd) {
                 case 0x00: // INFO
                     status = cmdListAddr.inc(4).readByte();
-                    this.debug('info unit=' + unit);
-                    this.debug('info buffer=' + buffer);
-                    this.debug('info status=' + status);
+                    this.debug(`info unit=${unit}`);
+                    this.debug(`info buffer=${buffer.toString()}`);
+                    this.debug(`info status=${status}`);
                     switch (unit) {
                         case 0:
                             switch (status) {
                                 case 0:
                                     buffer.writeByte(2); // two devices
                                     buffer.inc(1).writeByte(1 << 6); // no interrupts
-                                    buffer.inc(2).writeByte(0); // reserved
-                                    buffer.inc(3).writeByte(0); // reserved
+                                    buffer.inc(2).writeByte(0x2); // Other vendor
+                                    buffer.inc(3).writeByte(0x0); // Other vendor
                                     buffer.inc(4).writeByte(0); // reserved
                                     buffer.inc(5).writeByte(0); // reserved
                                     buffer.inc(6).writeByte(0); // reserved
@@ -396,12 +435,30 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
                         default: // Unit 1
                             switch (status) {
                                 case 0:
-                                    blocks = this.disks[unit].blocks.length;
+                                    blocks = this.disks[unit]?.blocks.length ?? 0;
                                     buffer.writeByte(0xf0); // W/R Block device in drive
                                     buffer.inc(1).writeByte(blocks & 0xff); // 1600 blocks
                                     buffer.inc(2).writeByte((blocks & 0xff00) >> 8);
                                     buffer.inc(3).writeByte((blocks & 0xff0000) >> 16);
                                     state.x = 4;
+                                    state.y = 0;
+                                    state.a = 0;
+                                    state.s &= ~flags.C;
+                                    break;
+                                case 3:
+                                    blocks = this.disks[unit]?.blocks.length ?? 0;
+                                    buffer.writeByte(0xf0); // W/R Block device in drive
+                                    buffer.inc(1).writeByte(blocks & 0xff); // Blocks low byte
+                                    buffer.inc(2).writeByte((blocks & 0xff00) >> 8); // Blocks middle byte
+                                    buffer.inc(3).writeByte((blocks & 0xff0000) >> 16); // Blocks high byte
+                                    buffer.inc(4).writeByte(ID.length); // Vendor ID length
+                                    for (let idx = 0; idx < ID.length; idx++) { // Vendor ID
+                                        buffer.inc(5 + idx).writeByte(ID.charCodeAt(idx));
+                                    }
+                                    buffer.inc(21).writeByte(DEVICE_TYPE_SCSI_HD); // Device Type
+                                    buffer.inc(22).writeByte(0x0); // Device Subtype
+                                    buffer.inc(23).writeWord(0x0101); // Version
+                                    state.x = 24;
                                     state.y = 0;
                                     state.a = 0;
                                     state.s &= ~flags.C;
@@ -415,16 +472,16 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
 
                 case 0x01: // READ BLOCK
                     block = cmdListAddr.inc(4).readWord();
-                    this.readBlock(state, unit, block, buffer);
+                    this.readBlock(state, drive, block, buffer);
                     break;
 
                 case 0x02: // WRITE BLOCK
                     block = cmdListAddr.inc(4).readWord();
-                    this.writeBlock(state, unit, block, buffer);
+                    this.writeBlock(state, drive, block, buffer);
                     break;
 
                 case 0x03: // FORMAT
-                    this.formatDevice(state, unit);
+                    this.formatDevice(state, drive);
                     break;
 
                 case 0x04: // CONTROL
@@ -453,6 +510,7 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
     }
 
     write() {
+        // not writable
     }
 
     getState() {
@@ -464,8 +522,9 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
                             (block) => new Uint8Array(block)
                         ),
                         encoding: ENCODING_BLOCK,
+                        format: disk.format,
                         readOnly: disk.readOnly,
-                        name: disk.name,
+                        metadata: { ...disk.metadata },
                     };
                     return result;
                 }
@@ -481,20 +540,27 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
                         (block) => new Uint8Array(block)
                     ),
                     encoding: ENCODING_BLOCK,
+                    format: disk.format,
                     readOnly: disk.readOnly,
-                    name: disk.name,
+                    metadata: { ...disk.metadata },
                 };
                 return result;
             }
         );
     }
 
-    setBinary(drive: number, name: string, fmt: string, rawData: ArrayBuffer) {
-        const volume = 254;
-        const readOnly = false;
-        if (fmt == '2mg') {
-            const { bytes, offset } = read2MGHeader(rawData);
+    setBinary(drive: DriveNumber, name: string, fmt: BlockFormat, rawData: ArrayBuffer) {
+        let volume = 254;
+        let readOnly = false;
+        if (fmt === '2mg') {
+            const header = read2MGHeader(rawData);
+            this.metadata[drive] = header;
+            const { bytes, offset } = header;
+            volume = header.volume;
+            readOnly = header.readOnly;
             rawData = rawData.slice(offset, offset + bytes);
+        } else {
+            this.metadata[drive] = null;
         }
         const options = {
             rawData,
@@ -503,8 +569,37 @@ export default class SmartPort implements Card, MassStorage, Restorable<SmartPor
             volume,
         };
 
-        this.disks[drive] = createBlockDisk(options);
+        this.ext[drive] = fmt;
+        this.disks[drive] = createBlockDisk(fmt, options);
+        this.callbacks?.label(drive, name);
 
         return true;
+    }
+
+    getBinary(drive: number): MassStorageData | null {
+        if (!this.disks[drive]) {
+            return null;
+        }
+        const disk = this.disks[drive];
+        const ext = this.ext[drive];
+        const { readOnly } = disk;
+        const { name } = disk.metadata;
+        let data: ArrayBuffer;
+        if (ext === '2mg') {
+            data = create2MGFromBlockDisk(this.metadata[drive], disk);
+        } else {
+            const { blocks } = disk;
+            const byteArray = new Uint8Array(blocks.length * 512);
+            for (let idx = 0; idx < blocks.length; idx++) {
+                byteArray.set(blocks[idx], idx * 512);
+            }
+            data = byteArray.buffer;
+        }
+        return {
+            metadata: { name },
+            ext,
+            data,
+            readOnly,
+        };
     }
 }

@@ -5,11 +5,11 @@ export type ROMState = null;
 export default class ROM implements MemoryPages, Restorable<ROMState> {
 
     constructor(
-    private readonly startPage: byte,
-    private readonly endPage: byte,
-    private readonly rom: rom) {
-        const expectedLength = (endPage-startPage+1) * 256;
-        if (rom.length != expectedLength) {
+        private readonly startPage: byte,
+        private readonly endPage: byte,
+        private readonly rom: rom) {
+        const expectedLength = (endPage - startPage + 1) * 256;
+        if (rom.length !== expectedLength) {
             throw Error(`rom does not have the correct length: expected ${expectedLength} was ${rom.length}`);
         }
     }
@@ -24,10 +24,12 @@ export default class ROM implements MemoryPages, Restorable<ROMState> {
         return this.rom[(page - this.startPage) << 8 | off];
     }
     write() {
+        // not writable
     }
     getState() {
         return null;
     }
-    setState(_state: null) {
+    setState(_state: ROMState) {
+        // not restorable
     }
 }

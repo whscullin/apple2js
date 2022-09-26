@@ -1,0 +1,28 @@
+.fileViewer {
+    width: 60em;
+    max-height: 60vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.textViewer {
+    background: white;
+    font-family: monospace;
+    width: 57em;
+    padding: 1em;
+    height: 60vh;
+    line-height: 1em;
+    overflow-y: auto;
+    border: 2px inset #f0edd0;
+    white-space: pre-wrap;
+}
+
+.hiresPreview {
+    border: 2px inset #f0edd0;
+    width: 560px;
+    height: 384px;
+    min-width: 560px;
+    min-height: 384px;
+}

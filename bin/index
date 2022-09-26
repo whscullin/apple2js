@@ -14,6 +14,7 @@ for (const fileName of dir.sort()) {
         const json = fs.readFileSync(path.resolve(diskPath, fileName));
         const data = JSON.parse(json);
         if (data.private) { continue; }
+        if (!data.name || !data.category) { continue; }
 
         const entry = {
             filename: `json/disks/${fileName}`,
@@ -26,7 +27,7 @@ for (const fileName of dir.sort()) {
     }
 }
 
-index.sort((x,y) => {
+index.sort((x, y) => {
     const xc = x.category.toLowerCase();
     const yc = y.category.toLowerCase();
     const xn = x.name.toLowerCase();
@@ -48,4 +49,9 @@ index.sort((x,y) => {
 fs.writeFileSync(
     path.resolve(diskPath, 'index.js'),
     `disk_index = ${JSON.stringify(index, null, 2)};`
+);
+
+fs.writeFileSync(
+    path.resolve(diskPath, 'index.json'),
+    JSON.stringify(index, null, 2)
 );

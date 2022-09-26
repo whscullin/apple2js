@@ -12,12 +12,13 @@ import Thunderclock from './cards/thunderclock';
 import VideoTerm from './cards/videoterm';
 
 import { Apple2 } from './apple2';
+import { SupportedSectors } from './formats/types';
 
 const prefs = new Prefs();
 const romVersion = prefs.readPref('computer_type2');
 let rom: string;
 let characterRom: string;
-let sectors = 16;
+let sectors: SupportedSectors = 16;
 
 switch (romVersion) {
     case 'apple2':
@@ -51,6 +52,7 @@ switch (romVersion) {
 }
 
 const options = {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     canvas: document.querySelector<HTMLCanvasElement>('#screen')!,
     gl: prefs.readPref('gl_canvas', 'true') === 'true',
     rom,
@@ -73,7 +75,7 @@ apple2.ready.then(() => {
     const slinky = new RAMFactor(1024 * 1024);
     const disk2 = new DiskII(io, driveLights, sectors);
     const clock = new Thunderclock();
-    const smartport = new SmartPort(cpu, { block: true });
+    const smartport = new SmartPort(cpu, null, { block: true });
 
     io.setSlot(0, lc);
     io.setSlot(1, parallel);

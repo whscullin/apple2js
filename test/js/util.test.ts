@@ -1,6 +1,6 @@
 /** @fileoverview Test for utils.ts. */
 
-import { allocMem, allocMemPages, numToString, testables, toBinary, toHex } from '../../js/util';
+import { allocMem, allocMemPages, testables, toBinary, toHex } from '../../js/util';
 
 describe('garbage', () => {
     it('returns 0 <= x <= 255', () => {
@@ -25,16 +25,17 @@ describe('allocMem', () => {
     });
     it('has garbage in the right places', () => {
         const memory = allocMem(0x800);
+        let passed = false;
         for (let i = 0; i < 0x800; i += 0x200) {
-            const passed = memory[i + 0x28] != 0xff
-                && memory[i + 0x29] != 0xff
-                && memory[i + 0x68] != 0xff
-                && memory[i + 0x69] != 0xff;
+            passed = memory[i + 0x28] !== 0xff
+                && memory[i + 0x29] !== 0xff
+                && memory[i + 0x68] !== 0xff
+                && memory[i + 0x69] !== 0xff;
             if (passed) {
-                return;
+                break;
             }
         }
-        fail('garbage not found');
+        expect(passed).toBe(true);
     });
 });
 
@@ -79,21 +80,3 @@ describe('hup', () => {
     // untestable due to direct reference to window.location
 });
 
-describe('numToString', () => {
-    it('packs a zero byte into a string of all zeros', () => {
-        expect(numToString(0x00)).toEqual('\0\0\0\0');
-    });
-    it('packs a byte in the printable ASCII range into a zero-padded string',
-        () => {
-            expect(numToString(0x41)).toEqual('A\0\0\0');
-        });
-    it('packs a word into a string', () => {
-        expect(numToString(0x4142)).toEqual('BA\0\0');
-    });
-    it('packs a 32-bit value into a string', () => {
-        expect(numToString(0x41424344)).toEqual('DCBA');
-    });
-    it('ignores more than 32 bits', () => {
-        expect(numToString(0x4142434445)).toEqual('EDCB');
-    });
-});

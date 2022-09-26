@@ -1,0 +1,40 @@
+.disk {
+    align-items: center;
+    display: flex;
+    flex-grow: 1;
+}
+
+.diskLight {
+    margin: 5px;
+    background-image: url("../../../css/red-off-16.png");
+    background-size: 16px 16px;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+}
+
+.diskLight.on {
+    background-image: url("../../../css/red-on-16.png");
+}
+
+.diskLabel {
+    color: #000;
+    font-family: sans-serif;
+    font-weight: bold;
+    margin-right: 0.5em;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    flex-grow: 1;
+    user-select: none;
+}
+
+@media only screen and (min-resolution: 1.25dppx) {
+    .diskLight {
+        background-image: url("../../../css/red-off-32.png");
+    }
+
+    .diskLight.on {
+        background-image: url("../../../css/red-on-32.png");
+    }
+}

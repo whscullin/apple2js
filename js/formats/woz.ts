@@ -1,14 +1,3 @@
-/* Copyright 2010-2021 Will Scullin <scullin@scullinsteel.com>
- *
- * Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation.  No representations are made about the suitability of this
- * software for any purpose.  It is provided "as is" without express or
- * implied warranty.
- */
-
 import { debug, toHex } from '../util';
 import { bit, byte, word } from '../types';
 import { grabNibble } from './format_utils';
@@ -30,29 +19,29 @@ const WOZ_INTEGRITY_CHECK = 0x0a0d0aff;
  * @returns ASCII string
  */
 function stringFromBytes(data: DataView, start: number, end: number): string {
-    return String.fromCharCode.apply(
-        null,
-        new Uint8Array(data.buffer.slice(data.byteOffset + start, data.byteOffset + end))
+    const byteArray = new Uint8Array(
+        data.buffer.slice(data.byteOffset + start, data.byteOffset + end)
     );
+    return String.fromCharCode(...byteArray);
 }
 
 export class InfoChunk {
-    version: byte
+    version: byte;
 
     // Version 1
-    diskType: byte
-    writeProtected: byte
-    synchronized: byte
-    cleaned: byte
-    creator: string
+    diskType: byte;
+    writeProtected: byte;
+    synchronized: byte;
+    cleaned: byte;
+    creator: string;
 
     // Version 2
-    sides: byte = 0
-    bootSector: byte = 0
-    bitTiming: byte = 0
-    compatibleHardware: word = 0
-    requiredRAM: word = 0
-    largestTrack: word = 0
+    sides: byte = 0;
+    bootSector: byte = 0;
+    bitTiming: byte = 0;
+    compatibleHardware: word = 0;
+    requiredRAM: word = 0;
+    largestTrack: word = 0;
 
     constructor(data: DataView) {
         this.version = data.getUint8(0);
@@ -74,7 +63,7 @@ export class InfoChunk {
 }
 
 export class TMapChunk {
-    trackMap: byte[]
+    trackMap: byte[];
 
     constructor(data: DataView) {
         this.trackMap = [];
@@ -89,8 +78,8 @@ const WOZ_TRACK_SIZE = 6656;
 const WOZ_TRACK_INFO_BITS = 6648;
 
 export class TrksChunk {
-    rawTracks: Uint8Array[]
-    tracks: Uint8Array[]
+    rawTracks: Uint8Array[];
+    tracks: Uint8Array[];
 }
 
 export class TrksChunk1 extends TrksChunk {
@@ -129,13 +118,13 @@ export class TrksChunk1 extends TrksChunk {
 }
 
 export interface Trk {
-    startBlock: word
-    blockCount: word
-    bitCount: number
+    startBlock: word;
+    blockCount: word;
+    bitCount: number;
 }
 
 export class TrksChunk2 extends TrksChunk {
-    trks: Trk[]
+    trks: Trk[];
 
     constructor (data: DataView) {
         super();
@@ -166,6 +155,9 @@ export class TrksChunk2 extends TrksChunk {
             const end = start + trk.blockCount * 512;
             const slice = bits.slice(start, end);
             const trackData = new Uint8Array(slice);
+            if (trackNo === 0) {
+                // debug(`First bytes: ${toHex(trackData[0])} ${toHex(trackData[1])} ${toHex(trackData[2])} ${toHex(trackData[3])}`);
+            }
             for (let jdx = 0; jdx < trk.bitCount; jdx++) {
                 const byteIndex = jdx >> 3;
                 const bitIndex = 7 - (jdx & 0x07);
@@ -188,7 +180,7 @@ export class TrksChunk2 extends TrksChunk {
 }
 
 export class MetaChunk  {
-    values: Record<string, string>
+    values: Record<string, string>;
 
     constructor (data: DataView) {
         const infoStr = stringFromBytes(data, 0, data.byteLength);
@@ -202,11 +194,11 @@ export class MetaChunk  {
 }
 
 interface Chunks {
-    [key: string]: any
-    info?: InfoChunk
-    tmap?: TMapChunk
-    trks?: TrksChunk
-    meta?: MetaChunk
+    [key: string]: unknown;
+    info?: InfoChunk;
+    tmap?: TMapChunk;
+    trks?: TrksChunk;
+    meta?: MetaChunk;
 }
 
 /**
@@ -295,18 +287,21 @@ export default function createDiskFromWoz(options: DiskOptions): WozDisk {
         debug('Invalid woz header');
     }
 
-    debug(chunks);
+    // debug(chunks);
 
-    const { meta, tmap, trks } = chunks;
+    const { meta, tmap, trks, info } = chunks;
 
     const disk: WozDisk = {
         encoding: ENCODING_BITSTREAM,
+        format: 'woz',
         trackMap: tmap?.trackMap || [],
-        tracks: trks?.tracks || [],
         rawTracks: trks?.rawTracks || [],
         readOnly: true, //chunks.info.writeProtected === 1;
-        name: meta?.values['title'] || options.name,
-        side: meta?.values['side_name'] || meta?.values['side'],
+        metadata: {
+            name: meta?.values['title'] || options.name,
+            side: meta?.values['side_name'] || meta?.values['side']
+        },
+        info
     };
 
     return disk;

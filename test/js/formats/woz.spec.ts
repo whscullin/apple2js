@@ -1,4 +1,4 @@
-import { WozDisk, ENCODING_BITSTREAM } from 'js/formats/types';
+import { ENCODING_BITSTREAM } from 'js/formats/types';
 import createDiskFromWoz from 'js/formats/woz';
 import {
     mockWoz1,
@@ -19,21 +19,19 @@ describe('woz', () => {
             rawData: mockWoz1
         };
 
-        const disk = createDiskFromWoz(options) as WozDisk;
+        const disk = createDiskFromWoz(options);
         expect(disk).toEqual({
-            name: 'Mock Woz 1',
+            metadata: { name: 'Mock Woz 1', side: undefined },
             readOnly: true,
             encoding: ENCODING_BITSTREAM,
+            format: 'woz',
             trackMap: mockTMAP,
             rawTracks: [new Uint8Array([
                 1, 1, 0, 1, 0, 1, 0, 1,
                 1, 0, 1, 0, 1, 0, 1, 0,
                 1, 0, 0, 1, 0, 1, 1, 0,
             ])],
-            tracks: [new Uint8Array([0xD5, 0xAA, 0x96])],
-        });
-        expect(console.log).toHaveBeenCalledWith(expect.objectContaining({
-            info:  {
+            info: {
                 bitTiming: 0,
                 bootSector: 0,
                 cleaned: 0,
@@ -47,7 +45,7 @@ describe('woz', () => {
                 version: 1,
                 writeProtected: 0
             }
-        }));
+        });
     });
 
     it('can parse Woz version 2', () => {
@@ -58,22 +56,22 @@ describe('woz', () => {
             rawData: mockWoz2
         };
 
-        const disk = createDiskFromWoz(options) as WozDisk;
+        const disk = createDiskFromWoz(options);
         expect(disk).toEqual({
-            name: 'Mock Woz 2',
-            side: 'B',
+            metadata: {
+                name: 'Mock Woz 2',
+                side: 'B',
+            },
             readOnly: true,
             encoding: ENCODING_BITSTREAM,
+            format: 'woz',
             trackMap: mockTMAP,
             rawTracks: [new Uint8Array([
                 1, 1, 0, 1, 0, 1, 0, 1,
                 1, 0, 1, 0, 1, 0, 1, 0,
                 1, 0, 0, 1, 0, 1, 1, 0,
             ])],
-            tracks: [new Uint8Array([0xD5, 0xAA, 0x96])],
-        });
-        expect(console.log).toHaveBeenCalledWith(expect.objectContaining({
-            info:  {
+            info: {
                 bitTiming: 0,
                 bootSector: 0,
                 cleaned: 0,
@@ -87,6 +85,6 @@ describe('woz', () => {
                 version: 2,
                 writeProtected: 0
             }
-        }));
+        });
     });
 });

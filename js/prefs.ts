@@ -1,25 +1,25 @@
-/* Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
- *
- * Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation.  No representations are made about the suitability of this
- * software for any purpose.  It is provided "as is" without express or
- * implied warranty.
- */
-
 const havePrefs = typeof window.localStorage !== 'undefined';
 
 export default class Prefs {
+    url: URL;
+    title: string;
+
+    constructor() {
+        this.url = new URL(window.location.href);
+        this.title = window.document.title;
+    }
 
     havePrefs() {
         return havePrefs;
     }
 
-    readPref(name: string): string | null
-    readPref(name: string, defaultValue: string): string
+    readPref(name: string): string | null;
+    readPref(name: string, defaultValue: string): string;
     readPref(name: string, defaultValue: string | null = null) {
+        if (this.url.searchParams.has(name)) {
+            return this.url.searchParams.get(name);
+        }
+
         if (havePrefs) {
             return window.localStorage.getItem(name) ?? defaultValue;
         }
@@ -27,6 +27,15 @@ export default class Prefs {
     }
 
     writePref(name: string, value: string) {
+        if (this.url.searchParams.has(name)) {
+            this.url.searchParams.set(name, value);
+            history.replaceState(
+                null,
+                this.title,
+                this.url.toString()
+            );
+        }
+
         if (havePrefs) {
             window.localStorage.setItem(name, value);
         }

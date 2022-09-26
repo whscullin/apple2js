@@ -1,0 +1,48 @@
+.listing {
+    width: calc(100% - 12px);
+    height: 320px;
+    overflow: auto;
+    white-space: pre-wrap;
+}
+
+.variables {
+    width: 100%;
+    height: 320px;
+    overflow: auto;
+}
+
+.variables table {
+    width: 100%;
+}
+
+.variables td {
+    background-color: #fff;
+    border: 1px inset;
+    white-space: pre;
+    font-family: monospace;
+}
+
+.internals {
+    width: 100%;
+}
+
+.internals table {
+    width: 100%;
+}
+
+.internals td {
+    background-color: #fff;
+    border: 1px inset;
+    white-space: pre;
+    font-family: monospace;
+    width: 30%;
+}
+
+.internals th {
+    width: 20%;
+    text-align: right;
+}
+
+.stack {
+    width: 10em;
+}

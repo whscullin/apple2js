@@ -7,7 +7,7 @@
 
 import fs from 'fs';
 
-import CPU6502 from 'js/cpu6502';
+import CPU6502, { FLAVOR_ROCKWELL_65C02, FLAVOR_WDC_65C02 } from 'js/cpu6502';
 import { toHex } from 'js/util';
 import type { byte, word } from 'js/types';
 
@@ -25,45 +25,45 @@ const detail = !!process.env.JEST_DETAIL;
 /**
  * Memory address and value
  */
-type MemoryValue = [address: word, value: byte]
+type MemoryValue = [address: word, value: byte];
 
 /**
  * Represents initial and final CPU and memory states
  */
  interface TestState {
     /** Program counter */
-    pc: word
+    pc: word;
     /** Stack register */
-    s: byte
+    s: byte;
     /** Accumulator */
-    a: byte
+    a: byte;
     /** X index */
-    x: byte
+    x: byte;
     /** Y index */
-    y: byte
+    y: byte;
     /** Processor status register */
-    p: byte
+    p: byte;
     /** M */
-    ram: MemoryValue[]
+    ram: MemoryValue[];
 }
 
 /**
  * CPU cycle memory operation
  */
-type Cycle = [address: word, value: byte, type: 'read'|'write']
+type Cycle = [address: word, value: byte, type: 'read'|'write'];
 
 /**
  * One test record
  */
 interface Test {
     /** Test name */
-    name: string
+    name: string;
     /** Initial CPU register and memory state */
-    initial: TestState
+    initial: TestState;
     /**  Final CPU register and memory state */
-    final: TestState
+    final: TestState;
     /** Detailed CPU cycles */
-    cycles: Cycle[]
+    cycles: Cycle[];
 }
 
 /**
@@ -145,9 +145,9 @@ function expectState(cpu: CPU6502, memory: TestMemory, test: Test) {
 }
 
 interface OpTest {
-    op: string
-    name: string
-    mode: string
+    op: string;
+    name: string;
+    mode: string;
 }
 
 const testPath = process.env.TOM_HARTE_TEST_PATH;
@@ -158,28 +158,56 @@ const maxTests = 16;
 
 if (testPath) {
     const testPath6502 = `${testPath}/6502/v1/`;
-    const testPath65C02 = `${testPath}/wdc65c02/v1/`;
+    const testPathWDC65C02 = `${testPath}/wdc65c02/v1/`;
+    const testPathRW65C02 = `${testPath}/rockwell65c02/v1/`;
 
     const opAry6502: OpTest[] = [];
-    const opAry65C02: OpTest[] = [];
+    const opAryRW65C02: OpTest[] = [];
+    const opAryWDC65C02: OpTest[] = [];
 
     const buildOpArrays = () => {
         const cpu = new CPU6502();
 
-        // Grab the implemented op codes
-        // TODO: Decide which undocumented opcodes are worthwhile.
         for (const op in cpu.OPS_6502) {
             const { name, mode } = cpu.OPS_6502[op];
             const test = { op: toHex(+op), name, mode };
             opAry6502.push(test);
-            opAry65C02.push(test);
+            opAryRW65C02.push(test);
+            opAryWDC65C02.push(test);
+        }
+
+        for (const op in cpu.OPS_NMOS_6502) {
+            const { name, mode } = cpu.OPS_NMOS_6502[op];
+            const test = { op: toHex(+op), name, mode };
+            opAry6502.push(test);
         }
 
         for (const op in cpu.OPS_65C02) {
             const { name, mode } = cpu.OPS_65C02[op];
             const test = { op: toHex(+op), name, mode };
-            opAry65C02.push(test);
+            opAryRW65C02.push(test);
+            opAryWDC65C02.push(test);
         }
+
+        // WDC 65C02 NOPs
+        [
+            '03', '0b', '13', '1b', '23', '2b', '33', '3b',
+            '43', '4b', '53', '5b', '63', '6b', '73', '7b',
+            '83', '8b', '93', '9b', 'a3', 'ab', 'b3', 'bb',
+            'c3',       'd3',       'e3', 'eb', 'f3', 'fb'
+        ].forEach((op) =>
+            opAryWDC65C02.push({ op, name: 'nop', mode: 'implied'})
+        );
+
+        // Rockwell 65C02 NOPs
+        [
+            '03', '0b', '13', '1b', '23', '2b', '33', '3b',
+            '43', '4b', '53', '5b', '63', '6b', '73', '7b',
+            '83', '8b', '93', '9b', 'a3', 'ab', 'b3', 'bb',
+            'c3', 'cb', 'd3', 'db', 'e3', 'eb', 'f3', 'fb'
+        ].forEach((op) =>
+            opAryRW65C02.push({ op, name: 'nop', mode: 'implied'})
+        );
     };
 
     buildOpArrays();
@@ -188,7 +216,7 @@ if (testPath) {
         let cpu: CPU6502;
         let memory: TestMemory;
 
-        describe('6502', function() {
+        describe('NMOS 6502', function() {
             beforeAll(function() {
                 cpu = new CPU6502();
                 memory = new TestMemory(256);
@@ -209,15 +237,36 @@ if (testPath) {
             });
         });
 
-        describe('WDC 65C02', function() {
+        describe('Rockwell 65C02', function() {
             beforeAll(function() {
-                cpu = new CPU6502({ '65C02': true });
+                cpu = new CPU6502({ flavor: FLAVOR_ROCKWELL_65C02 });
                 memory = new TestMemory(256);
                 cpu.addPageHandler(memory);
             });
 
-            describe.each(opAry65C02)('Test op $op $name $mode', ({op}) => {
-                const data = fs.readFileSync(`${testPath65C02}${op}.json`, 'utf-8');
+            describe.each(opAryRW65C02)('Test op $op $name $mode', ({op}) => {
+                const data = fs.readFileSync(`${testPathRW65C02}${op}.json`, 'utf-8');
+                const tests = JSON.parse(data) as Test[];
+
+                it.each(tests.slice(0, maxTests))('Test $name', (test) => {
+                    initState(cpu, test.initial);
+                    memory.logStart();
+                    cpu.step();
+                    memory.logStop();
+                    expectState(cpu, memory, test);
+                });
+            });
+        });
+
+        describe('WDC 65C02', function() {
+            beforeAll(function() {
+                cpu = new CPU6502({ flavor: FLAVOR_WDC_65C02 });
+                memory = new TestMemory(256);
+                cpu.addPageHandler(memory);
+            });
+
+            describe.each(opAryWDC65C02)('Test op $op $name $mode', ({op}) => {
+                const data = fs.readFileSync(`${testPathWDC65C02}${op}.json`, 'utf-8');
                 const tests = JSON.parse(data) as Test[];
 
                 it.each(tests.slice(0, maxTests))('Test $name', (test) => {

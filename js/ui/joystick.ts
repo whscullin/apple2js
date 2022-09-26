@@ -1,10 +1,16 @@
 import Apple2IO from '../apple2io';
-import { BOOLEAN_OPTION, OptionHandler } from './options_modal';
+import { BOOLEAN_OPTION, OptionHandler } from '../options';
 
 const JOYSTICK_DISABLE = 'disable_mouse';
 const JOYSTICK_FLIP_X_AXIS = 'flip_x';
 const JOYSTICK_FLIP_Y_AXIS = 'flip_y';
 const JOYSTICK_SWAP_AXIS = 'swap_x_y';
+
+let mouseMode = false;
+
+export function enableMouseMode(on: boolean) {
+    mouseMode = on;
+}
 
 export class JoyStick implements OptionHandler {
     private disableMouseJoystick = false;
@@ -17,14 +23,14 @@ export class JoyStick implements OptionHandler {
         document.addEventListener('mousemove', this.mousemove);
         document.querySelectorAll('canvas').forEach((canvas) => {
             canvas.addEventListener('mousedown', (evt) => {
-                if (!this.gamepad) {
-                    io.buttonDown(evt.which == 1 ? 0 : 1);
+                if (!this.gamepad && !mouseMode) {
+                    io.buttonDown(evt.which === 1 ? 0 : 1);
                 }
                 evt.preventDefault();
             });
             canvas.addEventListener('mouseup', (evt) => {
-                if (!this.gamepad) {
-                    io.buttonUp(evt.which == 1 ? 0 : 1);
+                if (!this.gamepad && !mouseMode) {
+                    io.buttonUp(evt.which === 1 ? 0 : 1);
                 }
             });
             canvas.addEventListener('contextmenu', (evt) => {
@@ -83,11 +89,11 @@ export class JoyStick implements OptionHandler {
     }
 
     private mousemove = (evt: MouseEvent) => {
-        if (this.gamepad || this.disableMouseJoystick) {
+        if (this.gamepad || this.disableMouseJoystick || mouseMode) {
             return;
         }
 
-        const s = document.querySelector<HTMLDivElement>('#screen')!;
+        const s = document.querySelector<HTMLDivElement>('canvas')!;
         const offset = s.getBoundingClientRect();
         let x = (evt.pageX - offset.left) / s.clientWidth;
         let y = (evt.pageY - offset.top) / s.clientHeight;
@@ -100,5 +106,5 @@ export class JoyStick implements OptionHandler {
 
         this.io.paddle(0, this.flipX ? 1 - x : x);
         this.io.paddle(1, this.flipY ? 1 - y : y);
-    }
+    };
 }

@@ -1,14 +1,3 @@
-/* Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
- *
- * Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation.  No representations are made about the suitability of this
- * software for any purpose.  It is provided "as is" without express or
- * implied warranty.
- */
-
 import { allocMem, debug } from '../util';
 import { Card, Restorable, byte, memory } from '../types';
 import { rom } from '../roms/cards/ramfactor';
@@ -27,9 +16,9 @@ const LOC = {
 } as const;
 
 export class RAMFactorState {
-    loc: number
-    firmware: byte
-    mem: memory
+    loc: number;
+    firmware: byte;
+    mem: memory;
 }
 
 export default class RAMFactor implements Card, Restorable<RAMFactorState> {
@@ -137,7 +126,9 @@ export default class RAMFactor implements Card, Restorable<RAMFactorState> {
         return rom[this.firmware << 12 | (page - 0xC0) << 8 | off];
     }
 
-    write() {}
+    write() {
+        // not writable
+    }
 
     reset() {
         this.firmware = 0;

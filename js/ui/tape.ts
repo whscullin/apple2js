@@ -1,15 +1,4 @@
 
-/* Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
- *
- * Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation.  No representations are made about the suitability of this
- * software for any purpose.  It is provided "as is" without express or
- * implied warranty.
- */
-
 import { TapeData } from '../types';
 import Apple2IO from '../apple2io';
 import { debug } from '../util';
@@ -43,13 +32,13 @@ export default class Tape {
                 let old = (datum > 0.0), current;
                 let last = 0;
                 let delta: number;
-                debug('Sample Count: ' + data.length);
-                debug('Sample rate: ' + buffer.sampleRate);
+                debug(`Sample Count: ${data.length}`);
+                debug(`Sample rate: ${buffer.sampleRate}`);
                 for (let idx = 1; idx < data.length; idx++) {
                     datum = data[idx];
                     if ((datum > 0.1) || (datum < -0.1)) {
                         current = (datum > 0.0);
-                        if (current != old) {
+                        if (current !== old) {
                             delta = idx - last;
                             if (delta > 2000000) {
                                 delta = 2000000;
@@ -76,7 +65,7 @@ export default class Tape {
                 if (done) {
                     done();
                 }
-            }, function (error) {
+            }, (error: Error) => {
                 window.alert(error.message);
             });
         };

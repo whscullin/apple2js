@@ -1,14 +1,3 @@
-/* Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
- *
- * Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation.  No representations are made about the suitability of this
- * software for any purpose.  It is provided "as is" without express or
- * implied warranty.
- */
-
 import CPU6502 from './cpu6502';
 import RAM, { RAMState } from './ram';
 import ROM, { ROMState } from './roms/rom';
@@ -112,11 +101,11 @@ class AuxRom implements Memory {
         private readonly rom: ROM) { }
 
     _access(page: byte, off: byte) {
-        if (page == 0xc3) {
+        if (page === 0xc3) {
             this.mmu._setIntc8rom(true);
             this.mmu._updateBanks();
         }
-        if (page == 0xcf && off == 0xff) {
+        if (page === 0xcf && off === 0xff) {
             this.mmu._setIntc8rom(false);
             this.mmu._updateBanks();
         }
@@ -133,29 +122,29 @@ class AuxRom implements Memory {
 }
 
 export interface MMUState {
-    bank1: boolean
-    readbsr: boolean
-    writebsr: boolean
-    prewrite: boolean
+    bank1: boolean;
+    readbsr: boolean;
+    writebsr: boolean;
+    prewrite: boolean;
 
-    intcxrom: boolean
-    slot3rom: boolean
-    intc8rom: boolean
+    intcxrom: boolean;
+    slot3rom: boolean;
+    intc8rom: boolean;
 
-    auxRamRead: boolean
-    auxRamWrite: boolean
-    altzp: boolean
+    auxRamRead: boolean;
+    auxRamWrite: boolean;
+    altzp: boolean;
 
-    _80store: boolean
-    page2: boolean
-    hires: boolean
+    _80store: boolean;
+    page2: boolean;
+    hires: boolean;
 
-    mem00_01: [RAMState, RAMState]
-    mem02_03: [RAMState, RAMState]
-    mem0C_1F: [RAMState, RAMState]
-    mem60_BF: [RAMState, RAMState]
-    memD0_DF: [ROMState, RAMState, RAMState, RAMState, RAMState]
-    memE0_FF: [ROMState, RAMState, RAMState]
+    mem00_01: [RAMState, RAMState];
+    mem02_03: [RAMState, RAMState];
+    mem0C_1F: [RAMState, RAMState];
+    mem60_BF: [RAMState, RAMState];
+    memD0_DF: [ROMState, RAMState, RAMState, RAMState, RAMState];
+    memE0_FF: [ROMState, RAMState, RAMState];
 }
 
 export default class MMU implements Memory, Restorable<MMUState> {
@@ -180,7 +169,7 @@ export default class MMU implements Memory, Restorable<MMUState> {
     private _altzp: boolean;
 
     // Video
-    private _80store: boolean;
+    private __80store: boolean;
     private _page2: boolean;
     private _hires: boolean;
 
@@ -300,7 +289,7 @@ export default class MMU implements Memory, Restorable<MMUState> {
         }
     }
 
-    _initSwitches() {
+    private _initSwitches() {
         this._bank1 = false;
         this._readbsr = false;
         this._writebsr = false;
@@ -314,14 +303,14 @@ export default class MMU implements Memory, Restorable<MMUState> {
         this._slot3rom = false;
         this._intc8rom = false;
 
-        this._80store = false;
+        this.__80store = false;
         this._page2 = false;
         this._hires = false;
 
         this._iouDisable = true;
     }
 
-    _debug(..._args: any[]) {
+    private _debug(..._args: unknown[]) {
         // debug.apply(this, _args);
     }
 
@@ -350,7 +339,7 @@ export default class MMU implements Memory, Restorable<MMUState> {
             }
         }
 
-        if (this._80store) {
+        if (this.__80store) {
             if (this._page2) {
                 for (let idx = 0x4; idx < 0x8; idx++) {
                     this._readPages[idx] = this._pages[idx][1];
@@ -451,15 +440,15 @@ export default class MMU implements Memory, Restorable<MMUState> {
 
     // Apple //e memory management
 
-    _accessMMUSet(off: byte, _val?: byte) {
+    private _accessMMUSet(off: byte, _val?: byte) {
         switch (off) {
             case LOC._80STOREOFF:
-                this._80store = false;
+                this.__80store = false;
                 this._debug('80 Store Off', _val);
                 this.vm.page(this._page2 ? 2 : 1);
                 break;
             case LOC._80STOREON:
-                this._80store = true;
+                this.__80store = true;
                 this._debug('80 Store On', _val);
                 break;
             case LOC.RAMRDOFF:
@@ -531,24 +520,24 @@ export default class MMU implements Memory, Restorable<MMUState> {
 
     // Status registers
 
-    _accessStatus(off: byte, val?: byte) {
+    private _accessStatus(off: byte, val?: byte) {
         let result = undefined;
 
         switch(off) {
             case LOC.BSRBANK2:
-                this._debug('Bank 2 Read ' + !this._bank1);
+                this._debug(`Bank 2 Read ${!this._bank1 ? 'true' : 'false'}`);
                 result = !this._bank1 ? 0x80 : 0x00;
                 break;
             case LOC.BSRREADRAM:
-                this._debug('Bank SW RAM Read ' + this._readbsr);
+                this._debug(`Bank SW RAM Read ${this._readbsr ? 'true' : 'false'}`);
                 result = this._readbsr ? 0x80 : 0x00;
                 break;
             case LOC.RAMRD: // 0xC013
-                this._debug('Aux RAM Read ' + this._auxRamRead);
+                this._debug(`Aux RAM Read ${this._auxRamRead ? 'true' : 'false'}`);
                 result = this._auxRamRead ? 0x80 : 0x0;
                 break;
             case LOC.RAMWRT: // 0xC014
-                this._debug('Aux RAM Write ' + this._auxRamWrite);
+                this._debug(`Aux RAM Write ${this._auxRamWrite ? 'true' : 'false'}`);
                 result = this._auxRamWrite ? 0x80 : 0x0;
                 break;
             case LOC.INTCXROM: // 0xC015
@@ -556,16 +545,16 @@ export default class MMU implements Memory, Restorable<MMUState> {
                 result = this._intcxrom ? 0x80 : 0x00;
                 break;
             case LOC.ALTZP: // 0xC016
-                this._debug('Alt ZP ' + this._altzp);
+                this._debug(`Alt ZP ${this._altzp ? 'true' : 'false'}`);
                 result = this._altzp ? 0x80 : 0x0;
                 break;
             case LOC.SLOTC3ROM: // 0xC017
-                this._debug('Slot C3 ROM ' + this._slot3rom);
+                this._debug(`Slot C3 ROM ${this._slot3rom ? 'true' : 'false'}`);
                 result = this._slot3rom ? 0x80 : 0x00;
                 break;
             case LOC._80STORE: // 0xC018
-                this._debug('80 Store ' + this._80store);
-                result = this._80store ? 0x80 : 0x00;
+                this._debug(`80 Store ${this.__80store ? 'true' : 'false'}`);
+                result = this.__80store ? 0x80 : 0x00;
                 break;
             case LOC.VERTBLANK: // 0xC019
             // result = cpu.getCycles() % 20 < 5 ? 0x80 : 0x00;
@@ -596,7 +585,7 @@ export default class MMU implements Memory, Restorable<MMUState> {
         return result;
     }
 
-    _accessIOUDisable(off: byte, val?: byte) {
+    private _accessIOUDisable(off: byte, val?: byte) {
         const writeMode = val !== undefined;
         let result;
 
@@ -625,13 +614,13 @@ export default class MMU implements Memory, Restorable<MMUState> {
     }
 
 
-    _accessGraphics(off: byte, val?: byte) {
+    private _accessGraphics(off: byte, val?: byte) {
         let result: byte | undefined = 0;
 
         switch (off) {
             case LOC.PAGE1:
                 this._page2 = false;
-                if (!this._80store) {
+                if (!this.__80store) {
                     result = this.io.ioSwitch(off, val);
                 }
                 this._debug('Page 2 off');
@@ -639,7 +628,7 @@ export default class MMU implements Memory, Restorable<MMUState> {
 
             case LOC.PAGE2:
                 this._page2 = true;
-                if (!this._80store) {
+                if (!this.__80store) {
                     result = this.io.ioSwitch(off, val);
                 }
                 this._debug('Page 2 on');
@@ -682,7 +671,7 @@ export default class MMU implements Memory, Restorable<MMUState> {
         return result;
     }
 
-    _accessLangCard(off: byte, val?: byte) {
+    private _accessLangCard(off: byte, val?: byte) {
         const readMode = val === undefined;
         const result = readMode ? 0 : undefined;
 
@@ -812,6 +801,46 @@ export default class MMU implements Memory, Restorable<MMUState> {
         this._vbEnd = this.cpu.getCycles() + 1000;
     }
 
+    public get bank1() {
+        return this._bank1;
+    }
+
+    public get readbsr() {
+        return this._readbsr;
+    }
+
+    public get writebsr() {
+        return this._writebsr;
+    }
+
+    public get auxread() {
+        return this._auxRamRead;
+    }
+
+    public get auxwrite() {
+        return this._auxRamWrite;
+    }
+
+    public get altzp() {
+        return this._altzp;
+    }
+
+    public get _80store() {
+        return this.__80store;
+    }
+
+    public get page2() {
+        return this._page2;
+    }
+
+    public get hires() {
+        return this._hires;
+    }
+
+    public get intcxrom() {
+        return this._intcxrom;
+    }
+
     public getState(): MMUState {
         return {
             bank1: this._bank1,
@@ -827,7 +856,7 @@ export default class MMU implements Memory, Restorable<MMUState> {
             auxRamWrite: this._auxRamWrite,
             altzp: this._altzp,
 
-            _80store: this._80store,
+            _80store: this.__80store,
             page2: this._page2,
             hires: this._hires,
 
@@ -864,7 +893,7 @@ export default class MMU implements Memory, Restorable<MMUState> {
         this._auxRamWrite = state.auxRamWrite;
         this._altzp = state.altzp;
 
-        this._80store = state._80store;
+        this.__80store = state._80store;
         this._page2 = state.page2;
         this._hires = state.hires;
 

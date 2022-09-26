@@ -1,0 +1,35 @@
+.controls {
+    padding: 3px 0;
+    margin: 2px 0;
+}
+
+.zeroPage {
+    width: 53em;
+}
+
+.trace {
+    width: 53em;
+}
+
+.stack {
+    width: 10em;
+}
+
+.fileChooser {
+    padding: 5px 0;
+}
+
+.invalid {
+    color: #f00;
+}
+
+div.invalid {
+    position: relative;
+    display: inline-block;
+}
+
+div.invalid i {
+    position: absolute;
+    top: -9px;
+    left: -16px;
+}

@@ -1,0 +1,9 @@
+.printer {
+    background: white;
+    font: monospace;
+    width: 60em;
+    padding: 5em;
+    height: 60vh;
+    overflow: auto;
+    border: 2px inset #f0edd0;
+}

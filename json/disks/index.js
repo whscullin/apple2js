@@ -1390,6 +1390,10 @@ disk_index = [
     "filename": "json/disks/videoterm.json",
     "e": true,
     "name": "VideoTerm Utilities",
+  },
+  {
+    "filename": "json/disks/audit.json",
+    "name": "Apple II Audit",
     "category": "Utility"
   }
 ];

@@ -1,0 +1,33 @@
+.header {
+    width: 580px;
+    margin: auto;
+}
+
+@media all and (display-mode: minimal-ui) {
+    .header {
+        display: none;
+    }
+}
+
+.header img {
+    border: none;
+}
+
+:global(.full-page) .header {
+    display: none;
+}
+
+.badge {
+    cursor: pointer;
+    user-select: none;
+}
+
+.subtitle {
+    margin: 0;
+    padding: 3px 0 0 10;
+    color: black;
+    font-family: "Adobe Garamond Pro", Garamond, Times, serif;
+    font-size: 13px;
+    font-weight: normal;
+    user-select: none;
+}

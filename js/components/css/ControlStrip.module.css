@@ -1,0 +1,43 @@
+.reset {
+    background: #44372c;
+    border-left: 3px solid #65594d;
+    border-top: 3px solid #65594d;
+    border-right: 3px solid #110e0d;
+    border-bottom: 3px solid #110e0d;
+
+    /* border: 5px outset #66594E; */
+    border-radius: 3px;
+    color: white;
+    font: 9px Helvetica, sans-serif;
+    height: 36px;
+    padding: 0;
+    margin-left: 10px;
+    width: 36px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+}
+
+.reset:hover {
+    background: #44372c;
+    border: 3px outset #66594e;
+}
+
+.reset:active {
+    background-color: #22150a;
+    border-left: 3px solid #44372c;
+    border-top: 3px solid #44372c;
+    border-right: 3px solid #000;
+    border-bottom: 3px solid #000;
+}
+
+:global(.full-page) .reset {
+    display: none;
+}
+
+.resetRow {
+    align-items: center;
+    display: flex;
+    margin: 10px 0;
+}

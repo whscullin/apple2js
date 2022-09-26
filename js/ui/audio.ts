@@ -1,15 +1,4 @@
-/* Copyright 2010-2019 Will Scullin <scullin@scullinsteel.com>
- *
- * Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided that
- * the above copyright notice appear in all copies and that both that
- * copyright notice and this permission notice appear in supporting
- * documentation.  No representations are made about the suitability of this
- * software for any purpose.  It is provided "as is" without express or
- * implied warranty.
- */
-
-import { BOOLEAN_OPTION, OptionHandler } from './options_modal';
+import { BOOLEAN_OPTION, OptionHandler } from '../options';
 import Apple2IO from '../apple2io';
 import { debug } from '../util';
 
@@ -48,8 +37,8 @@ export class Audio implements OptionHandler {
         });
 
         if (window.AudioWorklet) {
-            this.ready = this.audioContext.audioWorklet.addModule('./dist/audio_worker.bundle.js');
-            this.ready
+            const workletReady = this.audioContext.audioWorklet.addModule('./dist/audio_worker.bundle.js');
+            this.ready = workletReady
                 .then(() => {
                     this.workletNode = new AudioWorkletNode(this.audioContext, 'audio_worker');
 
@@ -116,7 +105,7 @@ export class Audio implements OptionHandler {
                 console.warn('audio not started', error);
             });
         }
-    }
+    };
 
     start = () => {
         if (this.audioContext) {
@@ -125,11 +114,11 @@ export class Audio implements OptionHandler {
                 console.warn('audio not resumed', error);
             });
         }
-    }
+    };
 
     isEnabled = () => {
         return this.sound;
-    }
+    };
 
     getOptions() {
         return [
@@ -152,5 +141,5 @@ export class Audio implements OptionHandler {
             case SOUND_ENABLED_OPTION:
                 this.sound = value;
         }
-    }
+    };
 }

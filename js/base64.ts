@@ -111,10 +111,10 @@ export function base64_decode(data: string | null | undefined): memory | undefin
         o3 = bits & 0xff;
 
         tmp_arr[ac++] = o1;
-        if (h3 != 64) {
+        if (h3 !== 64) {
             tmp_arr[ac++] = o2;
         }
-        if (h4 != 64) {
+        if (h4 !== 64) {
             tmp_arr[ac++] = o3;
         }
     } while (i < data.length);
@@ -124,8 +124,8 @@ export function base64_decode(data: string | null | undefined): memory | undefin
 
 const DATA_URL_PREFIX = 'data:application/octet-stream;base64,';
 
-export function base64_json_parse(json: string) {
-    const reviver = (_key: string, value: any) => {
+export function base64_json_parse(json: string): unknown {
+    const reviver = (_key: string, value: unknown) => {
         if (typeof value ==='string' && value.startsWith(DATA_URL_PREFIX)) {
             return base64_decode(value.slice(DATA_URL_PREFIX.length));
         }
@@ -135,8 +135,8 @@ export function base64_json_parse(json: string) {
     return JSON.parse(json, reviver);
 }
 
-export function base64_json_stringify(json: any) {
-    const replacer = (_key: string, value: any) => {
+export function base64_json_stringify(json: unknown) {
+    const replacer = (_key: string, value: unknown) => {
         if (value instanceof Uint8Array) {
             return DATA_URL_PREFIX + base64_encode(value);
         }
