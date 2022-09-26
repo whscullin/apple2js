@@ -8,5 +8,6 @@ echo "Building..."
 npm install
 
 echo "Starting server..."
-npm run start -- --public $HOSTNAME
+npm run start -- --client-web-socket-url $HOSTNAME
 
+#sleep infinity # uncomment to help debug
