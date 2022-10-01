@@ -10,7 +10,7 @@ import { ErrorModal } from './ErrorModal';
 import { ProgressModal } from './ProgressModal';
 import { loadHttpUnknownFile, getHashParts, loadJSON, SmartStorageBroker } from './util/files';
 import { useHash } from './hooks/useHash';
-import { DISK_FORMATS, DriveNumber, SupportedSectors } from 'js/formats/types';
+import { DISK_FORMATS, DRIVE_NUMBERS, SupportedSectors } from 'js/formats/types';
 import { spawn, Ready } from './util/promises';
 
 import styles from './css/Drives.module.css';
@@ -90,9 +90,9 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
             const hashParts = getHashParts(hash);
             const controllers: AbortController[] = [];
             let loading = 0;
-            for (const drive of [1, 2] as DriveNumber[]) {
-                if (hashParts && hashParts[drive]) {
-                    const hashPart = decodeURIComponent(hashParts[drive]);
+            for (const driveNo of DRIVE_NUMBERS) {
+                if (hashParts && hashParts[driveNo]) {
+                    const hashPart = decodeURIComponent(hashParts[driveNo]);
                     const isHttp = hashPart.match(/^https?:/i);
                     const isJson = hashPart.match(/\.json$/i);
                     if (isHttp && !isJson) {
@@ -101,7 +101,7 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
                             try {
                                 await loadHttpUnknownFile(
                                     smartStorageBroker,
-                                    drive,
+                                    driveNo,
                                     hashPart,
                                     signal,
                                     onProgress);
@@ -116,7 +116,7 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
                         }));
                     } else {
                         const url = isHttp ? hashPart : `json/disks/${hashPart}.json`;
-                        loadJSON(disk2, drive, url).catch((e) => setError(e));
+                        loadJSON(disk2, driveNo, url).catch((e) => setError(e));
                     }
                 }
             }

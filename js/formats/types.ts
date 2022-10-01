@@ -234,7 +234,7 @@ export const PROCESS_JSON = 'PROCESS_JSON';
 export interface ProcessBinaryMessage {
     type: typeof PROCESS_BINARY;
     payload: {
-        drive: DriveNumber;
+        driveNo: DriveNumber;
         fmt: FloppyFormat;
         options: DiskOptions;
     };
@@ -244,7 +244,7 @@ export interface ProcessBinaryMessage {
 export interface ProcessJsonDiskMessage {
     type: typeof PROCESS_JSON_DISK;
     payload: {
-        drive: DriveNumber;
+        driveNo: DriveNumber;
         jsonDisk: JSONDisk;
     };
 }
@@ -253,7 +253,7 @@ export interface ProcessJsonDiskMessage {
 export interface ProcessJsonMessage {
     type: typeof PROCESS_JSON;
     payload: {
-        drive: DriveNumber;
+        driveNo: DriveNumber;
         json: string;
     };
 }
@@ -272,7 +272,7 @@ export const DISK_PROCESSED = 'DISK_PROCESSED';
 export interface DiskProcessedResponse {
     type: typeof DISK_PROCESSED;
     payload: {
-        drive: DriveNumber;
+        driveNo: DriveNumber;
         disk: FloppyDisk | null;
     };
 }

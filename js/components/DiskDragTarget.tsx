@@ -6,7 +6,7 @@ import { spawn } from './util/promises';
 
 export interface DiskDragTargetProps<T> extends JSX.HTMLAttributes<HTMLDivElement> {
     storage: MassStorage<T> | undefined;
-    drive?: DriveNumber;
+    driveNo?: DriveNumber;
     formats: typeof FLOPPY_FORMATS
         | typeof BLOCK_FORMATS
         | typeof DISK_FORMATS;
@@ -16,7 +16,7 @@ export interface DiskDragTargetProps<T> extends JSX.HTMLAttributes<HTMLDivElemen
 
 export const DiskDragTarget = ({
     storage,
-    drive,
+    driveNo,
     dropRef,
     formats,
     onError,
@@ -54,7 +54,7 @@ export const DiskDragTarget = ({
             const onDrop = (event: DragEvent) => {
                 event.preventDefault();
                 event.stopPropagation();
-                const targetDrive = drive ?? 1;  //TODO(whscullin) Maybe pick available drive
+                const targetDrive = driveNo ?? 1;  //TODO(whscullin) Maybe pick available drive
 
                 const dt = event.dataTransfer;
                 if (dt?.files.length === 1 && storage) {
@@ -87,7 +87,7 @@ export const DiskDragTarget = ({
                 div.removeEventListener('drop', onDrop);
             };
         }
-    }, [drive, dropRef, formats, onError, storage]);
+    }, [driveNo, dropRef, formats, onError, storage]);
 
     return (
         <div ref={ref} {...props}>

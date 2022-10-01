@@ -67,7 +67,7 @@ describe('DiskII', () => {
         const state = diskII.getState();
         // These are just arbitrary changes, not an exhaustive list of fields.
         (state.drives[1].driver as {skip:number}).skip = 1;
-        state.controllerState.drive = 2;
+        state.controllerState.driveNo = 2;
         state.controllerState.latch = 0x42;
         state.controllerState.on = true;
         state.controllerState.q7 = true;
@@ -760,11 +760,11 @@ class TestDiskReader {
     nibbles = 0;
     diskII: DiskII;
 
-    constructor(drive: DriveNumber, label: string, image: ArrayBufferLike, apple2IO: Apple2IO, callbacks: Callbacks) {
+    constructor(driveNo: DriveNumber, label: string, image: ArrayBufferLike, apple2IO: Apple2IO, callbacks: Callbacks) {
         mocked(apple2IO).cycles.mockImplementation(() => this.cycles);
 
         this.diskII = new DiskII(apple2IO, callbacks);
-        this.diskII.setBinary(drive, label, 'woz', image);
+        this.diskII.setBinary(driveNo, label, 'woz', image);
     }
 
     readNibble(): byte {

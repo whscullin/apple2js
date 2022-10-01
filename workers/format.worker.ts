@@ -19,7 +19,7 @@ debug('Worker loaded');
 addEventListener('message', (message: MessageEvent<FormatWorkerMessage>) => {
     debug('Worker started', message.type);
     const data = message.data;
-    const { drive } = data.payload;
+    const { driveNo } = data.payload;
     let disk: FloppyDisk | null = null;
 
     switch (data.type) {
@@ -45,7 +45,7 @@ addEventListener('message', (message: MessageEvent<FormatWorkerMessage>) => {
     const response: DiskProcessedResponse = {
         type: DISK_PROCESSED,
         payload: {
-            drive,
+            driveNo,
             disk
         }
     };
