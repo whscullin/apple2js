@@ -18,9 +18,9 @@ export interface SmartPortOptions {
 }
 
 export interface Callbacks {
-    driveLight: (driveNo: DriveNumber, on: boolean) => void;
-    dirty: (driveNo: DriveNumber, dirty: boolean) => void;
-    label: (driveNo: DriveNumber, name?: string, side?: string) => void;
+    driveLight: (drive: DriveNumber, on: boolean) => void;
+    dirty: (drive: DriveNumber, dirty: boolean) => void;
+    label: (drive: DriveNumber, name?: string, side?: string) => void;
 }
 
 class Address {
@@ -152,15 +152,15 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
         // debug.apply(this, arguments);
     }
 
-    private driveLight(driveNo: DriveNumber) {
-        if (!this.busy[driveNo]) {
-            this.busy[driveNo] = true;
-            this.callbacks?.driveLight(driveNo, true);
+    private driveLight(drive: DriveNumber) {
+        if (!this.busy[drive]) {
+            this.busy[drive] = true;
+            this.callbacks?.driveLight(drive, true);
         }
-        clearTimeout(this.busyTimeout[driveNo]);
-        this.busyTimeout[driveNo] = setTimeout(() => {
-            this.busy[driveNo] = false;
-            this.callbacks?.driveLight(driveNo, false);
+        clearTimeout(this.busyTimeout[drive]);
+        this.busyTimeout[drive] = setTimeout(() => {
+            this.busy[drive] = false;
+            this.callbacks?.driveLight(drive, false);
         }, 100);
     }
 
@@ -168,7 +168,7 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
      * dumpBlock
      */
 
-    dumpBlock(driveNo: DriveNumber, block: number) {
+    dumpBlock(drive: DriveNumber, block: number) {
         let result = '';
         let b;
         let jdx;
@@ -176,7 +176,7 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
         for (let idx = 0; idx < 32; idx++) {
             result += toHex(idx << 4, 4) + ': ';
             for (jdx = 0; jdx < 16; jdx++) {
-                b = this.disks[driveNo].blocks[block][idx * 16 + jdx];
+                b = this.disks[drive].blocks[block][idx * 16 + jdx];
                 if (jdx === 8) {
                     result += ' ';
                 }
@@ -184,7 +184,7 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
             }
             result += '        ';
             for (jdx = 0; jdx < 16; jdx++) {
-                b = this.disks[driveNo].blocks[block][idx * 16 + jdx] & 0x7f;
+                b = this.disks[drive].blocks[block][idx * 16 + jdx] & 0x7f;
                 if (jdx === 8) {
                     result += ' ';
                 }
@@ -203,9 +203,9 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
      * getDeviceInfo
      */
 
-    getDeviceInfo(state: CpuState, driveNo: DriveNumber) {
-        if (this.disks[driveNo]) {
-            const blocks = this.disks[driveNo].blocks.length;
+    getDeviceInfo(state: CpuState, drive: DriveNumber) {
+        if (this.disks[drive]) {
+            const blocks = this.disks[drive].blocks.length;
             state.x = blocks & 0xff;
             state.y = blocks >> 8;
 
@@ -221,23 +221,23 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
      * readBlock
      */
 
-    readBlock(state: CpuState, driveNo: DriveNumber, block: number, buffer: Address) {
-        this.debug(`read drive=${driveNo}`);
+    readBlock(state: CpuState, drive: DriveNumber, block: number, buffer: Address) {
+        this.debug(`read drive=${drive}`);
         this.debug(`read buffer=${buffer.toString()}`);
         this.debug(`read block=$${toHex(block)}`);
 
-        if (!this.disks[driveNo]?.blocks.length) {
-            debug('Drive', driveNo, 'is empty');
+        if (!this.disks[drive]?.blocks.length) {
+            debug('Drive', drive, 'is empty');
             state.a = DEVICE_OFFLINE;
             state.s |= flags.C;
             return;
         }
 
         // debug('read', '\n' + dumpBlock(drive, block));
-        this.driveLight(driveNo);
+        this.driveLight(drive);
 
         for (let idx = 0; idx < 512; idx++) {
-            buffer.writeByte(this.disks[driveNo].blocks[block][idx]);
+            buffer.writeByte(this.disks[drive].blocks[block][idx]);
             buffer = buffer.inc(1);
         }
 
@@ -249,30 +249,30 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
      * writeBlock
      */
 
-    writeBlock(state: CpuState, driveNo: DriveNumber, block: number, buffer: Address) {
-        this.debug(`write drive=${driveNo}`);
+    writeBlock(state: CpuState, drive: DriveNumber, block: number, buffer: Address) {
+        this.debug(`write drive=${drive}`);
         this.debug(`write buffer=${buffer.toString()}`);
         this.debug(`write block=$${toHex(block)}`);
 
-        if (!this.disks[driveNo]?.blocks.length) {
-            debug('Drive', driveNo, 'is empty');
+        if (!this.disks[drive]?.blocks.length) {
+            debug('Drive', drive, 'is empty');
             state.a = DEVICE_OFFLINE;
             state.s |= flags.C;
             return;
         }
 
-        if (this.disks[driveNo].readOnly) {
-            debug('Drive', driveNo, 'is write protected');
+        if (this.disks[drive].readOnly) {
+            debug('Drive', drive, 'is write protected');
             state.a = WRITE_PROTECTED;
             state.s |= flags.C;
             return;
         }
 
         // debug('write', '\n' + dumpBlock(drive, block));
-        this.driveLight(driveNo);
+        this.driveLight(drive);
 
         for (let idx = 0; idx < 512; idx++) {
-            this.disks[driveNo].blocks[block][idx] = buffer.readByte();
+            this.disks[drive].blocks[block][idx] = buffer.readByte();
             buffer = buffer.inc(1);
         }
         state.a = 0;
@@ -283,25 +283,25 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
      * formatDevice
      */
 
-    formatDevice(state: CpuState, driveNo: DriveNumber) {
-        if (!this.disks[driveNo]?.blocks.length) {
-            debug('Drive', driveNo, 'is empty');
+    formatDevice(state: CpuState, drive: DriveNumber) {
+        if (!this.disks[drive]?.blocks.length) {
+            debug('Drive', drive, 'is empty');
             state.a = DEVICE_OFFLINE;
             state.s |= flags.C;
             return;
         }
 
-        if (this.disks[driveNo].readOnly) {
-            debug('Drive', driveNo, 'is write protected');
+        if (this.disks[drive].readOnly) {
+            debug('Drive', drive, 'is write protected');
             state.a = WRITE_PROTECTED;
             state.s |= flags.C;
             return;
         }
 
-        for (let idx = 0; idx < this.disks[driveNo].blocks.length; idx++) {
-            this.disks[driveNo].blocks[idx] = new Uint8Array();
+        for (let idx = 0; idx < this.disks[drive].blocks.length; idx++) {
+            this.disks[drive].blocks[idx] = new Uint8Array();
             for (let jdx = 0; jdx < 512; jdx++) {
-                this.disks[driveNo].blocks[idx][jdx] = 0;
+                this.disks[drive].blocks[idx][jdx] = 0;
             }
         }
 
@@ -549,18 +549,18 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
         );
     }
 
-    setBinary(driveNo: DriveNumber, name: string, fmt: BlockFormat, rawData: ArrayBuffer) {
+    setBinary(drive: DriveNumber, name: string, fmt: BlockFormat, rawData: ArrayBuffer) {
         let volume = 254;
         let readOnly = false;
         if (fmt === '2mg') {
             const header = read2MGHeader(rawData);
-            this.metadata[driveNo] = header;
+            this.metadata[drive] = header;
             const { bytes, offset } = header;
             volume = header.volume;
             readOnly = header.readOnly;
             rawData = rawData.slice(offset, offset + bytes);
         } else {
-            this.metadata[driveNo] = null;
+            this.metadata[drive] = null;
         }
         const options = {
             rawData,
@@ -569,9 +569,9 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
             volume,
         };
 
-        this.ext[driveNo] = fmt;
-        this.disks[driveNo] = createBlockDisk(fmt, options);
-        this.callbacks?.label(driveNo, name);
+        this.ext[drive] = fmt;
+        this.disks[drive] = createBlockDisk(fmt, options);
+        this.callbacks?.label(drive, name);
 
         return true;
     }

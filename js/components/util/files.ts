@@ -48,7 +48,7 @@ export const getNameAndExtension = (url: string) => {
 export const loadLocalFile = (
     storage: MassStorage<FloppyFormat|BlockFormat>,
     formats: typeof FLOPPY_FORMATS | typeof BLOCK_FORMATS | typeof DISK_FORMATS,
-    driveNo: DriveNumber,
+    number: DriveNumber,
     file: File,
 ) => {
     return new Promise((resolve, reject) => {
@@ -58,7 +58,7 @@ export const loadLocalFile = (
             const { name, ext } = getNameAndExtension(file.name);
             if (includes(formats, ext)) {
                 initGamepad();
-                if (storage.setBinary(driveNo, name, ext, result)) {
+                if (storage.setBinary(number, name, ext, result)) {
                     resolve(true);
                 } else {
                     reject(`Unable to load ${name}`);
@@ -76,12 +76,12 @@ export const loadLocalFile = (
  * selection form element to be loaded.
  *
  * @param smartPort SmartPort object
- * @param driveNo Drive number
+ * @param number Drive number
  * @param file Browser File object to load
  * @returns true if successful
  */
-export const loadLocalBlockFile = (smartPort: SmartPort, driveNo: DriveNumber, file: File) => {
-    return loadLocalFile(smartPort, BLOCK_FORMATS, driveNo, file);
+export const loadLocalBlockFile = (smartPort: SmartPort, number: DriveNumber, file: File) => {
+    return loadLocalFile(smartPort, BLOCK_FORMATS, number, file);
 };
 
 /**
@@ -89,12 +89,12 @@ export const loadLocalBlockFile = (smartPort: SmartPort, driveNo: DriveNumber, f
  * selection form element to be loaded.
  *
  * @param disk2 Disk2 object
- * @param driveNo Drive number
+ * @param number Drive number
  * @param file Browser File object to load
  * @returns true if successful
  */
-export const loadLocalNibbleFile = (disk2: Disk2, driveNo: DriveNumber, file: File) => {
-    return loadLocalFile(disk2, FLOPPY_FORMATS, driveNo, file);
+export const loadLocalNibbleFile = (disk2: Disk2, number: DriveNumber, file: File) => {
+    return loadLocalFile(disk2, FLOPPY_FORMATS, number, file);
 };
 
 /**
@@ -103,13 +103,13 @@ export const loadLocalNibbleFile = (disk2: Disk2, driveNo: DriveNumber, file: Fi
  * as the emulator.
  *
  * @param disk2 Disk2 object
- * @param driveNo Drive number
+ * @param number Drive number
  * @param url URL, relative or absolute to JSON file
  * @returns true if successful
  */
 export const loadJSON = async (
     disk2: Disk2,
-    driveNo: DriveNumber,
+    number: DriveNumber,
     url: string,
 ) => {
     const response = await fetch(url);
@@ -120,7 +120,7 @@ export const loadJSON = async (
     if (!includes(FLOPPY_FORMATS, data.type)) {
         throw new Error(`Type "${data.type}" not recognized.`);
     }
-    disk2.setDisk(driveNo, data);
+    disk2.setDisk(number, data);
     initGamepad(data.gamepad);
 };
 
@@ -166,13 +166,13 @@ export const loadHttpFile = async (
  * as the emulator.
  *
  * @param smartPort SmartPort object
- * @param driveNo Drive number
+ * @param number Drive number
  * @param url URL, relative or absolute to JSON file
  * @returns true if successful
  */
 export const loadHttpBlockFile = async (
     smartPort: SmartPort,
-    driveNo: DriveNumber,
+    number: DriveNumber,
     url: string,
     signal?: AbortSignal,
     onProgress?: ProgressCallback
@@ -182,7 +182,7 @@ export const loadHttpBlockFile = async (
         throw new Error(`Extension "${ext}" not recognized.`);
     }
     const data = await loadHttpFile(url, signal, onProgress);
-    smartPort.setBinary(driveNo, name, ext, data);
+    smartPort.setBinary(number, name, ext, data);
     initGamepad();
 
     return true;
@@ -194,55 +194,55 @@ export const loadHttpBlockFile = async (
  * as the emulator.
  *
  * @param disk2 Disk2 object
- * @param driveNo Drive number
+ * @param number Drive number
  * @param url URL, relative or absolute to JSON file
  * @returns true if successful
  */
 export const loadHttpNibbleFile = async (
     disk2: Disk2,
-    driveNo: DriveNumber,
+    number: DriveNumber,
     url: string,
     signal?: AbortSignal,
     onProgress?: ProgressCallback
 ) => {
     if (url.endsWith('.json')) {
-        return loadJSON(disk2, driveNo, url);
+        return loadJSON(disk2, number, url);
     }
     const { name, ext } = getNameAndExtension(url);
     if (!includes(FLOPPY_FORMATS, ext)) {
         throw new Error(`Extension "${ext}" not recognized.`);
     }
     const data = await loadHttpFile(url, signal, onProgress);
-    disk2.setBinary(driveNo, name, ext, data);
+    disk2.setBinary(number, name, ext, data);
     initGamepad();
     return loadHttpFile(url, signal, onProgress);
 };
 
 export const loadHttpUnknownFile = async (
     smartStorageBroker: SmartStorageBroker,
-    driveNo: DriveNumber,
+    number: DriveNumber,
     url: string,
     signal?: AbortSignal,
     onProgress?: ProgressCallback,
 ) => {
     const data = await loadHttpFile(url, signal, onProgress);
     const { name, ext } = getNameAndExtension(url);
-    smartStorageBroker.setBinary(driveNo, name, ext, data);
+    smartStorageBroker.setBinary(number, name, ext, data);
 };
 
 export class SmartStorageBroker implements MassStorage<unknown> {
     constructor(private disk2: Disk2, private smartPort: SmartPort) {}
 
-    setBinary(driveNo: DriveNumber, name: string, ext: string, data: ArrayBuffer): boolean {
+    setBinary(drive: DriveNumber, name: string, ext: string, data: ArrayBuffer): boolean {
         if (includes(DISK_FORMATS, ext)) {
             if (data.byteLength >= 800 * 1024) {
                 if (includes(BLOCK_FORMATS, ext)) {
-                    this.smartPort.setBinary(driveNo, name, ext, data);
+                    this.smartPort.setBinary(drive, name, ext, data);
                 } else {
                     throw new Error(`Unable to load "${name}"`);
                 }
             } else if (includes(FLOPPY_FORMATS, ext)) {
-                this.disk2.setBinary(driveNo, name, ext, data);
+                this.disk2.setBinary(drive, name, ext, data);
             } else {
                 throw new Error(`Unable to load "${name}"`);
             }

@@ -8,18 +8,18 @@ import styles from './css/DownloadModal.module.css';
 interface DownloadModalProps {
     isOpen: boolean;
     massStorage: MassStorage<unknown>;
-    driveNo: DriveNumber;
+    number: DriveNumber;
     onClose: (closeBox?: boolean) => void;
 }
 
-export const DownloadModal = ({ massStorage, driveNo, onClose, isOpen } : DownloadModalProps) => {
+export const DownloadModal = ({ massStorage, number, onClose, isOpen } : DownloadModalProps) => {
     const [href, setHref] = useState('');
     const [downloadName, setDownloadName] = useState('');
     const doCancel = useCallback(() => onClose(true), [onClose]);
 
     useEffect(() => {
         if (isOpen) {
-            const storageData = massStorage.getBinary(driveNo);
+            const storageData = massStorage.getBinary(number);
             if (storageData) {
                 const { ext, data } = storageData;
                 const { name } = storageData.metadata;
@@ -37,7 +37,7 @@ export const DownloadModal = ({ massStorage, driveNo, onClose, isOpen } : Downlo
             setHref('');
             setDownloadName('');
         }
-    }, [isOpen, driveNo, massStorage]);
+    }, [isOpen, number, massStorage]);
 
     return (
         <>

@@ -65,13 +65,13 @@ export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
         <DiskDragTarget
             className={styles.disk}
             storage={disk2}
-            driveNo={number}
+            drive={number}
             formats={FLOPPY_FORMATS}
             onError={setError}
         >
-            <FileModal disk2={disk2} driveNo={number} onClose={doClose} isOpen={modalOpen} />
+            <FileModal disk2={disk2} number={number} onClose={doClose} isOpen={modalOpen} />
             <DownloadModal
-                driveNo={number}
+                number={number}
                 massStorage={disk2}
                 isOpen={downloadModalOpen}
                 onClose={doCloseDownload}
