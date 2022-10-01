@@ -84,7 +84,7 @@ let joystick: JoyStick;
 let system: System;
 let keyboard: KeyBoard;
 let io: Apple2IO;
-let driveNo: DriveNumber = 1;
+let _currentDrive: DriveNumber = 1;
 let _e: boolean;
 
 let ready: Promise<[void, void]>;
@@ -103,13 +103,14 @@ export function compileApplesoftProgram(program: string) {
 }
 
 export function openLoad(driveString: string, event: MouseEvent) {
-    driveNo = parseInt(driveString, 10) as DriveNumber;
-    if (event.metaKey && includes(DRIVE_NUMBERS, driveNo)) {
+    const drive = parseInt(driveString, 10) as DriveNumber;
+    _currentDrive = drive;
+    if (event.metaKey && includes(DRIVE_NUMBERS, drive)) {
         openLoadHTTP();
     } else {
-        if (disk_cur_cat[driveNo]) {
+        if (disk_cur_cat[drive]) {
             const element = document.querySelector<HTMLSelectElement>('#category_select')!;
-            element.value = disk_cur_cat[driveNo];
+            element.value = disk_cur_cat[drive];
             selectCategory();
         }
         MicroModal.show('load-modal');
@@ -117,27 +118,27 @@ export function openLoad(driveString: string, event: MouseEvent) {
 }
 
 export function openSave(driveString: string, event: MouseEvent) {
-    const driveNo = parseInt(driveString, 10) as DriveNumber;
+    const drive = parseInt(driveString, 10) as DriveNumber;
 
     const mimeType = 'application/octet-stream';
-    const storageData = _disk2.getBinary(driveNo);
+    const storageData = _disk2.getBinary(drive);
     const a = document.querySelector<HTMLAnchorElement>('#local_save_link')!;
 
     if (!storageData) {
-        alert(`No data from drive ${driveNo}`);
+        alert(`No data from drive ${drive}`);
         return;
     }
 
     const { data } = storageData;
     const blob = new Blob([data], { 'type': mimeType });
     a.href = window.URL.createObjectURL(blob);
-    a.download = driveLights.label(driveNo) + '.dsk';
+    a.download = driveLights.label(drive) + '.dsk';
 
     if (event.metaKey) {
-        dumpDisk(driveNo);
+        dumpDisk(drive);
     } else {
         const saveName = document.querySelector<HTMLInputElement>('#save_name')!;
-        saveName.value = driveLights.label(driveNo);
+        saveName.value = driveLights.label(drive);
         MicroModal.show('save-modal');
     }
 }
@@ -153,12 +154,12 @@ export function openAlert(msg: string) {
  * Drag and Drop
  */
 
-export function handleDragOver(_driveNo: number, event: DragEvent) {
+export function handleDragOver(_drive: number, event: DragEvent) {
     event.preventDefault();
     event.dataTransfer!.dropEffect = 'copy';
 }
 
-export function handleDragEnd(_driveNo: number, event: DragEvent) {
+export function handleDragEnd(_drive: number, event: DragEvent) {
     const dt = event.dataTransfer!;
     if (dt.items) {
         for (let i = 0; i < dt.items.length; i++) {
@@ -169,23 +170,23 @@ export function handleDragEnd(_driveNo: number, event: DragEvent) {
     }
 }
 
-export function handleDrop(driveNo: number, event: DragEvent) {
+export function handleDrop(drive: number, event: DragEvent) {
     event.preventDefault();
     event.stopPropagation();
 
-    if (driveNo < 1) {
+    if (drive < 1) {
         if (!_disk2.getMetadata(1)) {
-            driveNo = 1;
+            drive = 1;
         } else if (!_disk2.getMetadata(2)) {
-            driveNo = 2;
+            drive = 2;
         } else {
-            driveNo = 1;
+            drive = 1;
         }
     }
     const dt = event.dataTransfer!;
     if (dt.files.length === 1) {
         const runOnLoad = event.shiftKey;
-        doLoadLocal(driveNo as DriveNumber, dt.files[0], { runOnLoad });
+        doLoadLocal(drive as DriveNumber, dt.files[0], { runOnLoad });
     } else if (dt.files.length === 2) {
         doLoadLocal(1, dt.files[0]);
         doLoadLocal(2, dt.files[1]);
@@ -194,7 +195,7 @@ export function handleDrop(driveNo: number, event: DragEvent) {
             if (dt.items[idx].type === 'text/uri-list') {
                 dt.items[idx].getAsString(function (url) {
                     const parts = hup().split('|');
-                    parts[driveNo - 1] = url;
+                    parts[drive - 1] = url;
                     document.location.hash = parts.join('|');
                 });
             }
@@ -227,7 +228,7 @@ function loadingStop() {
     }
 }
 
-export function loadAjax(driveNo: DriveNumber, url: string) {
+export function loadAjax(drive: DriveNumber, url: string) {
     loadingStart();
 
     fetch(url).then(function (response: Response) {
@@ -240,7 +241,7 @@ export function loadAjax(driveNo: DriveNumber, url: string) {
         if (data.type === 'binary') {
             loadBinary(data );
         } else if (includes(DISK_FORMATS, data.type)) {
-            loadDisk(driveNo, data);
+            loadDisk(drive, data);
         }
         initGamepad(data.gamepad);
         loadingStop();
@@ -268,7 +269,7 @@ export function doLoad(event: MouseEvent|KeyboardEvent) {
     const files = localFile.files;
     if (files && files.length === 1) {
         const runOnLoad = event.shiftKey;
-        doLoadLocal(driveNo, files[0], { runOnLoad });
+        doLoadLocal(_currentDrive, files[0], { runOnLoad });
     } else if (url) {
         let filename;
         MicroModal.close('load-modal');
@@ -277,7 +278,7 @@ export function doLoad(event: MouseEvent|KeyboardEvent) {
             if (filename === '__manage') {
                 openManage();
             } else {
-                loadLocalStorage(driveNo, filename);
+                loadLocalStorage(_currentDrive, filename);
             }
         } else {
             const r1 = /json\/disks\/(.*).json$/.exec(url);
@@ -287,7 +288,7 @@ export function doLoad(event: MouseEvent|KeyboardEvent) {
                 filename = url;
             }
             const parts = hup().split('|');
-            parts[driveNo - 1] = filename;
+            parts[_currentDrive - 1] = filename;
             document.location.hash = parts.join('|');
         }
     }
@@ -296,7 +297,7 @@ export function doLoad(event: MouseEvent|KeyboardEvent) {
 export function doSave() {
     const saveName = document.querySelector<HTMLInputElement>('#save_name')!;
     const name = saveName.value;
-    saveLocalStorage(driveNo, name);
+    saveLocalStorage(_currentDrive, name);
     MicroModal.close('save-modal');
     window.setTimeout(() => openAlert('Saved'), 0);
 }
@@ -312,7 +313,7 @@ interface LoadOptions {
     runOnLoad?: boolean;
 }
 
-function doLoadLocal(driveNo: DriveNumber, file: File, options: Partial<LoadOptions> = {}) {
+function doLoadLocal(drive: DriveNumber, file: File, options: Partial<LoadOptions> = {}) {
     const parts = file.name.split('.');
     const ext = parts[parts.length - 1].toLowerCase();
     const matches = file.name.match(CIDERPRESS_EXTENSION);
@@ -321,7 +322,7 @@ function doLoadLocal(driveNo: DriveNumber, file: File, options: Partial<LoadOpti
         [, type, aux] = matches;
     }
     if (includes(DISK_FORMATS, ext)) {
-        doLoadLocalDisk(driveNo, file);
+        doLoadLocalDisk(drive, file);
     } else if (includes(TAPE_TYPES, ext)) {
         tape.doLoadLocalTape(file);
     } else if (BIN_TYPES.includes(ext) || type === '06' || options.address) {
@@ -365,7 +366,7 @@ function doLoadBinary(file: File, options: LoadOptions) {
     fileReader.readAsArrayBuffer(file);
 }
 
-function doLoadLocalDisk(driveNo: DriveNumber, file: File) {
+function doLoadLocalDisk(drive: DriveNumber, file: File) {
     loadingStart();
     const fileReader = new FileReader();
     fileReader.onload = function () {
@@ -376,14 +377,14 @@ function doLoadLocalDisk(driveNo: DriveNumber, file: File) {
 
         // Remove any json file reference
         const files = hup().split('|');
-        files[driveNo - 1] = '';
+        files[drive - 1] = '';
         document.location.hash = files.join('|');
 
         if (includes(DISK_FORMATS, ext)) {
             if (result.byteLength >= 800 * 1024) {
                 if (
                     includes(BLOCK_FORMATS, ext) &&
-                    _massStorage.setBinary(driveNo, name, ext, result)
+                    _massStorage.setBinary(drive, name, ext, result)
                 ) {
                     initGamepad();
                 } else {
@@ -392,7 +393,7 @@ function doLoadLocalDisk(driveNo: DriveNumber, file: File) {
             } else {
                 if (
                     includes(FLOPPY_FORMATS, ext) &&
-                    _disk2.setBinary(driveNo, name, ext, result)
+                    _disk2.setBinary(drive, name, ext, result)
                 ) {
                     initGamepad();
                 } else {
@@ -405,7 +406,7 @@ function doLoadLocalDisk(driveNo: DriveNumber, file: File) {
     fileReader.readAsArrayBuffer(file);
 }
 
-export function doLoadHTTP(driveNo: DriveNumber, url?: string) {
+export function doLoadHTTP(drive: DriveNumber, url?: string) {
     if (!url) {
         MicroModal.close('http-modal');
     }
@@ -453,13 +454,13 @@ export function doLoadHTTP(driveNo: DriveNumber, url?: string) {
             if (includes(DISK_FORMATS, ext)) {
                 if (data.byteLength >= 800 * 1024) {
                     if (includes(BLOCK_FORMATS, ext)) {
-                        _massStorage.setBinary(driveNo, name, ext, data);
+                        _massStorage.setBinary(drive, name, ext, data);
                         initGamepad();
                     }
                 } else {
                     if (
                         includes(FLOPPY_FORMATS, ext) &&
-                        _disk2.setBinary(driveNo, name, ext, data)
+                        _disk2.setBinary(drive, name, ext, data)
                     ) {
                         initGamepad();
                     }
@@ -546,11 +547,11 @@ function updateSoundButton(on: boolean) {
     }
 }
 
-function dumpDisk(driveNo: DriveNumber) {
+function dumpDisk(drive: DriveNumber) {
     const wind = window.open('', '_blank')!;
-    wind.document.title = driveLights.label(driveNo);
+    wind.document.title = driveLights.label(drive);
     wind.document.write('<pre>');
-    wind.document.write(_disk2.getJSON(driveNo, true));
+    wind.document.write(_disk2.getJSON(drive, true));
     wind.document.write('</pre>');
     wind.document.close();
 }
@@ -585,7 +586,7 @@ export function selectCategory() {
             option.value = file.filename;
             option.innerText = name;
             diskSelect.append(option);
-            if (disk_cur_name[driveNo] === name) {
+            if (disk_cur_name[_currentDrive] === name) {
                 option.selected = true;
             }
         }
@@ -602,7 +603,7 @@ export function clickDisk(event: MouseEvent|KeyboardEvent) {
 }
 
 /** Called to load disks from the local catalog. */
-function loadDisk(driveNo: DriveNumber, disk: JSONDisk) {
+function loadDisk(drive: DriveNumber, disk: JSONDisk) {
     let name = disk.name;
     const category = disk.category!; // all disks in the local catalog have a category
 
@@ -610,10 +611,10 @@ function loadDisk(driveNo: DriveNumber, disk: JSONDisk) {
         name += ' - ' + disk.disk;
     }
 
-    disk_cur_cat[driveNo] = category;
-    disk_cur_name[driveNo] = name;
+    disk_cur_cat[drive] = category;
+    disk_cur_name[drive] = name;
 
-    _disk2.setDisk(driveNo, disk);
+    _disk2.setDisk(drive, disk);
     initGamepad(disk.gamepad);
 }
 
@@ -653,16 +654,16 @@ type LocalDiskIndex = {
     [name: string]: string;
 };
 
-function saveLocalStorage(driveNo: DriveNumber, name: string) {
+function saveLocalStorage(drive: DriveNumber, name: string) {
     const diskIndex = JSON.parse(window.localStorage.getItem('diskIndex') || '{}') as LocalDiskIndex;
 
-    const json = _disk2.getJSON(driveNo);
+    const json = _disk2.getJSON(drive);
     diskIndex[name] = json;
 
     window.localStorage.setItem('diskIndex',  JSON.stringify(diskIndex));
 
-    driveLights.label(driveNo, name);
-    driveLights.dirty(driveNo, false);
+    driveLights.label(drive, name);
+    driveLights.dirty(drive, false);
     updateLocalStorage();
 }
 
@@ -676,12 +677,12 @@ function deleteLocalStorage(name: string) {
     updateLocalStorage();
 }
 
-function loadLocalStorage(driveNo: DriveNumber, name: string) {
+function loadLocalStorage(drive: DriveNumber, name: string) {
     const diskIndex = JSON.parse(window.localStorage.getItem('diskIndex') || '{}') as LocalDiskIndex;
     if (diskIndex[name]) {
-        _disk2.setJSON(driveNo, diskIndex[name]);
-        driveLights.label(driveNo, name);
-        driveLights.dirty(driveNo, false);
+        _disk2.setJSON(drive, diskIndex[name]);
+        driveLights.label(drive, name);
+        driveLights.dirty(drive, false);
     }
 }
 

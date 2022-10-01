@@ -2,8 +2,8 @@ import { Callbacks } from '../cards/disk2';
 import type { DriveNumber } from '../formats/types';
 
 export default class DriveLights implements Callbacks {
-    public driveLight(driveNo: DriveNumber, on: boolean) {
-        const disk = document.querySelector<HTMLElement>(`#disk${driveNo}`);
+    public driveLight(drive: DriveNumber, on: boolean) {
+        const disk = document.querySelector<HTMLElement>(`#disk${drive}`);
         if (disk) {
             disk.style.backgroundImage =
                 on ? 'url(css/red-on-16.png)' :
@@ -11,12 +11,12 @@ export default class DriveLights implements Callbacks {
         }
     }
 
-    public dirty(_driveNo: DriveNumber, _dirty: boolean) {
+    public dirty(_drive: DriveNumber, _dirty: boolean) {
         // document.querySelector('#disksave' + drive).disabled = !dirty;
     }
 
-    public label(driveNo: DriveNumber, label?: string, side?: string) {
-        const labelElement = document.querySelector<HTMLElement>(`#disk-label${driveNo}`);
+    public label(drive: DriveNumber, label?: string, side?: string) {
+        const labelElement = document.querySelector<HTMLElement>(`#disk-label${drive}`);
         let labelText = '';
         if (labelElement) {
             labelText = labelElement.innerText;

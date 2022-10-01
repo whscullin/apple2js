@@ -21,11 +21,11 @@ const DISK_TYPES: FilePickerAcceptType[] = [
 interface BlockFileModalProps {
     isOpen: boolean;
     smartPort: SmartPort;
-    driveNo: DriveNumber;
+    number: DriveNumber;
     onClose: (closeBox?: boolean) => void;
 }
 
-export const BlockFileModal = ({ smartPort, driveNo: number, onClose, isOpen } : BlockFileModalProps) => {
+export const BlockFileModal = ({ smartPort, number, onClose, isOpen } : BlockFileModalProps) => {
     const [handles, setHandles] = useState<FileSystemFileHandle[]>();
     const [busy, setBusy] = useState<boolean>(false);
     const [empty, setEmpty] = useState<boolean>(true);

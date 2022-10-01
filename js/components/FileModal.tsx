@@ -28,7 +28,7 @@ export type NibbleFileCallback = (
 interface FileModalProps {
     isOpen: boolean;
     disk2: DiskII;
-    driveNo: DriveNumber;
+    number: DriveNumber;
     onClose: (closeBox?: boolean) => void;
 }
 
@@ -38,7 +38,7 @@ interface IndexEntry {
     category: string;
 }
 
-export const FileModal = ({ disk2, driveNo, onClose, isOpen }: FileModalProps) => {
+export const FileModal = ({ disk2, number, onClose, isOpen }: FileModalProps) => {
     const [busy, setBusy] = useState<boolean>(false);
     const [empty, setEmpty] = useState<boolean>(true);
     const [category, setCategory] = useState<string>();
@@ -69,13 +69,13 @@ export const FileModal = ({ disk2, driveNo, onClose, isOpen }: FileModalProps) =
 
         try {
             if (handles?.length === 1) {
-                hashParts[driveNo] = '';
-                await loadLocalNibbleFile(disk2, driveNo, await handles[0].getFile());
+                hashParts[number] = '';
+                await loadLocalNibbleFile(disk2, number, await handles[0].getFile());
             }
             if (filename) {
                 const name = filename.match(/\/([^/]+).json$/) || ['', ''];
-                hashParts[driveNo] = name[1];
-                await loadJSON(disk2, driveNo, filename);
+                hashParts[number] = name[1];
+                await loadJSON(disk2, number, filename);
             }
         } catch (e) {
             setError(e);
@@ -86,7 +86,7 @@ export const FileModal = ({ disk2, driveNo, onClose, isOpen }: FileModalProps) =
         }
 
         setHashParts(hashParts);
-    }, [disk2, filename, driveNo, onClose, handles, hash]);
+    }, [disk2, filename, number, onClose, handles, hash]);
 
     const onChange = useCallback((handles: FileSystemFileHandle[]) => {
         setEmpty(handles.length === 0);
