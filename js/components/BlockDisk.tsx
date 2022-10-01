@@ -63,19 +63,19 @@ export const BlockDisk = ({ smartPort, number, on, name }: BlockDiskProps) => {
         <DiskDragTarget
             className={styles.disk}
             storage={smartPort}
-            drive={number}
+            driveNo={number}
             formats={BLOCK_FORMATS}
             onError={setError}
         >
             <ErrorModal error={error} setError={setError} />
             <BlockFileModal
                 smartPort={smartPort}
-                number={number}
+                driveNo={number}
                 onClose={doClose}
                 isOpen={modalOpen}
             />
             <DownloadModal
-                number={number}
+                driveNo={number}
                 massStorage={smartPort}
                 isOpen={downloadModalOpen}
                 onClose={doCloseDownload}
