@@ -42,7 +42,7 @@ export const ModalContent = ({ children }: { children: ComponentChildren }) => {
  */
 export const ModalFooter = ({ children }: { children: ComponentChildren }) => {
     return (
-        <div className={styles.modalFooter}>
+        <div role="contentinfo" className={styles.modalFooter}>
             {children}
         </div>
     );
@@ -92,7 +92,7 @@ export interface ModalHeaderProps {
  */
 export const ModalHeader = ({ onClose, title, icon }: ModalHeaderProps) => {
     return (
-        <div className={styles.modalHeader}>
+        <div role="banner" className={styles.modalHeader}>
             <span className={styles.modalTitle}>
                 {icon && <i className={`fa-solid fa-${icon}`} role="img" />}
                 {' '}
