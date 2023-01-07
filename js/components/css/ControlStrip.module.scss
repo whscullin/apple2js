@@ -17,19 +17,20 @@
     justify-content: center;
     align-items: center;
     user-select: none;
-}
 
-.reset:hover {
-    background: #44372c;
-    border: 3px outset #66594e;
-}
 
-.reset:active {
-    background-color: #22150a;
-    border-left: 3px solid #44372c;
-    border-top: 3px solid #44372c;
-    border-right: 3px solid #000;
-    border-bottom: 3px solid #000;
+    &:hover {
+        background: #44372c;
+        border: 3px outset #66594e;
+    }
+
+    &:active {
+        background-color: #22150a;
+        border-left: 3px solid #44372c;
+        border-top: 3px solid #44372c;
+        border-right: 3px solid #000;
+        border-bottom: 3px solid #000;
+    }
 }
 
 :global(.full-page) .reset {

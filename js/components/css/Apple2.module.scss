@@ -6,8 +6,8 @@
 .outer {
     width: 620px;
     display: none;
-}
 
-.outer.ready {
-    display: block;
+    &.ready {
+        display: block;
+    }
 }

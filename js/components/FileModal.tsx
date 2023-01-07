@@ -10,7 +10,7 @@ import { noAwait, spawn } from './util/promises';
 import { useHash } from './hooks/useHash';
 import { FileChooser, FilePickerAcceptType } from './FileChooser';
 
-import styles from './css/FileModal.module.css';
+import styles from './css/FileModal.module.scss';
 
 const DISK_TYPES: FilePickerAcceptType[] = [
     {

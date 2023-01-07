@@ -9,11 +9,11 @@
     justify-content: center;
     background: rgb(0 0 0 / 60%);
     z-index: 1;
-}
 
-.modalOverlay button {
-    min-width: 36px;
-    margin: 0 2px;
+    button {
+        min-width: 36px;
+        margin: 0 2px;
+    }
 }
 
 .modal {
@@ -36,10 +36,10 @@
     border: 1px outset #66594e;
     border-radius: 3px;
     user-select: none;
-}
 
-.modalHeader button {
-    min-width: 36px;
+    button {
+        min-width: 36px;
+    }
 }
 
 .modalTitle {
@@ -62,10 +62,11 @@
 .modalFooter {
     text-align: right;
     user-select: none;
-}
 
-.modalFooter a[role="button"],
-.modalFooter button {
-    margin: 0 0 0 5px;
-    min-width: 75px;
+
+    a[role="button"],
+    button {
+        margin: 0 0 0 5px;
+        min-width: 75px;
+    }
 }

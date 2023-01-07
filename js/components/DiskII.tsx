@@ -5,10 +5,11 @@ import Disk2 from '../cards/disk2';
 import { ErrorModal } from './ErrorModal';
 import { FileModal } from './FileModal';
 
-import styles from './css/DiskII.module.css';
+import styles from './css/DiskII.module.scss';
 import { DiskDragTarget } from './DiskDragTarget';
 import { FLOPPY_FORMATS } from 'js/formats/types';
 import { DownloadModal } from './DownloadModal';
+import { ControlButton } from './ControlButton';
 
 /**
  * Storage structure for Disk II state returned via callbacks.
@@ -78,12 +79,8 @@ export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
             />
             <ErrorModal error={error} setError={setError} />
             <div className={cs(styles.diskLight, { [styles.on]: on })} />
-            <button title="Load Disk" onClick={onOpenModal}>
-                <i className="fas fa-folder-open" />
-            </button>
-            <button title="Save Disk" onClick={onOpenDownloadModal}>
-                <i className="fas fa-save" />
-            </button>
+            <ControlButton title="Load Disk" onClick={onOpenModal} icon="folder-open" />
+            <ControlButton title="Save Disk" onClick={onOpenDownloadModal} icon="save" />
             <div className={styles.diskLabel}>
                 {label}
             </div>

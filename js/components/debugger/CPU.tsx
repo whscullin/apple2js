@@ -8,8 +8,8 @@ import { loadLocalBinaryFile } from '../util/files';
 import { spawn } from '../util/promises';
 import { toHex } from 'js/util';
 
-import styles from './css/CPU.module.css';
-import debuggerStyles from './css/Debugger.module.css';
+import styles from './css/CPU.module.scss';
+import debuggerStyles from './css/Debugger.module.scss';
 
 export interface CPUProps {
     apple2: Apple2Impl | undefined;
@@ -29,7 +29,7 @@ const VALID_PAGE = /^[0-9A-F]{1,2}$/i;
 const VALID_ADDRESS = /^[0-9A-F]{1,4}$/i;
 
 const ERROR_ICON = (
-    <div className={styles.invalid}>
+    <div className={styles.errorIcon}>
         <i
             className="fa-solid fa-triangle-exclamation"
             title="Invalid hex address"

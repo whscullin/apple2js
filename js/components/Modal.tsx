@@ -1,9 +1,12 @@
 import { h, ComponentChildren } from 'preact';
+import cs from 'classnames';
 import { createPortal } from 'preact/compat';
 import { useCallback } from 'preact/hooks';
 import { useHotKey } from './hooks/useHotKey';
 
-import styles from './css/Modal.module.css';
+import styles from './css/Modal.module.scss';
+import componentStyles from './css/Components.module.scss';
+import { ControlButton } from './ControlButton';
 
 /**
  * ModalOverlay creates a semi-transparent overlay in which the
@@ -39,9 +42,9 @@ export const ModalContent = ({ children }: { children: ComponentChildren }) => {
  */
 export const ModalFooter = ({ children }: { children: ComponentChildren }) => {
     return (
-        <footer className={styles.modalFooter}>
+        <div className={styles.modalFooter}>
             {children}
-        </footer>
+        </div>
     );
 };
 
@@ -64,9 +67,7 @@ export const ModalCloseButton = ({ onClose }: ModalCloseButtonProp) => {
     useHotKey('Escape', doClose);
 
     return (
-        <button onClick={doClose} title="Close">
-            {'\u2715'}
-        </button>
+        <ControlButton onClick={doClose} title="Close" icon="xmark" />
     );
 };
 
@@ -91,14 +92,14 @@ export interface ModalHeaderProps {
  */
 export const ModalHeader = ({ onClose, title, icon }: ModalHeaderProps) => {
     return (
-        <header className={styles.modalHeader}>
+        <div className={styles.modalHeader}>
             <span className={styles.modalTitle}>
                 {icon && <i className={`fa-solid fa-${icon}`} role="img" />}
                 {' '}
                 {title}
             </span>
             {onClose && <ModalCloseButton onClose={onClose} />}
-        </header>
+        </div>
     );
 };
 
@@ -132,7 +133,7 @@ export const Modal = ({
     return (
         isOpen ? createPortal((
             <ModalOverlay>
-                <div className={styles.modal} role="dialog">
+                <div className={cs(styles.modal, componentStyles.components)} role="dialog">
                     {title && <ModalHeader title={title} {...props} />}
                     {children}
                 </div>

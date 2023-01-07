@@ -5,8 +5,8 @@ import cs from 'classnames';
 import { Apple2 as Apple2Impl } from 'js/apple2';
 import { VideoPage } from 'js/videomodes';
 
-import styles from './css/VideoModes.module.css';
-import debuggerStyles from './css/Debugger.module.css';
+import styles from './css/VideoModes.module.scss';
+import debuggerStyles from './css/Debugger.module.scss';
 
 export interface VideoModesProps {
     apple2: Apple2Impl | undefined;
@@ -62,13 +62,13 @@ export const VideoModes = ({ apple2 }: VideoModesProps) => {
     return (
         <div className={styles.pages}>
             <div className={debuggerStyles.row}>
-                <div className={cs(styles.page, {[styles.active]: (text || !hires) && !page2})}>
+                <div className={cs(styles.page, { [styles.active]: (text || !hires) && !page2 })}>
                     <div className={debuggerStyles.heading}>
                         Text/Lores Page 1
                     </div>
                     <canvas width="560" height="192" ref={canvas1} />
                 </div>
-                <div className={cs(styles.page, {[styles.active]: (text || !hires) && page2})}>
+                <div className={cs(styles.page, { [styles.active]: (text || !hires) && page2 })}>
                     <div className={debuggerStyles.heading}>
                         Text/Lores Page 2
                     </div>
@@ -76,13 +76,13 @@ export const VideoModes = ({ apple2 }: VideoModesProps) => {
                 </div>
             </div>
             <div className={debuggerStyles.row}>
-                <div className={cs(styles.page, {[styles.active]: (!text && hires) && !page2})}>
+                <div className={cs(styles.page, { [styles.active]: (!text && hires) && !page2 })}>
                     <div className={debuggerStyles.heading}>
                         Hires Page 1
                     </div>
                     <canvas width="560" height="192" ref={canvas3} />
                 </div>
-                <div className={cs(styles.page, {[styles.active]: (!text && hires) && page2})}>
+                <div className={cs(styles.page, { [styles.active]: (!text && hires) && page2 })}>
                     <div className={debuggerStyles.heading}>
                         Hires Page 2
                     </div>

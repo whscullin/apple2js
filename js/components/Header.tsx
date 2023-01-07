@@ -1,6 +1,6 @@
 import { h } from 'preact';
 
-import styles from './css/Header.module.css';
+import styles from './css/Header.module.scss';
 
 const README = 'https://github.com/whscullin/apple2js#readme';
 

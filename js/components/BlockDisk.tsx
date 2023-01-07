@@ -8,7 +8,8 @@ import { DiskDragTarget } from './DiskDragTarget';
 import { DownloadModal } from './DownloadModal';
 import { ErrorModal } from './ErrorModal';
 
-import styles from './css/BlockDisk.module.css';
+import styles from './css/BlockDisk.module.scss';
+import { ControlButton } from './ControlButton';
 
 /**
  * Storage structure for drive state returned via callbacks.
@@ -84,12 +85,8 @@ export const BlockDisk = ({ smartPort, number, on, name }: BlockDiskProps) => {
                 id={`disk${number}`}
                 className={cs(styles.diskLight, { [styles.on]: on })}
             />
-            <button title="Load Disk" onClick={onOpenModal}>
-                <i className="fas fa-folder-open" />
-            </button>
-            <button title="Save Disk" onClick={onOpenDownloadModal}>
-                <i className="fas fa-save" />
-            </button>
+            <ControlButton title="Load Disk" onClick={onOpenModal} icon="folder-open" />
+            <ControlButton title="Save Disk" onClick={onOpenDownloadModal} icon="save" />
             <div
                 id={`disk-label${number}`}
                 className={styles.diskLabel}

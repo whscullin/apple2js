@@ -2,7 +2,7 @@ import { ComponentChild, ComponentChildren, h } from 'preact';
 import { useCallback, useState } from 'preact/hooks';
 import cs from 'classnames';
 
-import styles from './css/Tabs.module.css';
+import styles from './css/Tabs.module.scss';
 
 export interface TabProps {
     children: ComponentChildren;

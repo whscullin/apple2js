@@ -70,6 +70,26 @@
     /* border: 5px outset #66594E; */
     border-radius: 5px;
     cursor: pointer;
+
+    .active {
+        color: #4f4;
+    }
+
+    .small {
+        font-size: 7px;
+    }
+
+    div {
+        border-radius: 3px;
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        text-align: center;
+    }
+
+    span {
+        font-size: 13px;
+    }
 }
 
 .pressed {
@@ -82,14 +102,6 @@
     /* border: 5px outset #44372C; */
 }
 
-.key div {
-    border-radius: 3px;
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    text-align: center;
-}
-
 .vCenter div {
     bottom: 10px;
 }
@@ -97,22 +109,6 @@
 .vCenter2 div {
     bottom: 5px;
     line-height: 10px;
-}
-
-.key span {
-    font-size: 13px;
-}
-
-.key .small {
-    font-size: 7px;
-}
-
-.key-SHIFT {
-    width: 53px;
-}
-
-.active {
-    color: #4f4;
 }
 
 .key-RETURN {
@@ -134,10 +130,10 @@
     background-color: #ffd;
     color: black;
     border-radius: 2px;
-}
 
-.key-POWER div {
-    bottom: 15px;
+    div {
+        bottom: 15px;
+    }
 }
 
 .key-nbsp {

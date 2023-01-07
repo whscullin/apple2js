@@ -1,7 +1,7 @@
 import { h, ComponentChildren, JSX } from 'preact';
 import cs from 'classnames';
 
-import styles from './css/Inset.module.css';
+import styles from './css/Inset.module.scss';
 
 interface InsetProps extends JSX.HTMLAttributes<HTMLDivElement> {
     children: ComponentChildren;

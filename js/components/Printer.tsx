@@ -4,7 +4,7 @@ import Apple2IO, { slot } from 'js/apple2io';
 import Parallel, { ParallelOptions } from 'js/cards/parallel';
 import { Modal, ModalContent, ModalFooter } from './Modal';
 
-import styles from './css/Printer.module.css';
+import styles from './css/Printer.module.scss';
 import { ControlButton } from './ControlButton';
 import { byte } from 'js/types';
 

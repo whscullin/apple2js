@@ -1,0 +1,12 @@
+:global(.full-page) {
+    background: black;
+}
+
+.container {
+    font-size: 14px;
+    font-family: sans-serif;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+}

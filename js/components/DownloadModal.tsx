@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'preact/hooks';
 import { DriveNumber, MassStorage } from '../formats/types';
 import { Modal, ModalContent, ModalFooter } from './Modal';
 
-import styles from './css/DownloadModal.module.css';
+import styles from './css/DownloadModal.module.scss';
 
 interface DownloadModalProps {
     isOpen: boolean;
@@ -12,7 +12,7 @@ interface DownloadModalProps {
     onClose: (closeBox?: boolean) => void;
 }
 
-export const DownloadModal = ({ massStorage, driveNo, onClose, isOpen } : DownloadModalProps) => {
+export const DownloadModal = ({ massStorage, driveNo, onClose, isOpen }: DownloadModalProps) => {
     const [href, setHref] = useState('');
     const [downloadName, setDownloadName] = useState('');
     const doCancel = useCallback(() => onClose(true), [onClose]);
@@ -44,7 +44,7 @@ export const DownloadModal = ({ massStorage, driveNo, onClose, isOpen } : Downlo
             <Modal title="Save File" isOpen={isOpen} onClose={onClose}>
                 <ModalContent>
                     <div className={styles.modalContent}>
-                        { href
+                        {href
                             ? (
                                 <>
                                     <span>Disk Name: {downloadName}</span>

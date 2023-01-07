@@ -16,7 +16,7 @@ import { ThunderClock } from './ThunderClock';
 import { Videoterm } from './Videoterm';
 import { spawn, Ready } from './util/promises';
 
-import styles from './css/Apple2.module.css';
+import styles from './css/Apple2.module.scss';
 import { SupportedSectors } from 'js/formats/types';
 
 declare global {
