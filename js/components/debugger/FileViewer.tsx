@@ -3,7 +3,7 @@ import { h, Fragment } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Modal, ModalContent, ModalFooter } from '../Modal';
 
-import styles from './css/FileViewer.module.css';
+import styles from './css/FileViewer.module.scss';
 
 /**
  * Binary and text representation of file to be previewed

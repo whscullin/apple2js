@@ -10,7 +10,7 @@ import {
     mapKeyboardEvent
 } from './util/keyboard';
 
-import styles from './css/Keyboard.module.css';
+import styles from './css/Keyboard.module.scss';
 
 /**
  * Convenience function for massaging key labels for upper
@@ -23,7 +23,7 @@ const buildLabel = (key: string) => {
     const small = key.length > 1 && !key.startsWith('&');
     return (
         <span
-            className={cs({[styles.small]: small})}
+            className={cs({ [styles.small]: small })}
             dangerouslySetInnerHTML={{ __html: key }}
         />
     );
@@ -110,7 +110,7 @@ export interface KeyboardProps {
 export const Keyboard = ({ apple2, e }: KeyboardProps) => {
     const [pressed, setPressed] = useState<string[]>([]);
     const [active, setActive] = useState<string[]>(['LOCK']);
-    const keys = useMemo(() => keysAsTuples(e ? keys2e : keys2 ), [e]);
+    const keys = useMemo(() => keysAsTuples(e ? keys2e : keys2), [e]);
 
     // Set global keystroke handler
     useEffect(() => {
@@ -125,7 +125,7 @@ export const Keyboard = ({ apple2, e }: KeyboardProps) => {
 
             event.preventDefault();
 
-            const {key, keyCode, keyLabel} = mapKeyboardEvent(event, active.includes('LOCK'), active.includes('CTRL'));
+            const { key, keyCode, keyLabel } = mapKeyboardEvent(event, active.includes('LOCK'), active.includes('CTRL'));
             setPressed(pressed => pressed.concat([keyLabel]));
             setActive(active => active.concat([keyLabel]));
 
@@ -152,7 +152,7 @@ export const Keyboard = ({ apple2, e }: KeyboardProps) => {
             if (!apple2) {
                 return;
             }
-            const {key, keyLabel} = mapKeyboardEvent(event);
+            const { key, keyLabel } = mapKeyboardEvent(event);
             setPressed(pressed => pressed.filter(k => k !== keyLabel));
             setActive(active => active.filter(k => k !== keyLabel));
 

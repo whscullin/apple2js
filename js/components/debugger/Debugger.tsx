@@ -10,7 +10,7 @@ import { Disks } from './Disks';
 import { Memory } from './Memory';
 import { VideoModes } from './VideoModes';
 
-import styles from './css/Debugger.module.css';
+import styles from './css/Debugger.module.scss';
 
 interface DebuggerProps {
     apple2: Apple2 | undefined;

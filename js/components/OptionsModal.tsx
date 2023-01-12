@@ -11,7 +11,7 @@ import {
     SelectOption,
 } from '../options';
 
-import styles from './css/OptionsModal.module.css';
+import styles from './css/OptionsModal.module.scss';
 
 /**
  * Boolean property interface
@@ -29,7 +29,7 @@ interface BooleanProps {
  * @param setValue Value setter
  * @returns Boolean component
  */
-const Boolean = ({ option, value, setValue } : BooleanProps) => {
+const Boolean = ({ option, value, setValue }: BooleanProps) => {
     const { label, name } = option;
     const onChange = useCallback(
         (event: JSX.TargetedMouseEvent<HTMLInputElement>) =>
@@ -67,7 +67,7 @@ interface SelectProps {
  * @param setValue Value setter
  * @returns Select component
  */
-const Select = ({ option, value, setValue } : SelectProps) => {
+const Select = ({ option, value, setValue }: SelectProps) => {
     const { label, name } = option;
     const onChange = useCallback(
         (event: JSX.TargetedMouseEvent<HTMLSelectElement>) => {
@@ -110,7 +110,7 @@ export interface OptionsModalProps {
 export const OptionsModal = ({ isOpen, onClose }: OptionsModalProps) => {
     const options = useContext(OptionsContext);
     const sections = options.getSections();
-    const setValue = useCallback(( name: string, value: string | boolean ) => {
+    const setValue = useCallback((name: string, value: string | boolean) => {
         options.setOption(name, value);
     }, [options]);
 

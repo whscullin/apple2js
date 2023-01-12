@@ -1,7 +1,7 @@
 import { h } from 'preact';
 import { Modal, ModalContent } from './Modal';
 
-import styles from './css/ProgressModal.module.css';
+import styles from './css/ProgressModal.module.scss';
 
 export interface ErrorProps {
     title: string;
@@ -9,7 +9,7 @@ export interface ErrorProps {
     total: number | undefined;
 }
 
-export const ProgressModal = ({ title, current, total } : ErrorProps) => {
+export const ProgressModal = ({ title, current, total }: ErrorProps) => {
     if (current && total) {
         return (
             <Modal title={title} isOpen={true}>

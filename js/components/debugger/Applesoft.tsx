@@ -6,8 +6,8 @@ import ApplesoftDecompiler from 'js/applesoft/decompiler';
 import { ApplesoftHeap, ApplesoftVariable } from 'js/applesoft/heap';
 import { Apple2 as Apple2Impl } from 'js/apple2';
 
-import styles from './css/Applesoft.module.css';
-import debuggerStyles from './css/Debugger.module.css';
+import styles from './css/Applesoft.module.scss';
+import debuggerStyles from './css/Debugger.module.scss';
 
 export interface ApplesoftProps {
     apple2: Apple2Impl | undefined;

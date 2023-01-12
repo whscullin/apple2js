@@ -38,6 +38,24 @@ const baseConfig = {
                     'css-loader'
                 ],
                 exclude: /\.module\.css$/
+            },
+            {
+                test: /\.module\.s(a|c)ss$/,
+                use: [
+                    'style-loader',
+                    {
+                        loader: 'css-loader',
+                        options: {
+                            import: false,
+                            modules: {
+                                localIdentName: '[path][name]__[local]',
+                            }
+                        }
+                    },
+                    {
+                        loader: 'sass-loader',
+                    }
+                ],
             }
         ],
     },

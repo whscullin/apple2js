@@ -6,13 +6,13 @@
     font-weight: bold;
     padding: 4px;
     border-radius: 4px 4px 0 0;
-}
 
-.tab.selected {
-    background-color: #c4c1a0;
-    border-bottom: none;
-    margin-bottom: -2px;
-    color: #080;
+    .selected {
+        background-color: #c4c1a0;
+        border-bottom: none;
+        margin-bottom: -2px;
+        color: #080;
+    }
 }
 
 .tabs {

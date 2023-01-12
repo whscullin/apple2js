@@ -15,8 +15,8 @@ import { FileEntry } from 'js/formats/prodos/file_entry';
 import { VDH } from 'js/formats/prodos/vdh';
 import { toHex } from 'js/util';
 
-import styles from './css/Disks.module.css';
-import debuggerStyles from './css/Debugger.module.css';
+import styles from './css/Disks.module.scss';
+import debuggerStyles from './css/Debugger.module.scss';
 import { useCallback, useState } from 'preact/hooks';
 import { DOS33, FileEntry as DOSEntry, isMaybeDOS33 } from 'js/formats/dos/dos33';
 import createDiskFromDOS from 'js/formats/do';

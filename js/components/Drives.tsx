@@ -13,7 +13,7 @@ import { useHash } from './hooks/useHash';
 import { DISK_FORMATS, DRIVE_NUMBERS, SupportedSectors } from 'js/formats/types';
 import { spawn, Ready } from './util/promises';
 
-import styles from './css/Drives.module.css';
+import styles from './css/Drives.module.scss';
 import { DiskDragTarget } from './DiskDragTarget';
 
 /**

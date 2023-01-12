@@ -3,6 +3,7 @@ module.exports = {
         '^js/(.*)': '<rootDir>/js/$1',
         '^test/(.*)': '<rootDir>/test/$1',
         '\\.css$': 'identity-obj-proxy',
+        '\\.scss$': 'identity-obj-proxy',
     },
     'roots': [
         'js/',

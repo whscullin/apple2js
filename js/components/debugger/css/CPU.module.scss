@@ -23,13 +23,13 @@
     color: #f00;
 }
 
-div.invalid {
+.errorIcon {
     position: relative;
     display: inline-block;
-}
 
-div.invalid i {
-    position: absolute;
-    top: -9px;
-    left: -16px;
+    i {
+        position: absolute;
+        top: -9px;
+        left: -16px;
+    }
 }

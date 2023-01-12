@@ -1,6 +1,6 @@
 import { h, Ref } from 'preact';
 
-import styles from './css/Screen.module.css';
+import styles from './css/Screen.module.scss';
 
 /**
  * Screen properties

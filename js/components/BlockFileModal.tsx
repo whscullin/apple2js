@@ -9,7 +9,7 @@ import SmartPort from 'js/cards/smartport';
 import { useHash } from './hooks/useHash';
 import { noAwait } from './util/promises';
 
-import styles from './css/BlockFileModal.module.css';
+import styles from './css/BlockFileModal.module.scss';
 
 const DISK_TYPES: FilePickerAcceptType[] = [
     {
@@ -25,7 +25,7 @@ interface BlockFileModalProps {
     onClose: (closeBox?: boolean) => void;
 }
 
-export const BlockFileModal = ({ smartPort, driveNo: number, onClose, isOpen } : BlockFileModalProps) => {
+export const BlockFileModal = ({ smartPort, driveNo: number, onClose, isOpen }: BlockFileModalProps) => {
     const [handles, setHandles] = useState<FileSystemFileHandle[]>();
     const [busy, setBusy] = useState<boolean>(false);
     const [empty, setEmpty] = useState<boolean>(true);

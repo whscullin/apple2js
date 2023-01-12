@@ -4,7 +4,7 @@ import { CPUMeter } from './CPUMeter';
 import { Inset } from './Inset';
 import { useHotKey } from './hooks/useHotKey';
 import { AudioControl } from './AudioControl';
-import { OptionsModal} from './OptionsModal';
+import { OptionsModal } from './OptionsModal';
 import { OptionsContext } from './OptionsContext';
 import { Printer } from './Printer';
 import { ControlButton } from './ControlButton';
@@ -13,7 +13,7 @@ import { JoyStick } from '../ui/joystick';
 import { Screen, SCREEN_FULL_PAGE } from '../ui/screen';
 import { System } from '../ui/system';
 
-import styles from './css/ControlStrip.module.css';
+import styles from './css/ControlStrip.module.scss';
 import Apple2IO from 'js/apple2io';
 
 const README = 'https://github.com/whscullin/apple2js#readme';
@@ -57,26 +57,26 @@ export const ControlStrip = ({ apple2, e, toggleDebugger }: ControlStripProps) =
 
     const doReset = useCallback(() =>
         apple2?.reset()
-    , [apple2]);
+        , [apple2]);
 
     const doReadme = useCallback(() =>
         window.open(README, '_blank')
-    , []);
+        , []);
 
     const doShowOptions = useCallback(() =>
         setShowOptions(true)
-    , []);
+        , []);
 
     const doCloseOptions = useCallback(() =>
         setShowOptions(false)
-    , []);
+        , []);
 
     const doToggleFullPage = useCallback(() =>
         options.setOption(
             SCREEN_FULL_PAGE,
             !options.getOption(SCREEN_FULL_PAGE)
         )
-    , [options]);
+        , [options]);
 
     useHotKey('F2', doToggleFullPage);
     useHotKey('F4', doShowOptions);
@@ -90,7 +90,7 @@ export const ControlStrip = ({ apple2, e, toggleDebugger }: ControlStripProps) =
                 <ControlButton onClick={toggleDebugger} title="Toggle Debugger" icon="bug" />
                 <AudioControl apple2={apple2} />
                 <Printer io={io} slot={1} />
-                <div style={{flexGrow: 1}} />
+                <div style={{ flexGrow: 1 }} />
                 <ControlButton onClick={doReadme} title="About" icon="info" />
                 <ControlButton onClick={doShowOptions} title="Options (F4)" icon="cog" />
             </Inset>

@@ -6,8 +6,8 @@ import { Apple2 as Apple2Impl } from 'js/apple2';
 import MMU from 'js/mmu';
 import LanguageCard from 'js/cards/langcard';
 
-import styles from './css/Memory.module.css';
-import debuggerStyles from './css/Debugger.module.css';
+import styles from './css/Memory.module.scss';
+import debuggerStyles from './css/Debugger.module.scss';
 
 /**
  * Encapsulates the read/write status of a bank
@@ -20,7 +20,7 @@ interface ReadWrite {
 /**
  * Encapsulates the read/write status of a language card
  */
- interface LC extends ReadWrite {
+interface LC extends ReadWrite {
     bank0: ReadWrite;
     bank1: ReadWrite;
     rom: ReadWrite;
@@ -204,7 +204,7 @@ interface LanguageCardMapProps {
  * @param children label component
  * @returns LanguageCard component
  */
-const LanguageCardMap = ({lc, children}: LanguageCardMapProps) => {
+const LanguageCardMap = ({ lc, children }: LanguageCardMapProps) => {
     return (
         <div className={cs(styles.bank)}>
             <div className={cs(styles.lc, rw(lc))}>

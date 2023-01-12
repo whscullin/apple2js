@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { Apple2 as Apple2Impl } from '../apple2';
 import type { Stats } from '../apple2';
 
-import styles from './css/CPUMeter.module.css';
+import styles from './css/CPUMeter.module.scss';
 
 /**
  * Interface for CPUMeter.
