@@ -46,6 +46,7 @@ let lastFrames = 0;
 let lastRenderedFrames = 0;
 
 let hashtag = document.location.hash;
+let oldHashFiles: string[] = [];
 
 const options = new Options();
 const optionsModal = new OptionsModal(options);
@@ -748,6 +749,9 @@ function processHash(hash: string) {
             break;
         }
         const file = files[idx];
+        if (file === oldHashFiles[idx]) {
+            continue;
+        }
         if (file.indexOf('://') > 0) {
             const parts = file.split('.');
             const ext = parts[parts.length - 1].toLowerCase();
@@ -760,6 +764,7 @@ function processHash(hash: string) {
             loadAjax(drive, 'json/disks/' + file + '.json');
         }
     }
+    oldHashFiles = files;
 }
 
 export function updateUI() {
