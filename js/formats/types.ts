@@ -150,12 +150,12 @@ export type DiskFormat = MemberOf<typeof DISK_FORMATS>;
 
 /** Type guard for nibble disk formats. */
 export function isNibbleDiskFormat(f: DiskFormat): f is NibbleFormat {
-    return f in NIBBLE_FORMATS;
+    return NIBBLE_FORMATS.includes(f as NibbleFormat);
 }
 
 /** Type guard for block disk formats. */
 export function isBlockDiskFormat(f: DiskFormat): f is BlockFormat {
-    return f in BLOCK_FORMATS;
+    return BLOCK_FORMATS.includes(f as BlockFormat);
 }
 
 export function isNoFloppyDisk(disk: Disk): disk is NoFloppyDisk {
