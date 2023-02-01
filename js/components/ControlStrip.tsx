@@ -56,27 +56,22 @@ export const ControlStrip = ({ apple2, e, toggleDebugger }: ControlStripProps) =
     }, [apple2, e, options]);
 
     const doReset = useCallback(() =>
-        apple2?.reset()
-        , [apple2]);
+        apple2?.reset(), [apple2]);
 
     const doReadme = useCallback(() =>
-        window.open(README, '_blank')
-        , []);
+        window.open(README, '_blank'), []);
 
     const doShowOptions = useCallback(() =>
-        setShowOptions(true)
-        , []);
+        setShowOptions(true), []);
 
     const doCloseOptions = useCallback(() =>
-        setShowOptions(false)
-        , []);
+        setShowOptions(false), []);
 
     const doToggleFullPage = useCallback(() =>
         options.setOption(
             SCREEN_FULL_PAGE,
             !options.getOption(SCREEN_FULL_PAGE)
-        )
-        , [options]);
+        ), [options]);
 
     useHotKey('F2', doToggleFullPage);
     useHotKey('F4', doShowOptions);
