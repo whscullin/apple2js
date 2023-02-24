@@ -76,11 +76,12 @@ export class JoyStick implements OptionHandler {
         ];
     }
 
-    setOption(name: string, _value: boolean) {
+    setOption(name: string, value: boolean) {
         switch (name) {
             case JOYSTICK_DISABLE:
                 this.io.paddle(0, 0.5);
                 this.io.paddle(1, 0.5);
+                this.disableMouseJoystick = value;
                 break;
             case JOYSTICK_FLIP_X_AXIS:
             case JOYSTICK_FLIP_Y_AXIS:
