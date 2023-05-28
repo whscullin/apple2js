@@ -105,7 +105,7 @@ const appConfig = merge(baseConfig,
 
 const workletConfig = merge(baseConfig,
     {
-        target: false,
+        target: 'webworker',
         entry: {
             audio_worker: path.resolve('js/ui/audio_worker.ts')
         },
@@ -117,7 +117,7 @@ const workletConfig = merge(baseConfig,
 
 const workerConfig = merge(baseConfig,
     {
-        target: false,
+        target: 'webworker',
         entry: {
             format_worker: path.resolve('workers/format.worker.ts')
         },
