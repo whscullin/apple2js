@@ -41,7 +41,7 @@ export class MouseUI {
                     // Make sure the mouse down is processed in a different
                     // pass as the move, so that a simple tap isn't treated like
                     // a drag.
-                    setTimeout(() => this.mouse.setMouseDown(true), 100);
+                    setTimeout(() => this.mouse.setMouseDown(true), 20);
                 }
             );
 
@@ -49,7 +49,7 @@ export class MouseUI {
                 'touchend',
                 (event: TouchEventWithTarget) => {
                     updateTouchXY(event);
-                    this.mouse.setMouseDown(false);
+                    setTimeout(() => this.mouse.setMouseDown(false), 20);
                 }
             );
 
