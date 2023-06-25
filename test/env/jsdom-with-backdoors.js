@@ -9,7 +9,7 @@
  * setup. It still requires typing.
  */
 
-const JsdomEnvironment = require('jest-environment-jsdom');
+import JsdomEnvironment from 'jest-environment-jsdom';
 
 export default class JsdomEnvironmentWithBackDoors extends JsdomEnvironment {
     async setup() {
