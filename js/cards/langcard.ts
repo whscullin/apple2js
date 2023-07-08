@@ -1,5 +1,5 @@
 import RAM, { RAMState } from '../ram';
-import { debug } from '../util';
+// import { debug } from '../util';
 import { Card, Memory, byte, Restorable } from '../types';
 
 export interface LanguageCardState {
@@ -30,7 +30,7 @@ export default class LanguageCard implements Card, Restorable<LanguageCardState>
     private write2: Memory;
 
     constructor(private rom: Memory) {
-        debug('Language card');
+        // debug('Language card');
 
         this.bank1 = new RAM(0xd0, 0xdf);
         this.bank2 = new RAM(0xd0, 0xdf);
@@ -88,9 +88,11 @@ export default class LanguageCard implements Card, Restorable<LanguageCardState>
         let bankStr;
         let rwStr;
 
-        if (writeSwitch) { // $C081, $C083, $C089, $C08B
+        if (writeSwitch) { // 0xC081, 0xC083
             if (readMode) {
-                this._writebsr = this._prewrite;
+                if (this._prewrite) {
+                    this._writebsr = true;
+                }
             }
             this._prewrite = readMode;
 

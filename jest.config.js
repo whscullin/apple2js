@@ -4,6 +4,10 @@ module.exports = {
         '^test/(.*)': '<rootDir>/test/$1',
         '\\.css$': 'identity-obj-proxy',
         '\\.scss$': 'identity-obj-proxy',
+        // For some reason the preact modules are not where they are
+        // expected. This seems to have something to do with jest > v27.
+        // https://github.com/preactjs/enzyme-adapter-preact-pure/issues/179#issuecomment-1201096897
+        '^preact(/(.*)|$)': 'preact$1',
     },
     'roots': [
         'js/',
@@ -17,6 +21,9 @@ module.exports = {
         '^.+\\.ts$': 'ts-jest',
         '^.*\\.tsx$': 'ts-jest',
     },
+    'transformIgnorePatterns': [
+        '/node_modules/(?!(@testing-library/preact/dist/esm)/)',
+    ],
     'setupFilesAfterEnv': [
         '<rootDir>/test/jest-setup.ts'
     ],
@@ -24,5 +31,6 @@ module.exports = {
         '/node_modules/',
         '/js/roms/',
         '/test/',
-    ]
+    ],
+    'preset': 'ts-jest',
 };

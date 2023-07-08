@@ -684,7 +684,9 @@ export default class MMU implements Memory, Restorable<MMUState> {
 
         if (writeSwitch) { // 0xC081, 0xC083
             if (readMode) {
-                this._writebsr = this._prewrite;
+                if (this._prewrite) {
+                    this._writebsr = true;
+                }
             }
             this._prewrite = readMode;
 

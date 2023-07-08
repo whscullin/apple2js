@@ -8,7 +8,6 @@ import { DriveNumber, NibbleDisk, WozDisk } from 'js/formats/types';
 import { byte } from 'js/types';
 import { toHex } from 'js/util';
 import { VideoModes } from 'js/videomodes';
-import { mocked } from 'ts-jest/utils';
 import { BYTES_BY_SECTOR_IMAGE, BYTES_BY_TRACK_IMAGE } from '../formats/testdata/16sector';
 
 jest.mock('js/apple2io');
@@ -34,7 +33,7 @@ function setWriteProtected(diskII: DiskII, isWriteProtected: boolean) {
 
 describe('DiskII', () => {
     const mockApple2IO = new Apple2IO({} as unknown as CPU6502, {} as unknown as VideoModes);
-    const callbacks: Callbacks = {
+    const callbacks: jest.Mocked<Callbacks> = {
         driveLight: jest.fn(),
         dirty: jest.fn(),
         label: jest.fn(),
@@ -66,7 +65,7 @@ describe('DiskII', () => {
 
         const state = diskII.getState();
         // These are just arbitrary changes, not an exhaustive list of fields.
-        (state.drives[1].driver as {skip:number}).skip = 1;
+        (state.drives[1].driver as { skip: number }).skip = 1;
         state.controllerState.driveNo = 2;
         state.controllerState.latch = 0x42;
         state.controllerState.on = true;
@@ -115,7 +114,7 @@ describe('DiskII', () => {
             jest.useFakeTimers();
             const diskII = new DiskII(mockApple2IO, callbacks);
             diskII.ioSwitch(0x89);  // turn on the motor
-            mocked(callbacks.driveLight).mockReset();
+            callbacks.driveLight.mockReset();
 
             diskII.ioSwitch(0x88);  // turn off the motor
 
@@ -140,7 +139,7 @@ describe('DiskII', () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
             diskII.ioSwitch(0x8B);  // select drive 2
             diskII.ioSwitch(0x89);  // turn on the motor
-            mocked(callbacks.driveLight).mockReset();
+            callbacks.driveLight.mockReset();
 
             diskII.ioSwitch(0x88);  // turn off the motor
 
@@ -479,7 +478,7 @@ describe('DiskII', () => {
         it('writes a nibble to the disk', () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
             diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
-            let disk1 = diskII.getState().drives[1].disk as NibbleDisk; 
+            let disk1 = diskII.getState().drives[1].disk as NibbleDisk;
             let track0 = disk1.tracks[0];
             expect(track0[0]).toBe(0xFF);
 
@@ -487,7 +486,7 @@ describe('DiskII', () => {
             diskII.ioSwitch(0x8F, 0x80);  // write
             diskII.ioSwitch(0x8C);        // shift
 
-            disk1 = diskII.getState().drives[1].disk as NibbleDisk; 
+            disk1 = diskII.getState().drives[1].disk as NibbleDisk;
             track0 = disk1.tracks[0];
             expect(track0[0]).toBe(0x80);
         });
@@ -495,7 +494,7 @@ describe('DiskII', () => {
         it('writes two nibbles to the disk', () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
             diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
-            let disk1 = diskII.getState().drives[1].disk as NibbleDisk; 
+            let disk1 = diskII.getState().drives[1].disk as NibbleDisk;
             let track0 = disk1.tracks[0];
             expect(track0[0]).toBe(0xFF);
 
@@ -505,7 +504,7 @@ describe('DiskII', () => {
             diskII.ioSwitch(0x8F, 0x81);  // write
             diskII.ioSwitch(0x8C);        // shift
 
-            disk1 = diskII.getState().drives[1].disk as NibbleDisk; 
+            disk1 = diskII.getState().drives[1].disk as NibbleDisk;
             track0 = disk1.tracks[0];
             expect(track0[0]).toBe(0x80);
             expect(track0[1]).toBe(0x81);
@@ -571,7 +570,7 @@ describe('DiskII', () => {
 
         it('spins the disk when motor is on', () => {
             let cycles: number = 0;
-            mocked(mockApple2IO).cycles.mockImplementation(() => cycles);
+            (mockApple2IO.cycles as jest.Mock).mockImplementation(() => cycles);
 
             const diskII = new DiskII(mockApple2IO, callbacks);
             diskII.setBinary(1, 'DOS 3.3 System Master', 'woz', DOS33_SYSTEM_MASTER_IMAGE);
@@ -589,7 +588,7 @@ describe('DiskII', () => {
 
         it('does not spin the disk when motor is off', () => {
             let cycles: number = 0;
-            mocked(mockApple2IO).cycles.mockImplementation(() => cycles);
+            (mockApple2IO.cycles as jest.Mock).mockImplementation(() => cycles);
 
             const diskII = new DiskII(mockApple2IO, callbacks);
             diskII.setBinary(1, 'DOS 3.3 System Master', 'woz', DOS33_SYSTEM_MASTER_IMAGE);
@@ -606,7 +605,7 @@ describe('DiskII', () => {
 
         it('reads an FF sync byte from the beginning of the image', () => {
             let cycles: number = 0;
-            mocked(mockApple2IO).cycles.mockImplementation(() => cycles);
+            (mockApple2IO.cycles as jest.Mock).mockImplementation(() => cycles);
 
             const diskII = new DiskII(mockApple2IO, callbacks);
             diskII.setBinary(1, 'DOS 3.3 System Master', 'woz', DOS33_SYSTEM_MASTER_IMAGE);
@@ -632,7 +631,7 @@ describe('DiskII', () => {
 
         it('reads several FF sync bytes', () => {
             let cycles: number = 0;
-            mocked(mockApple2IO).cycles.mockImplementation(() => cycles);
+            (mockApple2IO.cycles as jest.Mock).mockImplementation(() => cycles);
 
             const diskII = new DiskII(mockApple2IO, callbacks);
             diskII.setBinary(1, 'DOS 3.3 System Master', 'woz', DOS33_SYSTEM_MASTER_IMAGE);
@@ -665,7 +664,7 @@ describe('DiskII', () => {
 
         it('reads random garbage on uninitialized tracks', () => {
             let cycles: number = 0;
-            mocked(mockApple2IO).cycles.mockImplementation(() => cycles);
+            (mockApple2IO.cycles as jest.Mock).mockImplementation(() => cycles);
 
             const diskII = new DiskII(mockApple2IO, callbacks);
             diskII.setBinary(1, 'DOS 3.3 System Master', 'woz', DOS33_SYSTEM_MASTER_IMAGE);
@@ -761,7 +760,7 @@ class TestDiskReader {
     diskII: DiskII;
 
     constructor(driveNo: DriveNumber, label: string, image: ArrayBufferLike, apple2IO: Apple2IO, callbacks: Callbacks) {
-        mocked(apple2IO).cycles.mockImplementation(() => this.cycles);
+        (apple2IO.cycles as jest.Mock).mockImplementation(() => this.cycles);
 
         this.diskII = new DiskII(apple2IO, callbacks);
         this.diskII.setBinary(driveNo, label, 'woz', image);
