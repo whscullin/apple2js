@@ -22,6 +22,17 @@ const FAKE_FILE_HANDLE = {
     isDirectory: false,
 } as const;
 
+const TEST_FILE_TYPES = [
+    {
+        description: 'Test description 1',
+        accept: { 'mime1': ['.ext1', '.ext2'] }
+    },
+    {
+        description: 'Test description 2',
+        accept: { 'mime2': ['.ext1', '.ext2'] }
+    }];
+
+
 const NOP = () => { /* do nothing */ };
 
 // eslint-disable-next-line no-undef
@@ -42,6 +53,13 @@ describe('FileChooser', () => {
 
             const inputElement = await screen.findByRole('button') as HTMLInputElement;
             expect(inputElement.type).toBe('file');
+        });
+
+        it('should pass the correct MIME types and file extensions to the picker', async () => {
+            const onChange = jest.fn();
+            render(<FileChooser control='input' onChange={onChange} accept={TEST_FILE_TYPES} />);
+            const inputElement = await screen.findByRole('button') as HTMLInputElement;
+            expect(inputElement.accept).toBe('.ext1,.ext2');
         });
 
         it('should fire a callback with empty list when no files are selected', async () => {
@@ -95,6 +113,23 @@ describe('FileChooser', () => {
             const { container } = render(<FileChooser control='picker' onChange={NOP} />);
 
             expect(container).not.toBeNull();
+        });
+
+        it('should pass the correct MIME types and file extensions to the picker', async () => {
+            mockFilePicker.mockResolvedValueOnce([]);
+            const onChange = jest.fn();
+            render(<FileChooser control='picker' onChange={onChange} accept={TEST_FILE_TYPES} />);
+
+            fireEvent.click(await screen.findByText('Choose File'));
+
+            await waitFor(() => {
+                expect(mockFilePicker).toBeCalledWith<[OpenFilePickerOptions]>({
+                    'excludeAcceptAllOption': true,
+                    'multiple': false,
+                    'types': TEST_FILE_TYPES
+                });
+                expect(onChange).toBeCalledWith([]);
+            });
         });
 
         it('should fire a callback with empty list when no files are selected', async () => {
