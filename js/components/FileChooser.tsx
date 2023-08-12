@@ -60,17 +60,24 @@ const InputFileChooser = ({
         //
         // which allows pretty generous interpretations.
         //
-        // Update(whscullin) - Adding the MIME type seems to block loading anything
-        // from iCloud when using Safari, so reverting to simply using extensions for
-        // now.
-        const newAccept = [];
+        // However, it turns out that Safari does not like MIME types when
+        // reading from iCloud. It may be related to:
+        //
+        // https://bugs.webkit.org/show_bug.cgi?id=244666
+        //
+        // or it could be related to some permissions issue with iCloud. For
+        // the moment, not adding the MIME type is sufficient.
+        const newAccept: string[] = [];
         for (const type of accept) {
-            for (const [/* typeString */, suffixes] of Object.entries(type.accept)) {
+            for (let [/* typeString */, suffixes] of Object.entries(type.accept)) {
                 // newAccept.push(typeString);
-                if (Array.isArray(suffixes)) {
-                    newAccept.push(...suffixes);
-                } else {
-                    newAccept.push(suffixes);
+                if (!Array.isArray(suffixes)) {
+                    suffixes = [suffixes];
+                }
+                for (const suffix of suffixes) {
+                    if (!newAccept.includes(suffix)) {
+                        newAccept.push(suffix);
+                    }
                 }
             }
         }
@@ -157,6 +164,10 @@ const FilePickerChooser = ({
  * Using `window.showOpenFilePicker` has the advantage of allowing read/write
  * access to the file, whereas the regular input element only gives read
  * access.
+ * 
+ * The FileChooser takes an optional `accept` parameter that specifies which
+ * types of files can be opened. The parameter is a map of MIME type to file
+ * extension. If the MIME type is the empty string, t
  */
 export const FileChooser = ({
     onChange,
