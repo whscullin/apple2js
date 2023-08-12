@@ -677,28 +677,35 @@ describe('DiskII', () => {
             diskII.ioSwitch(0x82);  // coil 1 off
             diskII.ioSwitch(0x8e);  // read mode
 
-            // Read 5 nibbles
-            const nibbles: byte[] = [];
-            let read = false;
-            while (nibbles.length < 5) {
-                cycles++;
-                const nibble = diskII.ioSwitch(0x8c);  // read data
-                const qa = nibble & 0x80;
-                if (qa && !read) {
-                    nibbles.push(nibble);
-                    read = true;
+            // Try this test 5 times because we could get unlucky.
+            let failures = 0;
+            for (let i = 0; i < 5; i++) {
+                // Read 5 nibbles
+                const nibbles: byte[] = [];
+                let read = false;
+                while (nibbles.length < 5) {
+                    cycles++;
+                    const nibble = diskII.ioSwitch(0x8c);  // read data
+                    const qa = nibble & 0x80;
+                    if (qa && !read) {
+                        nibbles.push(nibble);
+                        read = true;
+                    }
+                    if (!qa && read) {
+                        read = false;
+                    }
                 }
-                if (!qa && read) {
-                    read = false;
+                // Test that the first doesn't equal any of the others.
+                // (Yes, this test could fail with some bad luck.)
+                let equal = false;
+                for (let i = 1; i < 5; i++) {
+                    equal ||= nibbles[0] === nibbles[i];
+                }
+                if (equal) {
+                    failures++;
                 }
             }
-            // Test that the first doesn't equal any of the others.
-            // (Yes, this test could fail with some bad luck.)
-            let equal = false;
-            for (let i = 1; i < 5; i++) {
-                equal ||= nibbles[0] === nibbles[i];
-            }
-            expect(equal).not.toBeTruthy();
+            expect(failures).toBeLessThan(2);
         });
 
         it('disk spins at a consistent speed', () => {
