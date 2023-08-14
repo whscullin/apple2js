@@ -12,7 +12,7 @@ type Annunciators = Record<annunciator, boolean>;
 
 export interface Apple2IOState {
     annunciators: Annunciators;
-    cards: Array<Card | null>;
+    cards: Array<unknown>;
 }
 
 export type SampleListener = (sample: number[]) => void;
