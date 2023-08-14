@@ -27,7 +27,7 @@ class Address {
     lo: byte;
     hi: byte;
 
-    constructor(private cpu: CPU6502, a: byte | word, b?: byte) {
+    constructor(private cpu: CPU6502, a: number, b?: byte) {
         if (b === undefined) {
             this.lo = a & 0xff;
             this.hi = a >> 8;

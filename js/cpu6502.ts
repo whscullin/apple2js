@@ -814,7 +814,7 @@ export default class CPU6502 {
     };
 
     dec = (readAddrFn: ReadAddrFn) => {
-        const addr = readAddrFn({ inc: true});
+        const addr = readAddrFn({ inc: true });
         const oldVal = this.readByte(addr);
         this.workCycle(addr, oldVal);
         const val = this.decrement(oldVal);
@@ -1013,7 +1013,7 @@ export default class CPU6502 {
         }
     };
 
-    brc = (f: flag|0) => {
+    brc = (f: flag | 0) => {
         const off = this.readBytePC(); // changes pc
         if ((f & this.sr) === 0) {
             this.readByte(this.pc);
@@ -1198,7 +1198,7 @@ export default class CPU6502 {
 
     /* DCM = DEC + CMP */
     dcm = (readAddrFn: ReadAddrFn) => {
-        const addr = readAddrFn({ inc: true});
+        const addr = readAddrFn({ inc: true });
         const oldVal = this.readByte(addr);
         this.workCycle(addr, oldVal);
         const val = this.decrement(oldVal);
@@ -1208,7 +1208,7 @@ export default class CPU6502 {
 
     /* INS = INC + SBC */
     ins = (readAddrFn: ReadAddrFn) => {
-        const addr = readAddrFn({ inc: true});
+        const addr = readAddrFn({ inc: true });
         const oldVal = this.readByte(addr);
         this.workCycle(addr, oldVal);
         const val = this.increment(oldVal);
@@ -1238,7 +1238,7 @@ export default class CPU6502 {
             }
             if (ah + (ah & 0x1) > 5) {
                 c = true;
-                this.ar =((this.ar + 0x60) & 0xff);
+                this.ar = ((this.ar + 0x60) & 0xff);
             }
         }
         this.setFlag(flags.V, v);
@@ -1539,7 +1539,7 @@ export default class CPU6502 {
     public write(a: number, b: number, c?: byte): void {
         let page, off, val;
 
-        if (c !== undefined ) {
+        if (c !== undefined) {
             page = a & 0xff;
             off = b & 0xff;
             val = c & 0xff;
@@ -1972,18 +1972,18 @@ export default class CPU6502 {
         0x73: { name: 'RRA', fn: () => this.rra(this.readAddrZeroPageIndirectY), mode: 'zeroPageIndirectY' },
 
         // AXS
-        0x8F: { name: 'AXS', fn: () => this.axs(this.writeAbsolute), mode: 'absolute'},
-        0x87: { name: 'AXS', fn: () => this.axs(this.writeZeroPage), mode: 'zeroPage'},
-        0x97: { name: 'AXS', fn: () => this.axs(this.writeZeroPageY), mode: 'zeroPageY'},
-        0x83: { name: 'AXS', fn: () => this.axs(this.writeZeroPageXIndirect), mode: 'zeroPageXIndirect'},
+        0x8F: { name: 'AXS', fn: () => this.axs(this.writeAbsolute), mode: 'absolute' },
+        0x87: { name: 'AXS', fn: () => this.axs(this.writeZeroPage), mode: 'zeroPage' },
+        0x97: { name: 'AXS', fn: () => this.axs(this.writeZeroPageY), mode: 'zeroPageY' },
+        0x83: { name: 'AXS', fn: () => this.axs(this.writeZeroPageXIndirect), mode: 'zeroPageXIndirect' },
 
         // LAX
-        0xAF: { name: 'LAX', fn: () => this.lax(this.readAbsolute), mode: 'absolute'},
-        0xBF: { name: 'LAX', fn: () => this.lax(this.readAbsoluteY), mode: 'absoluteY'},
-        0xA7: { name: 'LAX', fn: () => this.lax(this.readZeroPage), mode: 'zeroPage'},
-        0xB7: { name: 'LAX', fn: () => this.lax(this.readZeroPageY), mode: 'zeroPageY'},
-        0xA3: { name: 'LAX', fn: () => this.lax(this.readZeroPageXIndirect), mode: 'zeroPageXIndirect'},
-        0xB3: { name: 'LAX', fn: () => this.lax(this.readZeroPageIndirectY), mode: 'zeroPageIndirectY'},
+        0xAF: { name: 'LAX', fn: () => this.lax(this.readAbsolute), mode: 'absolute' },
+        0xBF: { name: 'LAX', fn: () => this.lax(this.readAbsoluteY), mode: 'absoluteY' },
+        0xA7: { name: 'LAX', fn: () => this.lax(this.readZeroPage), mode: 'zeroPage' },
+        0xB7: { name: 'LAX', fn: () => this.lax(this.readZeroPageY), mode: 'zeroPageY' },
+        0xA3: { name: 'LAX', fn: () => this.lax(this.readZeroPageXIndirect), mode: 'zeroPageXIndirect' },
+        0xB3: { name: 'LAX', fn: () => this.lax(this.readZeroPageIndirectY), mode: 'zeroPageIndirectY' },
 
         // DCM
         0xCF: { name: 'DCM', fn: () => this.dcm(this.readAddrAbsolute), mode: 'absolute' },
@@ -2066,27 +2066,27 @@ export default class CPU6502 {
         0xF2: { name: 'HLT', fn: () => this.hlt(this.readNopImplied), mode: 'implied' },
 
         // TAS
-        0x9B: { name: 'TAS', fn: () => this.tas(this.readAddrAbsoluteY), mode: 'absoluteY'},
+        0x9B: { name: 'TAS', fn: () => this.tas(this.readAddrAbsoluteY), mode: 'absoluteY' },
 
         // SAY
-        0x9C: { name: 'SAY', fn: () => this.say(this.readAddrAbsoluteX), mode: 'absoluteX'},
+        0x9C: { name: 'SAY', fn: () => this.say(this.readAddrAbsoluteX), mode: 'absoluteX' },
 
         // XAS
-        0x9E: { name: 'XAS', fn: () => this.xas(this.readAddrAbsoluteY), mode: 'absoluteY'},
+        0x9E: { name: 'XAS', fn: () => this.xas(this.readAddrAbsoluteY), mode: 'absoluteY' },
 
         // AXA
-        0x9F: { name: 'AXA', fn: () => this.axa(this.readAddrAbsoluteY), mode: 'absoluteY'},
-        0x93: { name: 'AXA', fn: () => this.axa(this.readAddrZeroPageIndirectY), mode: 'zeroPageIndirectY'},
+        0x9F: { name: 'AXA', fn: () => this.axa(this.readAddrAbsoluteY), mode: 'absoluteY' },
+        0x93: { name: 'AXA', fn: () => this.axa(this.readAddrZeroPageIndirectY), mode: 'zeroPageIndirectY' },
 
         // ANC
         0x2b: { name: 'ANC', fn: () => this.anc(this.readImmediate), mode: 'immediate' },
         0x0b: { name: 'ANC', fn: () => this.anc(this.readImmediate), mode: 'immediate' },
 
         // LAS
-        0xBB: { name: 'LAS', fn: () => this.las(this.readAbsoluteY), mode: 'absoluteY'},
+        0xBB: { name: 'LAS', fn: () => this.las(this.readAbsoluteY), mode: 'absoluteY' },
 
         // SBC
-        0xEB: { name: 'SBC', fn: () => this.sbc(this.readImmediate), mode: 'immediate'}
+        0xEB: { name: 'SBC', fn: () => this.sbc(this.readImmediate), mode: 'immediate' }
     };
 
     OPS_ROCKWELL_65C02: Instructions = {

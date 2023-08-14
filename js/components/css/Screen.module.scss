@@ -8,16 +8,17 @@
 
 :global(.full-page) .display {
     width: 100vw;
-    height: 68.5714vw; /* 384px / 560px * 100% */
+    height: 68.5714vw;
+
+    /* 384px / 560px * 100% */
     max-height: 100vh;
-    max-width: 145.83vh; /* 560px / 384px * 100% */
+    max-width: 145.83vh;
+
+    /* 560px / 384px * 100% */
     padding: 0;
     border: 0;
     position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    inset: 0;
     justify-content: center;
     align-items: center;
     margin: auto !important;
@@ -49,30 +50,23 @@
     display: block;
     pointer-events: none;
     background-image:
-        repeating-linear-gradient(
-            to bottom,
-            transparent 0,
-            transparent 1px,
-            rgb(0 0 0 / 50%) 1px,
-            rgb(0 0 0 / 50%) 2px
-        );
+        repeating-linear-gradient(to bottom,
+        transparent 0,
+        transparent 1px,
+        rgb(0 0 0 / 50%) 1px,
+        rgb(0 0 0 / 50%) 2px);
     content: "";
     position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
+    inset: 0;
 }
 
 :global(.full-page) :global(.scanlines)::after {
     background-image:
-        repeating-linear-gradient(
-            to bottom,
-            transparent 0,
-            transparent 0.25vh,
-            rgb(0 0 0 / 50%) 0.25vh,
-            rgb(0 0 0 / 50%) 0.5vh
-        );
+        repeating-linear-gradient(to bottom,
+        transparent 0,
+        transparent 0.25vh,
+        rgb(0 0 0 / 50%) 0.25vh,
+        rgb(0 0 0 / 50%) 0.5vh);
 }
 
 .screen {

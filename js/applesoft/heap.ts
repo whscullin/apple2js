@@ -10,7 +10,7 @@ import {
     VARTAB
 } from './zeropage';
 
-export type ApplesoftValue = word | number | string | ApplesoftArray;
+export type ApplesoftValue = number | string | ApplesoftArray;
 export type ApplesoftArray = Array<ApplesoftValue>;
 
 export enum VariableType {
@@ -29,7 +29,7 @@ export interface ApplesoftVariable {
 
 
 export class ApplesoftHeap {
-    constructor(private mem: Memory) {}
+    constructor(private mem: Memory) { }
 
     private readByte(addr: word): byte {
         const page = addr >> 8;

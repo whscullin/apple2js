@@ -1,4 +1,4 @@
-import { byte, memory, word } from './types';
+import { byte, memory } from './types';
 
 /*eslint no-console: 0*/
 
@@ -66,7 +66,7 @@ export function debug(...args: unknown[]): void {
  * @param n the number of nibbles. If `n` is missing, it is guessed from the value
  *     of `v`. If `v` < 256, it is assumed to be 2 nibbles, otherwise 4.
  */
-export function toHex(v: byte | word | number, n?: number) {
+export function toHex(v: number, n?: number) {
     if (!n) {
         n = v < 256 ? 2 : 4;
     }

@@ -12,7 +12,7 @@ type Annunciators = Record<annunciator, boolean>;
 
 export interface Apple2IOState {
     annunciators: Annunciators;
-    cards: Array<unknown | null>;
+    cards: Array<Card | null>;
 }
 
 export type SampleListener = (sample: number[]) => void;
@@ -344,7 +344,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
                 slot = page & 0x0f;
                 card = this._slot[slot];
                 if (this._auxRom !== card) {
-                // _debug('Setting auxRom to slot', slot);
+                    // _debug('Setting auxRom to slot', slot);
                     this._auxRom = card;
                 }
                 if (card) {
@@ -380,7 +380,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
                 slot = page & 0x0f;
                 card = this._slot[slot];
                 if (this._auxRom !== card) {
-                // _debug('Setting auxRom to slot', slot);
+                    // _debug('Setting auxRom to slot', slot);
                     this._auxRom = card;
                 }
                 if (card) {

@@ -352,7 +352,7 @@ enum LookingFor {
 }
 
 export class FindSectorError extends Error {
-    constructor(track: byte, sector: byte, e: unknown | Error | string) {
+    constructor(track: byte, sector: byte, e: unknown) {
         super(`Error finding track ${track} (${toHex(track)}), sector ${sector} (${toHex(sector)}): `
             + (e instanceof Error
                 ? `${e.message}`
@@ -501,7 +501,7 @@ export class InvalidChecksum extends Error {
 }
 
 export class ReadSectorError extends Error {
-    constructor(track: byte, sector: byte, e: unknown | Error) {
+    constructor(track: byte, sector: byte, e: unknown) {
         super(`Error reading track ${track} (${toHex(track)}), sector ${sector} (${toHex(sector)}): `
             + (e instanceof Error
                 ? `${e.message}`

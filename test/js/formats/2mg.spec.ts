@@ -63,32 +63,32 @@ describe('2mg format', () => {
         });
 
         it('throws if the header length is invalid', () => {
-            expect(() => read2MGHeader(INVALID_HEADER_LENGTH_IMAGE.buffer)).toThrowError(/header length/);
+            expect(() => read2MGHeader(INVALID_HEADER_LENGTH_IMAGE.buffer)).toThrow(/header length/);
         });
 
         it('throws if block count is not correct for ProDOS image', () => {
             const image = new Uint8Array(VALID_PRODOS_IMAGE);
             image[0x14] = image[0x14] + 1;
-            expect(() => read2MGHeader(image.buffer)).toThrowError(/blocks/);
+            expect(() => read2MGHeader(image.buffer)).toThrow(/blocks/);
         });
 
         it('throws if comment comes before end of disk data', () => {
             const image = new Uint8Array(VALID_PRODOS_IMAGE);
             image[0x20] = 1;
-            expect(() => read2MGHeader(image.buffer)).toThrowError(/is before/);
+            expect(() => read2MGHeader(image.buffer)).toThrow(/is before/);
         });
 
         it('throws if creator data comes before end of disk data', () => {
             const image = new Uint8Array(VALID_PRODOS_IMAGE);
             image[0x28] = 1;
-            expect(() => read2MGHeader(image.buffer)).toThrowError(/is before/);
+            expect(() => read2MGHeader(image.buffer)).toThrow(/is before/);
         });
 
         it('throws if data length is too big for file', () => {
             const image = new Uint8Array(VALID_PRODOS_IMAGE);
             image[0x1D] += 2;  // Increment byte length by 512
             image[0x14] += 1;  // Increment block length by 1
-            expect(() => read2MGHeader(image.buffer)).toThrowError(/extends beyond/);
+            expect(() => read2MGHeader(image.buffer)).toThrow(/extends beyond/);
         });
 
         it('returns a header for a valid ProDOS image', () => {
@@ -125,7 +125,7 @@ describe('2mg format', () => {
                 offset: 64,
                 volume: 0,
             };
-            expect(() => create2MGFragments(headerData, { blocks: 63 })).toThrowError(/does not match/);
+            expect(() => create2MGFragments(headerData, { blocks: 63 })).toThrow(/does not match/);
         });
 
         it('throws an error if not a ProDOS volume', () => {
@@ -137,7 +137,7 @@ describe('2mg format', () => {
                 offset: 64,
                 volume: 254,
             };
-            expect(() => create2MGFragments(headerData, { blocks: 280 })).toThrowError(/not supported/);
+            expect(() => create2MGFragments(headerData, { blocks: 280 })).toThrow(/not supported/);
         });
 
         it('uses defaults', () => {

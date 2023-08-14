@@ -67,9 +67,9 @@ const OFFSETS = {
 } as const;
 
 const FLAGS = {
-    READ_ONLY:    0x80000000,
+    READ_ONLY: 0x80000000,
     VOLUME_VALID: 0x00000100,
-    VOLUME_MASK:  0x000000FF
+    VOLUME_MASK: 0x000000FF
 } as const;
 
 export enum FORMAT {
@@ -101,7 +101,7 @@ export function read2MGHeader(rawData: ArrayBuffer): HeaderData {
     if (headerLength !== 64) {
         throw new Error(`2mg header length is incorrect ${headerLength} !== 64`);
     }
-    const format = prefix.getInt32(OFFSETS.FORMAT, true);
+    const format = prefix.getInt32(OFFSETS.FORMAT, true) as FORMAT;
     const flags = prefix.getInt32(OFFSETS.FLAGS, true);
     const blocks = prefix.getInt32(OFFSETS.BLOCKS, true);
     const offset = prefix.getInt32(OFFSETS.DATA_OFFSET, true);
@@ -177,7 +177,7 @@ export function read2MGHeader(rawData: ArrayBuffer): HeaderData {
  * @returns 2mg prefix and suffix for creating a 2mg disk image
  */
 
-export const create2MGFragments = (headerData: HeaderData | null, { blocks } : { blocks: number }) => {
+export const create2MGFragments = (headerData: HeaderData | null, { blocks }: { blocks: number }) => {
     if (!headerData) {
         headerData = {
             bytes: blocks * 512,

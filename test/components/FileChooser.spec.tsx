@@ -69,7 +69,7 @@ describe('FileChooser', () => {
             inputElement.files = EMPTY_FILE_LIST;
             fireEvent.change(inputElement);
             await waitFor(() => {
-                expect(onChange).toBeCalledWith([]);
+                expect(onChange).toHaveBeenCalledWith([]);
             });
         });
 
@@ -123,12 +123,12 @@ describe('FileChooser', () => {
             fireEvent.click(await screen.findByText('Choose File'));
 
             await waitFor(() => {
-                expect(mockFilePicker).toBeCalledWith<[OpenFilePickerOptions]>({
+                expect(mockFilePicker).toHaveBeenCalledWith<[OpenFilePickerOptions]>({
                     'excludeAcceptAllOption': true,
                     'multiple': false,
                     'types': TEST_FILE_TYPES
                 });
-                expect(onChange).toBeCalledWith([]);
+                expect(onChange).toHaveBeenCalledWith([]);
             });
         });
 
@@ -140,8 +140,8 @@ describe('FileChooser', () => {
             fireEvent.click(await screen.findByText('Choose File'));
 
             await waitFor(() => {
-                expect(mockFilePicker).toBeCalled();
-                expect(onChange).toBeCalledWith([]);
+                expect(mockFilePicker).toHaveBeenCalled();
+                expect(onChange).toHaveBeenCalledWith([]);
             });
         });
 
@@ -153,7 +153,7 @@ describe('FileChooser', () => {
             fireEvent.click(await screen.findByText('Choose File'));
 
             await waitFor(() => {
-                expect(mockFilePicker).toBeCalled();
+                expect(mockFilePicker).toHaveBeenCalled();
                 expect(onChange).toHaveBeenCalled();
                 const handleList = onChange.mock.calls[0][0];
                 expect(handleList).toHaveLength(1);
