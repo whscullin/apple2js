@@ -1,0 +1,13 @@
+version: "2"
+services:
+  apple2js:
+    container_name: "apple2js"
+    build: .
+    #restart: always
+    environment:
+      - HOSTNAME=http://docker.localdomain:8989
+    volumes:
+      - ./:/home/node/app
+    ports:
+      - '8989:8080'
+
