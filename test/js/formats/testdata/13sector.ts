@@ -1,4 +1,5 @@
 import { memory } from 'js/types';
+import { concat } from 'js/util';
 
 function generateBytesInOrder() {
     const data: memory[][] = [];
@@ -53,3 +54,25 @@ function generateBytesByTrack() {
 }
 
 export const BYTES_BY_TRACK: memory[][] = generateBytesByTrack();
+
+function toImage(disk: memory[][]) {
+    const tracks: Uint8Array[] = [];
+    for (let t = 0; t < disk.length; t++) {
+        const track = concat(...disk[t]);
+        tracks.push(track);
+    }
+    return concat(...tracks);
+}
+
+export const BYTES_BY_SECTOR_IMAGE = toImage(BYTES_BY_SECTOR);
+export const BYTES_BY_TRACK_IMAGE = toImage(BYTES_BY_TRACK);
+
+function randomImage() {
+    const result = new Uint8Array(35 * 13 * 256);
+    for (let i = 0; i < result.length; i++) {
+        result[i] = Math.floor(Math.random() * 256);
+    }
+    return result;
+}
+
+export const RANDOM_IMAGE = randomImage();

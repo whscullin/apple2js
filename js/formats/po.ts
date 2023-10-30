@@ -1,7 +1,5 @@
-import { explodeSector16, PO } from './format_utils';
-import { bytify } from '../util';
-import type { byte } from '../types';
-import { NibbleDisk, DiskOptions, ENCODING_NIBBLE } from './types';
+import { NibbleDisk, DiskOptions, ENCODING_NIBBLE, TrackSectorSource } from './types';
+import { ByteArrayArrayTrackSectorSource, ByteArrayByteSource, ByteTrackSectorSource, ProdosOrderedTrackSectorSource, TrackSector6x2NibbleTrackSource } from './sources';
 
 /**
  * Returns a `Disk` object from ProDOS-ordered image data.
@@ -19,24 +17,23 @@ export default function createDiskFromProDOS(options: DiskOptions) {
         readOnly: readOnly || false,
     };
 
-    for (let physical_track = 0; physical_track < 35; physical_track++) {
-        let track: byte[] = [];
-        for (let physical_sector = 0; physical_sector < 16; physical_sector++) {
-            const prodos_sector = PO[physical_sector];
-            let sector;
-            if (rawData) {
-                const off = (16 * physical_track + prodos_sector) * 256;
-                sector = new Uint8Array(rawData.slice(off, off + 256));
-            } else if (data) {
-                sector = data[physical_track][prodos_sector];
-            } else {
-                throw new Error('Requires data or rawData');
-            }
-            track = track.concat(
-                explodeSector16(volume, physical_track, physical_sector, sector)
-            );
-        }
-        disk.tracks[physical_track] = bytify(track);
+    let trackSectorSource: TrackSectorSource;
+    if (rawData) {
+        trackSectorSource =
+            new ByteTrackSectorSource(
+                new ByteArrayByteSource(new Uint8Array(rawData)));
+    } else if (data) {
+        trackSectorSource = new ByteArrayArrayTrackSectorSource(data);
+    } else {
+        throw new Error('Requires data or rawData');
+    }
+
+    const nibbleTrackSource =
+        new TrackSector6x2NibbleTrackSource(
+            new ProdosOrderedTrackSectorSource(trackSectorSource), volume);
+
+    for (let physical_track = 0; physical_track < nibbleTrackSource.numTracks(); physical_track++) {
+        disk.tracks[physical_track] = nibbleTrackSource.read(physical_track);
     }
 
     return disk;
