@@ -72,6 +72,10 @@ export class System implements OptionHandler {
                                 value: 'apple2pig',
                                 name: 'Apple ][+ (pig font)'
                             },
+                            {
+                                value: 'pravetz82',
+                                name: 'Pravetz 82'
+                            },
                         ]
                     },
                 ]

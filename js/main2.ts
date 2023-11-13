@@ -46,6 +46,10 @@ switch (romVersion) {
         rom = 'fpbasic';
         characterRom = 'apple2lc_char';
         break;
+    case 'pravetz82':
+        rom = 'pravetz82';
+        characterRom = 'apple2_char';
+        break;
     default:
         rom = 'fpbasic';
         characterRom = 'apple2_char';
