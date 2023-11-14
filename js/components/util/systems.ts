@@ -67,5 +67,10 @@ export const systemTypes: Record<string, Partial<SystemType>> = {
         rom: 'fpbasic',
         characterRom: 'apple2_char',
         e: false,
+    },
+    pravetz82: {
+        rom: 'pravetz82',
+        characterRom: 'apple2_char',
+        e: false,
     }
 } as const;
