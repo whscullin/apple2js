@@ -27,7 +27,7 @@ import { TXTTAB } from 'js/applesoft/zeropage';
 import { debug } from '../util';
 import { Apple2, Stats, State as Apple2State } from '../apple2';
 import DiskII from '../cards/disk2';
-import CPU6502 from '../cpu6502';
+import { CPU6502 } from '@whscullin/cpu6502';
 import { VideoModes } from '../videomodes';
 import Apple2IO from '../apple2io';
 import Printer from './printer';

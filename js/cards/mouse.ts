@@ -1,5 +1,5 @@
 import { Card, byte, word, Restorable } from '../types';
-import CPU6502, { CpuState } from '../cpu6502';
+import { CPU6502, CpuState } from '@whscullin/cpu6502';
 import { debug } from '../util';
 import { rom } from '../roms/cards/mouse';
 

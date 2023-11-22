@@ -3,7 +3,7 @@ import fs from 'fs';
 
 import Apple2IO from 'js/apple2io';
 import DiskII, { Callbacks } from 'js/cards/disk2';
-import CPU6502 from 'js/cpu6502';
+import { CPU6502 } from '@whscullin/cpu6502';
 import { DriveNumber, NibbleDisk, WozDisk } from 'js/formats/types';
 import { byte } from 'js/types';
 import { toHex } from 'js/util';

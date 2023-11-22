@@ -72,7 +72,8 @@
     "y18n": "^4.0.1"
   },
   "dependencies": {
-    "apple2shader": "0.0.4",
+    "@whscullin/cpu6502": "file:submodules/cpu6502",
+    "apple2shader": "file:submodules/apple2shader",
     "classnames": "^2.3.1",
     "micromodal": "^0.4.2",
     "preact": "^10.7.1"

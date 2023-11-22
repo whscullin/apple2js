@@ -1,4 +1,4 @@
-import type { CpuState } from 'js/cpu6502';
+import type { CpuState } from '@whscullin/cpu6502';
 import { toHex } from 'js/util';
 import { dumpStatusRegister } from 'js/debugger';
 

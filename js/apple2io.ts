@@ -1,4 +1,4 @@
-import CPU6502 from './cpu6502';
+import { CPU6502 } from '@whscullin/cpu6502';
 import { Card, Memory, MemoryPages, TapeData, byte, Restorable } from './types';
 import { debug, garbage } from './util';
 import { VideoModes } from './videomodes';

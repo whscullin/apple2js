@@ -1,4 +1,4 @@
-import CPU6502 from '../../js/cpu6502';
+import { CPU6502 } from '@whscullin/cpu6502';
 import Debugger, { DebuggerContainer } from '../../js/debugger';
 import { MemoryPages } from '../../js/types';
 import { TestMemory } from '../util/memory';

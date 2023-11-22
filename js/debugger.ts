@@ -1,7 +1,7 @@
 import { debug, toHex } from './util';
 import { byte, word } from './types';
 
-import CPU6502, { DebugInfo, flags, sizes } from './cpu6502';
+import { CPU6502, DebugInfo, flags, sizes } from '@whscullin/cpu6502';
 
 export interface DebuggerContainer {
     run: () => void;
