@@ -14,7 +14,7 @@ export default function createDiskFromNibble(options: DiskOptions): NibbleDisk {
         metadata: { name, side },
         volume: volume || 254,
         readOnly: readOnly || false,
-        tracks: []
+        tracks: [],
     };
 
     for (let t = 0; t < 35; t++) {

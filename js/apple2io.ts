@@ -33,12 +33,12 @@ const LOC = {
     SETHIRES: 0x57, // select Hi-res
     CLRAN0: 0x58, // Set annunciator-0 output to 0
     SETAN0: 0x59, // Set annunciator-0 output to 1
-    CLRAN1: 0x5A, // Set annunciator-1 output to 0
-    SETAN1: 0x5B, // Set annunciator-1 output to 1
-    CLRAN2: 0x5C, // Set annunciator-2 output to 0
-    SETAN2: 0x5D, // Set annunciator-2 output to 1
-    CLRAN3: 0x5E, // Set annunciator-3 output to 0
-    SETAN3: 0x5F, // Set annunciator-3 output to 1
+    CLRAN1: 0x5a, // Set annunciator-1 output to 0
+    SETAN1: 0x5b, // Set annunciator-1 output to 1
+    CLRAN2: 0x5c, // Set annunciator-2 output to 0
+    SETAN2: 0x5d, // Set annunciator-2 output to 1
+    CLRAN3: 0x5e, // Set annunciator-3 output to 0
+    SETAN3: 0x5f, // Set annunciator-3 output to 1
     TAPEIN: 0x60, // bit 7: data from cassette
     PB0: 0x61, // game Pushbutton 0 / open apple (command) key data
     PB1: 0x62, // game Pushbutton 1 / closed apple (option) key data
@@ -51,7 +51,9 @@ const LOC = {
     ACCEL: 0x74, // CPU Speed control
 };
 
-export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> {
+export default class Apple2IO
+    implements MemoryPages, Restorable<Apple2IOState>
+{
     private _slot: Array<Card | null> = new Array<Card | null>(7).fill(null);
     private _auxRom: Memory | null = null;
 
@@ -85,7 +87,10 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
     private _tapeNext: number = 0;
     private _tapeCurrent = false;
 
-    constructor(private readonly cpu: CPU6502, private readonly vm: VideoModes) {
+    constructor(
+        private readonly cpu: CPU6502,
+        private readonly vm: VideoModes
+    ) {
         this.init();
     }
 
@@ -99,8 +104,16 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
 
     _tick() {
         const now = this.cpu.getCycles();
-        const phase = this._didAudio ? (this._phase > 0 ? this._high : this._low) : 0.0;
-        for (; this._sampleTime < now; this._sampleTime += this._cycles_per_sample) {
+        const phase = this._didAudio
+            ? this._phase > 0
+                ? this._high
+                : this._low
+            : 0.0;
+        for (
+            ;
+            this._sampleTime < now;
+            this._sampleTime += this._cycles_per_sample
+        ) {
             this._sample[this._sampleIdx++] = phase;
             if (this._sampleIdx === this._sample_size) {
                 if (this._audioListener) {
@@ -114,7 +127,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
     }
 
     _calcSampleRate() {
-        this._cycles_per_sample = this._khz * 1000 / this._rate;
+        this._cycles_per_sample = (this._khz * 1000) / this._rate;
     }
 
     _updateKHz(khz: number) {
@@ -200,16 +213,16 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
                 result = this._button[2] ? 0x80 : 0;
                 break;
             case LOC.PADDLE0:
-                result = (delta < (this._paddle[0] * 2756) ? 0x80 : 0x00);
+                result = delta < this._paddle[0] * 2756 ? 0x80 : 0x00;
                 break;
             case LOC.PADDLE1:
-                result = (delta < (this._paddle[1] * 2756) ? 0x80 : 0x00);
+                result = delta < this._paddle[1] * 2756 ? 0x80 : 0x00;
                 break;
             case LOC.PADDLE2:
-                result = (delta < (this._paddle[2] * 2756) ? 0x80 : 0x00);
+                result = delta < this._paddle[2] * 2756 ? 0x80 : 0x00;
                 break;
             case LOC.PADDLE3:
-                result = (delta < (this._paddle[3] * 2756) ? 0x80 : 0x00);
+                result = delta < this._paddle[3] * 2756 ? 0x80 : 0x00;
                 break;
             case LOC.ACCEL:
                 if (val !== undefined) {
@@ -225,13 +238,12 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
                 if (this._tapeOffset < this._tape.length) {
                     this._tapeCurrent = this._tape[this._tapeOffset][1];
                     while (now >= this._tapeNext) {
-                        if ((this._tapeOffset % 1000) === 0) {
+                        if (this._tapeOffset % 1000 === 0) {
                             debug(`Read ${this._tapeOffset / 1000}`);
                         }
                         this._tapeCurrent = this._tape[this._tapeOffset][1];
                         this._tapeNext += this._tape[this._tapeOffset++][0];
                     }
-
                 }
 
                 result = this._tapeCurrent ? 0x80 : 0x00;
@@ -344,7 +356,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
                 slot = page & 0x0f;
                 card = this._slot[slot];
                 if (this._auxRom !== card) {
-                // _debug('Setting auxRom to slot', slot);
+                    // _debug('Setting auxRom to slot', slot);
                     this._auxRom = card;
                 }
                 if (card) {
@@ -380,7 +392,7 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
                 slot = page & 0x0f;
                 card = this._slot[slot];
                 if (this._auxRom !== card) {
-                // _debug('Setting auxRom to slot', slot);
+                    // _debug('Setting auxRom to slot', slot);
                     this._auxRom = card;
                 }
                 if (card) {
@@ -399,13 +411,15 @@ export default class Apple2IO implements MemoryPages, Restorable<Apple2IOState> 
         // TODO vet more potential state
         return {
             annunciators: this._annunciators,
-            cards: this._slot.map((card) => card ? card.getState() : null)
+            cards: this._slot.map((card) => (card ? card.getState() : null)),
         };
     }
 
     setState(state: Apple2IOState) {
         this._annunciators = state.annunciators;
-        state.cards.map((cardState, idx) => this._slot[idx]?.setState(cardState));
+        state.cards.map(
+            (cardState, idx) => this._slot[idx]?.setState(cardState)
+        );
     }
 
     setSlot(slot: slot, card: Card) {

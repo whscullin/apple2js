@@ -41,9 +41,7 @@ export interface LoresPage extends VideoPage {
     getText: () => string;
 }
 
-export interface HiresPage extends VideoPage {
-
-}
+export interface HiresPage extends VideoPage {}
 
 export interface VideoModes extends Restorable<VideoModesState> {
     textMode: boolean;

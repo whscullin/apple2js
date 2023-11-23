@@ -12,18 +12,20 @@ export interface DebuggerContainer {
 type symbols = { [key: number]: string };
 type breakpointFn = (info: DebugInfo) => boolean;
 
-const alwaysBreak = (_info: DebugInfo) => { return true; };
+const alwaysBreak = (_info: DebugInfo) => {
+    return true;
+};
 
 export const dumpStatusRegister = (sr: byte) =>
     [
-        (sr & flags.N) ? 'N' : '-',
-        (sr & flags.V) ? 'V' : '-',
-        (sr & flags.X) ? 'X' : '-',
-        (sr & flags.B) ? 'B' : '-',
-        (sr & flags.D) ? 'D' : '-',
-        (sr & flags.I) ? 'I' : '-',
-        (sr & flags.Z) ? 'Z' : '-',
-        (sr & flags.C) ? 'C' : '-',
+        sr & flags.N ? 'N' : '-',
+        sr & flags.V ? 'V' : '-',
+        sr & flags.X ? 'X' : '-',
+        sr & flags.B ? 'B' : '-',
+        sr & flags.D ? 'D' : '-',
+        sr & flags.I ? 'I' : '-',
+        sr & flags.Z ? 'Z' : '-',
+        sr & flags.C ? 'C' : '-',
     ].join('');
 
 export default class Debugger {
@@ -33,7 +35,10 @@ export default class Debugger {
     private breakpoints: Map<word, breakpointFn> = new Map();
     private symbols: symbols = {};
 
-    constructor(private cpu: CPU6502, private container: DebuggerContainer) {}
+    constructor(
+        private cpu: CPU6502,
+        private container: DebuggerContainer
+    ) {}
 
     stepCycles(cycles: number) {
         this.cpu.stepCyclesDebug(this.verbose ? 1 : cycles, () => {
@@ -79,8 +84,7 @@ export default class Debugger {
         this.cpu.setPC(address);
     };
 
-    isRunning = () =>
-        this.container.isRunning();
+    isRunning = () => this.container.isRunning();
 
     setVerbose = (verbose: boolean) => {
         this.verbose = verbose;
@@ -91,7 +95,10 @@ export default class Debugger {
     };
 
     getTrace = (count?: number) => {
-        return this.trace.slice(count ? -count : undefined).map(this.printDebugInfo).join('\n');
+        return this.trace
+            .slice(count ? -count : undefined)
+            .map(this.printDebugInfo)
+            .join('\n');
     };
 
     printTrace = (count?: number) => {
@@ -105,7 +112,7 @@ export default class Debugger {
         let max = 255;
         let min = 0;
         if (size) {
-            if ((sp - 3) >= (255 - size)) {
+            if (sp - 3 >= 255 - size) {
                 min = Math.max(255 - size + 1, 0);
             } else {
                 max = Math.min(sp + size - 4, 255);
@@ -117,7 +124,7 @@ export default class Debugger {
             const isSP = addr === sp ? '*' : ' ';
             const addrStr = `$${toHex(0x0100 + addr)}`;
             const valStr = toHex(this.cpu.read(0x01, addr));
-            if (!size || ((sp + size > addr) && (addr > sp - size))) {
+            if (!size || (sp + size > addr && addr > sp - size)) {
                 stack.push(`${isSP} ${addrStr} ${valStr}`);
             }
         }
@@ -134,7 +141,7 @@ export default class Debugger {
     };
 
     listBreakpoints = () => {
-        for(const [addr, fn] of this.breakpoints.entries()) {
+        for (const [addr, fn] of this.breakpoints.entries()) {
             debug(toHex(addr, 4), fn);
         }
     };
@@ -149,12 +156,13 @@ export default class Debugger {
 
         return [
             toHex(pc, 4),
-            '- ', symbol,
+            '- ',
+            symbol,
             this.dumpRegisters(info),
             ' ',
             this.dumpRawOp(cmd),
             ' ',
-            this.dumpOp(pc, cmd)
+            this.dumpOp(pc, cmd),
         ].join('');
     };
 
@@ -296,9 +304,8 @@ export default class Debugger {
         const addr = (msb << 8) | lsb;
         let val;
         let off;
-        const toHexOrSymbol = (v: word, n?: number) => (
-            this.symbols[v] || ('$' + toHex(v, n))
-        );
+        const toHexOrSymbol = (v: word, n?: number) =>
+            this.symbols[v] || '$' + toHex(v, n);
 
         let result = op.name + ' ';
         switch (op.mode) {
@@ -360,7 +367,10 @@ export default class Debugger {
                     off -= 256;
                 }
                 pc += off + 2;
-                result += `${toHexOrSymbol(val)},${toHexOrSymbol(pc, 4)} (${off})`;
+                result += `${toHexOrSymbol(val)},${toHexOrSymbol(
+                    pc,
+                    4
+                )} (${off})`;
                 break;
             default:
                 break;

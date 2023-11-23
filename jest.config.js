@@ -1,5 +1,5 @@
 module.exports = {
-    'moduleNameMapper': {
+    moduleNameMapper: {
         '^js/(.*)': '<rootDir>/js/$1',
         '^test/(.*)': '<rootDir>/test/$1',
         '\\.css$': 'identity-obj-proxy',
@@ -9,28 +9,17 @@ module.exports = {
         // https://github.com/preactjs/enzyme-adapter-preact-pure/issues/179#issuecomment-1201096897
         '^preact(/(.*)|$)': 'preact$1',
     },
-    'roots': [
-        'js/',
-        'test/',
-    ],
-    'testMatch': [
-        '**/?(*.)+(spec|test).+(ts|js|tsx)'
-    ],
-    'transform': {
+    roots: ['js/', 'test/'],
+    testMatch: ['**/?(*.)+(spec|test).+(ts|js|tsx)'],
+    transform: {
         '^.+\\.js$': 'babel-jest',
         '^.+\\.ts$': 'ts-jest',
         '^.*\\.tsx$': 'ts-jest',
     },
-    'transformIgnorePatterns': [
+    transformIgnorePatterns: [
         '/node_modules/(?!(@testing-library/preact/dist/esm)/)',
     ],
-    'setupFilesAfterEnv': [
-        '<rootDir>/test/jest-setup.ts'
-    ],
-    'coveragePathIgnorePatterns': [
-        '/node_modules/',
-        '/js/roms/',
-        '/test/',
-    ],
-    'preset': 'ts-jest',
+    setupFilesAfterEnv: ['<rootDir>/test/jest-setup.ts'],
+    coveragePathIgnorePatterns: ['/node_modules/', '/js/roms/', '/test/'],
+    preset: 'ts-jest',
 };

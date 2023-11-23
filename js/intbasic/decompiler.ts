@@ -17,12 +17,12 @@ const TOKENS: Record<byte, string> = {
     0x07: 'RUN',
     0x08: 'RUN',
     0x09: 'DEL',
-    0x0A: ',',
-    0x0B: 'NEW',
-    0x0C: 'CLR',
-    0x0D: 'AUTO',
-    0x0E: ',',
-    0x0F: 'MAN',
+    0x0a: ',',
+    0x0b: 'NEW',
+    0x0c: 'CLR',
+    0x0d: 'AUTO',
+    0x0e: ',',
+    0x0f: 'MAN',
     0x10: 'HIMEM:',
     0x11: 'LOMEM:',
     0x12: '+',
@@ -33,12 +33,12 @@ const TOKENS: Record<byte, string> = {
     0x17: '#',
     0x18: '>=',
     0x19: '>',
-    0x1A: '<=',
-    0x1B: '<>',
-    0x1C: '<',
-    0x1D: 'AND',
-    0x1E: 'OR',
-    0x1F: 'MOD',
+    0x1a: '<=',
+    0x1b: '<>',
+    0x1c: '<',
+    0x1d: 'AND',
+    0x1e: 'OR',
+    0x1f: 'MOD',
     0x20: '^',
     0x21: '+',
     0x22: '(',
@@ -49,12 +49,12 @@ const TOKENS: Record<byte, string> = {
     0x27: ',',
     0x28: '"',
     0x29: '"',
-    0x2A: '(',
-    0x2B: '!',
-    0x2C: '!',
-    0x2D: '(',
-    0x2E: 'PEEK',
-    0x2F: 'RND',
+    0x2a: '(',
+    0x2b: '!',
+    0x2c: '!',
+    0x2d: '(',
+    0x2e: 'PEEK',
+    0x2f: 'RND',
     0x30: 'SGN',
     0x31: 'ABS',
     0x32: 'PDL',
@@ -65,12 +65,12 @@ const TOKENS: Record<byte, string> = {
     0x37: 'NOT',
     0x38: '(',
     0x39: '=',
-    0x3A: '#',
-    0x3B: 'LEN(',
-    0x3C: 'ASC(',
-    0x3D: 'SCRN(',
-    0x3E: ',',
-    0x3F: '(',
+    0x3a: '#',
+    0x3b: 'LEN(',
+    0x3c: 'ASC(',
+    0x3d: 'SCRN(',
+    0x3e: ',',
+    0x3f: '(',
     0x40: '$',
     0x41: '$',
     0x42: '(',
@@ -81,12 +81,12 @@ const TOKENS: Record<byte, string> = {
     0x47: ';',
     0x48: ',',
     0x49: ',',
-    0x4A: ',',
-    0x4B: 'TEXT',
-    0x4C: 'GR',
-    0x4D: 'CALL',
-    0x4E: 'DIM',
-    0x4F: 'DIM',
+    0x4a: ',',
+    0x4b: 'TEXT',
+    0x4c: 'GR',
+    0x4d: 'CALL',
+    0x4e: 'DIM',
+    0x4f: 'DIM',
     0x50: 'TAB',
     0x51: 'END',
     0x52: 'INPUT',
@@ -97,12 +97,12 @@ const TOKENS: Record<byte, string> = {
     0x57: 'TO',
     0x58: 'STEP',
     0x59: 'NEXT',
-    0x5A: ',',
-    0x5B: 'RETURN',
-    0x5C: 'GOSUB',
-    0x5D: 'REM',
-    0x5E: 'LET',
-    0x5F: 'GOTO',
+    0x5a: ',',
+    0x5b: 'RETURN',
+    0x5c: 'GOSUB',
+    0x5d: 'REM',
+    0x5e: 'LET',
+    0x5f: 'GOTO',
     0x60: 'IF',
     0x61: 'PRINT',
     0x62: 'PRINT',
@@ -113,12 +113,12 @@ const TOKENS: Record<byte, string> = {
     0x67: 'PLOT',
     0x68: ',',
     0x69: 'HLIN',
-    0x6A: ',',
-    0x6B: 'AT',
-    0x6C: 'VLIN',
-    0x6D: ',',
-    0x6E: 'AT',
-    0x6F: 'VTAB',
+    0x6a: ',',
+    0x6b: 'AT',
+    0x6c: 'VLIN',
+    0x6d: ',',
+    0x6e: 'AT',
+    0x6f: 'VTAB',
     0x70: '=',
     0x71: '=',
     0x72: ')',
@@ -129,16 +129,16 @@ const TOKENS: Record<byte, string> = {
     0x77: 'POP',
     0x78: 'NODSP',
     0x79: 'NODSP',
-    0x7A: 'NOTRACE',
-    0x7B: 'DSP',
-    0x7C: 'DSP',
-    0x7D: 'TRACE',
-    0x7E: 'PR#',
-    0x7F: 'IN#'
+    0x7a: 'NOTRACE',
+    0x7b: 'DSP',
+    0x7c: 'DSP',
+    0x7d: 'TRACE',
+    0x7e: 'PR#',
+    0x7f: 'IN#',
 };
 
 export default class IntBasicDump {
-    constructor(private data: Uint8Array) { }
+    constructor(private data: Uint8Array) {}
 
     private readByte(addr: word) {
         return this.data[addr];
@@ -168,17 +168,33 @@ export default class IntBasicDump {
             let val = 0;
             do {
                 val = this.readByte(addr++);
-                if (!inRem && !inQuote && !isAlphaNum && val >= 0xB0 && val <= 0xB9) {
+                if (
+                    !inRem &&
+                    !inQuote &&
+                    !isAlphaNum &&
+                    val >= 0xb0 &&
+                    val <= 0xb9
+                ) {
                     str += this.readWord(addr);
                     addr += 2;
                 } else if (val < 0x80 && val > 0x01) {
                     const t = TOKENS[val];
-                    if (t.length > 1) { str += ' '; }
+                    if (t.length > 1) {
+                        str += ' ';
+                    }
                     str += t;
-                    if (t.length > 1) { str += ' '; }
-                    if (val === 0x28) { inQuote = true; }
-                    if (val === 0x29) { inQuote = false; }
-                    if (val === 0x5d) { inRem = true; }
+                    if (t.length > 1) {
+                        str += ' ';
+                    }
+                    if (val === 0x28) {
+                        inQuote = true;
+                    }
+                    if (val === 0x29) {
+                        inQuote = false;
+                    }
+                    if (val === 0x5d) {
+                        inRem = true;
+                    }
                     isAlphaNum = false;
                 } else if (val > 0x80) {
                     const char = LETTERS[val - 0x80];

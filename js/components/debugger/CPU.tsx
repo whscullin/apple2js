@@ -60,7 +60,7 @@ export const CPU = ({ apple2 }: CPUProps) => {
                 stack: debug.getStack(38),
                 trace: debug.getTrace(16),
                 zeroPage: debug.dumpPage(0),
-                memory: debug.dumpPage(parseInt(memoryPage, 16) || 0)
+                memory: debug.dumpPage(parseInt(memoryPage, 16) || 0),
             });
         }
         animationRef.current = requestAnimationFrame(animate);
@@ -83,46 +83,51 @@ export const CPU = ({ apple2 }: CPUProps) => {
         debug?.step();
     }, [debug]);
 
-    const doLoadAddress = useCallback((event: JSX.TargetedEvent<HTMLInputElement>) => {
-        setLoadAddress(event.currentTarget.value);
-    }, []);
-    const doRunCheck = useCallback((event: JSX.TargetedEvent<HTMLInputElement>) => {
-        setRun(event.currentTarget.checked);
-    }, []);
+    const doLoadAddress = useCallback(
+        (event: JSX.TargetedEvent<HTMLInputElement>) => {
+            setLoadAddress(event.currentTarget.value);
+        },
+        []
+    );
+    const doRunCheck = useCallback(
+        (event: JSX.TargetedEvent<HTMLInputElement>) => {
+            setRun(event.currentTarget.checked);
+        },
+        []
+    );
 
-    const doMemoryPage = useCallback((event: JSX.TargetedEvent<HTMLInputElement>) => {
-        setMemoryPage(event.currentTarget.value);
-    }, []);
+    const doMemoryPage = useCallback(
+        (event: JSX.TargetedEvent<HTMLInputElement>) => {
+            setMemoryPage(event.currentTarget.value);
+        },
+        []
+    );
 
-    const doChooseFile = useCallback((handles: FileSystemFileHandle[]) => {
-        if (debug && handles.length === 1) {
-            spawn(async () => {
-                const file = await handles[0].getFile();
-                let atAddress = parseInt(loadAddress, 16) || 0x800;
+    const doChooseFile = useCallback(
+        (handles: FileSystemFileHandle[]) => {
+            if (debug && handles.length === 1) {
+                spawn(async () => {
+                    const file = await handles[0].getFile();
+                    let atAddress = parseInt(loadAddress, 16) || 0x800;
 
-                const matches = file.name.match(CIDERPRESS_EXTENSION);
-                if (matches && matches.length === 3) {
-                    const [, , aux] = matches;
-                    atAddress = parseInt(aux, 16);
-                }
+                    const matches = file.name.match(CIDERPRESS_EXTENSION);
+                    if (matches && matches.length === 3) {
+                        const [, , aux] = matches;
+                        atAddress = parseInt(aux, 16);
+                    }
 
-                await loadLocalBinaryFile(file, atAddress, debug);
-                setLoadAddress(toHex(atAddress, 4));
-                if (run) {
-                    debug?.runAt(atAddress);
-                }
-            });
-        }
-    }, [debug, loadAddress, run]);
+                    await loadLocalBinaryFile(file, atAddress, debug);
+                    setLoadAddress(toHex(atAddress, 4));
+                    if (run) {
+                        debug?.runAt(atAddress);
+                    }
+                });
+            }
+        },
+        [debug, loadAddress, run]
+    );
 
-    const {
-        memory,
-        registers,
-        running,
-        stack,
-        trace,
-        zeroPage
-    } = data;
+    const { memory, registers, running, stack, trace, zeroPage } = data;
 
     const memoryPageValid = VALID_PAGE.test(memoryPage);
     const loadAddressValid = VALID_ADDRESS.test(loadAddress);
@@ -156,9 +161,7 @@ export const CPU = ({ apple2 }: CPUProps) => {
             <div className={debuggerStyles.row}>
                 <div className={debuggerStyles.column}>
                     <span className={debuggerStyles.subHeading}>Registers</span>
-                    <pre tabIndex={-1}>
-                        {registers}
-                    </pre>
+                    <pre tabIndex={-1}>{registers}</pre>
                     <span className={debuggerStyles.subHeading}>Trace</span>
                     <pre className={styles.trace} tabIndex={-1}>
                         {trace}
@@ -177,7 +180,9 @@ export const CPU = ({ apple2 }: CPUProps) => {
             </div>
             <div>
                 <hr />
-                <span className={debuggerStyles.subHeading}>Memory Page: $ </span>
+                <span className={debuggerStyles.subHeading}>
+                    Memory Page: ${' '}
+                </span>
                 <input
                     value={memoryPage}
                     onChange={doMemoryPage}
@@ -199,9 +204,9 @@ export const CPU = ({ apple2 }: CPUProps) => {
                     onChange={doLoadAddress}
                     className={cs({ [styles.invalid]: !loadAddressValid })}
                 />
-                {loadAddressValid ? null : ERROR_ICON}
-                {' '}
-                <input type="checkbox" checked={run} onChange={doRunCheck} />Run
+                {loadAddressValid ? null : ERROR_ICON}{' '}
+                <input type="checkbox" checked={run} onChange={doRunCheck} />
+                Run
                 <div className={styles.fileChooser}>
                     <FileChooser onChange={doChooseFile} />
                 </div>

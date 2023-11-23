@@ -14,14 +14,14 @@ const keymap = {
     0x05: [0x05, 0x05, 0x05], //
     0x06: [0x06, 0x06, 0x06], //
     0x07: [0x07, 0x07, 0x07], //
-    0x08: [0x7F, 0x7F, 0x7F], // BS/DELETE
+    0x08: [0x7f, 0x7f, 0x7f], // BS/DELETE
     0x09: [0x09, 0x09, 0x09], // TAB
-    0x0A: [0x0A, 0x0A, 0x0A], //
-    0x0B: [0x0B, 0x0B, 0x0B], //
-    0x0C: [0x0C, 0x0C, 0x0C], //
-    0x0D: [0x0D, 0x0D, 0x0D], // CR
-    0x0E: [0x0E, 0x0E, 0x0E], //
-    0x0F: [0x0F, 0x0F, 0x0F], //
+    0x0a: [0x0a, 0x0a, 0x0a], //
+    0x0b: [0x0b, 0x0b, 0x0b], //
+    0x0c: [0x0c, 0x0c, 0x0c], //
+    0x0d: [0x0d, 0x0d, 0x0d], // CR
+    0x0e: [0x0e, 0x0e, 0x0e], //
+    0x0f: [0x0f, 0x0f, 0x0f], //
 
     0x10: [0xff, 0xff, 0xff], // SHIFT
     0x11: [0xff, 0xff, 0xff], // CTRL
@@ -33,12 +33,12 @@ const keymap = {
     0x17: [0x17, 0x17, 0x18], //
     0x18: [0x18, 0x18, 0x18], //
     0x19: [0x19, 0x19, 0x19], //
-    0x1A: [0x1A, 0x1A, 0x1A], //
-    0x1B: [0x1B, 0x1B, 0x1B], // ESC
-    0x1C: [0x1C, 0x1C, 0x1C], //
-    0x1D: [0x1D, 0x1D, 0x1D], //
-    0x1E: [0x1E, 0x1E, 0x1E], //
-    0x1F: [0x1F, 0x1F, 0x1F], //
+    0x1a: [0x1a, 0x1a, 0x1a], //
+    0x1b: [0x1b, 0x1b, 0x1b], // ESC
+    0x1c: [0x1c, 0x1c, 0x1c], //
+    0x1d: [0x1d, 0x1d, 0x1d], //
+    0x1e: [0x1e, 0x1e, 0x1e], //
+    0x1f: [0x1f, 0x1f, 0x1f], //
 
     // Most of these besides space won't happen
     0x20: [0x20, 0x20, 0x20], //
@@ -47,16 +47,16 @@ const keymap = {
     0x23: [0x23, 0x23, 0x23], //
     0x24: [0x24, 0x24, 0x24], //
     0x25: [0x08, 0x08, 0x08], // <- left
-    0x26: [0x0B, 0x0B, 0x0B], // ^ up
+    0x26: [0x0b, 0x0b, 0x0b], // ^ up
     0x27: [0x15, 0x15, 0x15], // -> right
-    0x28: [0x0A, 0x0A, 0x0A], // v down
+    0x28: [0x0a, 0x0a, 0x0a], // v down
     0x29: [0x29, 0x29, 0x29], // )
-    0x2A: [0x2A, 0x2A, 0x2A], // *
-    0x2B: [0x2B, 0x2B, 0x2B], // +
-    0x2C: [0x2C, 0x2C, 0x3C], // , - <
-    0x2D: [0x2D, 0x2D, 0x5F], // - - _
-    0x2E: [0x2E, 0x2E, 0x3E], // . - >
-    0x2F: [0x2F, 0x2F, 0x3F], // / - ?
+    0x2a: [0x2a, 0x2a, 0x2a], // *
+    0x2b: [0x2b, 0x2b, 0x2b], // +
+    0x2c: [0x2c, 0x2c, 0x3c], // , - <
+    0x2d: [0x2d, 0x2d, 0x5f], // - - _
+    0x2e: [0x2e, 0x2e, 0x3e], // . - >
+    0x2f: [0x2f, 0x2f, 0x3f], // / - ?
 
     0x30: [0x30, 0x30, 0x29], // 0 - )
     0x31: [0x31, 0x31, 0x21], // 1 - !
@@ -64,16 +64,16 @@ const keymap = {
     0x33: [0x33, 0x33, 0x23], // 3 - #
     0x34: [0x34, 0x34, 0x24], // 4 - $
     0x35: [0x35, 0x35, 0x25], // 5 - %
-    0x36: [0x36, 0x36, 0x5E], // 6 - ^
+    0x36: [0x36, 0x36, 0x5e], // 6 - ^
     0x37: [0x37, 0x37, 0x26], // 7 - &
-    0x38: [0x38, 0x38, 0x2A], // 8 - *
+    0x38: [0x38, 0x38, 0x2a], // 8 - *
     0x39: [0x39, 0x39, 0x28], // 9 - (
-    0x3A: [0x3A, 0x3A, 0x3A], // :
-    0x3B: [0x3B, 0x3B, 0x3A], // ; - :
-    0x3C: [0x3C, 0x3C, 0x3C], // <
-    0x3D: [0x3D, 0x3D, 0x2B], // = - +
-    0x3E: [0x3E, 0x3E, 0x3E], // >
-    0x3F: [0x3F, 0x3F, 0x3F], // ?
+    0x3a: [0x3a, 0x3a, 0x3a], // :
+    0x3b: [0x3b, 0x3b, 0x3a], // ; - :
+    0x3c: [0x3c, 0x3c, 0x3c], // <
+    0x3d: [0x3d, 0x3d, 0x2b], // = - +
+    0x3e: [0x3e, 0x3e, 0x3e], // >
+    0x3f: [0x3f, 0x3f, 0x3f], // ?
 
     // Alpha and control
     0x40: [0x40, 0x00, 0x40], // @
@@ -86,12 +86,12 @@ const keymap = {
     0x47: [0x67, 0x07, 0x47], // G - BELL
     0x48: [0x68, 0x08, 0x48], // H
     0x49: [0x69, 0x09, 0x49], // I - TAB
-    0x4A: [0x6A, 0x0A, 0x4A], // J - NL
-    0x4B: [0x6B, 0x0B, 0x4B], // K - VT
-    0x4C: [0x6C, 0x0C, 0x4C], // L
-    0x4D: [0x6D, 0x0D, 0x4D], // M - CR
-    0x4E: [0x6E, 0x0E, 0x4E], // N
-    0x4F: [0x6F, 0x0F, 0x4F], // O
+    0x4a: [0x6a, 0x0a, 0x4a], // J - NL
+    0x4b: [0x6b, 0x0b, 0x4b], // K - VT
+    0x4c: [0x6c, 0x0c, 0x4c], // L
+    0x4d: [0x6d, 0x0d, 0x4d], // M - CR
+    0x4e: [0x6e, 0x0e, 0x4e], // N
+    0x4f: [0x6f, 0x0f, 0x4f], // O
 
     0x50: [0x70, 0x10, 0x50], // P
     0x51: [0x71, 0x11, 0x51], // Q
@@ -103,12 +103,12 @@ const keymap = {
     0x57: [0x77, 0x17, 0x57], // W
     0x58: [0x78, 0x18, 0x58], // X
     0x59: [0x79, 0x19, 0x59], // Y
-    0x5A: [0x7A, 0x1A, 0x5A], // Z
-    0x5B: [0xFF, 0xFF, 0xFF], // Left window
-    0x5C: [0xFF, 0xFF, 0xFF], // Right window
-    0x5D: [0xFF, 0xFF, 0xFF], // Select
-    0x5E: [0x5E, 0x1E, 0x5E], //
-    0x5F: [0x5F, 0x1F, 0x5F], // _
+    0x5a: [0x7a, 0x1a, 0x5a], // Z
+    0x5b: [0xff, 0xff, 0xff], // Left window
+    0x5c: [0xff, 0xff, 0xff], // Right window
+    0x5d: [0xff, 0xff, 0xff], // Select
+    0x5e: [0x5e, 0x1e, 0x5e], //
+    0x5f: [0x5f, 0x1f, 0x5f], // _
 
     // Numeric pad
     0x60: [0x30, 0x30, 0x30], // 0
@@ -122,27 +122,27 @@ const keymap = {
     0x68: [0x38, 0x38, 0x38], // 8
     0x69: [0x39, 0x39, 0x39], // 9
 
-    0x6A: [0x2A, 0x2A, 0x2A], // *
-    0x6B: [0x2B, 0x2B, 0x2B], // +
-    0x6D: [0x2D, 0x2D, 0x2D], // -
-    0x6E: [0x2E, 0x2E, 0x2E], // .
-    0x6F: [0x2F, 0x2F, 0x39], // /
+    0x6a: [0x2a, 0x2a, 0x2a], // *
+    0x6b: [0x2b, 0x2b, 0x2b], // +
+    0x6d: [0x2d, 0x2d, 0x2d], // -
+    0x6e: [0x2e, 0x2e, 0x2e], // .
+    0x6f: [0x2f, 0x2f, 0x39], // /
 
     // Stray keys
-    0xAD: [0x2D, 0x2D, 0x5F], // - - _
-    0xBA: [0x3B, 0x3B, 0x3A], // ; - :
-    0xBB: [0x3D, 0x3D, 0x2B], // = - +
-    0xBC: [0x2C, 0x2C, 0x3C], // , - <
-    0xBD: [0x2D, 0x2D, 0x5F], // - - _
-    0xBE: [0x2E, 0x2E, 0x3E], // . - >
-    0xBF: [0x2F, 0x2F, 0x3F], // / - ?
-    0xC0: [0x60, 0x60, 0x7E], // ` - ~
-    0xDB: [0x5B, 0x1B, 0x7B], // [ - {
-    0xDC: [0x5C, 0x1C, 0x7C], // \ - |
-    0xDD: [0x5D, 0x1D, 0x7D], // ] - }
-    0xDE: [0x27, 0x22, 0x22], // ' - '
+    0xad: [0x2d, 0x2d, 0x5f], // - - _
+    0xba: [0x3b, 0x3b, 0x3a], // ; - :
+    0xbb: [0x3d, 0x3d, 0x2b], // = - +
+    0xbc: [0x2c, 0x2c, 0x3c], // , - <
+    0xbd: [0x2d, 0x2d, 0x5f], // - - _
+    0xbe: [0x2e, 0x2e, 0x3e], // . - >
+    0xbf: [0x2f, 0x2f, 0x3f], // / - ?
+    0xc0: [0x60, 0x60, 0x7e], // ` - ~
+    0xdb: [0x5b, 0x1b, 0x7b], // [ - {
+    0xdc: [0x5c, 0x1c, 0x7c], // \ - |
+    0xdd: [0x5d, 0x1d, 0x7d], // ] - }
+    0xde: [0x27, 0x22, 0x22], // ' - '
 
-    0xFF: [0xFF, 0xFF, 0xFF] // No comma line
+    0xff: [0xff, 0xff, 0xff], // No comma line
 } as const;
 
 function isKeyboardCode(code: number): code is KnownKeys<typeof keymap> {
@@ -150,14 +150,13 @@ function isKeyboardCode(code: number): code is KnownKeys<typeof keymap> {
 }
 
 const uiKitMap = {
-    'Dead': 0xFF,
-    'UIKeyInputLeftArrow': 0x08,
-    'UIKeyInputRightArrow': 0x15,
-    'UIKeyInputUpArrow': 0x0B,
-    'UIKeyInputDownArrow': 0x0A,
-    'UIKeyInputEscape': 0x1B
+    Dead: 0xff,
+    UIKeyInputLeftArrow: 0x08,
+    UIKeyInputRightArrow: 0x15,
+    UIKeyInputUpArrow: 0x0b,
+    UIKeyInputDownArrow: 0x0a,
+    UIKeyInputEscape: 0x1b,
 } as const;
-
 
 function isUiKitKey(k: string): k is KnownKeys<typeof uiKitMap> {
     return k in uiKitMap;
@@ -166,36 +165,203 @@ function isUiKitKey(k: string): k is KnownKeys<typeof uiKitMap> {
 const keys2 = [
     [
         ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', ':', '-', 'RESET'],
-        ['ESC', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'REPT', 'RETURN'],
-        ['CTRL', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', '&larr;', '&rarr;'],
+        [
+            'ESC',
+            'Q',
+            'W',
+            'E',
+            'R',
+            'T',
+            'Y',
+            'U',
+            'I',
+            'O',
+            'P',
+            'REPT',
+            'RETURN',
+        ],
+        [
+            'CTRL',
+            'A',
+            'S',
+            'D',
+            'F',
+            'G',
+            'H',
+            'J',
+            'K',
+            'L',
+            ';',
+            '&larr;',
+            '&rarr;',
+        ],
         ['SHIFT', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', 'SHIFT'],
-        ['POWER', '&nbsp;']
-    ], [
-        ['!', '"', '#', '$', '%', '&', '\'', '(', ')', '0', '*', '=', 'RESET'],
-        ['ESC', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', '@', 'REPT', 'RETURN'],
-        ['CTRL', 'A', 'S', 'D', 'F', 'BELL', 'H', 'J', 'K', 'L', '+', '&larr;', '&rarr;'],
+        ['POWER', '&nbsp;'],
+    ],
+    [
+        ['!', '"', '#', '$', '%', '&', "'", '(', ')', '0', '*', '=', 'RESET'],
+        [
+            'ESC',
+            'Q',
+            'W',
+            'E',
+            'R',
+            'T',
+            'Y',
+            'U',
+            'I',
+            'O',
+            '@',
+            'REPT',
+            'RETURN',
+        ],
+        [
+            'CTRL',
+            'A',
+            'S',
+            'D',
+            'F',
+            'BELL',
+            'H',
+            'J',
+            'K',
+            'L',
+            '+',
+            '&larr;',
+            '&rarr;',
+        ],
         ['SHIFT', 'Z', 'X', 'C', 'V', 'B', '^', ']', '<', '>', '?', 'SHIFT'],
-        ['POWER', '&nbsp;']
-    ]
+        ['POWER', '&nbsp;'],
+    ],
 ] as const;
-
 
 type Key2 = DeepMemberOf<typeof keys2>;
 
 const keys2e = [
     [
-        ['ESC', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 'DELETE'],
-        ['TAB', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', '\\'],
-        ['CTRL', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', '"', 'RETURN'],
+        [
+            'ESC',
+            '1',
+            '2',
+            '3',
+            '4',
+            '5',
+            '6',
+            '7',
+            '8',
+            '9',
+            '0',
+            '-',
+            '=',
+            'DELETE',
+        ],
+        [
+            'TAB',
+            'Q',
+            'W',
+            'E',
+            'R',
+            'T',
+            'Y',
+            'U',
+            'I',
+            'O',
+            'P',
+            '[',
+            ']',
+            '\\',
+        ],
+        [
+            'CTRL',
+            'A',
+            'S',
+            'D',
+            'F',
+            'G',
+            'H',
+            'J',
+            'K',
+            'L',
+            ';',
+            '"',
+            'RETURN',
+        ],
         ['SHIFT', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', 'SHIFT'],
-        ['LOCK', '`', 'POW', 'OPEN_APPLE', '&nbsp;', 'CLOSED_APPLE', '&larr;', '&rarr;', '&darr;', '&uarr;']
-    ], [
-        ['ESC', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', 'DELETE'],
-        ['TAB', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', '|'],
-        ['CTRL', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':', '\'', 'RETURN'],
+        [
+            'LOCK',
+            '`',
+            'POW',
+            'OPEN_APPLE',
+            '&nbsp;',
+            'CLOSED_APPLE',
+            '&larr;',
+            '&rarr;',
+            '&darr;',
+            '&uarr;',
+        ],
+    ],
+    [
+        [
+            'ESC',
+            '!',
+            '@',
+            '#',
+            '$',
+            '%',
+            '^',
+            '&',
+            '*',
+            '(',
+            ')',
+            '_',
+            '+',
+            'DELETE',
+        ],
+        [
+            'TAB',
+            'Q',
+            'W',
+            'E',
+            'R',
+            'T',
+            'Y',
+            'U',
+            'I',
+            'O',
+            'P',
+            '{',
+            '}',
+            '|',
+        ],
+        [
+            'CTRL',
+            'A',
+            'S',
+            'D',
+            'F',
+            'G',
+            'H',
+            'J',
+            'K',
+            'L',
+            ':',
+            "'",
+            'RETURN',
+        ],
         ['SHIFT', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', '?', 'SHIFT'],
-        ['CAPS', '~', 'POW', 'OPEN_APPLE', '&nbsp;', 'CLOSED_APPLE', '&larr;', '&rarr;', '&darr;', '&uarr;']
-    ]
+        [
+            'CAPS',
+            '~',
+            'POW',
+            'OPEN_APPLE',
+            '&nbsp;',
+            'CLOSED_APPLE',
+            '&larr;',
+            '&rarr;',
+            '&darr;',
+            '&uarr;',
+        ],
+    ],
 ] as const;
 
 type Key2e = DeepMemberOf<typeof keys2e>;
@@ -220,7 +386,11 @@ export default class KeyBoard {
 
     private functions: Record<string, KeyFunction> = {};
 
-    constructor(private cpu: CPU6502, private io: Apple2IO, private e: boolean) {
+    constructor(
+        private cpu: CPU6502,
+        private io: Apple2IO,
+        private e: boolean
+    ) {
         this.keys = e ? keys2e : keys2;
 
         window.addEventListener('keydown', this.keydown);
@@ -238,20 +408,20 @@ export default class KeyBoard {
         if (isUiKitKey(evt.key)) {
             key = uiKitMap[evt.key];
         } else if (isKeyboardCode(code)) {
-            key = keymap[code][evt.shiftKey ? 2 : (evt.ctrlKey ? 1 : 0)];
+            key = keymap[code][evt.shiftKey ? 2 : evt.ctrlKey ? 1 : 0];
 
             if (code !== 20 && this.capslockKeyUsed) {
                 this.capslockKey(evt.getModifierState('CapsLock'));
             }
 
-            if (this.capslocked && key >= 0x61 && key <= 0x7A) {
+            if (this.capslocked && key >= 0x61 && key <= 0x7a) {
                 key -= 0x20;
             }
         } else {
             debug('Unhandled key = ' + toHex(code));
         }
 
-        if (key === 0x7F && evt.shiftKey && evt.ctrlKey) {
+        if (key === 0x7f && evt.shiftKey && evt.ctrlKey) {
             this.cpu.reset();
             key = 0xff;
         }
@@ -264,10 +434,14 @@ export default class KeyBoard {
         this.shifted = down;
         if (down) {
             this.io.buttonUp(2);
-            shiftKeys.forEach((key) => { key.classList.add('active'); });
+            shiftKeys.forEach((key) => {
+                key.classList.add('active');
+            });
         } else {
             this.io.buttonDown(2);
-            shiftKeys.forEach((key) => { key.classList.remove('active'); });
+            shiftKeys.forEach((key) => {
+                key.classList.remove('active');
+            });
         }
     }
 
@@ -377,10 +551,8 @@ export default class KeyBoard {
                 key.classList.add('key-' + key1.replace(/[&#;]/g, ''));
 
                 if (key1.length > 1) {
-                    if (key1 === 'LOCK')
-                        key.classList.add('v-center2');
-                    else
-                        key.classList.add('v-center');
+                    if (key1 === 'LOCK') key.classList.add('v-center2');
+                    else key.classList.add('v-center');
                 }
                 if (key1 !== key2) {
                     key.classList.add('key-' + key2.replace(/[&;]/g, ''));
@@ -399,7 +571,6 @@ export default class KeyBoard {
                 const mouseDown = this.genMouseDown(key, key1, key2);
                 const mouseUp = this.genMouseUp(key);
                 if (window.ontouchstart === undefined) {
-
                     key.addEventListener('mousedown', mouseDown);
                     key.addEventListener('mouseup', mouseUp);
                     key.addEventListener('mouseleave', mouseUp);
@@ -487,8 +658,13 @@ export default class KeyBoard {
             } else {
                 if (this.controlled && key >= '@' && key <= '_') {
                     this.io.keyDown(key.charCodeAt(0) - 0x40);
-                } else if (this.e && !this.shifted && !this.capslocked &&
-                    key >= 'A' && key <= 'Z') {
+                } else if (
+                    this.e &&
+                    !this.shifted &&
+                    !this.capslocked &&
+                    key >= 'A' &&
+                    key <= 'Z'
+                ) {
                     this.io.keyDown(key.charCodeAt(0) + 0x20);
                 } else {
                     this.io.keyDown(key.charCodeAt(0));
@@ -522,7 +698,8 @@ export default class KeyBoard {
             this.capslockKey();
         } else if (evt.key === 'Control') {
             this.controlKey(true);
-        } else if (evt.key === 'Meta') { // AKA Command
+        } else if (evt.key === 'Meta') {
+            // AKA Command
             this.commandKey(true);
         } else if (evt.key === 'Alt') {
             if (evt.location === 1) {
@@ -536,7 +713,6 @@ export default class KeyBoard {
                 evt.preventDefault();
             }
         }
-
     };
 
     private keyup = (evt: KeyboardEvent) => {
@@ -544,13 +720,17 @@ export default class KeyBoard {
             this.io.keyUp();
         }
 
-        if (evt.key === 'Shift') { // Shift
+        if (evt.key === 'Shift') {
+            // Shift
             this.shiftKey(false);
-        } else if (evt.key === 'Control') { // Control
+        } else if (evt.key === 'Control') {
+            // Control
             this.controlKey(false);
-        } else if (evt.key === 'Meta') { // AKA Command
+        } else if (evt.key === 'Meta') {
+            // AKA Command
             this.commandKey(false);
-        } else if (evt.key === 'Alt') { // Alt
+        } else if (evt.key === 'Alt') {
+            // Alt
             if (evt.location === 1) {
                 this.commandKey(false);
             } else {

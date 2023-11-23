@@ -12,7 +12,12 @@ interface DownloadModalProps {
     onClose: (closeBox?: boolean) => void;
 }
 
-export const DownloadModal = ({ massStorage, driveNo, onClose, isOpen }: DownloadModalProps) => {
+export const DownloadModal = ({
+    massStorage,
+    driveNo,
+    onClose,
+    isOpen,
+}: DownloadModalProps) => {
     const [href, setHref] = useState('');
     const [downloadName, setDownloadName] = useState('');
     const doCancel = useCallback(() => onClose(true), [onClose]);
@@ -24,10 +29,9 @@ export const DownloadModal = ({ massStorage, driveNo, onClose, isOpen }: Downloa
                 const { ext, data } = storageData;
                 const { name } = storageData.metadata;
                 if (data.byteLength) {
-                    const blob = new Blob(
-                        [data],
-                        { type: 'application/octet-stream' }
-                    );
+                    const blob = new Blob([data], {
+                        type: 'application/octet-stream',
+                    });
                     const href = window.URL.createObjectURL(blob);
                     setHref(href);
                     setDownloadName(`${name}.${ext}`);
@@ -44,22 +48,20 @@ export const DownloadModal = ({ massStorage, driveNo, onClose, isOpen }: Downloa
             <Modal title="Save File" isOpen={isOpen} onClose={onClose}>
                 <ModalContent>
                     <div className={styles.modalContent}>
-                        {href
-                            ? (
-                                <>
-                                    <span>Disk Name: {downloadName}</span>
-                                    <a
-                                        role="button"
-                                        href={href}
-                                        download={downloadName}
-                                    >
-                                        Download
-                                    </a>
-                                </>
-                            ) : (
-                                <span>No Download Available</span>
-                            )
-                        }
+                        {href ? (
+                            <>
+                                <span>Disk Name: {downloadName}</span>
+                                <a
+                                    role="button"
+                                    href={href}
+                                    download={downloadName}
+                                >
+                                    Download
+                                </a>
+                            </>
+                        ) : (
+                            <span>No Download Available</span>
+                        )}
                     </div>
                 </ModalContent>
                 <ModalFooter>

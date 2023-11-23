@@ -1,7 +1,6 @@
 import { DriveNumber, NibbleDisk, WozDisk } from '../../formats/types';
 import { ControllerState, DiskDriver, Drive, DriverState } from './types';
 
-
 /**
  * Common logic for both `NibbleDiskDriver` and `WozDiskDriver`.
  */
@@ -10,7 +9,8 @@ export abstract class BaseDiskDriver implements DiskDriver {
         protected readonly driveNo: DriveNumber,
         protected readonly drive: Drive,
         protected readonly disk: NibbleDisk | WozDisk,
-        protected readonly controller: ControllerState) { }
+        protected readonly controller: ControllerState
+    ) {}
 
     /** Called frequently to ensure the disk is spinning. */
     abstract tick(): void;

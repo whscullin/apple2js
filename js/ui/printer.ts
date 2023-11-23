@@ -1,17 +1,17 @@
 import { byte } from '../types';
 
 /**
-  * Printer UI. The "paper" is bound to the element selected by the input.
-  *
-  * Every line that is output to the printer is added as a <div> to the paper.
-  * The high bit of all characters is stripped and only visible characters are
-  * added to the output. The following characters receive special treatment:
-  *
-  * *   `EOT` (ASCII 4): deletes last character
-  * *   `HT` (ASCII 9): replaced with 8 spaces
-  * *   `LF` (ASCII 10): silently removed
-  * *   `CR` (ASCII 13): a newline and carriage return
-  */
+ * Printer UI. The "paper" is bound to the element selected by the input.
+ *
+ * Every line that is output to the printer is added as a <div> to the paper.
+ * The high bit of all characters is stripped and only visible characters are
+ * added to the output. The following characters receive special treatment:
+ *
+ * *   `EOT` (ASCII 4): deletes last character
+ * *   `HT` (ASCII 9): replaced with 8 spaces
+ * *   `LF` (ASCII 10): silently removed
+ * *   `CR` (ASCII 13): a newline and carriage return
+ */
 export default class Printer {
     private paper: HTMLElement;
     private _lineBuffer = '';

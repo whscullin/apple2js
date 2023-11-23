@@ -33,18 +33,26 @@ export class Audio implements OptionHandler {
 
     constructor(io: Apple2IO) {
         this.audioContext = new AudioContext({
-            sampleRate: SAMPLE_RATE
+            sampleRate: SAMPLE_RATE,
         });
 
         if (window.AudioWorklet) {
-            const workletReady = this.audioContext.audioWorklet.addModule('./dist/audio_worker.bundle.js');
+            const workletReady = this.audioContext.audioWorklet.addModule(
+                './dist/audio_worker.bundle.js'
+            );
             this.ready = workletReady
                 .then(() => {
-                    this.workletNode = new AudioWorkletNode(this.audioContext, 'audio_worker');
+                    this.workletNode = new AudioWorkletNode(
+                        this.audioContext,
+                        'audio_worker'
+                    );
 
                     io.sampleRate(this.audioContext.sampleRate, QUANTUM_SIZE);
                     io.addSampleListener((sample) => {
-                        if (this.sound && this.audioContext.state === 'running') {
+                        if (
+                            this.sound &&
+                            this.audioContext.state === 'running'
+                        ) {
                             this.workletNode.port.postMessage(sample);
                         }
                     });
@@ -55,7 +63,11 @@ export class Audio implements OptionHandler {
             // TODO(flan): MDN says that createScriptProcessor is deprecated and
             // replaced by AudioWorklet. FF and Chrome support AudioWorklet, but
             // Safari does not (yet).
-            this.audioNode = this.audioContext.createScriptProcessor(SAMPLE_SIZE, 1, 1);
+            this.audioNode = this.audioContext.createScriptProcessor(
+                SAMPLE_SIZE,
+                1,
+                1
+            );
 
             this.audioNode.onaudioprocess = (event) => {
                 const data = event.outputBuffer.getChannelData(0);
@@ -99,11 +111,14 @@ export class Audio implements OptionHandler {
     autoStart = () => {
         if (this.audioContext && !this.started) {
             this.samples = [];
-            this.audioContext.resume().then(() => {
-                this.started = true;
-            }).catch((error) => {
-                console.warn('audio not started', error);
-            });
+            this.audioContext
+                .resume()
+                .then(() => {
+                    this.started = true;
+                })
+                .catch((error) => {
+                    console.warn('audio not started', error);
+                });
         }
     };
 
@@ -130,9 +145,9 @@ export class Audio implements OptionHandler {
                         label: 'Enabled',
                         type: BOOLEAN_OPTION,
                         defaultVal: true,
-                    }
-                ]
-            }
+                    },
+                ],
+            },
         ];
     }
 

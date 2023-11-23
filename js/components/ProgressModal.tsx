@@ -17,7 +17,9 @@ export const ProgressModal = ({ title, current, total }: ErrorProps) => {
                     <div className={styles.progressContainer}>
                         <div
                             className={styles.progressBar}
-                            style={{ width: Math.floor(320 * (current / total)) }}
+                            style={{
+                                width: Math.floor(320 * (current / total)),
+                            }}
                         />
                     </div>
                 </ModalContent>

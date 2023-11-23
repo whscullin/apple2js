@@ -11,7 +11,7 @@ export function garbage(): byte {
 }
 
 export const testables = {
-    garbage
+    garbage,
 };
 
 /**
@@ -22,7 +22,7 @@ export function allocMem(size: number) {
     const result = new Uint8Array(size);
 
     for (let idx = 0; idx < size; idx++) {
-        result[idx] = (idx & 0x02) ? 0x00 : 0xff;
+        result[idx] = idx & 0x02 ? 0x00 : 0xff;
     }
     // Borrowed from AppleWin (https://github.com/AppleWin/AppleWin)
     for (let idx = 0; idx < size; idx += 0x200) {

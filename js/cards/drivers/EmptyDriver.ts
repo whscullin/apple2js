@@ -1,14 +1,14 @@
 import { DiskDriver, Drive, DriverState } from './types';
 
 /** Returned state for an empty drive. */
-export interface EmptyDriverState extends DriverState { }
+export interface EmptyDriverState extends DriverState {}
 
 /**
  * Driver for empty drives. This implementation does nothing except keep
  * the head clamped between tracks 0 and 34.
  */
 export class EmptyDriver implements DiskDriver {
-    constructor(private readonly drive: Drive) { }
+    constructor(private readonly drive: Drive) {}
 
     tick(): void {
         // do nothing

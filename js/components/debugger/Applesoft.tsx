@@ -42,12 +42,23 @@ const formatArray = (value: unknown): string => {
 const Variable = ({ variable }: { variable: ApplesoftVariable }) => {
     const { name, type, sizes, value } = variable;
     const isArray = !!sizes;
-    const arrayStr = isArray ? `(${sizes.map((size) => size - 1).join(',')})` : '';
+    const arrayStr = isArray
+        ? `(${sizes.map((size) => size - 1).join(',')})`
+        : '';
     return (
         <tr>
-            <td>{name}{TYPE_SYMBOL[type]}{arrayStr}</td>
-            <td>{TYPE_NAME[type]}{isArray ? ' Array' : ''}</td>
-            <td><pre tabIndex={-1}>{isArray ? formatArray(value) : value}</pre></td>
+            <td>
+                {name}
+                {TYPE_SYMBOL[type]}
+                {arrayStr}
+            </td>
+            <td>
+                {TYPE_NAME[type]}
+                {isArray ? ' Array' : ''}
+            </td>
+            <td>
+                <pre tabIndex={-1}>{isArray ? formatArray(value) : value}</pre>
+            </td>
         </tr>
     );
 };
@@ -57,7 +68,7 @@ export const Applesoft = ({ apple2 }: ApplesoftProps) => {
     const [data, setData] = useState<ApplesoftData>({
         listing: '',
         variables: [],
-        internals: {}
+        internals: {},
     });
     const [heap, setHeap] = useState<ApplesoftHeap>();
     const cpu = apple2?.getCPU();
@@ -72,18 +83,19 @@ export const Applesoft = ({ apple2 }: ApplesoftProps) => {
     const animate = useCallback(() => {
         if (cpu && heap) {
             try {
-                const decompiler = ApplesoftDecompiler.decompilerFromMemory(cpu);
+                const decompiler =
+                    ApplesoftDecompiler.decompilerFromMemory(cpu);
                 setData({
                     variables: heap.dumpVariables(),
                     internals: heap.dumpInternals(),
-                    listing: decompiler.decompile()
+                    listing: decompiler.decompile(),
                 });
             } catch (error) {
                 if (error instanceof Error) {
                     setData({
                         variables: [],
                         internals: {},
-                        listing: error.message
+                        listing: error.message,
                     });
                 } else {
                     throw error;
@@ -103,7 +115,9 @@ export const Applesoft = ({ apple2 }: ApplesoftProps) => {
     return (
         <div className={styles.column}>
             <span className={debuggerStyles.subHeading}>Listing</span>
-            <pre className={styles.listing} tabIndex={-1}>{listing}</pre>
+            <pre className={styles.listing} tabIndex={-1}>
+                {listing}
+            </pre>
             <span className={debuggerStyles.subHeading}>Variables</span>
             <div className={styles.variables}>
                 <table>
@@ -112,7 +126,9 @@ export const Applesoft = ({ apple2 }: ApplesoftProps) => {
                         <th>Type</th>
                         <th>Value</th>
                     </tr>
-                    {variables.map((variable, idx) => <Variable key={idx} variable={variable} />)}
+                    {variables.map((variable, idx) => (
+                        <Variable key={idx} variable={variable} />
+                    ))}
                 </table>
             </div>
             <span className={debuggerStyles.subHeading}>Internals</span>

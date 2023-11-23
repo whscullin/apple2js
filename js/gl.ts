@@ -11,7 +11,7 @@ import {
     VideoModes,
     VideoModesState,
     bank,
-    pageNo
+    pageNo,
 } from './videomodes';
 
 // Color constants
@@ -22,7 +22,7 @@ const notDirty: Region = {
     top: 193,
     bottom: -1,
     left: 561,
-    right: -1
+    right: -1,
 };
 
 /****************************************************************************
@@ -40,7 +40,7 @@ export class LoresPageGL implements LoresPage {
     private _refreshing = false;
     private _blink = false;
 
-    dirty: Region = {...notDirty};
+    dirty: Region = { ...notDirty };
     imageData: ImageData;
 
     constructor(
@@ -58,14 +58,18 @@ export class LoresPageGL implements LoresPage {
     }
 
     private _drawPixel(data: Uint8ClampedArray, off: number, color: Color) {
-        const c0 = color[0], c1 = color[1], c2 = color[2];
+        const c0 = color[0],
+            c1 = color[1],
+            c2 = color[2];
         data[off + 0] = data[off + 4] = c0;
         data[off + 1] = data[off + 5] = c1;
         data[off + 2] = data[off + 6] = c2;
     }
 
     private _drawHalfPixel(data: Uint8ClampedArray, off: number, color: Color) {
-        const c0 = color[0], c1 = color[1], c2 = color[2];
+        const c0 = color[0],
+            c1 = color[1],
+            c2 = color[2];
         data[off + 0] = c0;
         data[off + 1] = c1;
         data[off + 2] = c2;
@@ -75,10 +79,10 @@ export class LoresPageGL implements LoresPage {
         let inverse = false;
         if (this.e) {
             if (!this.vm._80colMode && !this.vm.altCharMode) {
-                inverse = ((val & 0xc0) === 0x40) && this._blink;
+                inverse = (val & 0xc0) === 0x40 && this._blink;
             }
         } else {
-            inverse = !((val & 0x80) || (val & 0x40) && this._blink);
+            inverse = !(val & 0x80 || (val & 0x40 && this._blink));
         }
         return inverse;
     }
@@ -104,19 +108,22 @@ export class LoresPageGL implements LoresPage {
     // These are used by both bank 0 and 1
 
     private _start() {
-        return (0x04 * this.page);
+        return 0x04 * this.page;
     }
 
-    private _end() { return (0x04 * this.page) + 0x03; }
+    private _end() {
+        return 0x04 * this.page + 0x03;
+    }
 
     private _read(page: byte, off: byte, bank: bank) {
-        const addr = (page << 8) | off, base = addr & 0x3FF;
+        const addr = (page << 8) | off,
+            base = addr & 0x3ff;
         return this._buffer[bank][base];
     }
 
     private _write(page: byte, off: byte, val: byte, bank: bank) {
         const addr = (page << 8) | off;
-        const base = addr & 0x3FF;
+        const base = addr & 0x3ff;
         let fore, back;
 
         if (this._buffer[bank][base] === val && !this._refreshing) {
@@ -128,23 +135,35 @@ export class LoresPageGL implements LoresPage {
         const adj = off - col;
 
         // 000001cd eabab000 -> 000abcde
-        const ab = (adj & 0x18);
+        const ab = adj & 0x18;
         const cd = (page & 0x03) << 1;
         const ee = adj >> 7;
         const row = ab | cd | ee;
 
         const data = this.imageData.data;
-        if ((row < 24) && (col < 40)) {
+        if (row < 24 && col < 40) {
             let y = row << 3;
-            if (y < this.dirty.top) { this.dirty.top = y; }
+            if (y < this.dirty.top) {
+                this.dirty.top = y;
+            }
             y += 8;
-            if (y > this.dirty.bottom) { this.dirty.bottom = y; }
+            if (y > this.dirty.bottom) {
+                this.dirty.bottom = y;
+            }
             let x = col * 14;
-            if (x < this.dirty.left) { this.dirty.left = x; }
+            if (x < this.dirty.left) {
+                this.dirty.left = x;
+            }
             x += 14;
-            if (x > this.dirty.right) { this.dirty.right = x; }
+            if (x > this.dirty.right) {
+                this.dirty.right = x;
+            }
 
-            if (this.vm.textMode || this.vm.hiresMode || (this.vm.mixedMode && row > 19)) {
+            if (
+                this.vm.textMode ||
+                this.vm.hiresMode ||
+                (this.vm.mixedMode && row > 19)
+            ) {
                 if (this.vm._80colMode) {
                     const inverse = this._checkInverse(val);
 
@@ -152,15 +171,16 @@ export class LoresPageGL implements LoresPage {
                     back = inverse ? whiteCol : blackCol;
 
                     if (!this.vm.altCharMode) {
-                        val = (val >= 0x40 && val < 0x80) ? val - 0x40 : val;
+                        val = val >= 0x40 && val < 0x80 ? val - 0x40 : val;
                     }
 
-                    let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
+                    let offset =
+                        (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
 
                     for (let jdx = 0; jdx < 8; jdx++) {
                         let b = this.charset[val * 8 + jdx];
                         for (let idx = 0; idx < 7; idx++) {
-                            const color = (b & 0x01) ? back : fore;
+                            const color = b & 0x01 ? back : fore;
                             this._drawHalfPixel(data, offset, color);
                             b >>= 1;
                             offset += 4;
@@ -176,7 +196,7 @@ export class LoresPageGL implements LoresPage {
                     back = inverse ? whiteCol : blackCol;
 
                     if (!this.vm.altCharMode) {
-                        val = (val >= 0x40 && val < 0x80) ? val - 0x40 : val;
+                        val = val >= 0x40 && val < 0x80 ? val - 0x40 : val;
                     }
 
                     let offset = (col * 14 + row * 560 * 8) * 4;
@@ -185,7 +205,7 @@ export class LoresPageGL implements LoresPage {
                         for (let jdx = 0; jdx < 8; jdx++) {
                             let b = this.charset[val * 8 + jdx];
                             for (let idx = 0; idx < 7; idx++) {
-                                const color = (b & 0x01) ? back : fore;
+                                const color = b & 0x01 ? back : fore;
                                 this._drawPixel(data, offset, color);
                                 b >>= 1;
                                 offset += 8;
@@ -197,7 +217,7 @@ export class LoresPageGL implements LoresPage {
                             let b = this.charset[val * 8 + jdx] << 1;
 
                             for (let idx = 0; idx < 7; idx++) {
-                                const color = (b & 0x80) ? fore : back;
+                                const color = b & 0x80 ? fore : back;
                                 this._drawPixel(data, offset, color);
                                 b <<= 1;
                                 offset += 8;
@@ -208,16 +228,17 @@ export class LoresPageGL implements LoresPage {
                 }
             } else {
                 if (this.vm._80colMode && !this.vm.an3State) {
-                    let offset = (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
+                    let offset =
+                        (col * 14 + (bank ? 0 : 1) * 7 + row * 560 * 8) * 4;
                     for (let jdx = 0; jdx < 8; jdx++) {
-                        let b = (jdx < 4) ? (val & 0x0f) : (val >> 4);
-                        b |= (b << 4);
-                        b |= (b << 8);
+                        let b = jdx < 4 ? val & 0x0f : val >> 4;
+                        b |= b << 4;
+                        b |= b << 8;
                         if (col & 0x1) {
                             b >>= 2;
                         }
                         for (let idx = 0; idx < 7; idx++) {
-                            const color = (b & 0x01) ? whiteCol : blackCol;
+                            const color = b & 0x01 ? whiteCol : blackCol;
                             this._drawHalfPixel(data, offset, color);
                             b >>= 1;
                             offset += 4;
@@ -227,14 +248,14 @@ export class LoresPageGL implements LoresPage {
                 } else if (bank === 0) {
                     let offset = (col * 14 + row * 560 * 8) * 4;
                     for (let jdx = 0; jdx < 8; jdx++) {
-                        let b = (jdx < 4) ? (val & 0x0f) : (val >> 4);
-                        b |= (b << 4);
-                        b |= (b << 8);
+                        let b = jdx < 4 ? val & 0x0f : val >> 4;
+                        b |= b << 4;
+                        b |= b << 8;
                         if (col & 0x1) {
                             b >>= 2;
                         }
                         for (let idx = 0; idx < 14; idx++) {
-                            const color = (b & 0x0001) ? whiteCol : blackCol;
+                            const color = b & 0x0001 ? whiteCol : blackCol;
                             this._drawHalfPixel(data, offset, color);
                             b >>= 1;
                             offset += 4;
@@ -264,7 +285,7 @@ export class LoresPageGL implements LoresPage {
         this._blink = !this._blink;
         for (let idx = 0; idx < 0x400; idx++, addr++) {
             const b = this._buffer[0][idx];
-            if ((b & 0xC0) === 0x40) {
+            if ((b & 0xc0) === 0x40) {
                 this._write(addr >> 8, addr & 0xff, this._buffer[0][idx], 0);
             }
         }
@@ -293,7 +314,7 @@ export class LoresPageGL implements LoresPage {
             buffer: [
                 new Uint8Array(this._buffer[0]),
                 new Uint8Array(this._buffer[1]),
-            ]
+            ],
         };
     }
 
@@ -312,25 +333,29 @@ export class LoresPageGL implements LoresPage {
     }
 
     private mapCharCode(charCode: byte) {
-        charCode &= 0x7F;
+        charCode &= 0x7f;
         if (charCode < 0x20) {
             charCode += 0x40;
         }
-        if (!this.e && (charCode >= 0x60)) {
+        if (!this.e && charCode >= 0x60) {
             charCode -= 0x40;
         }
         return charCode;
     }
 
     getText() {
-        let buffer = '', line, charCode;
+        let buffer = '',
+            line,
+            charCode;
         let row, col, base;
         for (row = 0; row < 24; row++) {
             base = this.rowToBase(row);
             line = '';
             if (this.e && this.vm._80colMode) {
                 for (col = 0; col < 80; col++) {
-                    charCode = this.mapCharCode(this._buffer[1 - col % 2][base + Math.floor(col / 2)]);
+                    charCode = this.mapCharCode(
+                        this._buffer[1 - (col % 2)][base + Math.floor(col / 2)]
+                    );
                     line += String.fromCharCode(charCode);
                 }
             } else {
@@ -353,7 +378,9 @@ export class LoresPageGL implements LoresPage {
  ***************************************************************************/
 
 const _drawPixel = (data: Uint8ClampedArray, off: number, color: Color) => {
-    const c0 = color[0], c1 = color[1], c2 = color[2];
+    const c0 = color[0],
+        c1 = color[1],
+        c2 = color[2];
 
     data[off + 0] = data[off + 4] = c0;
     data[off + 1] = data[off + 5] = c1;
@@ -361,7 +388,9 @@ const _drawPixel = (data: Uint8ClampedArray, off: number, color: Color) => {
 };
 
 const _drawHalfPixel = (data: Uint8ClampedArray, off: number, color: Color) => {
-    const c0 = color[0], c1 = color[1], c2 = color[2];
+    const c0 = color[0],
+        c1 = color[1],
+        c2 = color[2];
 
     data[off + 0] = c0;
     data[off + 1] = c1;
@@ -370,14 +399,14 @@ const _drawHalfPixel = (data: Uint8ClampedArray, off: number, color: Color) => {
 
 export class HiresPageGL implements HiresPage {
     public imageData: ImageData;
-    dirty: Region = {...notDirty};
+    dirty: Region = { ...notDirty };
 
     private _buffer: memory[] = [];
     private _refreshing = false;
 
     constructor(
         private vm: VideoModes,
-        private page: pageNo,
+        private page: pageNo
     ) {
         this.imageData = this.vm.context.createImageData(560, 192);
         this.imageData.data.fill(0xff);
@@ -405,18 +434,23 @@ export class HiresPageGL implements HiresPage {
         };
     }
 
-    private _start() { return (0x20 * this.page); }
+    private _start() {
+        return 0x20 * this.page;
+    }
 
-    private _end() { return (0x020 * this.page) + 0x1f; }
+    private _end() {
+        return 0x020 * this.page + 0x1f;
+    }
 
     private _read(page: byte, off: byte, bank: bank) {
-        const addr = (page << 8) | off, base = addr & 0x1FFF;
+        const addr = (page << 8) | off,
+            base = addr & 0x1fff;
         return this._buffer[bank][base];
     }
 
     private _write(page: byte, off: byte, val: byte, bank: bank) {
         const addr = (page << 8) | off;
-        const base = addr & 0x1FFF;
+        const base = addr & 0x1fff;
 
         if (this._buffer[bank][base] === val && !this._refreshing) {
             return;
@@ -427,7 +461,7 @@ export class HiresPageGL implements HiresPage {
         const adj = off - col;
 
         // 000001cd eabab000 -> 000abcde
-        const ab = (adj & 0x18);
+        const ab = adj & 0x18;
         const cd = (page & 0x03) << 1;
         const e = adj >> 7;
 
@@ -435,17 +469,25 @@ export class HiresPageGL implements HiresPage {
             rowb = base >> 10;
 
         const data = this.imageData.data;
-        if ((rowa < 24) && (col < 40) && this.vm.hiresMode) {
-            let y = rowa << 3 | rowb;
-            if (y < this.dirty.top) { this.dirty.top = y; }
+        if (rowa < 24 && col < 40 && this.vm.hiresMode) {
+            let y = (rowa << 3) | rowb;
+            if (y < this.dirty.top) {
+                this.dirty.top = y;
+            }
             y += 1;
-            if (y > this.dirty.bottom) { this.dirty.bottom = y; }
+            if (y > this.dirty.bottom) {
+                this.dirty.bottom = y;
+            }
             let x = col * 14 - 2;
-            if (x < this.dirty.left) { this.dirty.left = x; }
+            if (x < this.dirty.left) {
+                this.dirty.left = x;
+            }
             x += 14;
-            if (x > this.dirty.right) { this.dirty.right = x; }
+            if (x > this.dirty.right) {
+                this.dirty.right = x;
+            }
 
-            const dy = rowa << 3 | rowb;
+            const dy = (rowa << 3) | rowb;
             if (this.vm.doubleHiresMode) {
                 const dx = col * 14 + (bank ? 0 : 7);
                 let offset = dx * 4 + dy * 280 * 4 * 2;
@@ -476,9 +518,10 @@ export class HiresPageGL implements HiresPage {
                 }
                 let bits = val;
                 for (let idx = 0; idx < 7; idx++, offset += 8) {
-                    const drawPixel = cropLastPixel && idx === 6
-                        ? _drawHalfPixel
-                        : _drawPixel;
+                    const drawPixel =
+                        cropLastPixel && idx === 6
+                            ? _drawHalfPixel
+                            : _drawPixel;
                     if (bits & 0x01) {
                         drawPixel(data, offset, whiteCol);
                     } else {
@@ -489,7 +532,12 @@ export class HiresPageGL implements HiresPage {
                 if (!this._refreshing) {
                     this._refreshing = true;
                     const after = addr + 1;
-                    this._write(after >> 8, after & 0xff, this._buffer[0][after & 0x1fff], 0);
+                    this._write(
+                        after >> 8,
+                        after & 0xff,
+                        this._buffer[0][after & 0x1fff],
+                        0
+                    );
                     this._refreshing = false;
                 }
             }
@@ -531,7 +579,7 @@ export class HiresPageGL implements HiresPage {
             buffer: [
                 new Uint8Array(this._buffer[0]),
                 new Uint8Array(this._buffer[1]),
-            ]
+            ],
         };
     }
 
@@ -595,7 +643,10 @@ export class VideoModesGL implements VideoModes {
 
     private defaultMonitor(): screenEmu.DisplayConfiguration {
         const config = new screenEmu.DisplayConfiguration();
-        config.displayResolution = new screenEmu.Size(this.screen.width, this.screen.height);
+        config.displayResolution = new screenEmu.Size(
+            this.screen.width,
+            this.screen.height
+        );
         config.displayScanlineLevel = 0.5;
         config.videoWhiteOnly = true;
         config.videoSaturation = 0.8;
@@ -608,7 +659,10 @@ export class VideoModesGL implements VideoModes {
     private monitorII(): screenEmu.DisplayConfiguration {
         // Values taken from openemulator/libemulation/res/library/Monitors/Apple Monitor II.xml
         const config = new screenEmu.DisplayConfiguration();
-        config.displayResolution = new screenEmu.Size(this.screen.width, this.screen.height);
+        config.displayResolution = new screenEmu.Size(
+            this.screen.width,
+            this.screen.height
+        );
         config.videoDecoder = 'CANVAS_MONOCHROME';
         config.videoBrightness = 0.15;
         config.videoContrast = 0.8;
@@ -625,13 +679,16 @@ export class VideoModesGL implements VideoModes {
     }
 
     private _refresh() {
-        this.doubleHiresMode = !this.an3State && this.hiresMode && this._80colMode;
+        this.doubleHiresMode =
+            !this.an3State && this.hiresMode && this._80colMode;
 
         this._refreshFlag = true;
 
         if (this._displayConfig) {
             this._displayConfig.videoWhiteOnly = this.textMode || this.monoMode;
-            this._displayConfig.displayScanlineLevel = this._scanlines ? 0.5 : 0;
+            this._displayConfig.displayScanlineLevel = this._scanlines
+                ? 0.5
+                : 0;
             this._sv.displayConfiguration = this._displayConfig;
         }
     }
@@ -680,7 +737,9 @@ export class VideoModesGL implements VideoModes {
     }
 
     _80col(on: boolean) {
-        if (!this.e) { return; }
+        if (!this.e) {
+            return;
+        }
 
         const old = this._80colMode;
         this._80colMode = on;
@@ -691,7 +750,9 @@ export class VideoModesGL implements VideoModes {
     }
 
     altChar(on: boolean) {
-        if (!this.e) { return; }
+        if (!this.e) {
+            return;
+        }
 
         const old = this.altCharMode;
         this.altCharMode = on;
@@ -710,7 +771,9 @@ export class VideoModesGL implements VideoModes {
     }
 
     an3(on: boolean) {
-        if (!this.e) { return; }
+        if (!this.e) {
+            return;
+        }
 
         const old = this.an3State;
         this.an3State = on;
@@ -788,7 +851,9 @@ export class VideoModesGL implements VideoModes {
     buildScreen(mainData: ImageData, mixData?: ImageData | null) {
         const details = screenEmu.C.NTSC_DETAILS;
         const { width, height } = details.imageSize;
-        const { x, y } = this._80colMode ? details.topLeft80Col : details.topLeft;
+        const { x, y } = this._80colMode
+            ? details.topLeft80Col
+            : details.topLeft;
 
         if (mixData) {
             this.context.putImageData(mainData, x, y, 0, 0, 560, 160);
@@ -813,10 +878,12 @@ export class VideoModesGL implements VideoModes {
         }
 
         if (altData) {
-            blitted = this.updateImage(
-                altData,
-                { top: 0, left: 0, right: 560, bottom: 192 }
-            );
+            blitted = this.updateImage(altData, {
+                top: 0,
+                left: 0,
+                right: 560,
+                bottom: 192,
+            });
         } else if (this.hiresMode && !this.textMode) {
             blitted = this.updateImage(
                 hgr.imageData,
@@ -825,12 +892,10 @@ export class VideoModesGL implements VideoModes {
                 this.mixedMode ? gr.dirty : null
             );
         } else {
-            blitted = this.updateImage(
-                gr.imageData, gr.dirty
-            );
+            blitted = this.updateImage(gr.imageData, gr.dirty);
         }
-        hgr.dirty = {...notDirty};
-        gr.dirty = {...notDirty};
+        hgr.dirty = { ...notDirty };
+        gr.dirty = { ...notDirty };
 
         return blitted;
     }
@@ -846,7 +911,7 @@ export class VideoModesGL implements VideoModes {
             _80colMode: this._80colMode,
             altCharMode: this.altCharMode,
             an3State: this.an3State,
-            flag: 0
+            flag: 0,
         };
     }
 

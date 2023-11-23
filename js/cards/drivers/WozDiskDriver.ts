@@ -3,7 +3,13 @@ import { DriveNumber, WozDisk } from '../../formats/types';
 import { toHex } from '../../util';
 import { SEQUENCER_ROM } from '../disk2';
 import { BaseDiskDriver } from './BaseDiskDriver';
-import { ControllerState, Drive, DriverState, LssClockCycle, LssState } from './types';
+import {
+    ControllerState,
+    Drive,
+    DriverState,
+    LssClockCycle,
+    LssState,
+} from './types';
 
 interface WozDiskDriverState extends DriverState {
     clock: LssClockCycle;
@@ -32,7 +38,8 @@ export class WozDiskDriver extends BaseDiskDriver {
         readonly disk: WozDisk,
         controller: ControllerState,
         private readonly onDirty: () => void,
-        private readonly io: Apple2IO) {
+        private readonly io: Apple2IO
+    ) {
         super(driveNo, drive, disk, controller);
 
         // From the example in UtA2e, p. 9-29, col. 1, para. 1., this is
@@ -129,7 +136,13 @@ export class WozDiskDriver extends BaseDiskDriver {
 
             const command = SEQUENCER_ROM[controller.sectors][idx];
 
-            this.debug(`clock: ${this.clock} state: ${toHex(this.state)} pulse: ${pulse} command: ${toHex(command)} q6: ${controller.q6} latch: ${toHex(controller.latch)}`);
+            this.debug(
+                `clock: ${this.clock} state: ${toHex(
+                    this.state
+                )} pulse: ${pulse} command: ${toHex(command)} q6: ${
+                    controller.q6
+                } latch: ${toHex(controller.latch)}`
+            );
 
             switch (command & 0xf) {
                 case 0x0: // CLR
@@ -140,23 +153,23 @@ export class WozDiskDriver extends BaseDiskDriver {
                 case 0x9: // SL0
                     controller.latch = (controller.latch << 1) & 0xff;
                     break;
-                case 0xA: // SR
+                case 0xa: // SR
                     controller.latch >>= 1;
                     if (this.isWriteProtected()) {
                         controller.latch |= 0x80;
                     }
                     break;
-                case 0xB: // LD
+                case 0xb: // LD
                     controller.latch = controller.bus;
                     this.debug('Loading', toHex(controller.latch), 'from bus');
                     break;
-                case 0xD: // SL1
+                case 0xd: // SL1
                     controller.latch = ((controller.latch << 1) | 0x01) & 0xff;
                     break;
                 default:
                     this.debug(`unknown command: ${toHex(command & 0xf)}`);
             }
-            this.state = (command >> 4 & 0xF) as LssState;
+            this.state = ((command >> 4) & 0xf) as LssState;
 
             if (this.clock === 4) {
                 if (this.isOn()) {

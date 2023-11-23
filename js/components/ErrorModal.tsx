@@ -32,9 +32,7 @@ export const ErrorModal = ({ error, setError }: ErrorProps) => {
                 onClose={onClose}
             >
                 <ModalContent>
-                    <div className={styles.errorModal}>
-                        {errorStr}
-                    </div>
+                    <div className={styles.errorModal}>{errorStr}</div>
                 </ModalContent>
                 <ModalFooter>
                     <button onClick={onClose}>OK</button>

@@ -9,11 +9,7 @@ export interface TabProps {
 }
 
 export const Tab = ({ children }: TabProps) => {
-    return (
-        <div>
-            {children}
-        </div>
-    );
+    return <div>{children}</div>;
 };
 
 interface TabWrapperProps {
@@ -24,7 +20,10 @@ interface TabWrapperProps {
 
 const TabWrapper = ({ children, onClick, selected }: TabWrapperProps) => {
     return (
-        <div onClick={onClick} className={cs(styles.tab, { [styles.selected]: selected })}>
+        <div
+            onClick={onClick}
+            className={cs(styles.tab, { [styles.selected]: selected })}
+        >
             {children}
         </div>
     );
@@ -38,10 +37,13 @@ export interface TabsProps {
 export const Tabs = ({ children, setSelected }: TabsProps) => {
     const [innerSelected, setInnerSelected] = useState(0);
 
-    const innerSetSelected = useCallback((idx: number) => {
-        setSelected(idx);
-        setInnerSelected(idx);
-    }, [setSelected]);
+    const innerSetSelected = useCallback(
+        (idx: number) => {
+            setSelected(idx);
+            setInnerSelected(idx);
+        },
+        [setSelected]
+    );
 
     if (!Array.isArray(children)) {
         return null;
@@ -49,7 +51,7 @@ export const Tabs = ({ children, setSelected }: TabsProps) => {
 
     return (
         <div className={styles.tabs}>
-            {children.map((child, idx) =>
+            {children.map((child, idx) => (
                 <TabWrapper
                     key={idx}
                     onClick={() => innerSetSelected(idx)}
@@ -57,7 +59,7 @@ export const Tabs = ({ children, setSelected }: TabsProps) => {
                 >
                     {child}
                 </TabWrapper>
-            )}
+            ))}
         </div>
     );
 };

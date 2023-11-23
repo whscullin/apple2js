@@ -1,6 +1,6 @@
 #header {
-  width: 580px;
-  margin: auto;
+    width: 580px;
+    margin: auto;
 }
 
 img {
@@ -16,22 +16,22 @@ img {
     margin: 0;
     padding: 3px 0 0 10;
     color: black;
-    font-family: "Adobe Garamond Pro",Garamond,Times;
+    font-family: 'Adobe Garamond Pro', Garamond, Times;
     font-size: 13px;
     font-weight: normal;
     user-select: none;
 }
 
 .motter {
-    font-family: "Motter Tektura";
+    font-family: 'Motter Tektura';
     font-size: 12px;
 }
 
-input[type="button"] {
+input[type='button'] {
     width: 75px;
 }
 
-input[type="text"] {
+input[type='text'] {
     width: 40px;
 }
 
@@ -73,7 +73,7 @@ body {
     padding: 0;
     border: 0;
     position: fixed;
-    top:0;
+    top: 0;
     bottom: 0;
     left: 0;
     right: 0;
@@ -100,7 +100,9 @@ body {
     height: 100%;
 }
 
-.full-page #header, .full-page .inset, .full-page #reset {
+.full-page #header,
+.full-page .inset,
+.full-page #reset {
     display: none;
 }
 
@@ -187,9 +189,9 @@ th {
 }
 
 canvas {
-  display: block;
-  float: left;
-  image-rendering: pixelated;
+    display: block;
+    float: left;
+    image-rendering: pixelated;
 }
 
 .mono {
@@ -199,7 +201,13 @@ canvas {
 .scanlines:after {
     display: block;
     pointer-events: none;
-    background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 1px, rgba(0,0,0,0.5) 1px, rgba(0,0,0,0.5) 2px);
+    background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent 1px,
+        rgba(0, 0, 0, 0.5) 1px,
+        rgba(0, 0, 0, 0.5) 2px
+    );
     content: '';
     position: absolute;
     top: 0;
@@ -209,7 +217,13 @@ canvas {
 }
 
 .full-page .scanlines:after {
-    background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 0.25vh, rgba(0,0,0,0.5) 0.25vh, rgba(0,0,0,0.5) 0.5vh);
+    background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent 0.25vh,
+        rgba(0, 0, 0, 0.5) 0.25vh,
+        rgba(0, 0, 0, 0.5) 0.5vh
+    );
 }
 
 #screen {
@@ -238,7 +252,7 @@ canvas {
 #about {
     padding: 16px;
     margin: 0;
-    font-family: "Adobe Garamond Pro",Garamond,Times;
+    font-family: 'Adobe Garamond Pro', Garamond, Times;
     font-size: 14px;
     background-color: #fff;
     color: #000;
@@ -287,7 +301,7 @@ canvas {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0,0,0,0.6);
+    background: rgba(0, 0, 0, 0.6);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -307,10 +321,10 @@ canvas {
     font-size: 14px;
     justify-content: space-between;
     align-items: center;
-    background: #44372C;
+    background: #44372c;
     color: #fff;
     padding: 5px 11px;
-    border: 1px outset #66594E;
+    border: 1px outset #66594e;
     border-radius: 3px;
     user-select: none;
 }
@@ -325,13 +339,15 @@ canvas {
     box-sizing: border-box;
 }
 
-.modal__close, .modal__close:active, .modal__close:hover {
+.modal__close,
+.modal__close:active,
+.modal__close:hover {
     background: transparent;
     padding: 3px;
 }
 
 .modal__header .modal__close:before {
-    content: "\2715";
+    content: '\2715';
 }
 
 .modal__content {
@@ -348,10 +364,10 @@ canvas {
 
 button,
 a.button {
-    background: #44372C;
+    background: #44372c;
     color: #fff;
     padding: 2px 8px;
-    border: 1px outset #66594E;
+    border: 1px outset #66594e;
     border-radius: 3px;
     font-size: 15px;
     text-decoration: none;
@@ -359,14 +375,14 @@ a.button {
 
 button:hover,
 a.button:hover {
-    background-color: #55473D;
-    border: 1px outset #66594E;
+    background-color: #55473d;
+    border: 1px outset #66594e;
 }
 
 button:active,
 a.button:active {
-    background-color: #22150A;
-    border: 1px outset #44372C;
+    background-color: #22150a;
+    border: 1px outset #44372c;
 }
 
 button:focus,
@@ -374,7 +390,8 @@ a.button:hover {
     outline: none;
 }
 
-#keyboard, #reset {
+#keyboard,
+#reset {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     -khtml-user-select: none;
@@ -435,23 +452,23 @@ a.button:hover {
     padding: 0;
     width: 32px;
     height: 32px;
-    background-color: #44372C;
+    background-color: #44372c;
     color: white;
     text-align: center;
     position: relative;
-    border-left: 5px solid #65594D;
-    border-top: 5px solid #65594D;
-    border-right: 5px solid #110E0D;
-    border-bottom: 5px solid #110E0D;
+    border-left: 5px solid #65594d;
+    border-top: 5px solid #65594d;
+    border-right: 5px solid #110e0d;
+    border-bottom: 5px solid #110e0d;
     /* border: 5px outset #66594E; */
     border-radius: 5px;
     cursor: pointer;
 }
 
 #keyboard .pressed {
-    background-color: #22150A;
-    border-left: 5px solid #44372C;
-    border-top: 5px solid #44372C;
+    background-color: #22150a;
+    border-left: 5px solid #44372c;
+    border-top: 5px solid #44372c;
     border-right: 5px solid #000000;
     border-bottom: 5px solid #000000;
     /* border: 5px outset #44372C; */
@@ -602,11 +619,11 @@ a.button:hover {
 }
 
 #reset {
-    background: #44372C;
-    border-left: 3px solid #65594D;
-    border-top: 3px solid #65594D;
-    border-right: 3px solid #110E0D;
-    border-bottom: 3px solid #110E0D;
+    background: #44372c;
+    border-left: 3px solid #65594d;
+    border-top: 3px solid #65594d;
+    border-right: 3px solid #110e0d;
+    border-bottom: 3px solid #110e0d;
     /* border: 5px outset #66594E; */
     border-radius: 3px;
     color: white;
@@ -621,14 +638,14 @@ a.button:hover {
 }
 
 #reset:hover {
-  background: #44372C;
-  border: 3px outset #66594E;
+    background: #44372c;
+    border: 3px outset #66594e;
 }
 
 #reset:active {
-    background-color: #22150A;
-    border-left: 3px solid #44372C;
-    border-top: 3px solid #44372C;
+    background-color: #22150a;
+    border-left: 3px solid #44372c;
+    border-top: 3px solid #44372c;
     border-right: 3px solid #000000;
     border-bottom: 3px solid #000000;
 }
@@ -654,8 +671,8 @@ a.button:hover {
 }
 
 .standalone {
-  position: fixed;
-  width: 100%;
+    position: fixed;
+    width: 100%;
 }
 
 .standalone #header {

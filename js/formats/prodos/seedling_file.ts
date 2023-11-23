@@ -8,7 +8,10 @@ export class SeedlingFile extends ProDOSFile {
     blocks: Uint8Array[];
     bitMap: BitMap;
 
-    constructor(volume: ProDOSVolume, private fileEntry: FileEntry) {
+    constructor(
+        volume: ProDOSVolume,
+        private fileEntry: FileEntry
+    ) {
         super(volume);
         this.blocks = volume.blocks();
         this.bitMap = volume.bitMap();
@@ -45,4 +48,3 @@ export class SeedlingFile extends ProDOSFile {
         }
     }
 }
-

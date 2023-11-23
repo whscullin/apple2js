@@ -12,16 +12,17 @@ module.exports = {
         [
             '@babel/typescript',
             {
-                jsxPragma: 'h'
-            }
+                jsxPragma: 'h',
+            },
         ],
     ],
     plugins: [
         [
-            '@babel/plugin-transform-react-jsx', {
+            '@babel/plugin-transform-react-jsx',
+            {
                 pragma: 'h',
                 pragmaFrag: 'Fragment',
-            }
-        ]
-    ]
+            },
+        ],
+    ],
 };

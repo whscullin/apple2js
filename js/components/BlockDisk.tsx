@@ -85,12 +85,17 @@ export const BlockDisk = ({ smartPort, number, on, name }: BlockDiskProps) => {
                 id={`disk${number}`}
                 className={cs(styles.diskLight, { [styles.on]: on })}
             />
-            <ControlButton title="Load Disk" onClick={onOpenModal} icon="folder-open" />
-            <ControlButton title="Save Disk" onClick={onOpenDownloadModal} icon="save" />
-            <div
-                id={`disk-label${number}`}
-                className={styles.diskLabel}
-            >
+            <ControlButton
+                title="Load Disk"
+                onClick={onOpenModal}
+                icon="folder-open"
+            />
+            <ControlButton
+                title="Save Disk"
+                onClick={onOpenDownloadModal}
+                icon="save"
+            />
+            <div id={`disk-label${number}`} className={styles.diskLabel}>
                 {name}
             </div>
         </DiskDragTarget>

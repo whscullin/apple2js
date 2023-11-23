@@ -6,8 +6,8 @@ import { DiskOptions, ENCODING_BITSTREAM, WozDisk } from './types';
 const WOZ_HEADER_START = 0;
 const WOZ_HEADER_SIZE = 12;
 
-const WOZ1_SIGNATURE = 0x315A4F57;
-const WOZ2_SIGNATURE = 0x325A4F57;
+const WOZ1_SIGNATURE = 0x315a4f57;
+const WOZ2_SIGNATURE = 0x325a4f57;
 const WOZ_INTEGRITY_CHECK = 0x0a0d0aff;
 
 /**
@@ -89,24 +89,37 @@ export class TrksChunk1 extends TrksChunk {
         this.rawTracks = [];
         this.tracks = [];
 
-        for (let trackNo = 0, idx = 0; idx < data.byteLength; idx += WOZ_TRACK_SIZE, trackNo++) {
+        for (
+            let trackNo = 0, idx = 0;
+            idx < data.byteLength;
+            idx += WOZ_TRACK_SIZE, trackNo++
+        ) {
             let track = [];
             const rawTrack: bit[] = [];
-            const slice = data.buffer.slice(data.byteOffset + idx, data.byteOffset + idx + WOZ_TRACK_SIZE);
+            const slice = data.buffer.slice(
+                data.byteOffset + idx,
+                data.byteOffset + idx + WOZ_TRACK_SIZE
+            );
             const trackData = new Uint8Array(slice);
             const trackInfo = new DataView(slice);
-            const trackBitCount = trackInfo.getUint16(WOZ_TRACK_INFO_BITS, true);
+            const trackBitCount = trackInfo.getUint16(
+                WOZ_TRACK_INFO_BITS,
+                true
+            );
             for (let jdx = 0; jdx < trackBitCount; jdx++) {
                 const byteIndex = jdx >> 3;
                 const bitIndex = 7 - (jdx & 0x07);
-                rawTrack[jdx] = (trackData[byteIndex] >> bitIndex) & 0x01 ? 1 : 0;
+                rawTrack[jdx] =
+                    (trackData[byteIndex] >> bitIndex) & 0x01 ? 1 : 0;
             }
 
             track = [];
             let offset = 0;
             while (offset < rawTrack.length) {
                 const result = grabNibble(rawTrack, offset);
-                if (!result.nibble) { break; }
+                if (!result.nibble) {
+                    break;
+                }
                 track.push(result.nibble);
                 offset = result.offset + 1;
             }
@@ -126,7 +139,7 @@ export interface Trk {
 export class TrksChunk2 extends TrksChunk {
     trks: Trk[];
 
-    constructor (data: DataView) {
+    constructor(data: DataView) {
         super();
 
         let trackNo;
@@ -135,11 +148,13 @@ export class TrksChunk2 extends TrksChunk {
             const startBlock = data.getUint16(trackNo * 8, true);
             const blockCount = data.getUint16(trackNo * 8 + 2, true);
             const bitCount = data.getUint32(trackNo * 8 + 4, true);
-            if (bitCount === 0) { break; }
+            if (bitCount === 0) {
+                break;
+            }
             this.trks.push({
                 startBlock: startBlock,
                 blockCount: blockCount,
-                bitCount: bitCount
+                bitCount: bitCount,
             });
         }
         this.tracks = [];
@@ -161,14 +176,17 @@ export class TrksChunk2 extends TrksChunk {
             for (let jdx = 0; jdx < trk.bitCount; jdx++) {
                 const byteIndex = jdx >> 3;
                 const bitIndex = 7 - (jdx & 0x07);
-                rawTrack[jdx] = (trackData[byteIndex] >> bitIndex) & 0x01 ? 1 : 0;
+                rawTrack[jdx] =
+                    (trackData[byteIndex] >> bitIndex) & 0x01 ? 1 : 0;
             }
 
             track = [];
             let offset = 0;
             while (offset < rawTrack.length) {
                 const result = grabNibble(rawTrack, offset);
-                if (!result.nibble) { break; }
+                if (!result.nibble) {
+                    break;
+                }
                 track.push(result.nibble);
                 offset = result.offset + 1;
             }
@@ -179,13 +197,16 @@ export class TrksChunk2 extends TrksChunk {
     }
 }
 
-export class MetaChunk  {
+export class MetaChunk {
     values: Record<string, string>;
 
-    constructor (data: DataView) {
+    constructor(data: DataView) {
         const infoStr = stringFromBytes(data, 0, data.byteLength);
         const parts = infoStr.split('\n');
-        this.values = parts.reduce(function(acc: Record<string, string>, part) {
+        this.values = parts.reduce(function (
+            acc: Record<string, string>,
+            part
+        ) {
             const subParts = part.split('\t');
             acc[subParts[0]] = subParts[1];
             return acc;
@@ -250,7 +271,7 @@ export default function createDiskFromWoz(options: DiskOptions): WozDisk {
         return {
             type: type,
             size: size,
-            data: data
+            data: data,
         };
     }
 
@@ -259,24 +280,24 @@ export default function createDiskFromWoz(options: DiskOptions): WozDisk {
         let chunk = readChunk();
         while (chunk) {
             switch (chunk.type) {
-                case 0x4F464E49: // INFO
+                case 0x4f464e49: // INFO
                     chunks.info = new InfoChunk(chunk.data);
                     break;
-                case 0x50414D54: // TMAP
+                case 0x50414d54: // TMAP
                     chunks.tmap = new TMapChunk(chunk.data);
                     break;
-                case 0x534B5254: // TRKS
+                case 0x534b5254: // TRKS
                     if (wozVersion === 1) {
                         chunks.trks = new TrksChunk1(chunk.data);
                     } else {
                         chunks.trks = new TrksChunk2(chunk.data);
                     }
                     break;
-                case 0x4154454D: // META
+                case 0x4154454d: // META
                     chunks.meta = new MetaChunk(chunk.data);
                     break;
                 case 0x54495257: // WRIT
-                // Ignore
+                    // Ignore
                     break;
                 default:
                     debug('Unsupported chunk', toHex(chunk.type, 8));
@@ -299,9 +320,9 @@ export default function createDiskFromWoz(options: DiskOptions): WozDisk {
         readOnly: true, //chunks.info.writeProtected === 1;
         metadata: {
             name: meta?.values['title'] || options.name,
-            side: meta?.values['side_name'] || meta?.values['side']
+            side: meta?.values['side_name'] || meta?.values['side'],
         },
-        info
+        info,
     };
 
     return disk;

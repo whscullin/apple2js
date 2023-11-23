@@ -1,32 +1,38 @@
-<!DOCTYPE html>
+<!doctype html>
 
 <head>
-  <title>PreApple II</title>
-  <meta name="viewport" content="width=640, user-scalable=no" />
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta charset="utf-8" />
+    <title>PreApple II</title>
+    <meta name="viewport" content="width=640, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta charset="utf-8" />
 
-  <link rel="apple-touch-icon" href="img/webapp-iphone.png" />
-  <link rel="apple-touch-icon" size="72x72" href="img/webapp-ipad.png" />
-  <link rel="shortcut icon" href="img/logoicon.png" />
-  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.1.1/css/all.css" />
-  <style>
-    body {
-      background-color: #c4c1a0;
-      margin: 16px 0;
-    }
-  </style>
+    <link rel="apple-touch-icon" href="img/webapp-iphone.png" />
+    <link rel="apple-touch-icon" size="72x72" href="img/webapp-ipad.png" />
+    <link rel="shortcut icon" href="img/logoicon.png" />
+    <link
+        rel="stylesheet"
+        href="https://use.fontawesome.com/releases/v6.1.1/css/all.css"
+    />
+    <style>
+        body {
+            background-color: #c4c1a0;
+            margin: 16px 0;
+        }
+    </style>
 </head>
 
 <body>
-  <div id="app"></div>
-  <svg width="0" height="0" xmlns="http://www.w3.org/2000/svg">
-    <filter id="green">
-      <feColorMatrix type="matrix" values="0.0 0.0 0.0 0.0 0
+    <div id="app"></div>
+    <svg width="0" height="0" xmlns="http://www.w3.org/2000/svg">
+        <filter id="green">
+            <feColorMatrix
+                type="matrix"
+                values="0.0 0.0 0.0 0.0 0
                     0.0 1.0 0.0 0.0 0
                     0.0 0.0 0.5 0.0 0
-                    0.0 0.0 0.0 1.0 0" />
-    </filter>
-  </svg>
-  <script src="dist/preact.bundle.js"></script>
+                    0.0 0.0 0.0 1.0 0"
+            />
+        </filter>
+    </svg>
+    <script src="dist/preact.bundle.js"></script>
 </body>

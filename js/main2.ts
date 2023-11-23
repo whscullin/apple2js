@@ -59,33 +59,35 @@ const options = {
     characterRom,
     e: false,
     enhanced: false,
-    tick: updateUI
+    tick: updateUI,
 };
 
 export const apple2 = new Apple2(options);
-apple2.ready.then(() => {
-    const cpu = apple2.getCPU();
-    const io = apple2.getIO();
+apple2.ready
+    .then(() => {
+        const cpu = apple2.getCPU();
+        const io = apple2.getIO();
 
-    const printer = new Printer('#printer-modal .paper');
+        const printer = new Printer('#printer-modal .paper');
 
-    const lc = new LanguageCard(apple2.getROM());
-    const parallel = new Parallel(printer);
-    const videoTerm = new VideoTerm();
-    const slinky = new RAMFactor(1024 * 1024);
-    const disk2 = new DiskII(io, driveLights, sectors);
-    const clock = new Thunderclock();
-    const smartport = new SmartPort(cpu, null, { block: true });
+        const lc = new LanguageCard(apple2.getROM());
+        const parallel = new Parallel(printer);
+        const videoTerm = new VideoTerm();
+        const slinky = new RAMFactor(1024 * 1024);
+        const disk2 = new DiskII(io, driveLights, sectors);
+        const clock = new Thunderclock();
+        const smartport = new SmartPort(cpu, null, { block: true });
 
-    io.setSlot(0, lc);
-    io.setSlot(1, parallel);
-    io.setSlot(2, slinky);
-    io.setSlot(4, clock);
-    io.setSlot(3, videoTerm);
-    io.setSlot(6, disk2);
-    io.setSlot(7, smartport);
+        io.setSlot(0, lc);
+        io.setSlot(1, parallel);
+        io.setSlot(2, slinky);
+        io.setSlot(4, clock);
+        io.setSlot(3, videoTerm);
+        io.setSlot(6, disk2);
+        io.setSlot(7, smartport);
 
-    cpu.addPageHandler(lc);
+        cpu.addPageHandler(lc);
 
-    initUI(apple2, disk2, smartport, printer, false);
-}).catch(console.error);
+        initUI(apple2, disk2, smartport, printer, false);
+    })
+    .catch(console.error);

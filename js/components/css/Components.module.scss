@@ -2,13 +2,13 @@
     font-size: 14px;
     font-family: sans-serif;
 
-    a[role="button"] {
+    a[role='button'] {
         text-decoration: none;
     }
 
     button,
-    a[role="button"],
-    input[type="file"]::file-selector-button {
+    a[role='button'],
+    input[type='file']::file-selector-button {
         background: #44372c;
         color: #fff;
         padding: 2px 8px;
@@ -24,26 +24,26 @@
     }
 
     button:hover,
-    a[role="button"]:hover,
-    input[type="file"]::file-selector-button {
+    a[role='button']:hover,
+    input[type='file']::file-selector-button {
         background-color: #55473d;
         border: 1px outset #66594e;
     }
 
     button:active,
-    a[role="button"]:active,
-    input[type="file"]::file-selector-button {
+    a[role='button']:active,
+    input[type='file']::file-selector-button {
         background-color: #22150a;
         border: 1px outset #44372c;
     }
 
     button:focus,
-    a[role="button"]:focus,
-    input[type="file"]::file-selector-button {
+    a[role='button']:focus,
+    input[type='file']::file-selector-button {
         outline: none;
     }
 
-    input[type="checkbox"] {
+    input[type='checkbox'] {
         appearance: none;
         background-color: #65594d;
         border: 1px inset #65594d;
@@ -54,14 +54,14 @@
         position: relative;
     }
 
-    input[type="checkbox"]:checked {
+    input[type='checkbox']:checked {
         background-color: #65594d;
         border: 1px inset #65594d;
         color: #0d0;
     }
 
-    input[type="checkbox"]:checked::after {
-        content: "\2716";
+    input[type='checkbox']:checked::after {
+        content: '\2716';
         font-size: 12px;
         position: absolute;
         top: 0;

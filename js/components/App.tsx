@@ -24,16 +24,13 @@ export const App = () => {
 
     const system = {
         ...defaultSystem,
-        ...(systemTypes[systemType] || {})
+        ...(systemTypes[systemType] || {}),
     };
 
     return (
         <div className={cs(styles.container, componentStyles.components)}>
             <Header e={system.e} />
-            <Apple2
-                gl={gl}
-                {...system}
-            />
+            <Apple2 gl={gl} {...system} />
         </div>
     );
 };

@@ -1,5 +1,11 @@
 import { h, Fragment } from 'preact';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'preact/hooks';
 import Apple2IO, { slot } from 'js/apple2io';
 import Parallel, { ParallelOptions } from 'js/cards/parallel';
 import { Modal, ModalContent, ModalFooter } from './Modal';
@@ -20,32 +26,35 @@ export const Printer = ({ io, slot }: PrinterProps) => {
     const rawLength = useRef(0);
     const [href, setHref] = useState('');
 
-    const cbs = useMemo<ParallelOptions>(() => ({
-        putChar: (val: byte) => {
-            const ascii = val & 0x7f;
-            const visible = val >= 0x20;
-            const char = String.fromCharCode(ascii);
+    const cbs = useMemo<ParallelOptions>(
+        () => ({
+            putChar: (val: byte) => {
+                const ascii = val & 0x7f;
+                const visible = val >= 0x20;
+                const char = String.fromCharCode(ascii);
 
-            if (char === '\r') {
-                // Skip for once
-            } else if (char === '\t') {
-                // possibly not right due to tab stops
-                setContent((content) => content += '        ');
-            } else if (ascii === 0x04) {
-                setContent((content) => content = content.slice(0, -1));
-                return;
-            } else if (visible) {
-                setContent((content) => content += char);
-            }
+                if (char === '\r') {
+                    // Skip for once
+                } else if (char === '\t') {
+                    // possibly not right due to tab stops
+                    setContent((content) => (content += '        '));
+                } else if (ascii === 0x04) {
+                    setContent((content) => (content = content.slice(0, -1)));
+                    return;
+                } else if (visible) {
+                    setContent((content) => (content += char));
+                }
 
-            raw.current[rawLength.current++] = val;
-            if (rawLength.current > raw.current.length) {
-                const newRaw = new Uint8Array(raw.current.length * 2);
-                newRaw.set(raw.current);
-                raw.current = newRaw;
-            }
-        }
-    }), [rawLength]);
+                raw.current[rawLength.current++] = val;
+                if (rawLength.current > raw.current.length) {
+                    const newRaw = new Uint8Array(raw.current.length * 2);
+                    newRaw.set(raw.current);
+                    raw.current = newRaw;
+                }
+            },
+        }),
+        [rawLength]
+    );
 
     useEffect(() => {
         if (io) {
@@ -56,10 +65,9 @@ export const Printer = ({ io, slot }: PrinterProps) => {
 
     useEffect(() => {
         if (isOpen) {
-            const blob = new Blob(
-                [raw.current.slice(0, rawLength.current)],
-                { type: 'application/octet-stream' }
-            );
+            const blob = new Blob([raw.current.slice(0, rawLength.current)], {
+                type: 'application/octet-stream',
+            });
             const href = window.URL.createObjectURL(blob);
             setHref(href);
         }
@@ -80,7 +88,7 @@ export const Printer = ({ io, slot }: PrinterProps) => {
         <>
             <Modal isOpen={isOpen} onClose={onClose} title="Printer">
                 <ModalContent>
-                    <pre className={styles.printer} tabIndex={-1} >
+                    <pre className={styles.printer} tabIndex={-1}>
                         {content}
                     </pre>
                 </ModalContent>

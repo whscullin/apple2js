@@ -2,29 +2,29 @@ import type { KnownKeys } from '../types';
 
 export const BUTTON = {
     // Buttons
-    'A': 0,
-    'B': 1,
-    'X': 2,
-    'Y': 3,
+    A: 0,
+    B: 1,
+    X: 2,
+    Y: 3,
 
     // Triggers
-    'L1': 4,
-    'R1': 5,
+    L1: 4,
+    R1: 5,
 
     // Analog stick buttons
-    'L3': 6,
-    'R3': 7,
+    L3: 6,
+    R3: 7,
 
     // Special
-    'START': 8,
-    'SELECT': 9,
-    'LOGO': 10,
+    START: 8,
+    SELECT: 9,
+    LOGO: 10,
 
     // D pad
-    'UP': 11,
-    'DOWN': 12,
-    'LEFT': 13,
-    'RIGHT': 14
+    UP: 11,
+    DOWN: 12,
+    LEFT: 13,
+    RIGHT: 14,
 } as const;
 
 export type ButtonType = KnownKeys<typeof BUTTON>;

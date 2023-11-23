@@ -1,7 +1,11 @@
 import type { byte, Card, Restorable } from '../types';
 import { debug, toHex } from '../util';
 import { rom as readOnlyRom } from '../roms/cards/cffa';
-import { create2MGFromBlockDisk, HeaderData, read2MGHeader } from '../formats/2mg';
+import {
+    create2MGFromBlockDisk,
+    HeaderData,
+    read2MGHeader,
+} from '../formats/2mg';
 import { ProDOSVolume } from '../formats/prodos';
 import createBlockDisk from '../formats/block';
 import {
@@ -15,9 +19,9 @@ import {
 const rom = new Uint8Array(readOnlyRom);
 
 const COMMANDS = {
-    ATACRead:    0x20,
-    ATACWrite:   0x30,
-    ATAIdentify: 0xEC
+    ATACRead: 0x20,
+    ATACWrite: 0x30,
+    ATAIdentify: 0xec,
 };
 
 // CFFA Card Settings
@@ -25,68 +29,69 @@ const COMMANDS = {
 const SETTINGS = {
     Max32MBPartitionsDev0: 0x800,
     Max32MBPartitionsDev1: 0x801,
-    DefaultBootDevice:     0x802,
-    DefaultBootPartition:  0x803,
-    Reserved:              0x804, // 4 bytes
-    WriteProtectBits:      0x808,
-    MenuSnagMask:          0x809,
-    MenuSnagKey:           0x80A,
-    BootTimeDelayTenths:   0x80B,
-    BusResetSeconds:       0x80C,
-    CheckDeviceTenths:     0x80D,
-    ConfigOptionBits:      0x80E,
-    BlockOffsetDev0:       0x80F, // 3 bytes
-    BlockOffsetDev1:       0x812, // 3 bytes
-    Unused:                0x815
+    DefaultBootDevice: 0x802,
+    DefaultBootPartition: 0x803,
+    Reserved: 0x804, // 4 bytes
+    WriteProtectBits: 0x808,
+    MenuSnagMask: 0x809,
+    MenuSnagKey: 0x80a,
+    BootTimeDelayTenths: 0x80b,
+    BusResetSeconds: 0x80c,
+    CheckDeviceTenths: 0x80d,
+    ConfigOptionBits: 0x80e,
+    BlockOffsetDev0: 0x80f, // 3 bytes
+    BlockOffsetDev1: 0x812, // 3 bytes
+    Unused: 0x815,
 };
 
 // CFFA ATA Register Locations
 
 const LOC = {
-    ATADataHigh:   0x80,
-    SetCSMask:     0x81,
-    ClearCSMask:   0x82,
-    WriteEEPROM:   0x83,
+    ATADataHigh: 0x80,
+    SetCSMask: 0x81,
+    ClearCSMask: 0x82,
+    WriteEEPROM: 0x83,
     NoWriteEEPROM: 0x84,
-    ATADevCtrl:    0x86,
-    ATAAltStatus:  0x86,
-    ATADataLow:    0x88,
-    AError:        0x89,
-    ASectorCnt:    0x8a,
-    ASector:       0x8b,
-    ATACylinder:   0x8c,
-    ATACylinderH:  0x8d,
-    ATAHead:       0x8e,
-    ATACommand:    0x8f,
-    ATAStatus:     0x8f
+    ATADevCtrl: 0x86,
+    ATAAltStatus: 0x86,
+    ATADataLow: 0x88,
+    AError: 0x89,
+    ASectorCnt: 0x8a,
+    ASector: 0x8b,
+    ATACylinder: 0x8c,
+    ATACylinderH: 0x8d,
+    ATAHead: 0x8e,
+    ATACommand: 0x8f,
+    ATAStatus: 0x8f,
 };
 
 // ATA Status Bits
 
 const STATUS = {
-    BSY:  0x80, // Busy
+    BSY: 0x80, // Busy
     DRDY: 0x40, // Drive ready. 1 when ready
-    DWF:  0x20, // Drive write fault. 1 when fault
-    DSC:  0x10, // Disk seek complete. 1 when not seeking
-    DRQ:  0x08, // Data request. 1 when ready to write
+    DWF: 0x20, // Drive write fault. 1 when fault
+    DSC: 0x10, // Disk seek complete. 1 when not seeking
+    DRQ: 0x08, // Data request. 1 when ready to write
     CORR: 0x04, // Correct data. 1 on correctable error
-    IDX:  0x02, // 1 once per revolution
-    ERR:  0x01  // Error. 1 on error
+    IDX: 0x02, // 1 once per revolution
+    ERR: 0x01, // Error. 1 on error
 };
 
 // ATA Identity Block Locations
 
 const IDENTITY = {
-    SectorCountLow:  58,
-    SectorCountHigh: 57
+    SectorCountLow: 58,
+    SectorCountHigh: 57,
 };
 
 export interface CFFAState {
     disks: Array<BlockDisk | null>;
 }
 
-export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<CFFAState> {
-
+export default class CFFA
+    implements Card, MassStorage<BlockFormat>, Restorable<CFFAState>
+{
     // CFFA internal Flags
 
     private _disableSignalling = false;
@@ -122,22 +127,22 @@ export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<
 
     // Disk data
 
-    private _partitions: Array<ProDOSVolume|null> = [
+    private _partitions: Array<ProDOSVolume | null> = [
         // Drive 1
         null,
         // Drive 2
-        null
+        null,
     ];
 
     private _sectors: Uint16Array[][] = [
         // Drive 1
         [],
         // Drive 2
-        []
+        [],
     ];
 
     private _name: string[] = [];
-    private _metadata: Array<HeaderData|null> = [];
+    private _metadata: Array<HeaderData | null> = [];
 
     constructor() {
         debug('CFFA');
@@ -178,7 +183,7 @@ export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<
         const statusArray = [];
         let flag: keyof typeof STATUS;
         for (flag in STATUS) {
-            if(status & STATUS[flag]) {
+            if (status & STATUS[flag]) {
                 statusArray.push(flag);
             }
         }
@@ -199,7 +204,7 @@ export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<
                 const val = this._sectors[this._drive][sector][idx * 16 + jdx];
                 row.push(toHex(val, 4));
                 const low = val & 0x7f;
-                const hi = val >> 8 & 0x7f;
+                const hi = (val >> 8) & 0x7f;
                 charRow.push(low > 0x1f ? String.fromCharCode(low) : '.');
                 charRow.push(hi > 0x1f ? String.fromCharCode(hi) : '.');
             }
@@ -217,106 +222,119 @@ export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<
         if (readMode) {
             retVal = 0;
             switch (off & 0x8f) {
-                case LOC.ATADataHigh:   // 0x00
+                case LOC.ATADataHigh: // 0x00
                     retVal = this._dataHigh;
                     break;
-                case LOC.SetCSMask:     // 0x01
+                case LOC.SetCSMask: // 0x01
                     this._disableSignalling = true;
                     break;
-                case LOC.ClearCSMask:   // 0x02
+                case LOC.ClearCSMask: // 0x02
                     this._disableSignalling = false;
                     break;
-                case LOC.WriteEEPROM:   // 0x03
+                case LOC.WriteEEPROM: // 0x03
                     this._writeEEPROM = true;
                     break;
                 case LOC.NoWriteEEPROM: // 0x04
                     this._writeEEPROM = false;
                     break;
-                case LOC.ATAAltStatus:  // 0x06
+                case LOC.ATAAltStatus: // 0x06
                     retVal = this._altStatus;
                     break;
-                case LOC.ATADataLow:    // 0x08
+                case LOC.ATADataLow: // 0x08
                     this._dataHigh = this._curSector[this._curWord] >> 8;
                     retVal = this._curSector[this._curWord] & 0xff;
                     if (!this._disableSignalling) {
                         this._curWord++;
                     }
                     break;
-                case LOC.AError:        // 0x09
+                case LOC.AError: // 0x09
                     retVal = this._error;
                     break;
-                case LOC.ASectorCnt:    // 0x0A
+                case LOC.ASectorCnt: // 0x0A
                     retVal = this._sectorCnt;
                     break;
-                case LOC.ASector:       // 0x0B
+                case LOC.ASector: // 0x0B
                     retVal = this._sector;
                     break;
-                case LOC.ATACylinder:   // 0x0C
+                case LOC.ATACylinder: // 0x0C
                     retVal = this._cylinder;
                     break;
-                case LOC.ATACylinderH:  // 0x0D
+                case LOC.ATACylinderH: // 0x0D
                     retVal = this._cylinderH;
                     break;
-                case LOC.ATAHead:       // 0x0E
-                    retVal = this._head | (this._lba ? 0x40 : 0) | (this._drive ? 0x10 : 0) | 0xA0;
+                case LOC.ATAHead: // 0x0E
+                    retVal =
+                        this._head |
+                        (this._lba ? 0x40 : 0) |
+                        (this._drive ? 0x10 : 0) |
+                        0xa0;
                     break;
-                case LOC.ATAStatus:     // 0x0F
-                    retVal = this._sectors[this._drive].length > 0 ? STATUS.DRDY | STATUS.DSC : 0;
+                case LOC.ATAStatus: // 0x0F
+                    retVal =
+                        this._sectors[this._drive].length > 0
+                            ? STATUS.DRDY | STATUS.DSC
+                            : 0;
                     this._debug('returning status', this._statusString(retVal));
                     break;
                 default:
                     debug('read unknown soft switch', toHex(off));
             }
 
-            if (off & 0x7) { // Anything but data high/low
+            if (off & 0x7) {
+                // Anything but data high/low
                 this._debug('read soft switch', toHex(off), toHex(retVal));
             }
         } else {
-            if (off & 0x7) { // Anything but data high/low
+            if (off & 0x7) {
+                // Anything but data high/low
                 this._debug('write soft switch', toHex(off), toHex(val));
             }
 
             switch (off & 0x8f) {
-                case LOC.ATADataHigh:   // 0x00
+                case LOC.ATADataHigh: // 0x00
                     this._dataHigh = val;
                     break;
-                case LOC.SetCSMask:     // 0x01
+                case LOC.SetCSMask: // 0x01
                     this._disableSignalling = true;
                     break;
-                case LOC.ClearCSMask:   // 0x02
+                case LOC.ClearCSMask: // 0x02
                     this._disableSignalling = false;
                     break;
-                case LOC.WriteEEPROM:   // 0x03
+                case LOC.WriteEEPROM: // 0x03
                     this._writeEEPROM = true;
                     break;
                 case LOC.NoWriteEEPROM: // 0x04
                     this._writeEEPROM = false;
                     break;
-                case LOC.ATADevCtrl:    // 0x06
+                case LOC.ATADevCtrl: // 0x06
                     this._debug('devCtrl:', toHex(val));
-                    this._interruptsEnabled = (val & 0x04) ? true : false;
-                    this._debug('Interrupts', this._interruptsEnabled ? 'enabled' : 'disabled');
+                    this._interruptsEnabled = val & 0x04 ? true : false;
+                    this._debug(
+                        'Interrupts',
+                        this._interruptsEnabled ? 'enabled' : 'disabled'
+                    );
                     if (val & 0x02) {
                         this._reset();
                     }
                     break;
-                case LOC.ATADataLow:    // 0x08
-                    this._curSector[this._curWord] = this._dataHigh << 8 | val;
+                case LOC.ATADataLow: // 0x08
+                    this._curSector[this._curWord] =
+                        (this._dataHigh << 8) | val;
                     this._curWord++;
                     break;
-                case LOC.ASectorCnt:    // 0x0a
+                case LOC.ASectorCnt: // 0x0a
                     this._debug('setting sector count', val);
                     this._sectorCnt = val;
                     break;
-                case LOC.ASector:       // 0x0b
+                case LOC.ASector: // 0x0b
                     this._debug('setting sector', toHex(val));
                     this._sector = val;
                     break;
-                case LOC.ATACylinder:   // 0x0c
+                case LOC.ATACylinder: // 0x0c
                     this._debug('setting cylinder', toHex(val));
                     this._cylinder = val;
                     break;
-                case LOC.ATACylinderH:  // 0x0d
+                case LOC.ATACylinderH: // 0x0d
                     this._debug('setting cylinder high', toHex(val));
                     this._cylinderH = val;
                     break;
@@ -324,14 +342,23 @@ export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<
                     this._head = val & 0xf;
                     this._lba = val & 0x40 ? true : false;
                     this._drive = val & 0x10 ? 1 : 0;
-                    this._debug('setting head', toHex(val & 0xf), 'drive', this._drive);
+                    this._debug(
+                        'setting head',
+                        toHex(val & 0xf),
+                        'drive',
+                        this._drive
+                    );
                     if (!this._lba) {
                         console.error('CHS mode not supported');
                     }
                     break;
-                case LOC.ATACommand:    // 0x0f
+                case LOC.ATACommand: // 0x0f
                     this._debug('command:', toHex(val));
-                    sector = this._head << 24 | this._cylinderH << 16 | this._cylinder << 8 | this._sector;
+                    sector =
+                        (this._head << 24) |
+                        (this._cylinderH << 16) |
+                        (this._cylinder << 8) |
+                        this._sector;
                     this._dumpSector(sector);
 
                     switch (val) {
@@ -341,13 +368,27 @@ export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<
                             this._curWord = 0;
                             break;
                         case COMMANDS.ATACRead:
-                            this._debug('ATA read sector', toHex(this._cylinderH), toHex(this._cylinder), toHex(this._sector), sector);
-                            this._curSector = this._sectors[this._drive][sector];
+                            this._debug(
+                                'ATA read sector',
+                                toHex(this._cylinderH),
+                                toHex(this._cylinder),
+                                toHex(this._sector),
+                                sector
+                            );
+                            this._curSector =
+                                this._sectors[this._drive][sector];
                             this._curWord = 0;
                             break;
                         case COMMANDS.ATACWrite:
-                            this._debug('ATA write sector', toHex(this._cylinderH), toHex(this._cylinder), toHex(this._sector), sector);
-                            this._curSector = this._sectors[this._drive][sector];
+                            this._debug(
+                                'ATA write sector',
+                                toHex(this._cylinderH),
+                                toHex(this._cylinder),
+                                toHex(this._sector),
+                                sector
+                            );
+                            this._curSector =
+                                this._sectors[this._drive][sector];
                             this._curWord = 0;
                             break;
                         default:
@@ -367,49 +408,45 @@ export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<
     }
 
     read(page: byte, off: byte) {
-        return rom[(page - 0xc0) << 8 | off];
+        return rom[((page - 0xc0) << 8) | off];
     }
 
     write(page: byte, off: byte, val: byte) {
         if (this._writeEEPROM) {
-            this._debug('writing', toHex(page << 8 | off), toHex(val));
-            rom[(page - 0xc0) << 8 | off] - val;
+            this._debug('writing', toHex((page << 8) | off), toHex(val));
+            rom[((page - 0xc0) << 8) | off] - val;
         }
     }
 
     getState() {
         return {
-            disks: this._partitions.map(
-                (partition) => {
-                    let result: BlockDisk | null = null;
-                    if (partition) {
-                        const disk: BlockDisk = partition.disk();
-                        result = {
-                            blocks: disk.blocks.map(
-                                (block) => new Uint8Array(block)
-                            ),
-                            encoding: ENCODING_BLOCK,
-                            format: disk.format,
-                            readOnly: disk.readOnly,
-                            metadata: { ...disk.metadata },
-                        };
-                    }
-                    return result;
+            disks: this._partitions.map((partition) => {
+                let result: BlockDisk | null = null;
+                if (partition) {
+                    const disk: BlockDisk = partition.disk();
+                    result = {
+                        blocks: disk.blocks.map(
+                            (block) => new Uint8Array(block)
+                        ),
+                        encoding: ENCODING_BLOCK,
+                        format: disk.format,
+                        readOnly: disk.readOnly,
+                        metadata: { ...disk.metadata },
+                    };
                 }
-            )
+                return result;
+            }),
         };
     }
 
     setState(state: CFFAState) {
-        state.disks.forEach(
-            (disk, idx) => {
-                if (disk) {
-                    this.setBlockVolume(idx + 1, disk);
-                } else {
-                    this.resetBlockVolume(idx + 1);
-                }
+        state.disks.forEach((disk, idx) => {
+            if (disk) {
+                this.setBlockVolume(idx + 1, disk);
+            } else {
+                this.resetBlockVolume(idx + 1);
             }
-        );
+        });
     }
 
     resetBlockVolume(drive: number) {
@@ -433,12 +470,14 @@ export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<
         drive = drive - 1;
 
         // Convert 512 byte blocks into 256 word sectors
-        this._sectors[drive] = disk.blocks.map(function(block) {
+        this._sectors[drive] = disk.blocks.map(function (block) {
             return new Uint16Array(block.buffer);
         });
 
-        this._identity[drive][IDENTITY.SectorCountHigh] = this._sectors[0].length & 0xffff;
-        this._identity[drive][IDENTITY.SectorCountLow] = this._sectors[0].length >> 16;
+        this._identity[drive][IDENTITY.SectorCountHigh] =
+            this._sectors[0].length & 0xffff;
+        this._identity[drive][IDENTITY.SectorCountLow] =
+            this._sectors[0].length >> 16;
 
         const prodos = new ProDOSVolume(disk);
 
@@ -455,7 +494,12 @@ export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<
 
     // Assign a raw disk image to a drive. Must be 2mg or raw PO image.
 
-    setBinary(drive: number, name: string, ext: BlockFormat, rawData: ArrayBuffer) {
+    setBinary(
+        drive: number,
+        name: string,
+        ext: BlockFormat,
+        rawData: ArrayBuffer
+    ) {
         const volume = 254;
         const readOnly = false;
 
@@ -471,7 +515,7 @@ export default class CFFA implements Card, MassStorage<BlockFormat>, Restorable<
             rawData,
             name,
             volume,
-            readOnly
+            readOnly,
         };
         const disk = createBlockDisk(ext, options);
 

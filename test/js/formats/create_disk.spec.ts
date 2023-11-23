@@ -13,7 +13,7 @@ describe('createDiskFromJsonDisk', () => {
             },
             readOnly: undefined,
             volume: 254,
-            tracks: expect.any(Array) as number[][]
+            tracks: expect.any(Array) as number[][],
         });
     });
 });

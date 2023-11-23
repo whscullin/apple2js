@@ -54,8 +54,8 @@ interface Banks {
  * @returns LC read/write state
  */
 const calcLC = (mmu: MMU, altzp: boolean) => {
-    const read = mmu.readbsr && (mmu.altzp === altzp);
-    const write = mmu.writebsr && (mmu.altzp === altzp);
+    const read = mmu.readbsr && mmu.altzp === altzp;
+    const write = mmu.writebsr && mmu.altzp === altzp;
     return {
         read,
         write,
@@ -170,7 +170,7 @@ const calcLanguageCard = (card: LanguageCard): LC => {
         rom: {
             read: !card.readbsr,
             write: !card.writebsr,
-        }
+        },
     };
 };
 
@@ -207,16 +207,14 @@ interface LanguageCardMapProps {
 const LanguageCardMap = ({ lc, children }: LanguageCardMapProps) => {
     return (
         <div className={cs(styles.bank)}>
-            <div className={cs(styles.lc, rw(lc))}>
-                {children} LC
-            </div>
+            <div className={cs(styles.lc, rw(lc))}>{children} LC</div>
             <div className={styles.lcbanks}>
-                <div className={cs(styles.lcbank, styles.lcbank0, rw(lc.bank0))}>
+                <div
+                    className={cs(styles.lcbank, styles.lcbank0, rw(lc.bank0))}
+                >
                     Bank 0
                 </div>
-                <div className={cs(styles.lcbank, rw(lc.bank1))}>
-                    Bank 1
-                </div>
+                <div className={cs(styles.lcbank, rw(lc.bank1))}>Bank 1</div>
             </div>
         </div>
     );
@@ -238,10 +236,14 @@ const Legend = () => {
                 <div className={cs(styles.write, styles.legend)}> </div> Write
             </div>
             <div>
-                <div className={cs(styles.write, styles.read, styles.legend)}> </div> Read/Write
+                <div className={cs(styles.write, styles.read, styles.legend)}>
+                    {' '}
+                </div>{' '}
+                Read/Write
             </div>
             <div>
-                <div className={cs(styles.inactive, styles.legend)}> </div> Inactive
+                <div className={cs(styles.inactive, styles.legend)}> </div>{' '}
+                Inactive
             </div>
         </div>
     );
@@ -291,12 +293,8 @@ export const Memory = ({ apple2 }: MemoryProps) => {
             <div className={styles.memory}>
                 <div className={debuggerStyles.heading}>MMU</div>
                 <div className={cs(styles.upperMemory, debuggerStyles.row)}>
-                    <LanguageCardMap lc={banks.aux.lc}>
-                        Aux
-                    </LanguageCardMap>
-                    <LanguageCardMap lc={banks.main.lc}>
-                        Main
-                    </LanguageCardMap>
+                    <LanguageCardMap lc={banks.aux.lc}>Aux</LanguageCardMap>
+                    <LanguageCardMap lc={banks.main.lc}>Main</LanguageCardMap>
                     <div className={cs(styles.bank)}>
                         <div className={cs(styles.rom, rw(banks.main.lc.rom))}>
                             ROM
@@ -304,9 +302,7 @@ export const Memory = ({ apple2 }: MemoryProps) => {
                     </div>
                 </div>
                 <div className={cs(debuggerStyles.row)}>
-                    <div className={cs(styles.io, rw(banks.io))}>
-                        IO
-                    </div>
+                    <div className={cs(styles.io, rw(banks.io))}>IO</div>
                     <div className={cs(styles.intcxrom, rw(banks.intcxrom))}>
                         CXROM
                     </div>
@@ -348,9 +344,7 @@ export const Memory = ({ apple2 }: MemoryProps) => {
                 <div className={cs(debuggerStyles.row, styles.languageCard)}>
                     <LanguageCardMap lc={lc} />
                     <div className={cs(styles.bank)}>
-                        <div className={cs(styles.rom, rw(lc.rom))}>
-                            ROM
-                        </div>
+                        <div className={cs(styles.rom, rw(lc.rom))}>ROM</div>
                     </div>
                 </div>
                 <hr />

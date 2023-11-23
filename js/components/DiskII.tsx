@@ -70,7 +70,12 @@ export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
             formats={FLOPPY_FORMATS}
             onError={setError}
         >
-            <FileModal disk2={disk2} driveNo={number} onClose={doClose} isOpen={modalOpen} />
+            <FileModal
+                disk2={disk2}
+                driveNo={number}
+                onClose={doClose}
+                isOpen={modalOpen}
+            />
             <DownloadModal
                 driveNo={number}
                 massStorage={disk2}
@@ -79,11 +84,17 @@ export const DiskII = ({ disk2, number, on, name, side }: DiskIIProps) => {
             />
             <ErrorModal error={error} setError={setError} />
             <div className={cs(styles.diskLight, { [styles.on]: on })} />
-            <ControlButton title="Load Disk" onClick={onOpenModal} icon="folder-open" />
-            <ControlButton title="Save Disk" onClick={onOpenDownloadModal} icon="save" />
-            <div className={styles.diskLabel}>
-                {label}
-            </div>
+            <ControlButton
+                title="Load Disk"
+                onClick={onOpenModal}
+                icon="folder-open"
+            />
+            <ControlButton
+                title="Save Disk"
+                onClick={onOpenDownloadModal}
+                icon="save"
+            />
+            <div className={styles.diskLabel}>{label}</div>
         </DiskDragTarget>
     );
 };

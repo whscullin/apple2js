@@ -9,11 +9,11 @@ import {
 } from 'js/formats/types';
 
 const nibbleDisk = {
-    encoding: 'nibble'
+    encoding: 'nibble',
 } as NibbleDisk;
 
 const wozDisk = {
-    encoding: 'bitstream'
+    encoding: 'bitstream',
 } as WozDisk;
 
 describe('Format types', () => {

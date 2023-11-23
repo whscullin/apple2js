@@ -9,7 +9,7 @@ export interface VideotermProps {
     slot: slot;
 }
 
-export const Videoterm = ({ io, slot }: VideotermProps ) => {
+export const Videoterm = ({ io, slot }: VideotermProps) => {
     useEffect(() => {
         if (io) {
             const videoterm = new VideotermImpl();

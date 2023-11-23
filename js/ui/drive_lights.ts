@@ -5,9 +5,9 @@ export default class DriveLights implements Callbacks {
     public driveLight(driveNo: DriveNumber, on: boolean) {
         const disk = document.querySelector<HTMLElement>(`#disk${driveNo}`);
         if (disk) {
-            disk.style.backgroundImage =
-                on ? 'url(css/red-on-16.png)' :
-                    'url(css/red-off-16.png)';
+            disk.style.backgroundImage = on
+                ? 'url(css/red-on-16.png)'
+                : 'url(css/red-off-16.png)';
         }
     }
 
@@ -16,12 +16,14 @@ export default class DriveLights implements Callbacks {
     }
 
     public label(driveNo: DriveNumber, label?: string, side?: string) {
-        const labelElement = document.querySelector<HTMLElement>(`#disk-label${driveNo}`);
+        const labelElement = document.querySelector<HTMLElement>(
+            `#disk-label${driveNo}`
+        );
         let labelText = '';
         if (labelElement) {
             labelText = labelElement.innerText;
             if (label) {
-                labelText = `${label || ''} ${(side ? `- ${side}` : '')}`;
+                labelText = `${label || ''} ${side ? `- ${side}` : ''}`;
                 labelElement.innerText = labelText;
             }
         }

@@ -14,8 +14,10 @@ import styles from './css/BlockFileModal.module.scss';
 const DISK_TYPES: FilePickerAcceptType[] = [
     {
         description: 'Disk Images',
-        accept: { 'application/octet-stream': BLOCK_FORMATS.map(x => '.' + x) },
-    }
+        accept: {
+            'application/octet-stream': BLOCK_FORMATS.map((x) => '.' + x),
+        },
+    },
 ];
 
 interface BlockFileModalProps {
@@ -25,7 +27,12 @@ interface BlockFileModalProps {
     onClose: (closeBox?: boolean) => void;
 }
 
-export const BlockFileModal = ({ smartPort, driveNo: number, onClose, isOpen }: BlockFileModalProps) => {
+export const BlockFileModal = ({
+    smartPort,
+    driveNo: number,
+    onClose,
+    isOpen,
+}: BlockFileModalProps) => {
     const [handles, setHandles] = useState<FileSystemFileHandle[]>();
     const [busy, setBusy] = useState<boolean>(false);
     const [empty, setEmpty] = useState<boolean>(true);
@@ -41,7 +48,11 @@ export const BlockFileModal = ({ smartPort, driveNo: number, onClose, isOpen }: 
             hashParts[number] = '';
             setBusy(true);
             try {
-                await loadLocalBlockFile(smartPort, number, await handles[0].getFile());
+                await loadLocalBlockFile(
+                    smartPort,
+                    number,
+                    await handles[0].getFile()
+                );
             } catch (error) {
                 setError(error);
             } finally {
@@ -68,7 +79,9 @@ export const BlockFileModal = ({ smartPort, driveNo: number, onClose, isOpen }: 
                 </ModalContent>
                 <ModalFooter>
                     <button onClick={doCancel}>Cancel</button>
-                    <button onClick={noAwait(doOpen)} disabled={busy || empty}>Open</button>
+                    <button onClick={noAwait(doOpen)} disabled={busy || empty}>
+                        Open
+                    </button>
                 </ModalFooter>
             </Modal>
             <ErrorModal error={error} setError={setError} />

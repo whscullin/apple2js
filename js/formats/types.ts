@@ -70,7 +70,10 @@ export const ENCODING_BITSTREAM = 'bitstream';
 export const ENCODING_BLOCK = 'block';
 
 export interface FloppyDisk extends Disk {
-    encoding: typeof ENCODING_NIBBLE | typeof ENCODING_BITSTREAM | typeof NO_DISK;
+    encoding:
+        | typeof ENCODING_NIBBLE
+        | typeof ENCODING_BITSTREAM
+        | typeof NO_DISK;
 }
 
 export interface NoFloppyDisk extends FloppyDisk {
@@ -101,21 +104,12 @@ export interface BlockDisk extends Disk {
 /**
  * File types supported by floppy devices in nibble mode.
  */
-export const NIBBLE_FORMATS = [
-    '2mg',
-    'd13',
-    'do',
-    'dsk',
-    'po',
-    'nib',
-] as const;
+export const NIBBLE_FORMATS = ['2mg', 'd13', 'do', 'dsk', 'po', 'nib'] as const;
 
 /**
  * File types supported by floppy devices in bitstream mode.
  */
-export const BITSTREAM_FORMATS = [
-    'woz',
-] as const;
+export const BITSTREAM_FORMATS = ['woz'] as const;
 
 /**
  * All file types supported by floppy devices.
@@ -128,19 +122,12 @@ export const FLOPPY_FORMATS = [
 /**
  * File types supported by block devices.
  */
-export const BLOCK_FORMATS = [
-    '2mg',
-    'hdv',
-    'po',
-] as const;
+export const BLOCK_FORMATS = ['2mg', 'hdv', 'po'] as const;
 
 /**
  * All supported disk formats.
  */
-export const DISK_FORMATS = [
-    ...FLOPPY_FORMATS,
-    ...BLOCK_FORMATS,
-] as const;
+export const DISK_FORMATS = [...FLOPPY_FORMATS, ...BLOCK_FORMATS] as const;
 
 export type FloppyFormat = MemberOf<typeof FLOPPY_FORMATS>;
 export type NibbleFormat = MemberOf<typeof NIBBLE_FORMATS>;
@@ -259,9 +246,9 @@ export interface ProcessJsonMessage {
 }
 
 export type FormatWorkerMessage =
-    ProcessBinaryMessage |
-    ProcessJsonDiskMessage |
-    ProcessJsonMessage;
+    | ProcessBinaryMessage
+    | ProcessJsonDiskMessage
+    | ProcessJsonMessage;
 
 /**
  * Format work result message type
@@ -277,8 +264,7 @@ export interface DiskProcessedResponse {
     };
 }
 
-export type FormatWorkerResponse =
-    DiskProcessedResponse;
+export type FormatWorkerResponse = DiskProcessedResponse;
 
 export interface MassStorageData {
     metadata: DiskMetadata;

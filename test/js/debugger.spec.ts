@@ -28,18 +28,14 @@ describe('Debugger', () => {
     describe('#utility', () => {
         it('should list without symbols', () => {
             const listing = theDebugger.list(0xff00);
-            expect(listing[0]).toEqual(
-                'FF00-           00 00       BRK #$00'
-            );
+            expect(listing[0]).toEqual('FF00-           00 00       BRK #$00');
         });
 
         it('should list with symbols', () => {
-            theDebugger.addSymbols({0x00: 'ZERO', 0xFF00: 'ENTRY'});
+            theDebugger.addSymbols({ 0x00: 'ZERO', 0xff00: 'ENTRY' });
 
             const listing = theDebugger.list(0xff00);
-            expect(listing[0]).toEqual(
-                'FF00- ENTRY     00 00       BRK #ZERO'
-            );
+            expect(listing[0]).toEqual('FF00- ENTRY     00 00       BRK #ZERO');
         });
 
         it('should dump page', () => {
@@ -51,9 +47,7 @@ describe('Debugger', () => {
 
         it('should dump registers', () => {
             const regs = theDebugger.dumpRegisters();
-            expect(regs).toEqual(
-                'A=00 X=00 Y=00 P=20 S=FF --X-----'
-            );
+            expect(regs).toEqual('A=00 X=00 Y=00 P=20 S=FF --X-----');
         });
 
         it('should dump the stack,', () => {
@@ -78,7 +72,7 @@ describe('Debugger', () => {
 
         it('should dump the stack within size', () => {
             const registers = cpu.getState();
-            registers.sp = 0xE3;
+            registers.sp = 0xe3;
             cpu.setState(registers);
             const stack = theDebugger.getStack(32);
             const lines = stack.split('\n');
@@ -93,7 +87,7 @@ describe('Debugger', () => {
 
         it('should dump the stack with size and move the window', () => {
             const registers = cpu.getState();
-            registers.sp = 0xC3;
+            registers.sp = 0xc3;
             cpu.setState(registers);
             const stack = theDebugger.getStack(32);
             const lines = stack.split('\n');

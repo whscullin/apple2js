@@ -29,11 +29,7 @@ export default class Prefs {
     writePref(name: string, value: string) {
         if (this.url.searchParams.has(name)) {
             this.url.searchParams.set(name, value);
-            history.replaceState(
-                null,
-                this.title,
-                this.url.toString()
-            );
+            history.replaceState(null, this.title, this.url.toString());
         }
 
         if (havePrefs) {

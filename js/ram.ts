@@ -31,16 +31,16 @@ export default class RAM implements Memory, Restorable<RAMState> {
     }
 
     public read(page: byte, offset: byte) {
-        return this.mem[(page - this.start_page) << 8 | offset];
+        return this.mem[((page - this.start_page) << 8) | offset];
     }
 
     public write(page: byte, offset: byte, val: byte) {
-        this.mem[(page - this.start_page) << 8 | offset] = val;
+        this.mem[((page - this.start_page) << 8) | offset] = val;
     }
 
     public getState(): RAMState {
         return {
-            mem: new Uint8Array(this.mem)
+            mem: new Uint8Array(this.mem),
         };
     }
 

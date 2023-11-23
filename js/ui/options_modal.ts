@@ -3,7 +3,7 @@ import {
     BOOLEAN_OPTION,
     SELECT_OPTION,
     Options,
-    SelectOption
+    SelectOption,
 } from '../options';
 
 export class OptionsModal {
@@ -25,7 +25,9 @@ export class OptionsModal {
                 const list = document.createElement('ul');
                 for (const option of options) {
                     const { name, label, type } = option;
-                    const onChange = (evt: InputEvent & { target: HTMLInputElement }) => {
+                    const onChange = (
+                        evt: InputEvent & { target: HTMLInputElement }
+                    ) => {
                         const { target } = evt;
                         switch (type) {
                             case BOOLEAN_OPTION:
@@ -42,8 +44,11 @@ export class OptionsModal {
                     switch (type) {
                         case BOOLEAN_OPTION:
                             {
-                                const inputElement = document.createElement('input');
-                                const checked = this.options.getOption(name) as boolean;
+                                const inputElement =
+                                    document.createElement('input');
+                                const checked = this.options.getOption(
+                                    name
+                                ) as boolean;
                                 inputElement.setAttribute('type', 'checkbox');
                                 inputElement.checked = checked;
                                 element = inputElement;
@@ -52,22 +57,29 @@ export class OptionsModal {
                         case SELECT_OPTION:
                             {
                                 const selectOption = option as SelectOption;
-                                const selectElement = document.createElement('select');
-                                const selected = this.options.getOption(name) as string;
+                                const selectElement =
+                                    document.createElement('select');
+                                const selected = this.options.getOption(
+                                    name
+                                ) as string;
                                 for (const value of selectOption.values) {
-                                    const optionElement = document.createElement('option');
+                                    const optionElement =
+                                        document.createElement('option');
                                     optionElement.value = value.value;
                                     optionElement.textContent = value.name;
-                                    optionElement.selected = value.value === selected;
+                                    optionElement.selected =
+                                        value.value === selected;
                                     selectElement.appendChild(optionElement);
                                 }
                                 element = selectElement;
                             }
                             break;
-                        default:
-                        {
-                            const inputElement = document.createElement('input');
-                            const value = this.options.getOption(name) as string;
+                        default: {
+                            const inputElement =
+                                document.createElement('input');
+                            const value = this.options.getOption(
+                                name
+                            ) as string;
                             inputElement.value = value;
                             element = inputElement;
                         }
