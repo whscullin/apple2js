@@ -1,4 +1,4 @@
-import CPU6502 from './cpu6502';
+import { CPU6502 } from '@whscullin/cpu6502';
 import RAM, { RAMState } from './ram';
 import ROM, { ROMState } from './roms/rom';
 import { debug } from './util';

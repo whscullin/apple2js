@@ -1,6 +1,6 @@
 import { byte, DeepMemberOf, KnownKeys } from '../types';
 import Apple2IO from '../apple2io';
-import CPU6502 from '../cpu6502';
+import { CPU6502 } from '@whscullin/cpu6502';
 import { debug, toHex } from '../util';
 
 // keycode: [plain, cntl, shift]

@@ -2,7 +2,7 @@ import { debug, toHex } from '../util';
 import { rom as smartPortRom } from '../roms/cards/smartport';
 import { Card, Restorable, byte, word, rom } from '../types';
 import { MassStorage, BlockDisk, ENCODING_BLOCK, BlockFormat, MassStorageData, DiskFormat } from '../formats/types';
-import CPU6502, { CpuState, flags } from '../cpu6502';
+import { CPU6502, CpuState, flags } from '@whscullin/cpu6502';
 import { create2MGFromBlockDisk, HeaderData, read2MGHeader } from '../formats/2mg';
 import createBlockDisk from '../formats/block';
 import { DriveNumber } from '../formats/types';

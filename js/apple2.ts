@@ -17,11 +17,12 @@ import {
 } from './gl';
 import ROM from './roms/rom';
 import { Apple2IOState } from './apple2io';
-import CPU6502, {
+import {
+    CPU6502,
     CpuState,
     FLAVOR_6502,
     FLAVOR_ROCKWELL_65C02,
-} from './cpu6502';
+} from '@whscullin/cpu6502';
 import MMU, { MMUState } from './mmu';
 import RAM, { RAMState } from './ram';
 

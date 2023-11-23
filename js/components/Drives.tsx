@@ -4,7 +4,7 @@ import Disk2, { Callbacks } from '../cards/disk2';
 import Apple2IO from '../apple2io';
 import { DiskII, DiskIIData } from './DiskII';
 import SmartPort from 'js/cards/smartport';
-import CPU6502 from 'js/cpu6502';
+import { CPU6502 } from '@whscullin/cpu6502';
 import { BlockDisk } from './BlockDisk';
 import { ErrorModal } from './ErrorModal';
 import { ProgressModal } from './ProgressModal';

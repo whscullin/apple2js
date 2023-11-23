@@ -1,0 +1,6 @@
+[submodule "submodules/cpu6502"]
+	path = submodules/cpu6502
+	url = https://github.com/whscullin/cpu6502
+[submodule "submodules/apple2shader"]
+	path = submodules/apple2shader
+	url = https://github.com/whscullin/apple2shader

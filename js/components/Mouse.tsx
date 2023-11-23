@@ -2,7 +2,7 @@ import { RefObject } from 'preact';
 import Apple2IO, { slot } from '../apple2io';
 import { MouseUI } from '../ui/mouse';
 import MouseCard from '../cards/mouse';
-import CPU6502 from '../cpu6502';
+import { CPU6502 } from '@whscullin/cpu6502';
 import { useEffect } from 'preact/hooks';
 
 /**
