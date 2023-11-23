@@ -5,6 +5,7 @@ import { numberToBytes, stringToBytes } from '../util';
  * Version 1 INFO segment
  */
 
+// prettier-ignore
 const mockInfo1 = [
     0x01, // Version
     0x01, // Disk Type (5.25")
@@ -12,35 +13,19 @@ const mockInfo1 = [
     0x01, // Synchronized
     0x00, // Cleaned
     ...stringToBytes('Apple2JS', ' ', 32),
-    0x00,
-    0x00,
-    0x00,
-    0x00, // 23 Unused
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
+    0x00, 0x00, 0x00, 0x00, // 23 Unused
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
 ];
 
 /**
  * Version 2 INFO segment
  */
 
+// prettier-ignore
 const mockInfo2 = [
     0x02, // Version
     0x01, // Disk Type (5.25")
@@ -51,26 +36,13 @@ const mockInfo2 = [
     0x01, // sides
     0x00, // bootSector
     0x00, // bitTiming
-    0x00,
-    0x00, // compatibleHardware
-    0x00,
-    0x00, // requiredRAM
-    0x00,
-    0x00, // largest track
-    0x00,
-    0x00,
-    0x00,
-    0x00, // 14 unused
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
+    0x00, 0x00, // compatibleHardware
+    0x00, 0x00, // requiredRAM
+    0x00, 0x00, // largest track
+    0x00, 0x00, 0x00, 0x00, // 14 unused
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00,
 ];
 
 /**
@@ -140,17 +112,13 @@ const mockMETA2 = 'title\tMock Woz 2\nside_name\tB';
  * Woz Version 1
  */
 
+// prettier-ignore
 export const mockWoz1: ArrayBuffer = new Uint8Array([
     // Header
     ...stringToBytes('WOZ1'),
-    0xff, // 7 bit detection
-    0x0a,
-    0x0d,
-    0x0a, // LF detection
-    0x00,
-    0x00,
-    0x00,
-    0x00, // CRC
+    0xff,                     // 7 bit detection
+    0x0a, 0x0d, 0x0a,         // LF detection
+    0x00, 0x00, 0x00, 0x00,   // CRC
     // Info chunk
     ...stringToBytes('INFO'),
     ...numberToBytes(60, 4), // Size
@@ -173,18 +141,13 @@ export const mockWoz1: ArrayBuffer = new Uint8Array([
  * Woz Version 2
  */
 
+// prettier-ignore
 export const mockWoz2: ArrayBuffer = new Uint8Array([
     // Header
     ...stringToBytes('WOZ2'),
-    0xff, // 7 bit detection
-    0x0a,
-    0x0d,
-    0x0a, // LF detection
-    0x00,
-    0x00,
-    0x00,
-    0x00, // CRC
-
+    0xff,                     // 7 bit detection
+    0x0a, 0x0d, 0x0a,         // LF detection
+    0x00, 0x00, 0x00, 0x00,   // CRC
     // Info chunk
     ...stringToBytes('INFO'),
     ...numberToBytes(mockInfo2.length, 4), // Size

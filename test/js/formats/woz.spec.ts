@@ -22,12 +22,12 @@ describe('woz', () => {
             encoding: ENCODING_BITSTREAM,
             format: 'woz',
             trackMap: mockTMAP,
-            rawTracks: [
-                new Uint8Array([
-                    1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1,
-                    0, 1, 1, 0,
-                ]),
-            ],
+            // prettier-ignore
+            rawTracks: [new Uint8Array([
+                1, 1, 0, 1, 0, 1, 0, 1,
+                1, 0, 1, 0, 1, 0, 1, 0,
+                1, 0, 0, 1, 0, 1, 1, 0,
+            ])],
             info: {
                 bitTiming: 0,
                 bootSector: 0,
@@ -63,12 +63,12 @@ describe('woz', () => {
             encoding: ENCODING_BITSTREAM,
             format: 'woz',
             trackMap: mockTMAP,
-            rawTracks: [
-                new Uint8Array([
-                    1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1,
-                    0, 1, 1, 0,
-                ]),
-            ],
+            // prettier-ignore
+            rawTracks: [new Uint8Array([
+                1, 1, 0, 1, 0, 1, 0, 1,
+                1, 0, 1, 0, 1, 0, 1, 0,
+                1, 0, 0, 1, 0, 1, 1, 0,
+            ])],
             info: {
                 bitTiming: 0,
                 bootSector: 0,
