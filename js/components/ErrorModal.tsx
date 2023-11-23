@@ -5,7 +5,7 @@ import { Modal, ModalContent, ModalFooter } from './Modal';
 import styles from './css/ErrorModal.module.scss';
 
 export interface ErrorProps {
-    error: unknown | undefined;
+    error: unknown;
     setError: (error: string | undefined) => void;
 }
 

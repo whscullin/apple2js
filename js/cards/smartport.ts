@@ -40,7 +40,7 @@ class Address {
 
     constructor(
         private cpu: CPU6502,
-        a: byte | word,
+        a: byte,
         b?: byte
     ) {
         if (b === undefined) {

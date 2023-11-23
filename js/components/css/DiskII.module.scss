@@ -29,7 +29,7 @@
     user-select: none;
 }
 
-@media only screen and (min-resolution: 1.25dppx) {
+@media only screen and (resolution >= 1.25dppx) {
     .diskLight {
         background-image: url('../../../css/red-off-32.png');
     }

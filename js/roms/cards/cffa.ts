@@ -4,7 +4,6 @@ import { ReadonlyUint8Array } from '../../types';
  * http://dreher.net/?s=projects/CFforAppleII&c=projects/CFforAppleII/downloads1.php
  */
 
-// prettier-ignore
 export const rom = new Uint8Array([
     0x43, 0x46, 0x46, 0x41, 0x20, 0x46, 0x69, 0x72,
     0x6d, 0x77, 0x61, 0x72, 0x65, 0x0d, 0x0d, 0x0d,

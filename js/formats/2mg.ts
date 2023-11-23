@@ -107,7 +107,7 @@ export function read2MGHeader(rawData: ArrayBuffer): HeaderData {
             `2mg header length is incorrect ${headerLength} !== 64`
         );
     }
-    const format = prefix.getInt32(OFFSETS.FORMAT, true);
+    const format = prefix.getInt32(OFFSETS.FORMAT, true) as FORMAT;
     const flags = prefix.getInt32(OFFSETS.FLAGS, true);
     const blocks = prefix.getInt32(OFFSETS.BLOCKS, true);
     const offset = prefix.getInt32(OFFSETS.DATA_OFFSET, true);

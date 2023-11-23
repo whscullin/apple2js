@@ -116,8 +116,8 @@ describe('DiskII', () => {
 
             diskII.ioSwitch(0x89); // turn on the motor
 
-            expect(callbacks.driveLight).toBeCalledTimes(1);
-            expect(callbacks.driveLight).toBeCalledWith(1, true);
+            expect(callbacks.driveLight).toHaveBeenCalledTimes(1);
+            expect(callbacks.driveLight).toHaveBeenCalledWith(1, true);
         });
 
         it('turns off drive light 1 when the motor is turned off', () => {
@@ -129,8 +129,8 @@ describe('DiskII', () => {
             diskII.ioSwitch(0x88); // turn off the motor
 
             jest.runAllTimers();
-            expect(callbacks.driveLight).toBeCalledTimes(1);
-            expect(callbacks.driveLight).toBeCalledWith(1, false);
+            expect(callbacks.driveLight).toHaveBeenCalledTimes(1);
+            expect(callbacks.driveLight).toHaveBeenCalledWith(1, false);
             jest.useRealTimers();
         });
 
@@ -140,8 +140,8 @@ describe('DiskII', () => {
             diskII.ioSwitch(0x8b); // select drive 2
             diskII.ioSwitch(0x89); // turn on the motor
 
-            expect(callbacks.driveLight).toBeCalledTimes(1);
-            expect(callbacks.driveLight).toBeCalledWith(2, true);
+            expect(callbacks.driveLight).toHaveBeenCalledTimes(1);
+            expect(callbacks.driveLight).toHaveBeenCalledWith(2, true);
         });
 
         it('turns off drive light 2 when drive 2 is selected and the motor is turned off', () => {
@@ -154,8 +154,8 @@ describe('DiskII', () => {
             diskII.ioSwitch(0x88); // turn off the motor
 
             jest.runAllTimers();
-            expect(callbacks.driveLight).toBeCalledTimes(1);
-            expect(callbacks.driveLight).toBeCalledWith(2, false);
+            expect(callbacks.driveLight).toHaveBeenCalledTimes(1);
+            expect(callbacks.driveLight).toHaveBeenCalledWith(2, false);
             jest.useRealTimers();
         });
 
@@ -165,7 +165,7 @@ describe('DiskII', () => {
             diskII.ioSwitch(0x89); // turn on the motor
             diskII.ioSwitch(0x8b); // select drive 2
 
-            expect(callbacks.driveLight).toBeCalledTimes(3);
+            expect(callbacks.driveLight).toHaveBeenCalledTimes(3);
             expect(callbacks.driveLight).toHaveBeenNthCalledWith(1, 1, true);
             expect(callbacks.driveLight).toHaveBeenNthCalledWith(2, 1, false);
             expect(callbacks.driveLight).toHaveBeenNthCalledWith(3, 2, true);

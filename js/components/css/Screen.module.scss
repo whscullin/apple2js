@@ -14,10 +14,7 @@
     padding: 0;
     border: 0;
     position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    inset: 0;
     justify-content: center;
     align-items: center;
     margin: auto !important;
@@ -57,10 +54,7 @@
     );
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
+    inset: 0;
 }
 
 :global(.full-page) :global(.scanlines)::after {

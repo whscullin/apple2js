@@ -7,7 +7,10 @@
         "esModuleInterop": true,
         "allowSyntheticDefaultImports": true,
         "target": "es6",
-        "lib": ["DOM", "ES6"],
+        "lib": [
+            "DOM",
+            "ES6"
+        ],
         "noImplicitAny": true,
         "noImplicitThis": true,
         "noUnusedLocals": true,
@@ -21,11 +24,25 @@
         "baseUrl": ".",
         "allowJs": true,
         "paths": {
-            "*": ["node_modules/*", "types/*"],
-            "js/*": ["js/*"],
-            "json/*": ["json/*"],
-            "test/*": ["test/*"]
+            "*": [
+                "node_modules/*",
+                "types/*"
+            ],
+            "js/*": [
+                "js/*"
+            ],
+            "json/*": [
+                "json/*"
+            ],
+            "test/*": [
+                "test/*"
+            ]
         }
     },
-    "include": ["js/**/*", "test/**/*", "types/**/*", "*.config.js"]
+    "include": [
+        "js/**/*",
+        "test/**/*",
+        "types/**/*",
+        "*.config.js"
+    ]
 }

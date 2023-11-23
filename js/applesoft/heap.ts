@@ -2,7 +2,7 @@ import { byte, word, Memory } from 'js/types';
 import { toHex } from 'js/util';
 import { CURLINE, ARG, FAC, ARYTAB, STREND, TXTTAB, VARTAB } from './zeropage';
 
-export type ApplesoftValue = word | number | string | ApplesoftArray;
+export type ApplesoftValue = word | string | ApplesoftArray;
 export type ApplesoftArray = Array<ApplesoftValue>;
 
 export enum VariableType {
@@ -149,7 +149,7 @@ export class ApplesoftHeap {
         for (addr = simpleVariableTable; addr < arrayVariableTable; addr += 7) {
             const { name, type } = this.readVar(addr);
 
-            switch (type) {
+            switch (type as VariableType) {
                 case VariableType.Float:
                     value = this.readFloat(addr + 2);
                     break;
