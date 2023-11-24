@@ -12,6 +12,8 @@ import { Apple2IOState } from './apple2io';
 import {
     CPU6502,
     CpuState,
+    Debugger,
+    DebuggerContainer,
     FLAVOR_6502,
     FLAVOR_ROCKWELL_65C02,
 } from '@whscullin/cpu6502';
@@ -19,7 +21,6 @@ import MMU, { MMUState } from './mmu';
 import RAM, { RAMState } from './ram';
 
 import SYMBOLS from './symbols';
-import Debugger, { DebuggerContainer } from './debugger';
 
 import { ReadonlyUint8Array, Restorable, rom } from './types';
 import { processGamepad } from './ui/gamepad';

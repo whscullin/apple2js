@@ -1,6 +1,6 @@
+import { Debugger } from '@whscullin/cpu6502';
 import Disk2 from 'js/cards/disk2';
 import SmartPort from 'js/cards/smartport';
-import Debugger from 'js/debugger';
 import {
     BlockFormat,
     BLOCK_FORMATS,
@@ -245,7 +245,7 @@ export class SmartStorageBroker implements MassStorage<unknown> {
     constructor(
         private disk2: Disk2,
         private smartPort: SmartPort
-    ) {}
+    ) { }
 
     setBinary(
         driveNo: DriveNumber,
