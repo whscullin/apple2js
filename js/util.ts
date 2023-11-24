@@ -1,4 +1,4 @@
-import { byte, memory, word } from './types';
+import { byte, memory } from './types';
 
 /*eslint no-console: 0*/
 
@@ -11,7 +11,7 @@ export function garbage(): byte {
 }
 
 export const testables = {
-    garbage
+    garbage,
 };
 
 /**
@@ -22,7 +22,7 @@ export function allocMem(size: number) {
     const result = new Uint8Array(size);
 
     for (let idx = 0; idx < size; idx++) {
-        result[idx] = (idx & 0x02) ? 0x00 : 0xff;
+        result[idx] = idx & 0x02 ? 0x00 : 0xff;
     }
     // Borrowed from AppleWin (https://github.com/AppleWin/AppleWin)
     for (let idx = 0; idx < size; idx += 0x200) {
@@ -66,7 +66,7 @@ export function debug(...args: unknown[]): void {
  * @param n the number of nibbles. If `n` is missing, it is guessed from the value
  *     of `v`. If `v` < 256, it is assumed to be 2 nibbles, otherwise 4.
  */
-export function toHex(v: byte | word | number, n?: number) {
+export function toHex(v: number, n?: number) {
     if (!n) {
         n = v < 256 ? 2 : 4;
     }

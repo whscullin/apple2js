@@ -20,9 +20,9 @@ const OFFSETS = {
     /** Header length (2 bytes) */
     HEADER_LENGTH: 0x08,
     /** Version number (2 bytes). (Version of what? Format? Image?). */
-    VERSION: 0x0A,
+    VERSION: 0x0a,
     /** Image format ID (4 bytes) */
-    FORMAT: 0x0C,
+    FORMAT: 0x0c,
     /** Flags and DOS 3.3 volume number */
     FLAGS: 0x10,
     /**
@@ -40,7 +40,7 @@ const OFFSETS = {
      * Length of disk data in bytes (4 bytes). (143,360 bytes for 5.25"
      * floppies; 512 × blocks for ProDOS volumes.)
      */
-    DATA_LENGTH: 0x1C,
+    DATA_LENGTH: 0x1c,
     /**
      * Comment start in bytes from the beginning of the image file (4 bytes).
      * Must be zero if there is no comment. The comment must come after the
@@ -61,15 +61,15 @@ const OFFSETS = {
      * Creator data length in bytes (4 bytes). Must be zero if there is no
      * creator data.
      */
-    CREATOR_DATA_LENGTH: 0x2C,
+    CREATOR_DATA_LENGTH: 0x2c,
     /** Padding (16 bytes). Must be zero. */
     PADDING: 0x30,
 } as const;
 
 const FLAGS = {
-    READ_ONLY:    0x80000000,
+    READ_ONLY: 0x80000000,
     VOLUME_VALID: 0x00000100,
-    VOLUME_MASK:  0x000000FF
+    VOLUME_MASK: 0x000000ff,
 } as const;
 
 export enum FORMAT {
@@ -92,16 +92,22 @@ export interface HeaderData {
 export function read2MGHeader(rawData: ArrayBuffer): HeaderData {
     const prefix = new DataView(rawData);
     const decoder = new TextDecoder('ascii');
-    const signature = decoder.decode(rawData.slice(OFFSETS.SIGNATURE, OFFSETS.SIGNATURE + 4));
+    const signature = decoder.decode(
+        rawData.slice(OFFSETS.SIGNATURE, OFFSETS.SIGNATURE + 4)
+    );
     if (signature !== '2IMG') {
         throw new Error(`Unrecognized 2mg signature: ${signature}`);
     }
-    const creator = decoder.decode(rawData.slice(OFFSETS.CREATOR, OFFSETS.CREATOR + 4));
+    const creator = decoder.decode(
+        rawData.slice(OFFSETS.CREATOR, OFFSETS.CREATOR + 4)
+    );
     const headerLength = prefix.getInt16(OFFSETS.HEADER_LENGTH, true);
     if (headerLength !== 64) {
-        throw new Error(`2mg header length is incorrect ${headerLength} !== 64`);
+        throw new Error(
+            `2mg header length is incorrect ${headerLength} !== 64`
+        );
     }
-    const format = prefix.getInt32(OFFSETS.FORMAT, true);
+    const format = prefix.getInt32(OFFSETS.FORMAT, true) as FORMAT;
     const flags = prefix.getInt32(OFFSETS.FLAGS, true);
     const blocks = prefix.getInt32(OFFSETS.BLOCKS, true);
     const offset = prefix.getInt32(OFFSETS.DATA_OFFSET, true);
@@ -109,43 +115,67 @@ export function read2MGHeader(rawData: ArrayBuffer): HeaderData {
     const commentOffset = prefix.getInt32(OFFSETS.COMMENT, true);
     const commentLength = prefix.getInt32(OFFSETS.COMMENT_LENGTH, true);
     const creatorDataOffset = prefix.getInt32(OFFSETS.CREATOR_DATA, true);
-    const creatorDataLength = prefix.getInt32(OFFSETS.CREATOR_DATA_LENGTH, true);
+    const creatorDataLength = prefix.getInt32(
+        OFFSETS.CREATOR_DATA_LENGTH,
+        true
+    );
 
     // Though the spec says that it should be zero if the format is not
     // ProDOS, we don't check that since we know that it is violated.
     // However we do check that it's correct if the image _is_ ProDOS.
     if (format === FORMAT.ProDOS && blocks * 512 !== bytes) {
-        throw new Error(`2mg blocks does not match disk data length: ${blocks} * 512 !== ${bytes}`);
+        throw new Error(
+            `2mg blocks does not match disk data length: ${blocks} * 512 !== ${bytes}`
+        );
     }
     if (offset < headerLength) {
-        throw new Error(`2mg data offset is less than header length: ${offset} < ${headerLength}`);
+        throw new Error(
+            `2mg data offset is less than header length: ${offset} < ${headerLength}`
+        );
     }
     if (offset + bytes > prefix.byteLength) {
-        throw new Error(`2mg data extends beyond disk image: ${offset} + ${bytes} > ${prefix.byteLength}`);
+        throw new Error(
+            `2mg data extends beyond disk image: ${offset} + ${bytes} > ${prefix.byteLength}`
+        );
     }
     const dataEnd = offset + bytes;
     if (commentOffset && commentOffset < dataEnd) {
-        throw new Error(`2mg comment is before the end of the disk data: ${commentOffset} < ${offset} + ${bytes}`);
+        throw new Error(
+            `2mg comment is before the end of the disk data: ${commentOffset} < ${offset} + ${bytes}`
+        );
     }
     const commentEnd = commentOffset ? commentOffset + commentLength : dataEnd;
     if (commentEnd > prefix.byteLength) {
-        throw new Error(`2mg comment extends beyond disk image: ${commentEnd} > ${prefix.byteLength}`);
+        throw new Error(
+            `2mg comment extends beyond disk image: ${commentEnd} > ${prefix.byteLength}`
+        );
     }
     if (creatorDataOffset && creatorDataOffset < commentEnd) {
-        throw new Error(`2mg creator data is before the end of the comment: ${creatorDataOffset} < ${commentEnd}`);
+        throw new Error(
+            `2mg creator data is before the end of the comment: ${creatorDataOffset} < ${commentEnd}`
+        );
     }
-    const creatorDataEnd = creatorDataOffset ? creatorDataOffset + creatorDataLength : commentEnd;
+    const creatorDataEnd = creatorDataOffset
+        ? creatorDataOffset + creatorDataLength
+        : commentEnd;
     if (creatorDataEnd > prefix.byteLength) {
-        throw new Error(`2mg creator data extends beyond disk image: ${creatorDataEnd} > ${prefix.byteLength}`);
+        throw new Error(
+            `2mg creator data extends beyond disk image: ${creatorDataEnd} > ${prefix.byteLength}`
+        );
     }
 
     const extras: { comment?: string; creatorData?: ReadonlyUint8Array } = {};
     if (commentOffset) {
         extras.comment = new TextDecoder('utf-8').decode(
-            new Uint8Array(rawData, commentOffset, commentLength));
+            new Uint8Array(rawData, commentOffset, commentLength)
+        );
     }
     if (creatorDataOffset) {
-        extras.creatorData = new Uint8Array(rawData, creatorDataOffset, creatorDataLength);
+        extras.creatorData = new Uint8Array(
+            rawData,
+            creatorDataOffset,
+            creatorDataLength
+        );
     }
 
     const readOnly = (flags & FLAGS.READ_ONLY) !== 0;
@@ -161,7 +191,7 @@ export function read2MGHeader(rawData: ArrayBuffer): HeaderData {
         offset,
         readOnly,
         volume,
-        ...extras
+        ...extras,
     };
 }
 
@@ -177,7 +207,10 @@ export function read2MGHeader(rawData: ArrayBuffer): HeaderData {
  * @returns 2mg prefix and suffix for creating a 2mg disk image
  */
 
-export const create2MGFragments = (headerData: HeaderData | null, { blocks } : { blocks: number }) => {
+export const create2MGFragments = (
+    headerData: HeaderData | null,
+    { blocks }: { blocks: number }
+) => {
     if (!headerData) {
         headerData = {
             bytes: blocks * 512,
@@ -197,7 +230,9 @@ export const create2MGFragments = (headerData: HeaderData | null, { blocks } : {
     const prefix = new Uint8Array(64);
     const prefixView = new DataView(prefix.buffer);
 
-    const volumeFlags = headerData.volume ? headerData.volume | FLAGS.VOLUME_VALID : 0;
+    const volumeFlags = headerData.volume
+        ? headerData.volume | FLAGS.VOLUME_VALID
+        : 0;
     const readOnlyFlag = headerData.readOnly ? FLAGS.READ_ONLY : 0;
     const flags = volumeFlags | readOnlyFlag;
     const prefixLength = prefix.length;
@@ -252,8 +287,13 @@ export const create2MGFragments = (headerData: HeaderData | null, { blocks } : {
  * @returns 2MS
  */
 
-export const create2MGFromBlockDisk = (headerData: HeaderData | null, { blocks }: BlockDisk): ArrayBuffer => {
-    const { prefix, suffix } = create2MGFragments(headerData, { blocks: blocks.length });
+export const create2MGFromBlockDisk = (
+    headerData: HeaderData | null,
+    { blocks }: BlockDisk
+): ArrayBuffer => {
+    const { prefix, suffix } = create2MGFragments(headerData, {
+        blocks: blocks.length,
+    });
 
     const imageLength = prefix.length + blocks.length * 512 + suffix.length;
     const byteArray = new Uint8Array(imageLength);
@@ -292,7 +332,7 @@ export default function createDiskFrom2MG(options: DiskOptions) {
             disk = Nibble(options);
             break;
         case FORMAT.DOS: // dsk
-        default:  // Something hinky, assume 'dsk'
+        default: // Something hinky, assume 'dsk'
             disk = DOS(options);
             break;
     }

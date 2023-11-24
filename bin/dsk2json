@@ -44,7 +44,7 @@ function read2MG(fileData) {
     return {
         diskData: fileData.slice(headerLength),
         type: type,
-        readOnly: readOnly
+        readOnly: readOnly,
     };
 }
 
@@ -53,11 +53,11 @@ function readTracks(type, diskData) {
 
     if (type === 'nib') {
         let start = 0;
-        let end = 0x1A00;
+        let end = 0x1a00;
         while (start < diskData.length) {
             const trackData = diskData.slice(start, end);
-            start += 0x1A00;
-            end += 0x1A00;
+            start += 0x1a00;
+            end += 0x1a00;
 
             tracks.push(trackData.toString('base64'));
         }
@@ -81,7 +81,6 @@ function readTracks(type, diskData) {
 }
 
 const fileName = argv._[0];
-
 
 let readOnly = argv.r || argv.readOnly ? true : undefined;
 const name = argv.n || argv.name;
@@ -110,7 +109,7 @@ fs.readFile(fileName, (err, fileData) => {
     let diskData;
 
     if (type === '2mg') {
-        ({diskData, readOnly, type} = read2MG(fileData));
+        ({ diskData, readOnly, type } = read2MG(fileData));
     } else {
         diskData = fileData;
     }
@@ -123,7 +122,7 @@ fs.readFile(fileName, (err, fileData) => {
         readOnly,
         disk,
         '2e': e,
-        data: readTracks(type, diskData)
+        data: readTracks(type, diskData),
     };
 
     Object.keys(entry).forEach((key) => {

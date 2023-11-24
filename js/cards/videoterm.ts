@@ -13,25 +13,25 @@ interface VideotermState {
 
 const LOC = {
     IOREG: 0x80,
-    IOVAL: 0x81
+    IOVAL: 0x81,
 } as const;
 
 const REGS = {
-    CURSOR_UPPER: 0x0A,
-    CURSOR_LOWER: 0x0B,
-    STARTPOS_HI: 0x0C,
-    STARTPOS_LO: 0x0D,
-    CURSOR_HI: 0x0E,
-    CURSOR_LO: 0x0F,
+    CURSOR_UPPER: 0x0a,
+    CURSOR_LOWER: 0x0b,
+    STARTPOS_HI: 0x0c,
+    STARTPOS_LO: 0x0d,
+    CURSOR_HI: 0x0e,
+    CURSOR_LO: 0x0f,
     LIGHTPEN_HI: 0x10,
-    LIGHTPEN_LO: 0x11
+    LIGHTPEN_LO: 0x11,
 } as const;
 
 const CURSOR_MODES = {
     SOLID: 0x00,
     HIDDEN: 0x01,
     BLINK: 0x10,
-    FAST_BLINK: 0x11
+    FAST_BLINK: 0x11,
 } as const;
 
 const BLACK: Color = [0x00, 0x00, 0x00];
@@ -56,7 +56,7 @@ export default class Videoterm implements Card, Restorable<VideotermState> {
         0x00, // 0E - Cursor Hi
         0x00, // 0F - Cursor Lo
         0x00, // 10 - Lightpen Hi
-        0x00  // 11 - Lightpen Lo
+        0x00, // 11 - Lightpen Lo
     ];
 
     private blink = false;
@@ -123,7 +123,8 @@ export default class Videoterm implements Card, Restorable<VideotermState> {
     }
 
     private refreshCursor(fromRegs: boolean) {
-        const addr = this.regs[REGS.CURSOR_HI] << 8 | this.regs[REGS.CURSOR_LO];
+        const addr =
+            (this.regs[REGS.CURSOR_HI] << 8) | this.regs[REGS.CURSOR_LO];
         const saddr = (0x800 + addr - this.startPos) & 0x7ff;
         const data = this.imageData.data;
         const row = (saddr / 80) & 0xff;
@@ -144,16 +145,20 @@ export default class Videoterm implements Card, Restorable<VideotermState> {
         if (blinkmode === CURSOR_MODES.HIDDEN) {
             return;
         }
-        if (this.blink || (blinkmode === CURSOR_MODES.SOLID)) {
+        if (this.blink || blinkmode === CURSOR_MODES.SOLID) {
             this.dirty = true;
             for (let idx = 0; idx < 8; idx++) {
                 const color = WHITE;
-                if (idx >= (this.regs[REGS.CURSOR_UPPER] & 0x1f) &&
-                    idx <= (this.regs[REGS.CURSOR_LOWER] & 0x1f)) {
+                if (
+                    idx >= (this.regs[REGS.CURSOR_UPPER] & 0x1f) &&
+                    idx <= (this.regs[REGS.CURSOR_LOWER] & 0x1f)
+                ) {
                     for (let jdx = 0; jdx < 7; jdx++) {
                         data[(y + idx) * 560 * 4 + (x + jdx) * 4] = color[0];
-                        data[(y + idx) * 560 * 4 + (x + jdx) * 4 + 1] = color[1];
-                        data[(y + idx) * 560 * 4 + (x + jdx) * 4 + 2] = color[2];
+                        data[(y + idx) * 560 * 4 + (x + jdx) * 4 + 1] =
+                            color[1];
+                        data[(y + idx) * 560 * 4 + (x + jdx) * 4 + 2] =
+                            color[2];
                     }
                 }
             }
@@ -162,8 +167,7 @@ export default class Videoterm implements Card, Restorable<VideotermState> {
 
     private updateStartPos() {
         const startPos =
-            this.regs[REGS.STARTPOS_HI] << 8 |
-            this.regs[REGS.STARTPOS_LO];
+            (this.regs[REGS.STARTPOS_HI] << 8) | this.regs[REGS.STARTPOS_LO];
         if (this.startPos !== startPos) {
             this.startPos = startPos;
             this.shouldRefresh = true;
@@ -208,7 +212,7 @@ export default class Videoterm implements Card, Restorable<VideotermState> {
                 }
                 break;
         }
-        this.bank = (off & 0x0C) >> 2;
+        this.bank = (off & 0x0c) >> 2;
         return result;
     }
 
@@ -218,9 +222,9 @@ export default class Videoterm implements Card, Restorable<VideotermState> {
 
     read(page: byte, off: byte) {
         if (page < 0xcc) {
-            return ROM[(page & 0x03) << 8 | off];
-        } else if (page < 0xce){
-            const addr = ((page & 0x01) + (this.bank << 1)) << 8 | off;
+            return ROM[((page & 0x03) << 8) | off];
+        } else if (page < 0xce) {
+            const addr = (((page & 0x01) + (this.bank << 1)) << 8) | off;
             return this.buffer[addr];
         }
         return 0;
@@ -228,7 +232,7 @@ export default class Videoterm implements Card, Restorable<VideotermState> {
 
     write(page: byte, off: byte, val: byte) {
         if (page > 0xcb && page < 0xce) {
-            const addr = ((page & 0x01) + (this.bank << 1)) << 8 | off;
+            const addr = (((page & 0x01) + (this.bank << 1)) << 8) | off;
             this.updateBuffer(addr, val);
         }
     }

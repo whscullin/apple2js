@@ -48,7 +48,6 @@ const DEFAULT_DECOMPILE_OPTIONS: DecompileOptions = {
 const MAX_LINES = 32768;
 
 export default class ApplesoftDecompiler {
-
     /**
      * Returns a decompiler for the program in the given memory.
      *
@@ -57,10 +56,16 @@ export default class ApplesoftDecompiler {
     static decompilerFromMemory(ram: Memory): ApplesoftDecompiler {
         const program: byte[] = [];
 
-        const start = ram.read(0x00, TXTTAB) + (ram.read(0x00, TXTTAB + 1) << 8);
+        const start =
+            ram.read(0x00, TXTTAB) + (ram.read(0x00, TXTTAB + 1) << 8);
         const end = ram.read(0x00, PRGEND) + (ram.read(0x00, PRGEND + 1) << 8);
         if (start >= 0xc000 || end >= 0xc000) {
-            throw new Error(`Program memory ${toHex(start, 4)}-${toHex(end, 4)} out of range`);
+            throw new Error(
+                `Program memory ${toHex(start, 4)}-${toHex(
+                    end,
+                    4
+                )} out of range`
+            );
         }
         for (let addr = start; addr <= end; addr++) {
             program.push(ram.read(addr >> 8, addr & 0xff));
@@ -117,8 +122,10 @@ export default class ApplesoftDecompiler {
      *     is the offset of the line number of the line; the tokens follow.
      */
     private forEachLine(
-        from: number, to: number,
-        callback: (offset: word) => void): void {
+        from: number,
+        to: number,
+        callback: (offset: word) => void
+    ): void {
         let count = 0;
         let offset = 0;
         let nextLineAddr = this.wordAt(offset);
@@ -223,12 +230,15 @@ export default class ApplesoftDecompiler {
      * @param from The first line to print (default 0).
      * @param to The last line to print (default end of program).
      */
-    list(options: Partial<ListOptions> = {},
-        from: number = 0, to: number = 65536): string {
+    list(
+        options: Partial<ListOptions> = {},
+        from: number = 0,
+        to: number = 65536
+    ): string {
         const allOptions = { ...DEFAULT_LIST_OPTIONS, ...options };
 
         let result = '';
-        this.forEachLine(from, to, offset => {
+        this.forEachLine(from, to, (offset) => {
             result += this.listLine(offset, allOptions);
         });
         return result;
@@ -264,7 +274,8 @@ export default class ApplesoftDecompiler {
 
             spaceIf = () => false;
             if (token === STRING_TO_TOKEN['AT']) {
-                spaceIf = (nextToken) => nextToken.toUpperCase().startsWith('N');
+                spaceIf = (nextToken) =>
+                    nextToken.toUpperCase().startsWith('N');
             }
 
             offset++;
@@ -329,13 +340,20 @@ export default class ApplesoftDecompiler {
     /**
      * Decompiles the program based on the given options.
      */
-    decompile(options: Partial<DecompileOptions> = {},
-        from: number = 0, to: number = 65536): string {
+    decompile(
+        options: Partial<DecompileOptions> = {},
+        from: number = 0,
+        to: number = 65536
+    ): string {
         const allOptions = { ...DEFAULT_DECOMPILE_OPTIONS, ...options };
 
         const results: string[] = [];
-        this.forEachLine(from, to, offset => {
-            results.push(allOptions.style === 'compact' ? this.compactLine(offset) : this.prettyLine(offset));
+        this.forEachLine(from, to, (offset) => {
+            results.push(
+                allOptions.style === 'compact'
+                    ? this.compactLine(offset)
+                    : this.prettyLine(offset)
+            );
         });
         return results.join('\n');
     }

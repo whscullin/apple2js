@@ -1,6 +1,16 @@
 import { includes, memory } from '../types';
 import { base64_decode } from '../base64';
-import { BitstreamFormat, DiskOptions, FloppyDisk, FloppyFormat, JSONDisk, NibbleDisk, NibbleFormat, NIBBLE_FORMATS, WozDisk } from './types';
+import {
+    BitstreamFormat,
+    DiskOptions,
+    FloppyDisk,
+    FloppyFormat,
+    JSONDisk,
+    NibbleDisk,
+    NibbleFormat,
+    NIBBLE_FORMATS,
+    WozDisk,
+} from './types';
 import createDiskFrom2MG from './2mg';
 import createDiskFromD13 from './d13';
 import createDiskFromDOS from './do';
@@ -9,12 +19,24 @@ import createDiskFromWoz from './woz';
 import createDiskFromNibble from './nib';
 
 /** Creates a `NibbleDisk` from the given format and options. */
-export function createDisk(fmt: NibbleFormat, options: DiskOptions): NibbleDisk | null;
+export function createDisk(
+    fmt: NibbleFormat,
+    options: DiskOptions
+): NibbleDisk | null;
 /** Creates a `WozDisk` from the given format and options. */
-export function createDisk(fmt: BitstreamFormat, options: DiskOptions): WozDisk | null;
+export function createDisk(
+    fmt: BitstreamFormat,
+    options: DiskOptions
+): WozDisk | null;
 /** Creates a `FloppyDisk` (either a `NibbleDisk` or a `WozDisk`) from the given format and options. */
-export function createDisk(fmt: FloppyFormat, options: DiskOptions): FloppyDisk | null;
-export function createDisk(fmt: FloppyFormat, options: DiskOptions): FloppyDisk | null {
+export function createDisk(
+    fmt: FloppyFormat,
+    options: DiskOptions
+): FloppyDisk | null;
+export function createDisk(
+    fmt: FloppyFormat,
+    options: DiskOptions
+): FloppyDisk | null {
     let disk: FloppyDisk | null = null;
 
     switch (fmt) {
@@ -74,7 +96,7 @@ export function createDiskFromJsonDisk(disk: JSONDisk): NibbleDisk | null {
             readOnly,
             name,
             side,
-            data: trackData
+            data: trackData,
         } as DiskOptions;
 
         return createDisk(fmt, options);
@@ -82,4 +104,3 @@ export function createDiskFromJsonDisk(disk: JSONDisk): NibbleDisk | null {
         return null;
     }
 }
-

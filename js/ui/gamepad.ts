@@ -4,11 +4,11 @@ import { BUTTON, ButtonType, GamepadConfiguration } from './types';
 export let gamepad: Gamepad | null = null;
 
 const DEFAULT_GAMEPAD: GamepadConfiguration = {
-    'A': 0,
-    'B': 1,
-    'L1': 0,
-    'R1': 1,
-    'START': '\x1B'
+    A: 0,
+    B: 1,
+    L1: 0,
+    R1: 1,
+    START: '\x1B',
 } as const;
 
 /**
@@ -26,7 +26,6 @@ const gamepadMap: Array<number | undefined> = [];
 const gamepadState: boolean[] = [];
 let flipX = false;
 let flipY = false;
-
 
 window.addEventListener('gamepadconnected', function (e: GamepadEvent) {
     gamepad = e.gamepad;
@@ -51,7 +50,7 @@ export function processGamepad(io: Apple2IO) {
             if (typeof button === 'object') {
                 pressed = button.pressed;
             } else {
-                pressed = (button === 1.0);
+                pressed = button === 1.0;
             }
 
             if (pressed && !old) {

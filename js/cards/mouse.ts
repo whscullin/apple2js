@@ -4,16 +4,16 @@ import { debug } from '../util';
 import { rom } from '../roms/cards/mouse';
 
 const CLAMP_MIN_LOW = 0x478;
-const CLAMP_MAX_LOW = 0x4F8;
+const CLAMP_MAX_LOW = 0x4f8;
 const CLAMP_MIN_HIGH = 0x578;
-const CLAMP_MAX_HIGH = 0x5F8;
+const CLAMP_MAX_HIGH = 0x5f8;
 
 const X_LOW = 0x478;
-const Y_LOW = 0x4F8;
+const Y_LOW = 0x4f8;
 const X_HIGH = 0x578;
-const Y_HIGH = 0x5F8;
+const Y_HIGH = 0x5f8;
 const STATUS = 0x778;
-const MODE = 0x7F8;
+const MODE = 0x7f8;
 
 const STATUS_DOWN = 0x80;
 const STATUS_LAST = 0x40;
@@ -38,7 +38,7 @@ const ENTRIES = {
     POS_MOUSE: 0x16,
     CLAMP_MOUSE: 0x17,
     HOME_MOUSE: 0x18,
-    INIT_MOUSE: 0x19
+    INIT_MOUSE: 0x19,
 };
 
 interface MouseState {
@@ -65,9 +65,9 @@ export default class Mouse implements Card, Restorable<MouseState> {
     /** Lowest mouse Y */
     private clampYMin: word = 0;
     /** Highest mouse X */
-    private clampXMax: word = 0x3FF;
+    private clampXMax: word = 0x3ff;
     /** Highest mouse Y */
-    private clampYMax: word = 0x3FF;
+    private clampYMax: word = 0x3ff;
     /** Mouse X position */
     private x: word = 0;
     /** Mouse Y position */
@@ -117,7 +117,7 @@ export default class Mouse implements Card, Restorable<MouseState> {
         };
 
         const clearCarry = (state: CpuState) => {
-            state.s &= 0xFE;
+            state.s &= 0xfe;
             return state;
         };
 
@@ -145,7 +145,8 @@ export default class Mouse implements Card, Restorable<MouseState> {
                     break;
                 case rom[ENTRIES.READ_MOUSE]:
                     {
-                        const moved = (this.lastX !== this.x) || (this.lastY !== this.y);
+                        const moved =
+                            this.lastX !== this.x || this.lastY !== this.y;
                         const status =
                             (this.down ? STATUS_DOWN : 0) |
                             (this.lastDown ? STATUS_LAST : 0) |
@@ -183,13 +184,29 @@ export default class Mouse implements Card, Restorable<MouseState> {
                     {
                         const clampY = state.a;
                         if (clampY) {
-                            this.clampYMin = holeRead(CLAMP_MIN_LOW) | (holeRead(CLAMP_MIN_HIGH) << 8);
-                            this.clampYMax = holeRead(CLAMP_MAX_LOW) | (holeRead(CLAMP_MAX_HIGH) << 8);
-                            debug('clampMouse Y', this.clampYMin, this.clampYMax);
+                            this.clampYMin =
+                                holeRead(CLAMP_MIN_LOW) |
+                                (holeRead(CLAMP_MIN_HIGH) << 8);
+                            this.clampYMax =
+                                holeRead(CLAMP_MAX_LOW) |
+                                (holeRead(CLAMP_MAX_HIGH) << 8);
+                            debug(
+                                'clampMouse Y',
+                                this.clampYMin,
+                                this.clampYMax
+                            );
                         } else {
-                            this.clampXMin = holeRead(CLAMP_MIN_LOW) | (holeRead(CLAMP_MIN_HIGH) << 8);
-                            this.clampXMax = holeRead(CLAMP_MAX_LOW) | (holeRead(CLAMP_MAX_HIGH) << 8);
-                            debug('clampMouse X', this.clampXMin, this.clampXMax);
+                            this.clampXMin =
+                                holeRead(CLAMP_MIN_LOW) |
+                                (holeRead(CLAMP_MIN_HIGH) << 8);
+                            this.clampXMax =
+                                holeRead(CLAMP_MAX_LOW) |
+                                (holeRead(CLAMP_MAX_HIGH) << 8);
+                            debug(
+                                'clampMouse X',
+                                this.clampXMin,
+                                this.clampXMax
+                            );
                         }
                         state = clearCarry(state);
                     }
@@ -229,10 +246,10 @@ export default class Mouse implements Card, Restorable<MouseState> {
         if (this.mode & MODE_INT_VBL) {
             this.serve |= INT_SCREEN;
         }
-        if ((this.mode & MODE_INT_PRESS) && this.shouldIntPress) {
+        if (this.mode & MODE_INT_PRESS && this.shouldIntPress) {
             this.serve |= INT_PRESS;
         }
-        if ((this.mode & MODE_INT_MOVE) && this.shouldIntMove) {
+        if (this.mode & MODE_INT_MOVE && this.shouldIntMove) {
             this.serve |= INT_MOVE;
         }
         if (this.serve) {
@@ -255,8 +272,8 @@ export default class Mouse implements Card, Restorable<MouseState> {
     setMouseXY(x: number, y: number, w: number, h: number) {
         const rangeX = this.clampXMax - this.clampXMin;
         const rangeY = this.clampYMax - this.clampYMin;
-        this.x = (x * rangeX / w + this.clampXMin) & 0xffff;
-        this.y = (y * rangeY / h + this.clampYMin) & 0xffff;
+        this.x = ((x * rangeX) / w + this.clampXMin) & 0xffff;
+        this.y = ((y * rangeY) / h + this.clampYMin) & 0xffff;
         this.shouldIntMove = true;
     }
 
@@ -318,7 +335,7 @@ export default class Mouse implements Card, Restorable<MouseState> {
             serve: this.serve,
             shouldIntMove: this.shouldIntMove,
             shouldIntPress: this.shouldIntPress,
-            slot: this.slot
+            slot: this.slot,
         };
     }
 }

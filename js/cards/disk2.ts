@@ -1,23 +1,40 @@
 import { base64_encode } from '../base64';
-import type {
-    byte,
-    Card,
-    ReadonlyUint8Array
-} from '../types';
+import type { byte, Card, ReadonlyUint8Array } from '../types';
 
 import {
-    DISK_PROCESSED, DriveNumber, DRIVE_NUMBERS, FloppyDisk,
-    FloppyFormat, FormatWorkerMessage,
-    FormatWorkerResponse, isNibbleDisk, isNoFloppyDisk, isWozDisk, JSONDisk, MassStorage,
-    MassStorageData, NibbleDisk, NibbleFormat, NO_DISK, PROCESS_BINARY, PROCESS_JSON, PROCESS_JSON_DISK, SupportedSectors, WozDisk
+    DISK_PROCESSED,
+    DriveNumber,
+    DRIVE_NUMBERS,
+    FloppyDisk,
+    FloppyFormat,
+    FormatWorkerMessage,
+    FormatWorkerResponse,
+    isNibbleDisk,
+    isNoFloppyDisk,
+    isWozDisk,
+    JSONDisk,
+    MassStorage,
+    MassStorageData,
+    NibbleDisk,
+    NibbleFormat,
+    NO_DISK,
+    PROCESS_BINARY,
+    PROCESS_JSON,
+    PROCESS_JSON_DISK,
+    SupportedSectors,
+    WozDisk,
 } from '../formats/types';
 
-import {
-    createDisk,
-    createDiskFromJsonDisk
-} from '../formats/create_disk';
+import { createDisk, createDiskFromJsonDisk } from '../formats/create_disk';
 
-import { jsonDecode, jsonEncode, readSector, _D13O, _DO, _PO } from '../formats/format_utils';
+import {
+    jsonDecode,
+    jsonEncode,
+    readSector,
+    _D13O,
+    _DO,
+    _PO,
+} from '../formats/format_utils';
 
 import Apple2IO from '../apple2io';
 
@@ -25,30 +42,36 @@ import { BOOTSTRAP_ROM_13, BOOTSTRAP_ROM_16 } from '../roms/cards/disk2';
 
 import { EmptyDriver } from './drivers/EmptyDriver';
 import { NibbleDiskDriver } from './drivers/NibbleDiskDriver';
-import { ControllerState, DiskDriver, Drive, DriverState, Phase } from './drivers/types';
+import {
+    ControllerState,
+    DiskDriver,
+    Drive,
+    DriverState,
+    Phase,
+} from './drivers/types';
 import { WozDiskDriver } from './drivers/WozDiskDriver';
 
 /** Softswitch locations */
 const LOC = {
     // Disk II Controller Commands
     // See Understanding the Apple IIe, Table 9.1
-    PHASE0OFF: 0x80,     // Q0L: Phase 0 OFF
-    PHASE0ON: 0x81,      // Q0H: Phase 0 ON
-    PHASE1OFF: 0x82,     // Q1L: Phase 1 OFF
-    PHASE1ON: 0x83,      // Q1H: Phase 1 ON
-    PHASE2OFF: 0x84,     // Q2L: Phase 2 OFF
-    PHASE2ON: 0x85,      // Q2H: Phase 2 ON
-    PHASE3OFF: 0x86,     // Q3L: Phase 3 OFF
-    PHASE3ON: 0x87,      // Q3H: Phase 3 ON
+    PHASE0OFF: 0x80, // Q0L: Phase 0 OFF
+    PHASE0ON: 0x81, // Q0H: Phase 0 ON
+    PHASE1OFF: 0x82, // Q1L: Phase 1 OFF
+    PHASE1ON: 0x83, // Q1H: Phase 1 ON
+    PHASE2OFF: 0x84, // Q2L: Phase 2 OFF
+    PHASE2ON: 0x85, // Q2H: Phase 2 ON
+    PHASE3OFF: 0x86, // Q3L: Phase 3 OFF
+    PHASE3ON: 0x87, // Q3H: Phase 3 ON
 
-    DRIVEOFF: 0x88,      // Q4L: Drives OFF
-    DRIVEON: 0x89,       // Q4H: Selected drive ON
-    DRIVE1: 0x8A,        // Q5L: Select drive 1
-    DRIVE2: 0x8B,        // Q5H: Select drive 2
-    DRIVEREAD: 0x8C,     // Q6L: Shift while writing; read data
-    DRIVEWRITE: 0x8D,    // Q6H: Load while writing; read write protect
-    DRIVEREADMODE: 0x8E, // Q7L: Read
-    DRIVEWRITEMODE: 0x8F // Q7H: Write
+    DRIVEOFF: 0x88, // Q4L: Drives OFF
+    DRIVEON: 0x89, // Q4H: Selected drive ON
+    DRIVE1: 0x8a, // Q5L: Select drive 1
+    DRIVE2: 0x8b, // Q5H: Select drive 2
+    DRIVEREAD: 0x8c, // Q6L: Shift while writing; read data
+    DRIVEWRITE: 0x8d, // Q6H: Load while writing; read write protect
+    DRIVEREADMODE: 0x8e, // Q7L: Read
+    DRIVEWRITEMODE: 0x8f, // Q7H: Write
 } as const;
 
 /** Logic state sequencer ROM */
@@ -62,6 +85,7 @@ const LOC = {
 // B     LOAD                         XXXXXXXX  YYYYYYYY
 // D     SL1                          ABCDEFGH  BCDEFGH1
 
+// prettier-ignore
 const SEQUENCER_ROM_13 = [
     // See Understanding the Apple IIe, Figure 9.10 The DOS 3.2 Logic State Sequencer
     // Note that the column order here is NOT the same as in Figure 9.10 for Q7 H (Write).
@@ -88,6 +112,7 @@ const SEQUENCER_ROM_13 = [
     0xDD, 0x4D, 0xE0, 0xE0, 0x0A, 0x0A, 0x0A, 0x0A, 0x88, 0x88, 0x08, 0x08, 0x88, 0x88, 0x08, 0x08  // F
 ] as const;
 
+// prettier-ignore
 const SEQUENCER_ROM_16 = [
     // See Understanding the Apple IIe, Figure 9.11 The DOS 3.3 Logic State Sequencer
     // Note that the column order here is NOT the same as in Figure 9.11 for Q7 H (Write).
@@ -152,7 +177,7 @@ const PHASE_DELTA = [
     [0, 1, 2, -1],
     [-1, 0, 1, 2],
     [-2, -1, 0, 1],
-    [1, -2, -1, 0]
+    [1, -2, -1, 0],
 ] as const;
 
 /** Callbacks triggered by events of the drive or controller. */
@@ -211,7 +236,8 @@ function getDiskState(disk: FloppyDisk): FloppyDisk {
     }
 
     if (isWozDisk(disk)) {
-        const { format, encoding, metadata, readOnly, trackMap, rawTracks } = disk;
+        const { format, encoding, metadata, readOnly, trackMap, rawTracks } =
+            disk;
         const result: WozDisk = {
             format,
             encoding,
@@ -235,22 +261,23 @@ function getDiskState(disk: FloppyDisk): FloppyDisk {
  * Emulates the 16-sector and 13-sector versions of the Disk ][ drive and controller.
  */
 export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
-
     private drives: Record<DriveNumber, Drive> = {
-        1: {   // Drive 1
+        1: {
+            // Drive 1
             track: 0,
             head: 0,
             phase: 0,
             readOnly: false,
             dirty: false,
         },
-        2: {   // Drive 2
+        2: {
+            // Drive 2
             track: 0,
             head: 0,
             phase: 0,
             readOnly: false,
             dirty: false,
-        }
+        },
     };
 
     private disks: Record<DriveNumber, FloppyDisk> = {
@@ -263,7 +290,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
             encoding: NO_DISK,
             readOnly: false,
             metadata: { name: 'Disk 2' },
-        }
+        },
     };
 
     private driver: Record<DriveNumber, DiskDriver> = {
@@ -283,7 +310,11 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
     private worker: Worker;
 
     /** Builds a new Disk ][ card. */
-    constructor(private io: Apple2IO, private callbacks: Callbacks, private sectors: SupportedSectors = 16) {
+    constructor(
+        private io: Apple2IO,
+        private callbacks: Callbacks,
+        private sectors: SupportedSectors = 16
+    ) {
         this.debug('Disk ][');
 
         this.state = {
@@ -382,7 +413,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
             case LOC.PHASE3OFF: // 0x06
                 this.setPhase(3, false);
                 break;
-            case LOC.PHASE3ON:  // 0x07
+            case LOC.PHASE3ON: // 0x07
                 this.setPhase(3, true);
                 break;
 
@@ -414,7 +445,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
                 }
                 break;
 
-            case LOC.DRIVE1:  // 0x0a
+            case LOC.DRIVE1: // 0x0a
                 this.debug('Disk 1');
                 state.driveNo = 1;
                 this.updateActiveDrive();
@@ -423,7 +454,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
                     this.callbacks.driveLight(1, true);
                 }
                 break;
-            case LOC.DRIVE2:  // 0x0b
+            case LOC.DRIVE2: // 0x0b
                 this.debug('Disk 2');
                 state.driveNo = 2;
                 this.updateActiveDrive();
@@ -443,7 +474,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
                 this.curDriver.onQ6High(readMode);
                 break;
 
-            case LOC.DRIVEREADMODE:  // 0x0e (Q7L)
+            case LOC.DRIVEREADMODE: // 0x0e (Q7L)
                 this.debug('Read Mode');
                 state.q7 = false;
                 break;
@@ -551,7 +582,6 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         this.driver[driveNo].setState(state.driver);
     }
 
-
     setState(state: State) {
         this.state = { ...state.controllerState };
         for (const d of DRIVE_NUMBERS) {
@@ -580,7 +610,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
     rwts(driveNo: DriveNumber, track: byte, sector: byte) {
         const curDisk = this.disks[driveNo];
         if (!isNibbleDisk(curDisk)) {
-            throw new Error('Can\'t read WOZ disks');
+            throw new Error("Can't read WOZ disks");
         }
         return readSector(curDisk, track, sector);
     }
@@ -593,7 +623,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
                 type: PROCESS_JSON_DISK,
                 payload: {
                     driveNo: driveNo,
-                    jsonDisk
+                    jsonDisk,
                 },
             };
             this.worker.postMessage(message);
@@ -611,7 +641,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
     getJSON(driveNo: DriveNumber, pretty: boolean = false) {
         const curDisk = this.disks[driveNo];
         if (!isNibbleDisk(curDisk)) {
-            throw new Error('Can\'t save WOZ disks to JSON');
+            throw new Error("Can't save WOZ disks to JSON");
         }
         return jsonEncode(curDisk, pretty);
     }
@@ -622,7 +652,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
                 type: PROCESS_JSON,
                 payload: {
                     driveNo: driveNo,
-                    json
+                    json,
                 },
             };
             this.worker.postMessage(message);
@@ -633,7 +663,12 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         return true;
     }
 
-    setBinary(driveNo: DriveNumber, name: string, fmt: FloppyFormat, rawData: ArrayBuffer) {
+    setBinary(
+        driveNo: DriveNumber,
+        name: string,
+        fmt: FloppyFormat,
+        rawData: ArrayBuffer
+    ) {
         const readOnly = false;
         const volume = 254;
         const options = {
@@ -650,7 +685,7 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
                     driveNo: driveNo,
                     fmt,
                     options,
-                }
+                },
             };
             this.worker.postMessage(message);
 
@@ -673,19 +708,22 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         try {
             this.worker = new Worker('dist/format_worker.bundle.js');
 
-            this.worker.addEventListener('message', (message: MessageEvent<FormatWorkerResponse>) => {
-                const { data } = message;
-                switch (data.type) {
-                    case DISK_PROCESSED:
-                        {
-                            const { driveNo: drive, disk } = data.payload;
-                            if (disk) {
-                                this.insertDisk(drive, disk);
+            this.worker.addEventListener(
+                'message',
+                (message: MessageEvent<FormatWorkerResponse>) => {
+                    const { data } = message;
+                    switch (data.type) {
+                        case DISK_PROCESSED:
+                            {
+                                const { driveNo: drive, disk } = data.payload;
+                                if (disk) {
+                                    this.insertDisk(drive, disk);
+                                }
                             }
-                        }
-                        break;
+                            break;
+                    }
                 }
-            });
+            );
         } catch (e: unknown) {
             console.error(e);
         }
@@ -696,22 +734,22 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         if (isNoFloppyDisk(disk)) {
             this.driver[driveNo] = new EmptyDriver(this.drives[driveNo]);
         } else if (isNibbleDisk(disk)) {
-            this.driver[driveNo] =
-                new NibbleDiskDriver(
-                    driveNo,
-                    this.drives[driveNo],
-                    disk,
-                    this.state,
-                    () => this.updateDirty(driveNo, true));
+            this.driver[driveNo] = new NibbleDiskDriver(
+                driveNo,
+                this.drives[driveNo],
+                disk,
+                this.state,
+                () => this.updateDirty(driveNo, true)
+            );
         } else if (isWozDisk(disk)) {
-            this.driver[driveNo] =
-                new WozDiskDriver(
-                    driveNo,
-                    this.drives[driveNo],
-                    disk,
-                    this.state,
-                    () => this.updateDirty(driveNo, true),
-                    this.io);
+            this.driver[driveNo] = new WozDiskDriver(
+                driveNo,
+                this.drives[driveNo],
+                disk,
+                this.state,
+                () => this.updateDirty(driveNo, true),
+                this.io
+            );
         } else {
             throw new Error(`Unknown disk format ${disk.encoding}`);
         }
@@ -736,16 +774,20 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
      * an error will be thrown. Using `ext == 'nib'` will always return
      * an image.
      */
-    getBinary(driveNo: DriveNumber, ext?: Exclude<NibbleFormat, 'woz'>): MassStorageData | null {
+    getBinary(
+        driveNo: DriveNumber,
+        ext?: Exclude<NibbleFormat, 'woz'>
+    ): MassStorageData | null {
         const curDisk = this.disks[driveNo];
         if (!isNibbleDisk(curDisk)) {
             return null;
         }
         const { format, readOnly, tracks, volume } = curDisk;
         const { name } = curDisk.metadata;
-        const len = format === 'nib' ?
-            tracks.reduce((acc, track) => acc + track.length, 0) :
-            this.sectors * tracks.length * 256;
+        const len =
+            format === 'nib'
+                ? tracks.reduce((acc, track) => acc + track.length, 0)
+                : this.sectors * tracks.length * 256;
         const data = new Uint8Array(len);
 
         ext = ext ?? format;
@@ -767,7 +809,11 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
 
                 for (let s = 0; s < maxSector; s++) {
                     const _s = sectorMap[s];
-                    const sector = readSector({ ...curDisk, format: ext }, t, _s);
+                    const sector = readSector(
+                        { ...curDisk, format: ext },
+                        t,
+                        _s
+                    );
                     data.set(sector, idx);
                     idx += sector.length;
                 }

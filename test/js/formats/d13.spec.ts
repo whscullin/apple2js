@@ -59,7 +59,7 @@ describe('DOS-13 format', () => {
         // From Beneith Apple DOS, GAP 1 should have 12-85 0xFF bytes
         const track = disk.tracks[0];
         let numFF = 0;
-        while (track[numFF] === 0xFF && numFF < 0x100) {
+        while (track[numFF] === 0xff && numFF < 0x100) {
             numFF++;
         }
         expect(numFF).toBeGreaterThanOrEqual(40);
@@ -77,7 +77,7 @@ describe('DOS-13 format', () => {
         const track = disk.tracks[0];
         let i = skipGap(track);
         // prologue
-        i = expectSequence(track, i, [0xD5, 0xAA, 0xB5]);
+        i = expectSequence(track, i, [0xd5, 0xaa, 0xb5]);
         // volume 10 = 0b00001010
         expect(track[i++]).toBe(0b10101111);
         expect(track[i++]).toBe(0b10101010);
@@ -91,7 +91,7 @@ describe('DOS-13 format', () => {
         expect(track[i++]).toBe(0b10101111);
         expect(track[i++]).toBe(0b10101010);
         // epilogue
-        i = expectSequence(track, i, [0xDE, 0xAA, 0xEB]);
+        i = expectSequence(track, i, [0xde, 0xaa, 0xeb]);
     });
 
     it('has correct Data Field for track 0, sector 0 (BYTES_BY_TRACK)', () => {
@@ -104,19 +104,19 @@ describe('DOS-13 format', () => {
         });
         const track: memory = disk.tracks[0];
         // skip to the first address epilogue
-        let i = findBytes(track, [0xDE, 0xAA, 0xEB]);
+        let i = findBytes(track, [0xde, 0xaa, 0xeb]);
         expect(i).toBeGreaterThan(50);
         i = skipGap(track, i);
         // prologue
-        i = expectSequence(track, i, [0xD5, 0xAA, 0xAD]);
+        i = expectSequence(track, i, [0xd5, 0xaa, 0xad]);
         // data (all zeros, which is 0xAB with 5 and 3 encoding)
         for (let j = 0; j < 410; j++) {
-            expect(track[i++]).toBe(0xAB);
+            expect(track[i++]).toBe(0xab);
         }
         // checksum (also zero)
-        expect(track[i++]).toBe(0xAB);
+        expect(track[i++]).toBe(0xab);
         // epilogue
-        i = expectSequence(track, i, [0xDE, 0xAA, 0xEB]);
+        i = expectSequence(track, i, [0xde, 0xaa, 0xeb]);
     });
 
     it('has correct Address Field for track 0, sector 1', () => {
@@ -129,10 +129,10 @@ describe('DOS-13 format', () => {
         });
         const track = disk.tracks[0];
         // first sector prologue
-        let i = findBytes(track, [0xD5, 0xAA, 0xB5]);
+        let i = findBytes(track, [0xd5, 0xaa, 0xb5]);
 
         // second sector prologue
-        i = findBytes(track, [0xD5, 0xAA, 0xB5], i);
+        i = findBytes(track, [0xd5, 0xaa, 0xb5], i);
         // volume 10 = 0b00001010
         expect(track[i++]).toBe(0b10101111);
         expect(track[i++]).toBe(0b10101010);
@@ -146,7 +146,7 @@ describe('DOS-13 format', () => {
         expect(track[i++]).toBe(0b10101010);
         expect(track[i++]).toBe(0b10101010);
         // epilogue
-        i = expectSequence(track, i, [0xDE, 0xAA, 0xEB]);
+        i = expectSequence(track, i, [0xde, 0xaa, 0xeb]);
     });
 
     it('has correct Data Field for track 0, disk sector 1 (BYTES_BY_SECTOR)', () => {
@@ -159,9 +159,9 @@ describe('DOS-13 format', () => {
         });
         const track: memory = disk.tracks[0];
         // First data field prologue
-        let i = findBytes(track, [0xD5, 0xAA, 0xAD]);
+        let i = findBytes(track, [0xd5, 0xaa, 0xad]);
         // Second data field prologue
-        i = findBytes(track, [0xD5, 0xAA, 0xAD], i);
+        i = findBytes(track, [0xd5, 0xaa, 0xad], i);
 
         // Sector 1 is physical/DOS sector A.
         // In 5 x 3 encoding, the lowest 3 bits of all the bytes come first,
@@ -175,43 +175,43 @@ describe('DOS-13 format', () => {
         //
         // Lower 3 bits of last byte:
         //    0b00010             = 0b00010 (02 -> AE)
-        expect(track[i++]).toBe(0xAE);
+        expect(track[i++]).toBe(0xae);
         //
         // Bottom 3 bits in block 1 (08 block):
         //    0b01000 XOR 0b00010 = 0b01010 (0A -> BE)
         //    0b01000 XOR 0b01000 = 0b00000 (00 -> AB) x 50
-        expect(track[i++]).toBe(0xBE);
+        expect(track[i++]).toBe(0xbe);
         for (let j = 0; j < 50; j++) {
-            expect(track[i++]).toBe(0xAB);
+            expect(track[i++]).toBe(0xab);
         }
         //
         // Bottom 3 bits in block 2 (0B block):
         //    0b01011 XOR 0b01000 = 0b00011 (03 -> AF)
         //    0b01011 XOR 0b01011 = 0b00000 (00 -> AB) x 50
-        expect(track[i++]).toBe(0xAF);
+        expect(track[i++]).toBe(0xaf);
         for (let j = 0; j < 50; j++) {
-            expect(track[i++]).toBe(0xAB);
+            expect(track[i++]).toBe(0xab);
         }
         //
         // Bottom 3 bits in block 1 (08 block):
         //    0b01000 XOR 0b01011 = 0b00011 (03 -> AF)
         //    0b01000 XOR 0b01000 = 0b00000 (00 -> AB) x 50
-        expect(track[i++]).toBe(0xAF);
+        expect(track[i++]).toBe(0xaf);
         for (let j = 0; j < 50; j++) {
-            expect(track[i++]).toBe(0xAB);
+            expect(track[i++]).toBe(0xab);
         }
         // Upper 5 bits of 0x0A are 0x00001:
         //   0b00001 XOR 0b01000 = 0b01001 (09 -> BD)
         //   0b00001 XOR 0b00001 = 0b00000 (00 -> AB) x 255
-        expect(track[i++]).toBe(0xBD);
+        expect(track[i++]).toBe(0xbd);
         for (let j = 0; j < 255; j++) {
-            expect(track[i++]).toBe(0xAB);
+            expect(track[i++]).toBe(0xab);
         }
 
         // checksum 0b00001 (01 -> AD)
-        expect(track[i++]).toBe(0xAD);
+        expect(track[i++]).toBe(0xad);
         // epilogue
-        i = expectSequence(track, i, [0xDE, 0xAA, 0xEB]);
+        i = expectSequence(track, i, [0xde, 0xaa, 0xeb]);
     });
 
     it('has correct Address Field for track 1, sector 0', () => {
@@ -225,7 +225,7 @@ describe('DOS-13 format', () => {
         const track = disk.tracks[1];
         let i = skipGap(track);
         // prologue
-        i = expectSequence(track, i, [0xD5, 0xAA, 0xB5]);
+        i = expectSequence(track, i, [0xd5, 0xaa, 0xb5]);
         // volume 10 = 0b00001010
         expect(track[i++]).toBe(0b10101111);
         expect(track[i++]).toBe(0b10101010);
@@ -239,7 +239,7 @@ describe('DOS-13 format', () => {
         expect(track[i++]).toBe(0b10101111);
         expect(track[i++]).toBe(0b10101011);
         // epilogue
-        i = expectSequence(track, i, [0xDE, 0xAA, 0xEB]);
+        i = expectSequence(track, i, [0xde, 0xaa, 0xeb]);
     });
 
     it('has correct Data Field for track 1, sector 0 (BYTES_BY_TRACK)', () => {
@@ -251,11 +251,11 @@ describe('DOS-13 format', () => {
             readOnly: true,
         });
         const track: memory = disk.tracks[1];
-        let i = findBytes(track, [0xDE, 0xAA, 0xEB]);
+        let i = findBytes(track, [0xde, 0xaa, 0xeb]);
         expect(i).toBeGreaterThan(50);
         i = skipGap(track, i);
         // prologue
-        i = expectSequence(track, i, [0xD5, 0xAA, 0xAD]);
+        i = expectSequence(track, i, [0xd5, 0xaa, 0xad]);
 
         // Expect data to be all 1s (track number).
 
@@ -270,43 +270,43 @@ describe('DOS-13 format', () => {
         //
         // Lower 3 bits of last byte:
         //    0b00001             = 0b00001 (01 -> AD)
-        expect(track[i++]).toBe(0xAD);
+        expect(track[i++]).toBe(0xad);
         //
         // Bottom 3 bits in block 1 (07 block):
         //    0b00111 XOR 0b00001 = 0b00110 (06 -> B7)
         //    0b00111 XOR 0b00111 = 0b00000 (00 -> AB) x 50
-        expect(track[i++]).toBe(0xB7);
+        expect(track[i++]).toBe(0xb7);
         for (let j = 0; j < 50; j++) {
-            expect(track[i++]).toBe(0xAB);
+            expect(track[i++]).toBe(0xab);
         }
         //
         // Bottom 3 bits in block 2 (04 block):
         //    0b00111 XOR 0b00100 = 0b00011 (03 -> AF)
         //    0b00100 XOR 0b00100 = 0b00000 (00 -> AB) x 50
-        expect(track[i++]).toBe(0xAF);
+        expect(track[i++]).toBe(0xaf);
         for (let j = 0; j < 50; j++) {
-            expect(track[i++]).toBe(0xAB);
+            expect(track[i++]).toBe(0xab);
         }
         //
         // Bottom 3 bits in block 1 (04 block):
         //    0b00100 XOR 0b00100 = 0b00011 (00 -> AB)
         //    0b00100 XOR 0b00100 = 0b00000 (00 -> AB) x 50
-        expect(track[i++]).toBe(0xAB);
+        expect(track[i++]).toBe(0xab);
         for (let j = 0; j < 50; j++) {
-            expect(track[i++]).toBe(0xAB);
+            expect(track[i++]).toBe(0xab);
         }
         // Upper 5 bits of 0x01 are 0x00000:
         //   0b00000 XOR 0b00100 = 0b00100 (04 -> B5)
         //   0b00000 XOR 0b00000 = 0b00000 (00 -> AB) x 255
-        expect(track[i++]).toBe(0xB5);
+        expect(track[i++]).toBe(0xb5);
         for (let j = 0; j < 255; j++) {
-            expect(track[i++]).toBe(0xAB);
+            expect(track[i++]).toBe(0xab);
         }
 
         // checksum 0b00000 (00 -> AB)
-        expect(track[i++]).toBe(0xAB);
+        expect(track[i++]).toBe(0xab);
         // epilogue
-        i = expectSequence(track, i, [0xDE, 0xAA, 0xEB]);
+        i = expectSequence(track, i, [0xde, 0xaa, 0xeb]);
     });
 
     it('has correct Address Fields for all tracks', () => {
@@ -321,7 +321,7 @@ describe('DOS-13 format', () => {
         for (let t = 0; t < disk.tracks.length; t++) {
             // We essentially seek through the track for the Address Fields
             const track = disk.tracks[t];
-            let i = findBytes(track, [0xD5, 0xAA, 0xB5]);
+            let i = findBytes(track, [0xd5, 0xaa, 0xb5]);
             for (let s = 0; s <= 12; s++) {
                 // volume 10 = 0b00001010
                 expect(track[i++]).toBe(0b10101111);
@@ -341,9 +341,9 @@ describe('DOS-13 format', () => {
                 expect(track[i++]).toBe(0b10101111 ^ track4x4XX ^ sector4x4XX);
                 expect(track[i++]).toBe(0b10101010 ^ track4x4YY ^ sector4x4YY);
                 // epilogue
-                i = expectSequence(track, i, [0xDE, 0xAA, 0xEB]);
+                i = expectSequence(track, i, [0xde, 0xaa, 0xeb]);
                 // next sector
-                i = findBytes(track, [0xD5, 0xAA, 0xB5], i);
+                i = findBytes(track, [0xd5, 0xaa, 0xb5], i);
             }
         }
     });

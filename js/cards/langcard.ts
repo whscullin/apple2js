@@ -13,7 +13,9 @@ export interface LanguageCardState {
     prewrite: boolean;
 }
 
-export default class LanguageCard implements Card, Restorable<LanguageCardState> {
+export default class LanguageCard
+    implements Card, Restorable<LanguageCardState>
+{
     private bank1: RAM;
     private bank2: RAM;
     private ram: RAM;
@@ -88,7 +90,8 @@ export default class LanguageCard implements Card, Restorable<LanguageCardState>
         let bankStr;
         let rwStr;
 
-        if (writeSwitch) { // 0xC081, 0xC083
+        if (writeSwitch) {
+            // 0xC081, 0xC083
             if (readMode) {
                 if (this._prewrite) {
                     this._writebsr = true;
@@ -96,30 +99,37 @@ export default class LanguageCard implements Card, Restorable<LanguageCardState>
             }
             this._prewrite = readMode;
 
-            if (offSwitch) { // $C083, $C08B
+            if (offSwitch) {
+                // $C083, $C08B
                 this._readbsr = true;
                 rwStr = 'Read/Write';
-            } else { // $C081, $C089
+            } else {
+                // $C081, $C089
                 this._readbsr = false;
                 rwStr = 'Write';
             }
-        } else { // $C080, $C082, $C088, $C08A
+        } else {
+            // $C080, $C082, $C088, $C08A
             this._writebsr = false;
             this._prewrite = false;
 
-            if (offSwitch) { // $C082, $C08A
+            if (offSwitch) {
+                // $C082, $C08A
                 this._readbsr = false;
                 rwStr = 'Off';
-            } else { // $C080, $C088
+            } else {
+                // $C080, $C088
                 this._readbsr = true;
                 rwStr = 'Read';
             }
         }
 
-        if (bank1Switch) { // C08[8-C]
+        if (bank1Switch) {
+            // C08[8-C]
             this._bsr2 = false;
             bankStr = 'Bank 1';
-        } else { // C08[0-3]
+        } else {
+            // C08[0-3]
             this._bsr2 = true;
             bankStr = 'Bank 2';
         }
@@ -180,7 +190,7 @@ export default class LanguageCard implements Card, Restorable<LanguageCardState>
             prewrite: this._prewrite,
             ram: this.ram.getState(),
             bank1: this.bank1.getState(),
-            bank2: this.bank2.getState()
+            bank2: this.bank2.getState(),
         };
     }
 

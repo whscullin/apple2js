@@ -1,9 +1,20 @@
 import { debug, toHex } from '../util';
 import { rom as smartPortRom } from '../roms/cards/smartport';
 import { Card, Restorable, byte, word, rom } from '../types';
-import { MassStorage, BlockDisk, ENCODING_BLOCK, BlockFormat, MassStorageData, DiskFormat } from '../formats/types';
+import {
+    MassStorage,
+    BlockDisk,
+    ENCODING_BLOCK,
+    BlockFormat,
+    MassStorageData,
+    DiskFormat,
+} from '../formats/types';
 import { CPU6502, CpuState, flags } from '@whscullin/cpu6502';
-import { create2MGFromBlockDisk, HeaderData, read2MGHeader } from '../formats/2mg';
+import {
+    create2MGFromBlockDisk,
+    HeaderData,
+    read2MGHeader,
+} from '../formats/2mg';
 import createBlockDisk from '../formats/block';
 import { DriveNumber } from '../formats/types';
 
@@ -27,7 +38,11 @@ class Address {
     lo: byte;
     hi: byte;
 
-    constructor(private cpu: CPU6502, a: byte | word, b?: byte) {
+    constructor(
+        private cpu: CPU6502,
+        a: byte,
+        b?: byte
+    ) {
         if (b === undefined) {
             this.lo = a & 0xff;
             this.hi = a >> 8;
@@ -46,7 +61,10 @@ class Address {
     }
 
     inc(val: byte) {
-        return new Address(this.cpu, ((this.hi << 8 | this.lo) + val) & 0xffff);
+        return new Address(
+            this.cpu,
+            (((this.hi << 8) | this.lo) + val) & 0xffff
+        );
     }
 
     readByte() {
@@ -57,7 +75,7 @@ class Address {
         const readLo = this.readByte();
         const readHi = this.inc(1).readByte();
 
-        return readHi << 8 | readLo;
+        return (readHi << 8) | readLo;
     }
 
     readAddress() {
@@ -97,8 +115,8 @@ const BLOCK_LO = 0x46;
 
 // const IO_ERROR = 0x27;
 const NO_DEVICE_CONNECTED = 0x28;
-const WRITE_PROTECTED = 0x2B;
-const DEVICE_OFFLINE = 0x2F;
+const WRITE_PROTECTED = 0x2b;
+const DEVICE_OFFLINE = 0x2f;
 // const VOLUME_DIRECTORY_NOT_FOUND = 0x45;
 // const NOT_A_PRODOS_DISK = 0x52;
 // const VOLUME_CONTROL_BLOCK_FULL = 0x55;
@@ -123,8 +141,9 @@ const DEVICE_TYPE_SCSI_HD = 0x07;
 // $0D: Printer
 // $0E: Clock
 // $0F: Modem
-export default class SmartPort implements Card, MassStorage<BlockFormat>, Restorable<SmartPortState> {
-
+export default class SmartPort
+    implements Card, MassStorage<BlockFormat>, Restorable<SmartPortState>
+{
     private rom: rom;
     private disks: BlockDisk[] = [];
     private busy: boolean[] = [];
@@ -139,7 +158,7 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
     ) {
         if (options?.block) {
             const dumbPortRom = new Uint8Array(smartPortRom);
-            dumbPortRom[0x07] = 0x3C;
+            dumbPortRom[0x07] = 0x3c;
             this.rom = dumbPortRom;
             debug('DumbPort card');
         } else {
@@ -221,7 +240,12 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
      * readBlock
      */
 
-    readBlock(state: CpuState, driveNo: DriveNumber, block: number, buffer: Address) {
+    readBlock(
+        state: CpuState,
+        driveNo: DriveNumber,
+        block: number,
+        buffer: Address
+    ) {
         this.debug(`read drive=${driveNo}`);
         this.debug(`read buffer=${buffer.toString()}`);
         this.debug(`read block=$${toHex(block)}`);
@@ -249,7 +273,12 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
      * writeBlock
      */
 
-    writeBlock(state: CpuState, driveNo: DriveNumber, block: number, buffer: Address) {
+    writeBlock(
+        state: CpuState,
+        driveNo: DriveNumber,
+        block: number,
+        buffer: Address
+    ) {
         this.debug(`write drive=${driveNo}`);
         this.debug(`write buffer=${buffer.toString()}`);
         this.debug(`write block=$${toHex(block)}`);
@@ -347,13 +376,14 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
         const blockOff = this.rom[0xff];
         const smartOff = blockOff + 3;
 
-        if (off === blockOff && this.cpu.getSync()) { // Regular block device entry POINT
+        if (off === blockOff && this.cpu.getSync()) {
+            // Regular block device entry POINT
             this.debug('block device entry');
             cmd = this.cpu.read(0x00, COMMAND);
             unit = this.cpu.read(0x00, UNIT);
             const bufferAddr = new Address(this.cpu, ADDRESS_LO);
             const blockAddr = new Address(this.cpu, BLOCK_LO);
-            const drive = (unit & 0x80) ? 2 : 1;
+            const drive = unit & 0x80 ? 2 : 1;
             const driveSlot = (unit & 0x70) >> 4;
 
             buffer = bufferAddr.readAddress();
@@ -435,27 +465,42 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
                         default: // Unit 1
                             switch (status) {
                                 case 0:
-                                    blocks = this.disks[unit]?.blocks.length ?? 0;
+                                    blocks =
+                                        this.disks[unit]?.blocks.length ?? 0;
                                     buffer.writeByte(0xf0); // W/R Block device in drive
                                     buffer.inc(1).writeByte(blocks & 0xff); // 1600 blocks
-                                    buffer.inc(2).writeByte((blocks & 0xff00) >> 8);
-                                    buffer.inc(3).writeByte((blocks & 0xff0000) >> 16);
+                                    buffer
+                                        .inc(2)
+                                        .writeByte((blocks & 0xff00) >> 8);
+                                    buffer
+                                        .inc(3)
+                                        .writeByte((blocks & 0xff0000) >> 16);
                                     state.x = 4;
                                     state.y = 0;
                                     state.a = 0;
                                     state.s &= ~flags.C;
                                     break;
                                 case 3:
-                                    blocks = this.disks[unit]?.blocks.length ?? 0;
+                                    blocks =
+                                        this.disks[unit]?.blocks.length ?? 0;
                                     buffer.writeByte(0xf0); // W/R Block device in drive
                                     buffer.inc(1).writeByte(blocks & 0xff); // Blocks low byte
-                                    buffer.inc(2).writeByte((blocks & 0xff00) >> 8); // Blocks middle byte
-                                    buffer.inc(3).writeByte((blocks & 0xff0000) >> 16); // Blocks high byte
+                                    buffer
+                                        .inc(2)
+                                        .writeByte((blocks & 0xff00) >> 8); // Blocks middle byte
+                                    buffer
+                                        .inc(3)
+                                        .writeByte((blocks & 0xff0000) >> 16); // Blocks high byte
                                     buffer.inc(4).writeByte(ID.length); // Vendor ID length
-                                    for (let idx = 0; idx < ID.length; idx++) { // Vendor ID
-                                        buffer.inc(5 + idx).writeByte(ID.charCodeAt(idx));
+                                    for (let idx = 0; idx < ID.length; idx++) {
+                                        // Vendor ID
+                                        buffer
+                                            .inc(5 + idx)
+                                            .writeByte(ID.charCodeAt(idx));
                                     }
-                                    buffer.inc(21).writeByte(DEVICE_TYPE_SCSI_HD); // Device Type
+                                    buffer
+                                        .inc(21)
+                                        .writeByte(DEVICE_TYPE_SCSI_HD); // Device Type
                                     buffer.inc(22).writeByte(0x0); // Device Subtype
                                     buffer.inc(23).writeWord(0x0101); // Version
                                     state.x = 24;
@@ -515,41 +560,38 @@ export default class SmartPort implements Card, MassStorage<BlockFormat>, Restor
 
     getState() {
         return {
-            disks: this.disks.map(
-                (disk) => {
-                    const result: BlockDisk = {
-                        blocks: disk.blocks.map(
-                            (block) => new Uint8Array(block)
-                        ),
-                        encoding: ENCODING_BLOCK,
-                        format: disk.format,
-                        readOnly: disk.readOnly,
-                        metadata: { ...disk.metadata },
-                    };
-                    return result;
-                }
-            )
-        };
-    }
-
-    setState(state: SmartPortState) {
-        this.disks = state.disks.map(
-            (disk) => {
+            disks: this.disks.map((disk) => {
                 const result: BlockDisk = {
-                    blocks: disk.blocks.map(
-                        (block) => new Uint8Array(block)
-                    ),
+                    blocks: disk.blocks.map((block) => new Uint8Array(block)),
                     encoding: ENCODING_BLOCK,
                     format: disk.format,
                     readOnly: disk.readOnly,
                     metadata: { ...disk.metadata },
                 };
                 return result;
-            }
-        );
+            }),
+        };
     }
 
-    setBinary(driveNo: DriveNumber, name: string, fmt: BlockFormat, rawData: ArrayBuffer) {
+    setState(state: SmartPortState) {
+        this.disks = state.disks.map((disk) => {
+            const result: BlockDisk = {
+                blocks: disk.blocks.map((block) => new Uint8Array(block)),
+                encoding: ENCODING_BLOCK,
+                format: disk.format,
+                readOnly: disk.readOnly,
+                metadata: { ...disk.metadata },
+            };
+            return result;
+        });
+    }
+
+    setBinary(
+        driveNo: DriveNumber,
+        name: string,
+        fmt: BlockFormat,
+        rawData: ArrayBuffer
+    ) {
         let volume = 254;
         let readOnly = false;
         if (fmt === '2mg') {

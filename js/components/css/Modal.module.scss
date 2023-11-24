@@ -1,9 +1,6 @@
 .modalOverlay {
     position: fixed;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
+    inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -63,7 +60,7 @@
     text-align: right;
     user-select: none;
 
-    a[role="button"],
+    a[role='button'],
     button {
         margin: 0 0 0 5px;
         min-width: 75px;

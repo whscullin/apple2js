@@ -33,7 +33,11 @@ interface ControlStripProps {
  * @param e Whether or not this is a //e
  * @returns ControlStrip component
  */
-export const ControlStrip = ({ apple2, e, toggleDebugger }: ControlStripProps) => {
+export const ControlStrip = ({
+    apple2,
+    e,
+    toggleDebugger,
+}: ControlStripProps) => {
     const [showOptions, setShowOptions] = useState(false);
     const [io, setIO] = useState<Apple2IO>();
     const options = useContext(OptionsContext);
@@ -55,23 +59,22 @@ export const ControlStrip = ({ apple2, e, toggleDebugger }: ControlStripProps) =
         }
     }, [apple2, e, options]);
 
-    const doReset = useCallback(() =>
-        apple2?.reset(), [apple2]);
+    const doReset = useCallback(() => apple2?.reset(), [apple2]);
 
-    const doReadme = useCallback(() =>
-        window.open(README, '_blank'), []);
+    const doReadme = useCallback(() => window.open(README, '_blank'), []);
 
-    const doShowOptions = useCallback(() =>
-        setShowOptions(true), []);
+    const doShowOptions = useCallback(() => setShowOptions(true), []);
 
-    const doCloseOptions = useCallback(() =>
-        setShowOptions(false), []);
+    const doCloseOptions = useCallback(() => setShowOptions(false), []);
 
-    const doToggleFullPage = useCallback(() =>
-        options.setOption(
-            SCREEN_FULL_PAGE,
-            !options.getOption(SCREEN_FULL_PAGE)
-        ), [options]);
+    const doToggleFullPage = useCallback(
+        () =>
+            options.setOption(
+                SCREEN_FULL_PAGE,
+                !options.getOption(SCREEN_FULL_PAGE)
+            ),
+        [options]
+    );
 
     useHotKey('F2', doToggleFullPage);
     useHotKey('F4', doShowOptions);
@@ -82,12 +85,20 @@ export const ControlStrip = ({ apple2, e, toggleDebugger }: ControlStripProps) =
             <OptionsModal isOpen={showOptions} onClose={doCloseOptions} />
             <Inset>
                 <CPUMeter apple2={apple2} />
-                <ControlButton onClick={toggleDebugger} title="Toggle Debugger" icon="bug" />
+                <ControlButton
+                    onClick={toggleDebugger}
+                    title="Toggle Debugger"
+                    icon="bug"
+                />
                 <AudioControl apple2={apple2} />
                 <Printer io={io} slot={1} />
                 <div style={{ flexGrow: 1 }} />
                 <ControlButton onClick={doReadme} title="About" icon="info" />
-                <ControlButton onClick={doShowOptions} title="Options (F4)" icon="cog" />
+                <ControlButton
+                    onClick={doShowOptions}
+                    title="Options (F4)"
+                    icon="cog"
+                />
             </Inset>
             {e && (
                 <div className={styles.reset} onClick={doReset}>

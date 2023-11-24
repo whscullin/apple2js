@@ -46,10 +46,10 @@ export const getNameAndExtension = (url: string) => {
 };
 
 export const loadLocalFile = (
-    storage: MassStorage<FloppyFormat|BlockFormat>,
+    storage: MassStorage<FloppyFormat | BlockFormat>,
     formats: typeof FLOPPY_FORMATS | typeof BLOCK_FORMATS | typeof DISK_FORMATS,
     driveNo: DriveNumber,
-    file: File,
+    file: File
 ) => {
     return new Promise((resolve, reject) => {
         const fileReader = new FileReader();
@@ -80,7 +80,11 @@ export const loadLocalFile = (
  * @param file Browser File object to load
  * @returns true if successful
  */
-export const loadLocalBlockFile = (smartPort: SmartPort, driveNo: DriveNumber, file: File) => {
+export const loadLocalBlockFile = (
+    smartPort: SmartPort,
+    driveNo: DriveNumber,
+    file: File
+) => {
     return loadLocalFile(smartPort, BLOCK_FORMATS, driveNo, file);
 };
 
@@ -93,7 +97,11 @@ export const loadLocalBlockFile = (smartPort: SmartPort, driveNo: DriveNumber, f
  * @param file Browser File object to load
  * @returns true if successful
  */
-export const loadLocalNibbleFile = (disk2: Disk2, driveNo: DriveNumber, file: File) => {
+export const loadLocalNibbleFile = (
+    disk2: Disk2,
+    driveNo: DriveNumber,
+    file: File
+) => {
     return loadLocalFile(disk2, FLOPPY_FORMATS, driveNo, file);
 };
 
@@ -110,13 +118,13 @@ export const loadLocalNibbleFile = (disk2: Disk2, driveNo: DriveNumber, file: Fi
 export const loadJSON = async (
     disk2: Disk2,
     driveNo: DriveNumber,
-    url: string,
+    url: string
 ) => {
     const response = await fetch(url);
     if (!response.ok) {
         throw new Error(`Error loading: ${response.statusText}`);
     }
-    const data = await response.json() as JSONDisk;
+    const data = (await response.json()) as JSONDisk;
     if (!includes(FLOPPY_FORMATS, data.type)) {
         throw new Error(`Type "${data.type}" not recognized.`);
     }
@@ -127,7 +135,7 @@ export const loadJSON = async (
 export const loadHttpFile = async (
     url: string,
     signal?: AbortSignal,
-    onProgress?: ProgressCallback,
+    onProgress?: ProgressCallback
 ): Promise<ArrayBuffer> => {
     const response = await fetch(url, signal ? { signal } : {});
     if (!response.ok) {
@@ -137,7 +145,10 @@ export const loadHttpFile = async (
         throw new Error('Error loading: no body');
     }
     const reader = response.body.getReader();
-    const contentLength = parseInt(response.headers.get('content-length') || '0', 10);
+    const contentLength = parseInt(
+        response.headers.get('content-length') || '0',
+        10
+    );
     let received = 0;
     const chunks: Uint8Array[] = [];
 
@@ -223,7 +234,7 @@ export const loadHttpUnknownFile = async (
     driveNo: DriveNumber,
     url: string,
     signal?: AbortSignal,
-    onProgress?: ProgressCallback,
+    onProgress?: ProgressCallback
 ) => {
     const data = await loadHttpFile(url, signal, onProgress);
     const { name, ext } = getNameAndExtension(url);
@@ -231,9 +242,17 @@ export const loadHttpUnknownFile = async (
 };
 
 export class SmartStorageBroker implements MassStorage<unknown> {
-    constructor(private disk2: Disk2, private smartPort: SmartPort) {}
+    constructor(
+        private disk2: Disk2,
+        private smartPort: SmartPort
+    ) {}
 
-    setBinary(driveNo: DriveNumber, name: string, ext: string, data: ArrayBuffer): boolean {
+    setBinary(
+        driveNo: DriveNumber,
+        name: string,
+        ext: string,
+        data: ArrayBuffer
+    ): boolean {
         if (includes(DISK_FORMATS, ext)) {
             if (data.byteLength >= 800 * 1024) {
                 if (includes(BLOCK_FORMATS, ext)) {
@@ -265,7 +284,11 @@ export class SmartStorageBroker implements MassStorage<unknown> {
  * @param debug Debugger object
  * @returns resolves to true if successful
  */
-export const loadLocalBinaryFile = (file: File, address: word, debug: Debugger) => {
+export const loadLocalBinaryFile = (
+    file: File,
+    address: word,
+    debug: Debugger
+) => {
     return new Promise((resolve, _reject) => {
         const fileReader = new FileReader();
         fileReader.onload = function () {

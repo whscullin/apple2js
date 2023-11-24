@@ -3,7 +3,7 @@ import { memory } from 'js/types';
 export function skipGap(track: memory, start: number = 0): number {
     const end = start + 0x100; // no gap is this big
     let i = start;
-    while (i < end && track[i] === 0xFF) {
+    while (i < end && track[i] === 0xff) {
         i++;
     }
     if (i === end) {
@@ -12,7 +12,11 @@ export function skipGap(track: memory, start: number = 0): number {
     return i;
 }
 
-export function compareSequences(track: memory, bytes: number[], pos: number): boolean {
+export function compareSequences(
+    track: memory,
+    bytes: number[],
+    pos: number
+): boolean {
     for (let i = 0; i < bytes.length; i++) {
         if (track[i + pos] !== bytes[i]) {
             return false;
@@ -21,15 +25,28 @@ export function compareSequences(track: memory, bytes: number[], pos: number): b
     return true;
 }
 
-export function expectSequence(track: memory, pos: number, bytes: number[]): number {
+export function expectSequence(
+    track: memory,
+    pos: number,
+    bytes: number[]
+): number {
     if (!compareSequences(track, bytes, pos)) {
-        const track_slice = track.slice(pos, Math.min(track.length, pos + bytes.length));
-        throw new Error(`expected ${bytes.toString()} got ${track_slice.toString()}`);
+        const track_slice = track.slice(
+            pos,
+            Math.min(track.length, pos + bytes.length)
+        );
+        throw new Error(
+            `expected ${bytes.toString()} got ${track_slice.toString()}`
+        );
     }
     return pos + bytes.length;
 }
 
-export function findBytes(track: memory, bytes: number[], start: number = 0): number {
+export function findBytes(
+    track: memory,
+    bytes: number[],
+    start: number = 0
+): number {
     if (start + bytes.length > track.length) {
         return -1;
     }
@@ -50,7 +67,11 @@ export function findBytes(track: memory, bytes: number[], start: number = 0): nu
  * @param padLength padded length
  * @returns an array of bytes
  */
-export const stringToBytes = (val: string, pad: string = '\0', padLength: number = 0) => {
+export const stringToBytes = (
+    val: string,
+    pad: string = '\0',
+    padLength: number = 0
+) => {
     const result = [];
     let idx = 0;
     while (idx < val.length) {

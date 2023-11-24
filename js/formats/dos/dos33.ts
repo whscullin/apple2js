@@ -41,13 +41,13 @@ export const VTOC_OFFSETS = {
 export const CATALOG_OFFSETS = {
     NEXT_CATALOG_TRACK: 0x01,
     NEXT_CATALOG_SECTOR: 0x02,
-    ENTRY1: 0x0B,
-    ENTRY2: 0x2E,
+    ENTRY1: 0x0b,
+    ENTRY2: 0x2e,
     ENTRY3: 0x51,
     ENTRY4: 0x74,
     ENTRY5: 0x97,
-    ENTRY6: 0xBA,
-    ENTRY7: 0xDD,
+    ENTRY6: 0xba,
+    ENTRY7: 0xdd,
 } as const;
 
 /**
@@ -113,7 +113,7 @@ export interface FileData {
 }
 
 function isNibbleDisk(disk: NibbleDisk | MassStorageData): disk is NibbleDisk {
-    return !!((disk as NibbleDisk).encoding);
+    return !!(disk as NibbleDisk).encoding;
 }
 
 /**
@@ -157,7 +157,9 @@ export class DOS33 {
             } else {
                 const offset = track * 0x1000 + sector * 0x100;
                 // Slice new array so modifications to apply to original track
-                data = new Uint8Array(this.disk.data.slice(offset, offset + 0x100));
+                data = new Uint8Array(
+                    this.disk.data.slice(offset, offset + 0x100)
+                );
             }
         }
         return data;
@@ -212,11 +214,11 @@ export class DOS33 {
             const data = this.rwts(track, sector);
             track = data[0x01];
             sector = data[0x02];
-            let offset = 0x0C; // offset in data
+            let offset = 0x0c; // offset in data
             while ((data[offset] || data[offset + 1]) && jdx < 121) {
                 fileTrackSectorList.push({
                     track: data[offset],
-                    sector: data[offset + 1]
+                    sector: data[offset + 1],
                 });
                 offset += 2;
                 jdx++;
@@ -247,16 +249,18 @@ export class DOS33 {
             case 'I':
             case 'A':
                 offset = 2;
-                length = data[0] | data[1] << 8;
+                length = data[0] | (data[1] << 8);
                 break;
             case 'T':
                 length = 0;
-                while (data[length]) { length++; }
+                while (data[length]) {
+                    length++;
+                }
                 break;
             case 'B':
                 offset = 4;
-                address = data[0] | data[1] << 8;
-                length = data[2] | data[3] << 8;
+                address = data[0] | (data[1] << 8);
+                length = data[2] | (data[3] << 8);
                 break;
         }
 
@@ -308,11 +312,12 @@ export class DOS33 {
      * @returns count of free sectors
      */
     freeSectorCount() {
-        return this.vtoc.trackSectorMap.reduce((count, flags) => (
-            count + flags.reduce((count, flag) => (
-                count + (flag ? 1 : 0)
-            ), 0)
-        ), 0);
+        return this.vtoc.trackSectorMap.reduce(
+            (count, flags) =>
+                count +
+                flags.reduce((count, flag) => count + (flag ? 1 : 0), 0),
+            0
+        );
     }
 
     /**
@@ -321,11 +326,12 @@ export class DOS33 {
      * @returns used sector count
      */
     usedSectorCount() {
-        return this.vtoc.trackSectorMap.reduce((count, flags) => (
-            count + flags.reduce((count, flag) => (
-                count + (flag ? 0 : 1)
-            ), 0)
-        ), 0);
+        return this.vtoc.trackSectorMap.reduce(
+            (count, flags) =>
+                count +
+                flags.reduce((count, flag) => count + (flag ? 0 : 1), 0),
+            0
+        );
     }
 
     /**
@@ -341,17 +347,14 @@ export class DOS33 {
         switch (file.type) {
             case 'A':
             case 'I':
-                prefix = [
-                    data.length % 0x100,
-                    data.length >> 8
-                ];
+                prefix = [data.length % 0x100, data.length >> 8];
                 break;
             case 'B':
                 prefix = [
                     fileData.address % 0x100,
                     fileData.address >> 8,
                     data.length % 0x100,
-                    data.length >> 8
+                    data.length >> 8,
                 ];
                 break;
         }
@@ -361,8 +364,11 @@ export class DOS33 {
 
         const { sectorByteCount, trackSectorListSize } = this.vtoc;
         const dataRequiredSectors = Math.ceil(data.length / sectorByteCount);
-        const fileSectorListRequiredSectors = Math.ceil(dataRequiredSectors / trackSectorListSize);
-        const requiredSectors = dataRequiredSectors + fileSectorListRequiredSectors;
+        const fileSectorListRequiredSectors = Math.ceil(
+            dataRequiredSectors / trackSectorListSize
+        );
+        const requiredSectors =
+            dataRequiredSectors + fileSectorListRequiredSectors;
         let idx;
         let sectors: TrackSector[] = [];
 
@@ -401,13 +407,21 @@ export class DOS33 {
                 }
                 sectorData[0x05] = idx & 0xff;
                 sectorData[0x06] = idx >> 8;
-                for (jdx = 0; jdx < trackSectorListSize && jdx < sectors.length; jdx++) {
-                    const offset = 0xC + jdx * 2;
+                for (
+                    jdx = 0;
+                    jdx < trackSectorListSize && jdx < sectors.length;
+                    jdx++
+                ) {
+                    const offset = 0xc + jdx * 2;
                     sectorData[offset] = sectors[jdx].track;
                     sectorData[offset + 1] = sectors[jdx].sector;
                 }
                 lastTrackSectorList = sectorData;
-                this.rwts(sector.track, sector.sector, new Uint8Array(sectorData));
+                this.rwts(
+                    sector.track,
+                    sector.sector,
+                    new Uint8Array(sectorData)
+                );
             }
 
             sector = sectors.shift() as TrackSector;
@@ -441,7 +455,8 @@ export class DOS33 {
                 for (let idx = 0; idx < fileData.data.length; idx++) {
                     const char = fileData.data[idx] & 0x7f;
                     if (char < 0x20) {
-                        if (char === 0xd) { // CR
+                        if (char === 0xd) {
+                            // CR
                             result += '\n';
                         } else {
                             result += `$${toHex(char)}`;
@@ -452,25 +467,30 @@ export class DOS33 {
                 }
                 break;
             case 'B':
-            default: {
-                result = '';
-                let hex = '';
-                let ascii = '';
-                for (let idx = 0; idx < fileData.data.length; idx++) {
-                    const val = fileData.data[idx];
-                    if (idx % 16 === 0) {
-                        if (idx !== 0) {
-                            result += `${hex}    ${ascii}\n`;
+            default:
+                {
+                    result = '';
+                    let hex = '';
+                    let ascii = '';
+                    for (let idx = 0; idx < fileData.data.length; idx++) {
+                        const val = fileData.data[idx];
+                        if (idx % 16 === 0) {
+                            if (idx !== 0) {
+                                result += `${hex}    ${ascii}\n`;
+                            }
+                            hex = '';
+                            ascii = '';
+                            result += `${toHex(fileData.address + idx, 4)}:`;
                         }
-                        hex = '';
-                        ascii = '';
-                        result += `${toHex(fileData.address + idx, 4)}:`;
+                        hex += ` ${toHex(val)}`;
+                        ascii +=
+                            (val & 0x7f) >= 0x20
+                                ? String.fromCharCode(val & 0x7f)
+                                : '.';
                     }
-                    hex += ` ${toHex(val)}`;
-                    ascii += (val & 0x7f) >= 0x20 ? String.fromCharCode(val & 0x7f) : '.';
+                    result += '\n';
                 }
-                result += '\n';
-            } break;
+                break;
         }
         return result;
     }
@@ -486,7 +506,7 @@ export class DOS33 {
         this.vtoc = {
             catalog: {
                 track: data[VTOC_OFFSETS.CATALOG_TRACK],
-                sector: data[VTOC_OFFSETS.CATALOG_SECTOR]
+                sector: data[VTOC_OFFSETS.CATALOG_SECTOR],
             },
             version: data[VTOC_OFFSETS.VERSION],
             volume: data[VTOC_OFFSETS.VOLUME],
@@ -495,9 +515,10 @@ export class DOS33 {
             allocationDirection: data[VTOC_OFFSETS.ALLOCATION_DIRECTION],
             trackCount: data[VTOC_OFFSETS.TRACK_COUNT],
             sectorCount: data[VTOC_OFFSETS.SECTOR_COUNT],
-            sectorByteCount: data[VTOC_OFFSETS.SECTOR_BYTE_COUNT_LOW] |
+            sectorByteCount:
+                data[VTOC_OFFSETS.SECTOR_BYTE_COUNT_LOW] |
                 (data[VTOC_OFFSETS.SECTOR_BYTE_COUNT_HIGH] << 8),
-            trackSectorMap: []
+            trackSectorMap: [],
         };
 
         for (let idx = 0; idx < this.vtoc.trackCount; idx++) {
@@ -532,8 +553,9 @@ export class DOS33 {
         data[VTOC_OFFSETS.CATALOG_TRACK] = vtoc.catalog.track;
         data[VTOC_OFFSETS.CATALOG_SECTOR] = vtoc.catalog.sector;
         data[VTOC_OFFSETS.VERSION] = vtoc.version || 3;
-        data[VTOC_OFFSETS.VOLUME] = vtoc.volume || 0xFE;
-        data[VTOC_OFFSETS.TRACK_SECTOR_LIST_SIZE] = vtoc.trackSectorListSize || 0x7a;
+        data[VTOC_OFFSETS.VOLUME] = vtoc.volume || 0xfe;
+        data[VTOC_OFFSETS.TRACK_SECTOR_LIST_SIZE] =
+            vtoc.trackSectorListSize || 0x7a;
         data[VTOC_OFFSETS.LAST_ALLOCATION_TRACK] = vtoc.lastAllocationTrack;
         data[VTOC_OFFSETS.ALLOCATION_DIRECTION] = vtoc.allocationDirection;
         data[VTOC_OFFSETS.TRACK_COUNT] = vtoc.trackCount;
@@ -578,7 +600,11 @@ export class DOS33 {
             catTrack = data[CATALOG_OFFSETS.NEXT_CATALOG_TRACK];
             catSector = data[CATALOG_OFFSETS.NEXT_CATALOG_SECTOR];
 
-            for (let idx = CATALOG_OFFSETS.ENTRY1; idx < 0x100; idx += CATALOG_ENTRY_LENGTH) {
+            for (
+                let idx = CATALOG_OFFSETS.ENTRY1;
+                idx < 0x100;
+                idx += CATALOG_ENTRY_LENGTH
+            ) {
                 const file: FileEntry = {
                     locked: false,
                     deleted: false,
@@ -596,12 +622,13 @@ export class DOS33 {
 
                 file.trackSectorList = {
                     track: entry[CATALOG_ENTRY_OFFSETS.SECTOR_LIST_TRACK],
-                    sector: entry[CATALOG_ENTRY_OFFSETS.SECTOR_LIST_SECTOR]
+                    sector: entry[CATALOG_ENTRY_OFFSETS.SECTOR_LIST_SECTOR],
                 };
 
                 if (file.trackSectorList.track === 0xff) {
                     file.deleted = true;
-                    file.trackSectorList.track = entry[CATALOG_ENTRY_OFFSETS.DELETED_FILE_TRACK];
+                    file.trackSectorList.track =
+                        entry[CATALOG_ENTRY_OFFSETS.DELETED_FILE_TRACK];
                 }
 
                 // Locked
@@ -642,15 +669,20 @@ export class DOS33 {
                 str += ' ';
 
                 // Size
-                file.size = entry[CATALOG_ENTRY_OFFSETS.FILE_LENGTH_LOW] |
-                    entry[CATALOG_ENTRY_OFFSETS.FILE_LENGTH_HIGH] << 8;
+                file.size =
+                    entry[CATALOG_ENTRY_OFFSETS.FILE_LENGTH_LOW] |
+                    (entry[CATALOG_ENTRY_OFFSETS.FILE_LENGTH_HIGH] << 8);
                 str += Math.floor(file.size / 100);
                 str += Math.floor(file.size / 10) % 10;
                 str += file.size % 10;
                 str += ' ';
 
                 // Filename
-                for (let jdx = CATALOG_ENTRY_OFFSETS.FILE_NAME; jdx < 0x21; jdx++) {
+                for (
+                    let jdx = CATALOG_ENTRY_OFFSETS.FILE_NAME;
+                    jdx < 0x21;
+                    jdx++
+                ) {
                     file.name += String.fromCharCode(entry[jdx] & 0x7f);
                 }
                 str += file.name;
@@ -672,17 +704,25 @@ export class DOS33 {
         while (catSector || catTrack) {
             const data = this.rwts(catTrack, catSector);
 
-            for (let idx = CATALOG_OFFSETS.ENTRY1; idx < 0x100; idx += CATALOG_ENTRY_OFFSETS.SECTOR_LIST_TRACK) {
+            for (
+                let idx = CATALOG_OFFSETS.ENTRY1;
+                idx < 0x100;
+                idx += CATALOG_ENTRY_OFFSETS.SECTOR_LIST_TRACK
+            ) {
                 const file = this.files.shift();
 
                 if (!file?.trackSectorList) {
                     continue;
                 }
 
-                data[idx + CATALOG_ENTRY_OFFSETS.SECTOR_LIST_TRACK] = file.trackSectorList.track;
-                data[idx + CATALOG_ENTRY_OFFSETS.SECTOR_LIST_SECTOR] = file.trackSectorList.sector;
+                data[idx + CATALOG_ENTRY_OFFSETS.SECTOR_LIST_TRACK] =
+                    file.trackSectorList.track;
+                data[idx + CATALOG_ENTRY_OFFSETS.SECTOR_LIST_SECTOR] =
+                    file.trackSectorList.sector;
 
-                data[idx + CATALOG_ENTRY_OFFSETS.FILE_TYPE] = file.locked ? 0x80 : 0x00;
+                data[idx + CATALOG_ENTRY_OFFSETS.FILE_TYPE] = file.locked
+                    ? 0x80
+                    : 0x00;
 
                 // File type
                 switch (file.type) {
@@ -706,12 +746,15 @@ export class DOS33 {
                 }
 
                 // Size
-                data[idx + CATALOG_ENTRY_OFFSETS.FILE_LENGTH_LOW] = file.size & 0xff;
-                data[idx + CATALOG_ENTRY_OFFSETS.FILE_LENGTH_HIGH] = file.size >> 8;
+                data[idx + CATALOG_ENTRY_OFFSETS.FILE_LENGTH_LOW] =
+                    file.size & 0xff;
+                data[idx + CATALOG_ENTRY_OFFSETS.FILE_LENGTH_HIGH] =
+                    file.size >> 8;
 
                 // Filename
-                for (let jdx = 0; jdx < 0x1E; jdx++) {
-                    data[idx + CATALOG_ENTRY_OFFSETS.FILE_NAME + jdx] = file.name.charCodeAt(jdx) | 0x80;
+                for (let jdx = 0; jdx < 0x1e; jdx++) {
+                    data[idx + CATALOG_ENTRY_OFFSETS.FILE_NAME + jdx] =
+                        file.name.charCodeAt(jdx) | 0x80;
                 }
             }
             this.rwts(catTrack, catSector, data);

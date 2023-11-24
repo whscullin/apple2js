@@ -3,7 +3,7 @@ import { Card, Restorable, byte } from '../types';
 import { rom } from '../roms/cards/parallel';
 
 const LOC = {
-    IOREG: 0x80
+    IOREG: 0x80,
 } as const;
 
 export interface ParallelState {}

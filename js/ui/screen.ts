@@ -64,8 +64,8 @@ export class Screen implements OptionHandler {
                         type: BOOLEAN_OPTION,
                         defaultVal: true,
                     },
-                ]
-            }
+                ],
+            },
         ];
     }
 

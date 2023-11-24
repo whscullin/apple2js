@@ -14,7 +14,7 @@ export function toReadableState(state: CpuState) {
             a: toHex(a),
             x: toHex(x),
             y: toHex(y),
-            s: dumpStatusRegister(s)
+            s: dumpStatusRegister(s),
         };
     } else {
         return state;

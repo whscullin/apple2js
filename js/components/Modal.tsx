@@ -15,11 +15,7 @@ import { ControlButton } from './ControlButton';
  * @returns ModalOverlay component
  */
 export const ModalOverlay = ({ children }: { children: ComponentChildren }) => {
-    return (
-        <div className={styles.modalOverlay}>
-            {children}
-        </div>
-    );
+    return <div className={styles.modalOverlay}>{children}</div>;
 };
 
 /**
@@ -28,11 +24,7 @@ export const ModalOverlay = ({ children }: { children: ComponentChildren }) => {
  * @returns ModalContent component
  */
 export const ModalContent = ({ children }: { children: ComponentChildren }) => {
-    return (
-        <div className={styles.modalContent}>
-            {children}
-        </div>
-    );
+    return <div className={styles.modalContent}>{children}</div>;
 };
 
 /**
@@ -66,9 +58,7 @@ export const ModalCloseButton = ({ onClose }: ModalCloseButtonProp) => {
     const doClose = useCallback(() => onClose(true), [onClose]);
     useHotKey('Escape', doClose);
 
-    return (
-        <ControlButton onClick={doClose} title="Close" icon="xmark" />
-    );
+    return <ControlButton onClick={doClose} title="Close" icon="xmark" />;
 };
 
 type OnCloseCallback = (closeBox?: boolean) => void;
@@ -94,8 +84,7 @@ export const ModalHeader = ({ onClose, title, icon }: ModalHeaderProps) => {
     return (
         <div role="banner" className={styles.modalHeader}>
             <span className={styles.modalTitle}>
-                {icon && <i className={`fa-solid fa-${icon}`} role="img" />}
-                {' '}
+                {icon && <i className={`fa-solid fa-${icon}`} role="img" />}{' '}
                 {title}
             </span>
             {onClose && <ModalCloseButton onClose={onClose} />}
@@ -124,20 +113,19 @@ export interface ModalProps {
  * @param onClose Close callback
  * @returns Modal component
  */
-export const Modal = ({
-    isOpen,
-    children,
-    title,
-    ...props
-}: ModalProps) => {
-    return (
-        isOpen ? createPortal((
-            <ModalOverlay>
-                <div className={cs(styles.modal, componentStyles.components)} role="dialog">
-                    {title && <ModalHeader title={title} {...props} />}
-                    {children}
-                </div>
-            </ModalOverlay>
-        ), document.body) : null
-    );
+export const Modal = ({ isOpen, children, title, ...props }: ModalProps) => {
+    return isOpen
+        ? createPortal(
+              <ModalOverlay>
+                  <div
+                      className={cs(styles.modal, componentStyles.components)}
+                      role="dialog"
+                  >
+                      {title && <ModalHeader title={title} {...props} />}
+                      {children}
+                  </div>
+              </ModalOverlay>,
+              document.body
+          )
+        : null;
 };

@@ -18,7 +18,7 @@ export interface BooleanOption extends Option {
 export interface SelectOption extends Option {
     type: typeof SELECT_OPTION;
     defaultVal: string;
-    values: Array<{name: string; value: string}>;
+    values: Array<{ name: string; value: string }>;
 }
 
 export interface OptionSection {

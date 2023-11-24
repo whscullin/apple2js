@@ -14,7 +14,7 @@ export default function createDiskFromDOS13(options: DiskOptions) {
         metadata: { name, side },
         volume,
         readOnly,
-        tracks: []
+        tracks: [],
     };
 
     if (!data && !rawData) {

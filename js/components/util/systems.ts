@@ -21,7 +21,7 @@ export const systemTypes: Record<string, Partial<SystemType>> = {
     apple2e: {
         rom: 'apple2e',
         characterRom: 'apple2e_char',
-        enhanced: false
+        enhanced: false,
     },
     apple2rm: {
         characterRom: 'rmfont_char',
@@ -58,7 +58,7 @@ export const systemTypes: Record<string, Partial<SystemType>> = {
         characterRom: 'pigfont_char',
         e: false,
     },
-    apple2lc:{
+    apple2lc: {
         rom: 'fpbasic',
         characterRom: 'apple2lc_char',
         e: false,
@@ -67,5 +67,5 @@ export const systemTypes: Record<string, Partial<SystemType>> = {
         rom: 'fpbasic',
         characterRom: 'apple2_char',
         e: false,
-    }
+    },
 } as const;
