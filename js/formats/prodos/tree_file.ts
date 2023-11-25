@@ -8,7 +8,10 @@ export class TreeFile extends ProDOSFile {
     private bitMap: BitMap;
     private blocks: Uint8Array[];
 
-    constructor(volume: ProDOSVolume, private fileEntry: FileEntry) {
+    constructor(
+        volume: ProDOSVolume,
+        private fileEntry: FileEntry
+    ) {
         super(volume);
         this.blocks = volume.blocks();
         this.bitMap = volume.bitMap();
@@ -24,7 +27,9 @@ export class TreeFile extends ProDOSFile {
                 (saplingPointers.getUint8(0x100 + idx) << 8);
             if (saplingPointer) {
                 pointers.push(saplingPointer);
-                const seedlingPointers = new DataView(this.blocks[saplingPointer]);
+                const seedlingPointers = new DataView(
+                    this.blocks[saplingPointer]
+                );
                 for (let jdx = 0; jdx < 256; jdx++) {
                     const seedlingPointer =
                         seedlingPointers.getUint8(idx) |
@@ -62,7 +67,9 @@ export class TreeFile extends ProDOSFile {
                         (seedlingPointers.getUint8(0x100 + idx) << 8);
                     if (seedlingPointer) {
                         const seedlingBlock = this.blocks[seedlingPointer];
-                        const bytes = seedlingBlock.slice(Math.min(BLOCK_SIZE, remainingLength));
+                        const bytes = seedlingBlock.slice(
+                            Math.min(BLOCK_SIZE, remainingLength)
+                        );
 
                         data.set(bytes, offset);
                     }
@@ -105,7 +112,9 @@ export class TreeFile extends ProDOSFile {
                 seedlingPointers.setUint8(idx, seedlingPointer & 0xff);
                 seedlingPointers.setUint8(0x100 + idx, seedlingPointer >> 8);
                 const seedlingBlock = this.blocks[seedlingPointer];
-                seedlingBlock.set(data.slice(offset, Math.min(BLOCK_SIZE, remainingLength)));
+                seedlingBlock.set(
+                    data.slice(offset, Math.min(BLOCK_SIZE, remainingLength))
+                );
                 jdx++;
                 offset += BLOCK_SIZE;
                 remainingLength -= BLOCK_SIZE;
@@ -122,4 +131,3 @@ export class TreeFile extends ProDOSFile {
         }
     }
 }
-

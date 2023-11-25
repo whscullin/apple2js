@@ -1,9 +1,6 @@
 import { debug } from '../js/util';
 import { jsonDecode } from '../js/formats/format_utils';
-import {
-    createDisk,
-    createDiskFromJsonDisk,
-} from '../js/formats/create_disk';
+import { createDisk, createDiskFromJsonDisk } from '../js/formats/create_disk';
 import {
     FormatWorkerMessage,
     DiskProcessedResponse,
@@ -23,22 +20,25 @@ addEventListener('message', (message: MessageEvent<FormatWorkerMessage>) => {
     let disk: FloppyDisk | null = null;
 
     switch (data.type) {
-        case PROCESS_BINARY: {
-            const { fmt, options } = data.payload;
-            disk = createDisk(fmt, options);
-        }
+        case PROCESS_BINARY:
+            {
+                const { fmt, options } = data.payload;
+                disk = createDisk(fmt, options);
+            }
             break;
 
-        case PROCESS_JSON_DISK: {
-            const { jsonDisk } = data.payload;
-            disk = createDiskFromJsonDisk(jsonDisk);
-        }
+        case PROCESS_JSON_DISK:
+            {
+                const { jsonDisk } = data.payload;
+                disk = createDiskFromJsonDisk(jsonDisk);
+            }
             break;
 
-        case PROCESS_JSON: {
-            const { json } = data.payload;
-            disk = jsonDecode(json);
-        }
+        case PROCESS_JSON:
+            {
+                const { json } = data.payload;
+                disk = jsonDecode(json);
+            }
             break;
     }
 
@@ -46,8 +46,8 @@ addEventListener('message', (message: MessageEvent<FormatWorkerMessage>) => {
         type: DISK_PROCESSED,
         payload: {
             driveNo,
-            disk
-        }
+            disk,
+        },
     };
 
     self.postMessage(response);

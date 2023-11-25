@@ -4,25 +4,26 @@ import { rom } from '../roms/cards/thunderclock';
 
 const LOC = {
     CONTROL: 0x80,
-    AUX: 0x88
+    AUX: 0x88,
 } as const;
 
 const COMMANDS = {
     MASK: 0x18,
     REGHOLD: 0x00,
     REGSHIFT: 0x08,
-    TIMED: 0x18
+    TIMED: 0x18,
 } as const;
 
 const FLAGS = {
     DATA: 0x01,
     CLOCK: 0x02,
-    STROBE: 0x04
+    STROBE: 0x04,
 } as const;
 
 export interface ThunderclockState {}
 
-export default class Thunderclock implements Card, Restorable<ThunderclockState>
+export default class Thunderclock
+    implements Card, Restorable<ThunderclockState>
 {
     constructor() {
         debug('Thunderclock');
@@ -82,7 +83,7 @@ export default class Thunderclock implements Card, Restorable<ThunderclockState>
     }
 
     private access(off: byte, val?: byte) {
-        switch (off & 0x8F) {
+        switch (off & 0x8f) {
             case LOC.CONTROL:
                 if (val !== undefined) {
                     const strobe = val & FLAGS.STROBE ? true : false;
@@ -105,7 +106,10 @@ export default class Thunderclock implements Card, Restorable<ThunderclockState>
                                     this.shiftMode = false;
                                     break;
                                 default:
-                                    this.debug('Unknown command', toHex(this.command));
+                                    this.debug(
+                                        'Unknown command',
+                                        toHex(this.command)
+                                    );
                             }
                         }
                     }
@@ -132,7 +136,7 @@ export default class Thunderclock implements Card, Restorable<ThunderclockState>
         if (page < 0xc8) {
             result = rom[off];
         } else {
-            result = rom[(page - 0xc8) << 8 | off];
+            result = rom[((page - 0xc8) << 8) | off];
         }
         return result;
     }

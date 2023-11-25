@@ -9,9 +9,9 @@ export const STORAGE_TYPES = {
     TREE: 0x3,
     PASCAL: 0x4,
     EXTENDED: 0x5,
-    DIRECTORY: 0xD,
-    SUBDIRECTORY_HEADER: 0xE,
-    VDH_HEADER: 0xF
+    DIRECTORY: 0xd,
+    SUBDIRECTORY_HEADER: 0xe,
+    VDH_HEADER: 0xf,
 } as const;
 
 export const ACCESS_TYPES = {
@@ -20,7 +20,7 @@ export const ACCESS_TYPES = {
     BACKUP: 0x20,
     WRITE: 0x02,
     READ: 0x01,
-    ALL: 0xE3
+    ALL: 0xe3,
 } as const;
 
 export const FILE_TYPES: Record<byte, string> = {
@@ -34,10 +34,10 @@ export const FILE_TYPES: Record<byte, string> = {
     0x07: 'FNT', // Font file
     0x08: 'FOT', // Graphics screen file
     0x09: 'BA3', // Business BASIC program file
-    0x0A: 'DA3', // Business BASIC data file
-    0x0B: 'WPF', // Word Processor file
-    0x0C: 'SOS', // SOS system file
-    0x0F: 'DIR', // Directory file (SOS and ProDOS)
+    0x0a: 'DA3', // Business BASIC data file
+    0x0b: 'WPF', // Word Processor file
+    0x0c: 'SOS', // SOS system file
+    0x0f: 'DIR', // Directory file (SOS and ProDOS)
     0x10: 'RPD', // RPS data file
     0x11: 'RPI', // RPS index file
     0x12: 'AFD', // AppleFile discard file
@@ -45,14 +45,14 @@ export const FILE_TYPES: Record<byte, string> = {
     0x14: 'ARF', // AppleFile report format file
     0x15: 'SCL', // Screen Library file
     0x19: 'ADB', // AppleWorks Data Base file
-    0x1A: 'AWP', // AppleWorks Word Processor file
-    0x1B: 'ASP', // AppleWorks Spreadsheet file
-    0xEF: 'PAR', // Pascal area
-    0xF0: 'CMD', // ProDOS CI added command file
-    0xFA: 'INT', // Integer BASIC program file
-    0xFB: 'IVR', // Integer BASIC variable file
-    0xFC: 'BAS', // Applesoft program file
-    0xFD: 'VAR', // Applesoft variables file
-    0xFE: 'REL', // Relocatable code file (EDASM)
-    0xFF: 'SYS'  // ProDOS system file
+    0x1a: 'AWP', // AppleWorks Word Processor file
+    0x1b: 'ASP', // AppleWorks Spreadsheet file
+    0xef: 'PAR', // Pascal area
+    0xf0: 'CMD', // ProDOS CI added command file
+    0xfa: 'INT', // Integer BASIC program file
+    0xfb: 'IVR', // Integer BASIC variable file
+    0xfc: 'BAS', // Applesoft program file
+    0xfd: 'VAR', // Applesoft variables file
+    0xfe: 'REL', // Relocatable code file (EDASM)
+    0xff: 'SYS', // ProDOS system file
 } as const;

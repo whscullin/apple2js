@@ -51,7 +51,10 @@ function writeWord(mem: Memory, addr: word, val: byte) {
 
 class LineBuffer implements IterableIterator<string> {
     private prevChar: number = 0;
-    constructor(private readonly line: string, private curChar: number = 0) { }
+    constructor(
+        private readonly line: string,
+        private curChar: number = 0
+    ) {}
 
     [Symbol.iterator](): IterableIterator<string> {
         return this;
@@ -132,7 +135,11 @@ export default class ApplesoftCompiler {
      * @param programStart Optional start address of the program. Defaults to
      *     standard Applesoft program address, 0x801.
      */
-    static compileToMemory(mem: Memory, program: string, programStart: word = PROGRAM_START) {
+    static compileToMemory(
+        mem: Memory,
+        program: string,
+        programStart: word = PROGRAM_START
+    ) {
         const compiler = new ApplesoftCompiler();
         compiler.compile(program);
         const compiledProgram: Uint8Array = compiler.program(programStart);
@@ -305,8 +312,8 @@ export default class ApplesoftCompiler {
 
         for (const lineNo of lineNumbers) {
             const lineBytes = this.lines.get(lineNo) || [];
-            const nextLineAddr = programStart + result.length + 4
-                + lineBytes.length + 1; // +1 for the zero at end of line
+            const nextLineAddr =
+                programStart + result.length + 4 + lineBytes.length + 1; // +1 for the zero at end of line
             result.push(nextLineAddr & 0xff, nextLineAddr >> 8);
             result.push(lineNo & 0xff, lineNo >> 8);
             result.push(...lineBytes);

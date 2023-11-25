@@ -4,13 +4,22 @@ import Disk2, { Callbacks } from '../cards/disk2';
 import Apple2IO from '../apple2io';
 import { DiskII, DiskIIData } from './DiskII';
 import SmartPort from 'js/cards/smartport';
-import CPU6502 from 'js/cpu6502';
+import { CPU6502 } from '@whscullin/cpu6502';
 import { BlockDisk } from './BlockDisk';
 import { ErrorModal } from './ErrorModal';
 import { ProgressModal } from './ProgressModal';
-import { loadHttpUnknownFile, getHashParts, loadJSON, SmartStorageBroker } from './util/files';
+import {
+    loadHttpUnknownFile,
+    getHashParts,
+    loadJSON,
+    SmartStorageBroker,
+} from './util/files';
 import { useHash } from './hooks/useHash';
-import { DISK_FORMATS, DRIVE_NUMBERS, SupportedSectors } from 'js/formats/types';
+import {
+    DISK_FORMATS,
+    DRIVE_NUMBERS,
+    SupportedSectors,
+} from 'js/formats/types';
 import { spawn, Ready } from './util/promises';
 
 import styles from './css/Drives.module.scss';
@@ -74,12 +83,12 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
     const [smartData1, setSmartData1] = useState<DiskIIData>({
         on: false,
         number: 1,
-        name: 'HD 1'
+        name: 'HD 1',
     });
     const [smartData2, setSmartData2] = useState<DiskIIData>({
         on: false,
         number: 2,
-        name: 'HD 2'
+        name: 'HD 2',
     });
 
     const hash = useHash();
@@ -97,25 +106,30 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
                     const isJson = hashPart.match(/\.json$/i);
                     if (isHttp && !isJson) {
                         loading++;
-                        controllers.push(spawn(async (signal) => {
-                            try {
-                                await loadHttpUnknownFile(
-                                    smartStorageBroker,
-                                    driveNo,
-                                    hashPart,
-                                    signal,
-                                    onProgress);
-                            } catch (e) {
-                                setError(e);
-                            }
-                            if (--loading === 0) {
-                                ready.onReady();
-                            }
-                            setCurrent(0);
-                            setTotal(0);
-                        }));
+                        controllers.push(
+                            spawn(async (signal) => {
+                                try {
+                                    await loadHttpUnknownFile(
+                                        smartStorageBroker,
+                                        driveNo,
+                                        hashPart,
+                                        signal,
+                                        onProgress
+                                    );
+                                } catch (e) {
+                                    setError(e);
+                                }
+                                if (--loading === 0) {
+                                    ready.onReady();
+                                }
+                                setCurrent(0);
+                                setTotal(0);
+                            })
+                        );
                     } else {
-                        const url = isHttp ? hashPart : `json/disks/${hashPart}.json`;
+                        const url = isHttp
+                            ? hashPart
+                            : `json/disks/${hashPart}.json`;
                         loadJSON(disk2, driveNo, url).catch((e) => setError(e));
                     }
                 }
@@ -123,7 +137,8 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
             if (!loading) {
                 ready.onReady();
             }
-            return () => controllers.forEach((controller) => controller.abort());
+            return () =>
+                controllers.forEach((controller) => controller.abort());
         }
     }, [hash, onProgress, ready, storageDevices]);
 
@@ -132,10 +147,10 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
         const setSmartData = [setSmartData1, setSmartData2];
         const callbacks: Callbacks = {
             driveLight: (drive, on) => {
-                setData[drive - 1]?.(data => ({ ...data, on }));
+                setData[drive - 1]?.((data) => ({ ...data, on }));
             },
             label: (drive, name, side) => {
-                setData[drive - 1]?.(data => ({
+                setData[drive - 1]?.((data) => ({
                     ...data,
                     name: name ?? `Disk ${drive}`,
                     side,
@@ -143,27 +158,31 @@ export const Drives = ({ cpu, io, sectors, enhanced, ready }: DrivesProps) => {
             },
             dirty: () => {
                 // do nothing
-            }
+            },
         };
 
         const smartPortCallbacks: Callbacks = {
             driveLight: (drive, on) => {
-                setSmartData[drive - 1]?.(data => ({ ...data, on }));
+                setSmartData[drive - 1]?.((data) => ({ ...data, on }));
             },
             label: (drive, name, side) => {
-                setSmartData[drive - 1]?.(data => ({
+                setSmartData[drive - 1]?.((data) => ({
                     ...data,
                     name: name ?? `HD ${drive}`,
                     side,
                 }));
             },
-            dirty: () => {/* Unused */ }
+            dirty: () => {
+                /* Unused */
+            },
         };
 
         if (cpu && io) {
             const disk2 = new Disk2(io, callbacks, sectors);
             io.setSlot(6, disk2);
-            const smartPort = new SmartPort(cpu, smartPortCallbacks, { block: !enhanced });
+            const smartPort = new SmartPort(cpu, smartPortCallbacks, {
+                block: !enhanced,
+            });
             io.setSlot(7, smartPort);
 
             const smartStorageBroker = new SmartStorageBroker(disk2, smartPort);

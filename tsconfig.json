@@ -1,45 +1,48 @@
 {
-  "compilerOptions": {
-    "jsx": "react",
-    "jsxFactory": "h",
-    "jsxFragmentFactory": "Fragment",
-    "module": "esnext",
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "target": "es6",
-    "lib": ["DOM", "ES6"],
-    "noImplicitAny": true,
-    "noImplicitThis": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "exactOptionalPropertyTypes": true,
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "sourceMap": true,
-    "strictNullChecks": true,
-    "outDir": "dist",
-    "baseUrl": ".",
-    "allowJs": true,
-    "paths": {
-      "*": [
-        "node_modules/*",
-        "types/*"
-      ],
-      "js/*": [
-          "js/*"
-      ],
-      "json/*": [
-        "json/*"
-      ],
-        "test/*": [
-          "test/*"
-      ]
-    }
-  },
-  "include": [
-      "js/**/*",
-      "test/**/*",
-      "types/**/*",
-      "*.config.js"
-  ]
+    "compilerOptions": {
+        "jsx": "react",
+        "jsxFactory": "h",
+        "jsxFragmentFactory": "Fragment",
+        "module": "esnext",
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "target": "es6",
+        "lib": [
+            "DOM",
+            "ES6"
+        ],
+        "noImplicitAny": true,
+        "noImplicitThis": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "exactOptionalPropertyTypes": true,
+        "moduleResolution": "node",
+        "resolveJsonModule": true,
+        "sourceMap": true,
+        "strictNullChecks": true,
+        "outDir": "dist",
+        "baseUrl": ".",
+        "allowJs": true,
+        "paths": {
+            "*": [
+                "node_modules/*",
+                "types/*"
+            ],
+            "js/*": [
+                "js/*"
+            ],
+            "json/*": [
+                "json/*"
+            ],
+            "test/*": [
+                "test/*"
+            ]
+        }
+    },
+    "include": [
+        "js/**/*",
+        "test/**/*",
+        "types/**/*",
+        "*.config.js"
+    ]
 }

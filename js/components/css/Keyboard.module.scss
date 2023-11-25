@@ -177,7 +177,7 @@
 }
 
 .key-OPEN_APPLE div {
-    background-image: url("../../../img/open-apple24.png");
+    background-image: url('../../../img/open-apple24.png');
     width: 24px;
     height: 24px;
     bottom: 1px;
@@ -185,7 +185,7 @@
 }
 
 .key-CLOSED_APPLE div {
-    background-image: url("../../../img/closed-apple24.png");
+    background-image: url('../../../img/closed-apple24.png');
     width: 24px;
     height: 24px;
     bottom: 1px;
@@ -201,9 +201,9 @@
 }
 
 .key-OPEN_APPLE.active div {
-    background-image: url("../../../img/open-apple24-green.png");
+    background-image: url('../../../img/open-apple24-green.png');
 }
 
 .key-CLOSED_APPLE.active div {
-    background-image: url("../../../img/closed-apple24-green.png");
+    background-image: url('../../../img/closed-apple24-green.png');
 }

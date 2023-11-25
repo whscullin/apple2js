@@ -22,7 +22,8 @@ export class NibbleDiskDriver extends BaseDiskDriver {
         drive: Drive,
         readonly disk: NibbleDisk,
         controller: ControllerState,
-        private readonly onDirty: () => void) {
+        private readonly onDirty: () => void
+    ) {
         super(driveNo, drive, disk, controller);
     }
 
@@ -57,7 +58,7 @@ export class NibbleDiskDriver extends BaseDiskDriver {
         } else {
             this.controller.latch = 0;
         }
-        this.skip = (++this.skip % 2);
+        this.skip = ++this.skip % 2;
     }
 
     onQ6High(readMode: boolean): void {

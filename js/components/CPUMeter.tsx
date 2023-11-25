@@ -38,19 +38,11 @@ export const CPUMeter = ({ apple2 }: CPUMeterProps) => {
             const time = Date.now();
             const delta = time - lastTime.current;
             if (stats) {
-                setKhz(
-                    Math.floor(
-                        (stats.cycles - cycles) / delta
-                    )
-                );
-                setFps(
-                    Math.floor(
-                        (stats.frames - frames) / delta * 1000
-                    )
-                );
+                setKhz(Math.floor((stats.cycles - cycles) / delta));
+                setFps(Math.floor(((stats.frames - frames) / delta) * 1000));
                 setRps(
                     Math.floor(
-                        (stats.renderedFrames - renderedFrames) / delta * 1000
+                        ((stats.renderedFrames - renderedFrames) / delta) * 1000
                     )
                 );
                 lastStats.current = { ...stats };

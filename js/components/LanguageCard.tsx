@@ -1,4 +1,4 @@
-import CPU6502 from 'js/cpu6502';
+import { CPU6502 } from '@whscullin/cpu6502';
 import { Memory } from 'js/types';
 import { useEffect } from 'preact/hooks';
 import Apple2IO, { slot } from '../apple2io';

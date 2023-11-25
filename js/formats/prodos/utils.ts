@@ -12,13 +12,19 @@ export function uint32ToDate(val: word) {
         const hourMinute = val >> 16;
 
         const year = yearMonthDay >> 9;
-        const month = (yearMonthDay & 0x01E0) >> 5;
-        const day = yearMonthDay & 0x001F;
+        const month = (yearMonthDay & 0x01e0) >> 5;
+        const day = yearMonthDay & 0x001f;
 
         const hour = hourMinute >> 8;
         const min = hourMinute & 0xff;
 
-        return new Date(year < 70 ? 2000 + year : 1900 + year, month - 1, day, hour, min);
+        return new Date(
+            year < 70 ? 2000 + year : 1900 + year,
+            month - 1,
+            day,
+            hour,
+            min
+        );
     }
     return new Date(0);
 }
@@ -36,15 +42,20 @@ export function dateToUint32(date: Date) {
         const hour = date.getHours();
         const min = date.getMinutes();
 
-        const yearMonthDay = year << 9 | month << 5 | day;
-        const hourMinute = hour << 8 | min;
-        val = hourMinute << 16 | yearMonthDay;
+        const yearMonthDay = (year << 9) | (month << 5) | day;
+        const hourMinute = (hour << 8) | min;
+        val = (hourMinute << 16) | yearMonthDay;
     }
 
     return val;
 }
 
-export function readFileName(block: DataView, offset: word, nameLength: byte, caseBits: word) {
+export function readFileName(
+    block: DataView,
+    offset: word,
+    nameLength: byte,
+    caseBits: word
+) {
     let name = '';
     if (!(caseBits & 0x8000)) {
         caseBits = 0;
@@ -66,7 +77,7 @@ export function writeFileName(block: DataView, offset: word, name: string) {
     for (let idx = 0; idx < name.length; idx++) {
         caseBits <<= 1;
         let charCode = name.charCodeAt(idx);
-        if (charCode > 0x60 && charCode < 0x7B) {
+        if (charCode > 0x60 && charCode < 0x7b) {
             caseBits |= 0x1;
             charCode -= 0x20;
         }
@@ -75,7 +86,11 @@ export function writeFileName(block: DataView, offset: word, name: string) {
     return caseBits;
 }
 
-export function dumpDirectory(volume: ProDOSVolume, dirEntry: FileEntry, depth: string) {
+export function dumpDirectory(
+    volume: ProDOSVolume,
+    dirEntry: FileEntry,
+    depth: string
+) {
     const dir = new Directory(volume, dirEntry);
     let str = '';
 

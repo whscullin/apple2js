@@ -1,4 +1,10 @@
-import { BYTES_BY_SECTOR, BYTES_BY_SECTOR_IMAGE, BYTES_BY_TRACK, BYTES_BY_TRACK_IMAGE, BYTES_IN_ORDER } from './16sector';
+import {
+    BYTES_BY_SECTOR,
+    BYTES_BY_SECTOR_IMAGE,
+    BYTES_BY_TRACK,
+    BYTES_BY_TRACK_IMAGE,
+    BYTES_IN_ORDER,
+} from './16sector';
 
 describe('BYTES_IN_ORDER', () => {
     it('has the correct bytes in track 0, sector 0, byte 0 and byte 1', () => {
@@ -82,7 +88,7 @@ describe('BYTES_BY_SECTOR_IMAGE', () => {
     it('has the correct bytes in track 30, sector 11', () => {
         const disk = BYTES_BY_SECTOR_IMAGE;
         for (let i = 0; i < 256; i++) {
-            expect(disk[((30 * 16) + 11) * 256 + i]).toBe(11);
+            expect(disk[(30 * 16 + 11) * 256 + i]).toBe(11);
         }
     });
 });
@@ -140,7 +146,7 @@ describe('BYTES_BY_TRACK_IMAGE', () => {
     it('has the correct bytes in track 30, sector 11', () => {
         const image = BYTES_BY_TRACK_IMAGE;
         for (let i = 0; i < 256; i++) {
-            expect(image[i + ((30 * 16) + 11) * 256]).toBe(30);
+            expect(image[i + (30 * 16 + 11) * 256]).toBe(30);
         }
     });
 });

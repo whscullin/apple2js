@@ -5,7 +5,7 @@ import { Modal, ModalContent, ModalFooter } from './Modal';
 import styles from './css/ErrorModal.module.scss';
 
 export interface ErrorProps {
-    error: unknown | undefined;
+    error: unknown;
     setError: (error: string | undefined) => void;
 }
 
@@ -32,9 +32,7 @@ export const ErrorModal = ({ error, setError }: ErrorProps) => {
                 onClose={onClose}
             >
                 <ModalContent>
-                    <div className={styles.errorModal}>
-                        {errorStr}
-                    </div>
+                    <div className={styles.errorModal}>{errorStr}</div>
                 </ModalContent>
                 <ModalFooter>
                     <button onClick={onClose}>OK</button>

@@ -22,8 +22,19 @@ export interface ControlButtonProps {
  * @param onClick Click callback
  * @returns Control Button component
  */
-export const ControlButton = ({ active, icon, title, onClick, ...props }: ControlButtonProps) => (
-    <button className={styles.iconButton} onClick={onClick} title={title} {...props} >
+export const ControlButton = ({
+    active,
+    icon,
+    title,
+    onClick,
+    ...props
+}: ControlButtonProps) => (
+    <button
+        className={styles.iconButton}
+        onClick={onClick}
+        title={title}
+        {...props}
+    >
         <i className={cs('fas', `fa-${icon}`, { [styles.active]: active })}></i>
     </button>
 );

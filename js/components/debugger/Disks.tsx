@@ -2,7 +2,15 @@ import { h, Fragment } from 'preact';
 import { useMemo } from 'preact/hooks';
 import cs from 'classnames';
 import { Apple2 as Apple2Impl } from 'js/apple2';
-import { BlockDisk, DiskFormat, DriveNumber, FloppyDisk, isBlockDiskFormat, isNibbleDisk, MassStorage } from 'js/formats/types';
+import {
+    BlockDisk,
+    DiskFormat,
+    DriveNumber,
+    FloppyDisk,
+    isBlockDiskFormat,
+    isNibbleDisk,
+    MassStorage,
+} from 'js/formats/types';
 import { slot } from 'js/apple2io';
 import DiskII from 'js/cards/disk2';
 import SmartPort from 'js/cards/smartport';
@@ -18,7 +26,11 @@ import { toHex } from 'js/util';
 import styles from './css/Disks.module.scss';
 import debuggerStyles from './css/Debugger.module.scss';
 import { useCallback, useState } from 'preact/hooks';
-import { DOS33, FileEntry as DOSEntry, isMaybeDOS33 } from 'js/formats/dos/dos33';
+import {
+    DOS33,
+    FileEntry as DOSEntry,
+    isMaybeDOS33,
+} from 'js/formats/dos/dos33';
 import createDiskFromDOS from 'js/formats/do';
 import { FileData, FileViewer } from './FileViewer';
 
@@ -29,7 +41,10 @@ import { FileData, FileViewer } from './FileViewer';
  * @returns Short string date
  */
 const formatDate = (date: Date) => {
-    return date.toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
+    return date.toLocaleString(undefined, {
+        dateStyle: 'short',
+        timeStyle: 'short',
+    });
 };
 
 /**
@@ -39,7 +54,7 @@ const formatDate = (date: Date) => {
  * @returns true if is BlockDisk
  */
 function isBlockDisk(disk: FloppyDisk | BlockDisk): disk is BlockDisk {
-    return !!((disk as BlockDisk).blocks);
+    return !!(disk as BlockDisk).blocks;
 }
 
 /**
@@ -80,14 +95,17 @@ const FileListing = ({ depth, fileEntry, setFileData }: FileListingProps) => {
                 onClick={doSetFileData}
             >
                 {'| '.repeat(depth)}
-                {deleted ?
-                    <i className="fas fa-file-circle-xmark" /> :
+                {deleted ? (
+                    <i className="fas fa-file-circle-xmark" />
+                ) : (
                     <i className="fas fa-file" />
-                }
-                {' '}
+                )}{' '}
                 {fileEntry.name}
             </td>
-            <td>{FILE_TYPES[fileEntry.fileType] ?? `$${toHex(fileEntry.fileType)}`}</td>
+            <td>
+                {FILE_TYPES[fileEntry.fileType] ??
+                    `$${toHex(fileEntry.fileType)}`}
+            </td>
             <td>{`$${toHex(fileEntry.auxType, 4)}`}</td>
             <td>{fileEntry.blocksUsed}</td>
             <td>{formatDate(fileEntry.creation)}</td>
@@ -115,7 +133,12 @@ interface DirectoryListingProps {
  * @param dirEntry Current directory entry to display
  * @returns DirectoryListing component
  */
-const DirectoryListing = ({ volume, depth, dirEntry, setFileData }: DirectoryListingProps) => {
+const DirectoryListing = ({
+    volume,
+    depth,
+    dirEntry,
+    setFileData,
+}: DirectoryListingProps) => {
     const [open, setOpen] = useState(depth === 0);
     return (
         <>
@@ -126,8 +149,12 @@ const DirectoryListing = ({ volume, depth, dirEntry, setFileData }: DirectoryLis
                     title={dirEntry.name}
                 >
                     {'| '.repeat(depth)}
-                    <i className={cs('fas', { 'fa-folder-open': open, 'fa-folder-closed': !open })} />
-                    {' '}
+                    <i
+                        className={cs('fas', {
+                            'fa-folder-open': open,
+                            'fa-folder-closed': !open,
+                        })}
+                    />{' '}
                     {dirEntry.name}
                 </td>
                 <td></td>
@@ -136,26 +163,31 @@ const DirectoryListing = ({ volume, depth, dirEntry, setFileData }: DirectoryLis
                 <td>{formatDate(dirEntry.creation)}</td>
                 <td></td>
             </tr>
-            {open && dirEntry.entries.map((fileEntry, idx) => {
-                if (fileEntry.storageType === STORAGE_TYPES.DIRECTORY) {
-                    const dirEntry = new Directory(volume, fileEntry);
-                    return <DirectoryListing
-                        key={idx}
-                        depth={depth + 1}
-                        volume={volume}
-                        dirEntry={dirEntry}
-                        setFileData={setFileData}
-                    />;
-                } else {
-                    return <FileListing
-                        key={idx}
-                        depth={depth + 1}
-                        volume={volume}
-                        fileEntry={fileEntry}
-                        setFileData={setFileData}
-                    />;
-                }
-            })}
+            {open &&
+                dirEntry.entries.map((fileEntry, idx) => {
+                    if (fileEntry.storageType === STORAGE_TYPES.DIRECTORY) {
+                        const dirEntry = new Directory(volume, fileEntry);
+                        return (
+                            <DirectoryListing
+                                key={idx}
+                                depth={depth + 1}
+                                volume={volume}
+                                dirEntry={dirEntry}
+                                setFileData={setFileData}
+                            />
+                        );
+                    } else {
+                        return (
+                            <FileListing
+                                key={idx}
+                                depth={depth + 1}
+                                volume={volume}
+                                fileEntry={fileEntry}
+                                setFileData={setFileData}
+                            />
+                        );
+                    }
+                })}
         </>
     );
 };
@@ -187,9 +219,12 @@ const CatalogEntry = ({ dos, fileEntry, setFileData }: CatalogEntryProps) => {
 
     return (
         <tr onClick={doSetFileData}>
-            <td className={cs(styles.filename, { [styles.deleted]: fileEntry.deleted })}>
-                {fileEntry.locked && <i className="fas fa-lock" />}
-                {' '}
+            <td
+                className={cs(styles.filename, {
+                    [styles.deleted]: fileEntry.deleted,
+                })}
+            >
+                {fileEntry.locked && <i className="fas fa-lock" />}{' '}
                 {fileEntry.name}
             </td>
             <td>{fileEntry.type}</td>
@@ -303,12 +338,20 @@ const DiskInfo = ({ massStorage, driveNo, setFileData }: DiskInfoProps) => {
                             <table>
                                 <thead>
                                     <tr>
-                                        <th className={styles.filename}>Filename</th>
+                                        <th className={styles.filename}>
+                                            Filename
+                                        </th>
                                         <th className={styles.type}>Type</th>
                                         <th className={styles.aux}>Aux</th>
-                                        <th className={styles.blocks}>Blocks</th>
-                                        <th className={styles.created}>Created</th>
-                                        <th className={styles.modified}>Modified</th>
+                                        <th className={styles.blocks}>
+                                            Blocks
+                                        </th>
+                                        <th className={styles.created}>
+                                            Created
+                                        </th>
+                                        <th className={styles.modified}>
+                                            Modified
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -321,9 +364,13 @@ const DiskInfo = ({ massStorage, driveNo, setFileData }: DiskInfoProps) => {
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td colSpan={1}>Blocks Free: {freeCount}</td>
+                                        <td colSpan={1}>
+                                            Blocks Free: {freeCount}
+                                        </td>
                                         <td colSpan={3}>Used: {usedCount}</td>
-                                        <td colSpan={2}>Total: {totalBlocks}</td>
+                                        <td colSpan={2}>
+                                            Total: {totalBlocks}
+                                        </td>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -337,7 +384,9 @@ const DiskInfo = ({ massStorage, driveNo, setFileData }: DiskInfoProps) => {
                         <table>
                             <thead>
                                 <tr>
-                                    <th className={styles.filename}>Filename</th>
+                                    <th className={styles.filename}>
+                                        Filename
+                                    </th>
                                     <th className={styles.type}>Type</th>
                                     <th className={styles.sectors}>Sectors</th>
                                     <th></th>
@@ -409,11 +458,19 @@ export const Disks = ({ apple2 }: DisksProps) => {
                     <div className={debuggerStyles.subHeading}>
                         {card.constructor.name} - 1
                     </div>
-                    <DiskInfo massStorage={card} driveNo={1} setFileData={setFileData} />
+                    <DiskInfo
+                        massStorage={card}
+                        driveNo={1}
+                        setFileData={setFileData}
+                    />
                     <div className={debuggerStyles.subHeading}>
                         {card.constructor.name} - 2
                     </div>
-                    <DiskInfo massStorage={card} driveNo={2} setFileData={setFileData} />
+                    <DiskInfo
+                        massStorage={card}
+                        driveNo={2}
+                        setFileData={setFileData}
+                    />
                 </div>
             ))}
             <FileViewer fileData={fileData} onClose={onClose} />

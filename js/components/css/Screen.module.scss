@@ -1,5 +1,5 @@
 :global(.mono) {
-    filter: url("#green");
+    filter: url('#green');
 }
 
 .display {
@@ -14,10 +14,7 @@
     padding: 0;
     border: 0;
     position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    inset: 0;
     justify-content: center;
     align-items: center;
     margin: auto !important;
@@ -48,31 +45,26 @@
 :global(.scanlines)::after {
     display: block;
     pointer-events: none;
-    background-image:
-        repeating-linear-gradient(
-            to bottom,
-            transparent 0,
-            transparent 1px,
-            rgb(0 0 0 / 50%) 1px,
-            rgb(0 0 0 / 50%) 2px
-        );
-    content: "";
+    background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent 1px,
+        rgb(0 0 0 / 50%) 1px,
+        rgb(0 0 0 / 50%) 2px
+    );
+    content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
+    inset: 0;
 }
 
 :global(.full-page) :global(.scanlines)::after {
-    background-image:
-        repeating-linear-gradient(
-            to bottom,
-            transparent 0,
-            transparent 0.25vh,
-            rgb(0 0 0 / 50%) 0.25vh,
-            rgb(0 0 0 / 50%) 0.5vh
-        );
+    background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent 0.25vh,
+        rgb(0 0 0 / 50%) 0.25vh,
+        rgb(0 0 0 / 50%) 0.5vh
+    );
 }
 
 .screen {

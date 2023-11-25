@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-
 const fs = require('fs');
 const path = require('path');
 
@@ -13,8 +12,12 @@ for (const fileName of dir.sort()) {
     if (/\.json$/.test(fileName)) {
         const json = fs.readFileSync(path.resolve(diskPath, fileName));
         const data = JSON.parse(json);
-        if (data.private) { continue; }
-        if (!data.name || !data.category) { continue; }
+        if (data.private) {
+            continue;
+        }
+        if (!data.name || !data.category) {
+            continue;
+        }
 
         const entry = {
             filename: `json/disks/${fileName}`,

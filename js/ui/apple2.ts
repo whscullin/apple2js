@@ -14,7 +14,7 @@ import {
     JSONBinaryImage,
     JSONDisk,
     BlockFormat,
-    FLOPPY_FORMATS
+    FLOPPY_FORMATS,
 } from '../formats/types';
 import { initGamepad } from './gamepad';
 import KeyBoard from './keyboard';
@@ -27,7 +27,7 @@ import { TXTTAB } from 'js/applesoft/zeropage';
 import { debug } from '../util';
 import { Apple2, Stats, State as Apple2State } from '../apple2';
 import DiskII from '../cards/disk2';
-import CPU6502 from '../cpu6502';
+import { CPU6502 } from '@whscullin/cpu6502';
 import { VideoModes } from '../videomodes';
 import Apple2IO from '../apple2io';
 import Printer from './printer';
@@ -94,7 +94,7 @@ export const driveLights = new DriveLights();
 
 export function dumpApplesoftProgram() {
     const decompiler = ApplesoftDecompiler.decompilerFromMemory(cpu);
-    debug(decompiler.list({apple2: _e ? 'e' : 'plus'}));
+    debug(decompiler.list({ apple2: _e ? 'e' : 'plus' }));
 }
 
 export function compileApplesoftProgram(program: string) {
@@ -109,7 +109,8 @@ export function openLoad(driveString: string, event: MouseEvent) {
         openLoadHTTP();
     } else {
         if (disk_cur_cat[driveNo]) {
-            const element = document.querySelector<HTMLSelectElement>('#category_select')!;
+            const element =
+                document.querySelector<HTMLSelectElement>('#category_select')!;
             element.value = disk_cur_cat[driveNo];
             selectCategory();
         }
@@ -130,14 +131,15 @@ export function openSave(driveString: string, event: MouseEvent) {
     }
 
     const { data } = storageData;
-    const blob = new Blob([data], { 'type': mimeType });
+    const blob = new Blob([data], { type: mimeType });
     a.href = window.URL.createObjectURL(blob);
     a.download = driveLights.label(driveNo) + '.dsk';
 
     if (event.metaKey) {
         dumpDisk(driveNo);
     } else {
-        const saveName = document.querySelector<HTMLInputElement>('#save_name')!;
+        const saveName =
+            document.querySelector<HTMLInputElement>('#save_name')!;
         saveName.value = driveLights.label(driveNo);
         MicroModal.show('save-modal');
     }
@@ -204,17 +206,23 @@ export function handleDrop(driveNo: number, event: DragEvent) {
 }
 
 function loadingStart() {
-    const meter = document.querySelector<HTMLDivElement>('#loading-modal .meter')!;
+    const meter = document.querySelector<HTMLDivElement>(
+        '#loading-modal .meter'
+    )!;
     meter.style.display = 'none';
     MicroModal.show('loading-modal');
 }
 
 function loadingProgress(current: number, total: number) {
     if (total) {
-        const meter = document.querySelector<HTMLDivElement>('#loading-modal .meter')!;
-        const progress = document.querySelector<HTMLDivElement>('#loading-modal .progress')!;
+        const meter = document.querySelector<HTMLDivElement>(
+            '#loading-modal .meter'
+        )!;
+        const progress = document.querySelector<HTMLDivElement>(
+            '#loading-modal .progress'
+        )!;
         meter.style.display = 'block';
-        progress.style.width = `${current / total * meter.clientWidth}px`;
+        progress.style.width = `${(current / total) * meter.clientWidth}px`;
     }
 }
 
@@ -222,43 +230,48 @@ function loadingStop() {
     MicroModal.close('loading-modal');
 
     if (!paused) {
-        ready.then(() => {
-            _apple2.run();
-        }).catch(console.error);
+        ready
+            .then(() => {
+                _apple2.run();
+            })
+            .catch(console.error);
     }
 }
 
 export function loadAjax(driveNo: DriveNumber, url: string) {
     loadingStart();
 
-    fetch(url).then(function (response: Response) {
-        if (response.ok) {
-            return response.json();
-        } else {
-            throw new Error('Error loading: ' + response.statusText);
-        }
-    }).then(function (data: JSONDisk | JSONBinaryImage) {
-        if (data.type === 'binary') {
-            loadBinary(data );
-        } else if (includes(DISK_FORMATS, data.type)) {
-            loadDisk(driveNo, data);
-        }
-        initGamepad(data.gamepad);
-        loadingStop();
-    }).catch(function (error: Error) {
-        loadingStop();
-        openAlert(error.message);
-        console.error(error);
-    });
+    fetch(url)
+        .then(function (response: Response) {
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error('Error loading: ' + response.statusText);
+            }
+        })
+        .then(function (data: JSONDisk | JSONBinaryImage) {
+            if (data.type === 'binary') {
+                loadBinary(data);
+            } else if (includes(DISK_FORMATS, data.type)) {
+                loadDisk(driveNo, data);
+            }
+            initGamepad(data.gamepad);
+            loadingStop();
+        })
+        .catch(function (error: Error) {
+            loadingStop();
+            openAlert(error.message);
+            console.error(error);
+        });
 }
 
-export function doLoad(event: MouseEvent|KeyboardEvent) {
+export function doLoad(event: MouseEvent | KeyboardEvent) {
     MicroModal.close('load-modal');
     const select = document.querySelector<HTMLSelectElement>('#disk_select')!;
     const urls = select.value;
     let url;
     if (urls && urls.length) {
-        if (typeof (urls) === 'string') {
+        if (typeof urls === 'string') {
             url = urls;
         } else {
             url = urls[0];
@@ -313,7 +326,11 @@ interface LoadOptions {
     runOnLoad?: boolean;
 }
 
-function doLoadLocal(driveNo: DriveNumber, file: File, options: Partial<LoadOptions> = {}) {
+function doLoadLocal(
+    driveNo: DriveNumber,
+    file: File,
+    options: Partial<LoadOptions> = {}
+) {
     const parts = file.name.split('.');
     const ext = parts[parts.length - 1].toLowerCase();
     const matches = file.name.match(CIDERPRESS_EXTENSION);
@@ -326,10 +343,13 @@ function doLoadLocal(driveNo: DriveNumber, file: File, options: Partial<LoadOpti
     } else if (includes(TAPE_TYPES, ext)) {
         tape.doLoadLocalTape(file);
     } else if (BIN_TYPES.includes(ext) || type === '06' || options.address) {
-        const auxAddress = aux !== undefined ? { address: parseInt(aux, 16) } : {};
+        const auxAddress =
+            aux !== undefined ? { address: parseInt(aux, 16) } : {};
         doLoadBinary(file, { ...options, ...auxAddress });
     } else {
-        const addressInput = document.querySelector<HTMLInputElement>('#local_file_address');
+        const addressInput = document.querySelector<HTMLInputElement>(
+            '#local_file_address'
+        );
         const addressStr = addressInput?.value;
         if (addressStr) {
             const address = parseInt(addressStr, 16);
@@ -415,65 +435,80 @@ export function doLoadHTTP(driveNo: DriveNumber, url?: string) {
     const input = document.querySelector<HTMLInputElement>('#http_url')!;
     url = url || input.value;
     if (url) {
-        fetch(url).then(function (response) {
-            if (response.ok) {
-                const reader = response.body!.getReader();
-                let received = 0;
-                const chunks: Uint8Array[] = [];
-                const contentLength = parseInt(response.headers.get('content-length')!, 10);
+        fetch(url)
+            .then(function (response) {
+                if (response.ok) {
+                    const reader = response.body!.getReader();
+                    let received = 0;
+                    const chunks: Uint8Array[] = [];
+                    const contentLength = parseInt(
+                        response.headers.get('content-length')!,
+                        10
+                    );
 
-                return reader.read().then(
-                    function readChunk(result): Promise<ArrayBufferLike> {
-                        if (result.done) {
-                            const data = new Uint8Array(received);
-                            let offset = 0;
-                            for (let idx = 0; idx < chunks.length; idx++) {
-                                data.set(chunks[idx], offset);
-                                offset += chunks[idx].length;
+                    return reader
+                        .read()
+                        .then(
+                            function readChunk(
+                                result
+                            ): Promise<ArrayBufferLike> {
+                                if (result.done) {
+                                    const data = new Uint8Array(received);
+                                    let offset = 0;
+                                    for (
+                                        let idx = 0;
+                                        idx < chunks.length;
+                                        idx++
+                                    ) {
+                                        data.set(chunks[idx], offset);
+                                        offset += chunks[idx].length;
+                                    }
+                                    return Promise.resolve(data.buffer);
+                                }
+
+                                received += result.value.length;
+                                if (contentLength) {
+                                    loadingProgress(received, contentLength);
+                                }
+                                chunks.push(result.value);
+
+                                return reader.read().then(readChunk);
                             }
-                            return Promise.resolve(data.buffer);
+                        );
+                } else {
+                    throw new Error('Error loading: ' + response.statusText);
+                }
+            })
+            .then(function (data) {
+                const urlParts = url!.split('/');
+                const file = urlParts.pop()!;
+                const fileParts = file.split('.');
+                const ext = fileParts.pop()!.toLowerCase();
+                const name = decodeURIComponent(fileParts.join('.'));
+                if (includes(DISK_FORMATS, ext)) {
+                    if (data.byteLength >= 800 * 1024) {
+                        if (includes(BLOCK_FORMATS, ext)) {
+                            _massStorage.setBinary(driveNo, name, ext, data);
+                            initGamepad();
                         }
-
-                        received += result.value.length;
-                        if (contentLength) {
-                            loadingProgress(received, contentLength);
+                    } else {
+                        if (
+                            includes(FLOPPY_FORMATS, ext) &&
+                            _disk2.setBinary(driveNo, name, ext, data)
+                        ) {
+                            initGamepad();
                         }
-                        chunks.push(result.value);
-
-                        return reader.read().then(readChunk);
-                    });
-            } else {
-                throw new Error('Error loading: ' + response.statusText);
-            }
-        }).then(function (data) {
-            const urlParts = url!.split('/');
-            const file = urlParts.pop()!;
-            const fileParts = file.split('.');
-            const ext = fileParts.pop()!.toLowerCase();
-            const name = decodeURIComponent(fileParts.join('.'));
-            if (includes(DISK_FORMATS, ext)) {
-                if (data.byteLength >= 800 * 1024) {
-                    if (includes(BLOCK_FORMATS, ext)) {
-                        _massStorage.setBinary(driveNo, name, ext, data);
-                        initGamepad();
                     }
                 } else {
-                    if (
-                        includes(FLOPPY_FORMATS, ext) &&
-                        _disk2.setBinary(driveNo, name, ext, data)
-                    ) {
-                        initGamepad();
-                    }
+                    throw new Error(`Extension ${ext} not recognized.`);
                 }
-            } else {
-                throw new Error(`Extension ${ext} not recognized.`);
-            }
-            loadingStop();
-        }).catch((error: Error) => {
-            loadingStop();
-            openAlert(error.message);
-            console.error(error);
-        });
+                loadingStop();
+            })
+            .catch((error: Error) => {
+                loadingStop();
+                openAlert(error.message);
+                console.error(error);
+            });
     }
 }
 
@@ -571,8 +606,10 @@ function loadBinary(bin: JSONBinaryImage) {
 }
 
 export function selectCategory() {
-    const diskSelect = document.querySelector<HTMLSelectElement>('#disk_select')!;
-    const categorySelect = document.querySelector<HTMLSelectElement>('#category_select')!;
+    const diskSelect =
+        document.querySelector<HTMLSelectElement>('#disk_select')!;
+    const categorySelect =
+        document.querySelector<HTMLSelectElement>('#category_select')!;
     diskSelect.innerHTML = '';
     const cat = disk_categories[categorySelect.value];
     if (cat) {
@@ -598,7 +635,7 @@ export function selectDisk() {
     localFile.value = '';
 }
 
-export function clickDisk(event: MouseEvent|KeyboardEvent) {
+export function clickDisk(event: MouseEvent | KeyboardEvent) {
     doLoad(event);
 }
 
@@ -623,18 +660,22 @@ function loadDisk(driveNo: DriveNumber, disk: JSONDisk) {
  */
 
 function updateLocalStorage() {
-    const diskIndex = JSON.parse(window.localStorage.getItem('diskIndex') || '{}') as LocalDiskIndex;
+    const diskIndex = JSON.parse(
+        window.localStorage.getItem('diskIndex') || '{}'
+    ) as LocalDiskIndex;
     const names = Object.keys(diskIndex);
 
-    const cat: DiskDescriptor[] = disk_categories['Local Saves'] = [];
-    const contentDiv = document.querySelector<HTMLDivElement>('#manage-modal-content')!;
+    const cat: DiskDescriptor[] = (disk_categories['Local Saves'] = []);
+    const contentDiv = document.querySelector<HTMLDivElement>(
+        '#manage-modal-content'
+    )!;
     contentDiv.innerHTML = '';
 
     names.forEach(function (name) {
         cat.push({
-            'category': 'Local Saves',
-            'name': name,
-            'filename': 'local:' + name
+            category: 'Local Saves',
+            name: name,
+            filename: 'local:' + name,
         });
         contentDiv.innerHTML =
             '<span class="local_save">' +
@@ -644,9 +685,9 @@ function updateLocalStorage() {
             '\')">Delete</a><br /></span>';
     });
     cat.push({
-        'category': 'Local Saves',
-        'name': 'Manage Saves...',
-        'filename': 'local:__manage'
+        category: 'Local Saves',
+        name: 'Manage Saves...',
+        filename: 'local:__manage',
     });
 }
 
@@ -655,12 +696,14 @@ type LocalDiskIndex = {
 };
 
 function saveLocalStorage(driveNo: DriveNumber, name: string) {
-    const diskIndex = JSON.parse(window.localStorage.getItem('diskIndex') || '{}') as LocalDiskIndex;
+    const diskIndex = JSON.parse(
+        window.localStorage.getItem('diskIndex') || '{}'
+    ) as LocalDiskIndex;
 
     const json = _disk2.getJSON(driveNo);
     diskIndex[name] = json;
 
-    window.localStorage.setItem('diskIndex',  JSON.stringify(diskIndex));
+    window.localStorage.setItem('diskIndex', JSON.stringify(diskIndex));
 
     driveLights.label(driveNo, name);
     driveLights.dirty(driveNo, false);
@@ -668,17 +711,21 @@ function saveLocalStorage(driveNo: DriveNumber, name: string) {
 }
 
 function deleteLocalStorage(name: string) {
-    const diskIndex = JSON.parse(window.localStorage.getItem('diskIndex') || '{}') as LocalDiskIndex;
+    const diskIndex = JSON.parse(
+        window.localStorage.getItem('diskIndex') || '{}'
+    ) as LocalDiskIndex;
     if (diskIndex[name]) {
         delete diskIndex[name];
         openAlert('Deleted');
     }
-    window.localStorage.setItem('diskIndex',  JSON.stringify(diskIndex));
+    window.localStorage.setItem('diskIndex', JSON.stringify(diskIndex));
     updateLocalStorage();
 }
 
 function loadLocalStorage(driveNo: DriveNumber, name: string) {
-    const diskIndex = JSON.parse(window.localStorage.getItem('diskIndex') || '{}') as LocalDiskIndex;
+    const diskIndex = JSON.parse(
+        window.localStorage.getItem('diskIndex') || '{}'
+    ) as LocalDiskIndex;
     if (diskIndex[name]) {
         _disk2.setJSON(driveNo, diskIndex[name]);
         driveLights.label(driveNo, name);
@@ -693,7 +740,8 @@ if (window.localStorage !== undefined) {
     });
 }
 
-const categorySelect = document.querySelector<HTMLSelectElement>('#category_select')!;
+const categorySelect =
+    document.querySelector<HTMLSelectElement>('#category_select')!;
 
 declare global {
     interface Window {
@@ -780,9 +828,11 @@ export function updateUI() {
 export function pauseRun() {
     const label = document.querySelector<HTMLElement>('#pause-run i')!;
     if (paused) {
-        ready.then(() => {
-            _apple2.run();
-        }).catch(console.error);
+        ready
+            .then(() => {
+                _apple2.run();
+            })
+            .catch(console.error);
         label.classList.remove('fa-play');
         label.classList.add('fa-pause');
     } else {
@@ -802,7 +852,7 @@ export function openPrinterModal() {
     const data = _printer.getRawOutput();
     const a = document.querySelector<HTMLAnchorElement>('#raw_printer_output')!;
 
-    const blob = new Blob([data], { 'type': mimeType });
+    const blob = new Blob([data], { type: mimeType });
     a.href = window.URL.createObjectURL(blob);
     a.download = 'raw_printer_output.bin';
     MicroModal.show('printer-modal');
@@ -841,10 +891,8 @@ function hup() {
     const regex = new RegExp('#(.*)');
     const hash = decodeURIComponent(window.location.hash);
     const results = regex.exec(hash);
-    if (!results)
-        return '';
-    else
-        return results[1];
+    if (!results) return '';
+    else return results[1];
 }
 
 function onLoaded(
@@ -887,7 +935,8 @@ function onLoaded(
     keyboard.create('#keyboard');
     keyboard.setFunction('F1', () => cpu.reset());
     keyboard.setFunction('F2', (event) => {
-        if (event.shiftKey) { // Full window, but not full screen
+        if (event.shiftKey) {
+            // Full window, but not full screen
             options.setOption(
                 SCREEN_FULL_PAGE,
                 !options.getOption(SCREEN_FULL_PAGE)
@@ -899,7 +948,10 @@ function onLoaded(
     keyboard.setFunction('F3', () => io.keyDown(0x1b)); // Escape
     keyboard.setFunction('F4', optionsModal.openModal);
     keyboard.setFunction('F6', () => {
-        window.localStorage.setItem('state', base64_json_stringify(_apple2.getState()));
+        window.localStorage.setItem(
+            'state',
+            base64_json_stringify(_apple2.getState())
+        );
     });
     keyboard.setFunction('F9', () => {
         const localState = window.localStorage.getItem('state');
@@ -917,7 +969,9 @@ function onLoaded(
     const screenElement = document.querySelector('#screen')!;
 
     const doPaste = (event: Event) => {
-        const paste = (event.clipboardData || window.clipboardData)!.getData('text');
+        const paste = (event.clipboardData || window.clipboardData)!.getData(
+            'text'
+        );
         io.setKeyBuffer(paste);
         event.preventDefault();
     };
@@ -928,14 +982,20 @@ function onLoaded(
     };
 
     window.addEventListener('paste', (event: Event) => {
-        if (document.activeElement && document.activeElement !== document.body) {
+        if (
+            document.activeElement &&
+            document.activeElement !== document.body
+        ) {
             return;
         }
         doPaste(event);
     });
 
     window.addEventListener('copy', (event: Event) => {
-        if (document.activeElement && document.activeElement !== document.body) {
+        if (
+            document.activeElement &&
+            document.activeElement !== document.body
+        ) {
             return;
         }
         doCopy(event);
@@ -964,16 +1024,20 @@ function onLoaded(
         _apple2.stop();
         processHash(hash);
     } else {
-        ready.then(() => {
-            _apple2.run();
-        }).catch(console.error);
+        ready
+            .then(() => {
+                _apple2.run();
+            })
+            .catch(console.error);
     }
 
-    document.querySelector<HTMLInputElement>('#local_file')?.addEventListener(
-        'change',
-        (event: Event) => {
+    document
+        .querySelector<HTMLInputElement>('#local_file')
+        ?.addEventListener('change', (event: Event) => {
             const target = event.target as HTMLInputElement;
-            const address = document.querySelector<HTMLInputElement>('#local_file_address_input')!;
+            const address = document.querySelector<HTMLInputElement>(
+                '#local_file_address_input'
+            )!;
             const parts = target.value.split('.');
             const ext = parts[parts.length - 1];
 
@@ -982,8 +1046,7 @@ function onLoaded(
             } else {
                 address.style.display = 'inline-block';
             }
-        }
-    );
+        });
 }
 
 export function initUI(
@@ -992,7 +1055,8 @@ export function initUI(
     massStorage: MassStorage<BlockFormat>,
     printer: Printer,
     e: boolean,
-    keyboardLayout: string) {
+    keyboardLayout: string
+) {
     window.addEventListener('load', () => {
         onLoaded(apple2, disk2, massStorage, printer, e, keyboardLayout);
     });

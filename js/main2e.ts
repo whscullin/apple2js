@@ -53,30 +53,32 @@ const options = {
     characterRom,
     e: true,
     enhanced,
-    tick: updateUI
+    tick: updateUI,
 };
 
 export const apple2 = new Apple2(options);
-apple2.ready.then(() => {
-    const io = apple2.getIO();
-    const cpu = apple2.getCPU();
+apple2.ready
+    .then(() => {
+        const io = apple2.getIO();
+        const cpu = apple2.getCPU();
 
-    const printer = new Printer('#printer-modal .paper');
-    const mouseUI = new MouseUI(options.canvas);
+        const printer = new Printer('#printer-modal .paper');
+        const mouseUI = new MouseUI(options.canvas);
 
-    const parallel = new Parallel(printer);
-    const slinky = new RAMFactor(1024 * 1024);
-    const disk2 = new DiskII(io, driveLights);
-    const clock = new Thunderclock();
-    const smartport = new SmartPort(cpu, null, { block: !enhanced });
-    const mouse = new Mouse(cpu, mouseUI);
+        const parallel = new Parallel(printer);
+        const slinky = new RAMFactor(1024 * 1024);
+        const disk2 = new DiskII(io, driveLights);
+        const clock = new Thunderclock();
+        const smartport = new SmartPort(cpu, null, { block: !enhanced });
+        const mouse = new Mouse(cpu, mouseUI);
 
-    io.setSlot(1, parallel);
-    io.setSlot(2, slinky);
-    io.setSlot(4, mouse);
-    io.setSlot(5, clock);
-    io.setSlot(6, disk2);
-    io.setSlot(7, smartport);
+        io.setSlot(1, parallel);
+        io.setSlot(2, slinky);
+        io.setSlot(4, mouse);
+        io.setSlot(5, clock);
+        io.setSlot(6, disk2);
+        io.setSlot(7, smartport);
 
-    initUI(apple2, disk2, smartport, printer, options.e, keyboardLayout);
-}).catch(console.error);
+        initUI(apple2, disk2, smartport, printer, options.e, keyboardLayout);
+    })
+    .catch(console.error);

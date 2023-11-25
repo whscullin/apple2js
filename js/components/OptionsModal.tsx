@@ -33,17 +33,13 @@ const Boolean = ({ option, value, setValue }: BooleanProps) => {
     const { label, name } = option;
     const onChange = useCallback(
         (event: JSX.TargetedMouseEvent<HTMLInputElement>) =>
-            setValue(name, event.currentTarget.checked)
-        , [name, setValue]
+            setValue(name, event.currentTarget.checked),
+        [name, setValue]
     );
 
     return (
         <li>
-            <input
-                type="checkbox"
-                checked={value}
-                onChange={onChange}
-            />
+            <input type="checkbox" checked={value} onChange={onChange} />
             <label>{label}</label>
         </li>
     );
@@ -84,9 +80,7 @@ const Select = ({ option, value, setValue }: SelectProps) => {
 
     return (
         <li>
-            <select onChange={onChange}>
-                {option.values.map(makeOption)}
-            </select>
+            <select onChange={onChange}>{option.values.map(makeOption)}</select>
             <label>{label}</label>
         </li>
     );
@@ -110,9 +104,12 @@ export interface OptionsModalProps {
 export const OptionsModal = ({ isOpen, onClose }: OptionsModalProps) => {
     const options = useContext(OptionsContext);
     const sections = options.getSections();
-    const setValue = useCallback((name: string, value: string | boolean) => {
-        options.setOption(name, value);
-    }, [options]);
+    const setValue = useCallback(
+        (name: string, value: string | boolean) => {
+            options.setOption(name, value);
+        },
+        [options]
+    );
 
     const makeOption = (option: Option) => {
         const { name, type } = option;
@@ -143,9 +140,7 @@ export const OptionsModal = ({ isOpen, onClose }: OptionsModalProps) => {
         return (
             <>
                 <h3>{section.name}</h3>
-                <ul>
-                    {section.options.map(makeOption)}
-                </ul>
+                <ul>{section.options.map(makeOption)}</ul>
             </>
         );
     };

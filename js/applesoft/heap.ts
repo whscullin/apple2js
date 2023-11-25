@@ -1,23 +1,15 @@
 import { byte, word, Memory } from 'js/types';
 import { toHex } from 'js/util';
-import {
-    CURLINE,
-    ARG,
-    FAC,
-    ARYTAB,
-    STREND,
-    TXTTAB,
-    VARTAB
-} from './zeropage';
+import { CURLINE, ARG, FAC, ARYTAB, STREND, TXTTAB, VARTAB } from './zeropage';
 
-export type ApplesoftValue = word | number | string | ApplesoftArray;
+export type ApplesoftValue = word | string | ApplesoftArray;
 export type ApplesoftArray = Array<ApplesoftValue>;
 
 export enum VariableType {
     Float = 0,
     String = 1,
     Function = 2,
-    Integer = 3
+    Integer = 3,
 }
 
 export interface ApplesoftVariable {
@@ -26,7 +18,6 @@ export interface ApplesoftVariable {
     type: VariableType;
     value: ApplesoftValue | undefined;
 }
-
 
 export class ApplesoftHeap {
     constructor(private mem: Memory) {}
@@ -61,7 +52,7 @@ export class ApplesoftHeap {
         if (exponent === 0) {
             return 0;
         }
-        exponent = (exponent & 0x80 ? 1 : -1) * ((exponent & 0x7F) - 1);
+        exponent = (exponent & 0x80 ? 1 : -1) * ((exponent & 0x7f) - 1);
 
         let msb = this.readByte(addr + 1);
         const sb3 = this.readByte(addr + 2);
@@ -74,7 +65,7 @@ export class ApplesoftHeap {
         } else {
             sign = msb & 0x80 ? -1 : 1;
         }
-        msb &= 0x7F;
+        msb &= 0x7f;
         const mantissa = (msb << 24) | (sb3 << 16) | (sb2 << 8) | lsb;
 
         return sign * (1 + mantissa / 0x80000000) * Math.pow(2, exponent);
@@ -83,7 +74,7 @@ export class ApplesoftHeap {
     private readString(len: byte, addr: word): string {
         let str = '';
         for (let idx = 0; idx < len; idx++) {
-            str += String.fromCharCode(this.readByte(addr + idx) & 0x7F);
+            str += String.fromCharCode(this.readByte(addr + idx) & 0x7f);
         }
         return str;
     }
@@ -91,13 +82,13 @@ export class ApplesoftHeap {
     private readVar(addr: word) {
         const firstByte = this.readByte(addr);
         const lastByte = this.readByte(addr + 1);
-        const firstLetter = firstByte & 0x7F;
-        const lastLetter = lastByte & 0x7F;
+        const firstLetter = firstByte & 0x7f;
+        const lastLetter = lastByte & 0x7f;
 
         const name =
             String.fromCharCode(firstLetter) +
             (lastLetter ? String.fromCharCode(lastLetter) : '');
-        const type = (lastByte & 0x80) >> 7 | (firstByte & 0x80) >> 6;
+        const type = ((lastByte & 0x80) >> 7) | ((firstByte & 0x80) >> 6);
 
         return { name, type };
     }
@@ -158,7 +149,7 @@ export class ApplesoftHeap {
         for (addr = simpleVariableTable; addr < arrayVariableTable; addr += 7) {
             const { name, type } = this.readVar(addr);
 
-            switch (type) {
+            switch (type as VariableType) {
                 case VariableType.Float:
                     value = this.readFloat(addr + 2);
                     break;

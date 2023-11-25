@@ -1,6 +1,12 @@
 import { h } from 'preact';
 import cs from 'classnames';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'preact/hooks';
 import { Apple2 as Apple2Impl } from '../apple2';
 import { ControlStrip } from './ControlStrip';
 import { Debugger } from './debugger/Debugger';
@@ -61,40 +67,50 @@ export const Apple2 = (props: Apple2Props) => {
     const vm = apple2?.getVideoModes();
     const rom = apple2?.getROM();
 
-    const doPaste = useCallback((event: Event) => {
-        if (
-            (document.activeElement !== screenRef.current) &&
-            (document.activeElement !== document.body)
-        ) {
-            return;
-        }
-        if (io) {
-            const paste = (event.clipboardData || window.clipboardData)?.getData('text');
-            if (paste) {
-                io.setKeyBuffer(paste);
+    const doPaste = useCallback(
+        (event: Event) => {
+            if (
+                document.activeElement !== screenRef.current &&
+                document.activeElement !== document.body
+            ) {
+                return;
             }
-        }
-        event.preventDefault();
-    }, [io]);
+            if (io) {
+                const paste = (
+                    event.clipboardData || window.clipboardData
+                )?.getData('text');
+                if (paste) {
+                    io.setKeyBuffer(paste);
+                }
+            }
+            event.preventDefault();
+        },
+        [io]
+    );
 
-    const doCopy = useCallback((event: Event) => {
-        if (
-            (document.activeElement !== screenRef.current) &&
-            (document.activeElement !== document.body)
-        ) {
-            return;
-        }
-        if (vm) {
-            event.clipboardData?.setData('text/plain', vm.getText());
-        }
-        event.preventDefault();
-    }, [vm]);
+    const doCopy = useCallback(
+        (event: Event) => {
+            if (
+                document.activeElement !== screenRef.current &&
+                document.activeElement !== document.body
+            ) {
+                return;
+            }
+            if (vm) {
+                event.clipboardData?.setData('text/plain', vm.getText());
+            }
+            event.preventDefault();
+        },
+        [vm]
+    );
 
     useEffect(() => {
         if (screenRef.current) {
             const options = {
                 canvas: screenRef.current,
-                tick: () => { /* do nothing */ },
+                tick: () => {
+                    /* do nothing */
+                },
                 ...props,
             };
             const apple2 = new Apple2Impl(options);
@@ -149,18 +165,33 @@ export const Apple2 = (props: Apple2Props) => {
     return (
         <div className={styles.container}>
             <div
-                className={cs(styles.outer, { apple2e: e, [styles.ready]: ready })}
+                className={cs(styles.outer, {
+                    apple2e: e,
+                    [styles.ready]: ready,
+                })}
             >
                 <Screen screenRef={screenRef} />
-                {!e ? <LanguageCard cpu={cpu} io={io} rom={rom} slot={0} /> : null}
+                {!e ? (
+                    <LanguageCard cpu={cpu} io={io} rom={rom} slot={0} />
+                ) : null}
                 <Slinky io={io} slot={2} />
                 {!e ? <Videoterm io={io} slot={3} /> : null}
                 <Mouse cpu={cpu} screenRef={screenRef} io={io} slot={4} />
                 <ThunderClock io={io} slot={5} />
                 <Inset>
-                    <Drives cpu={cpu} io={io} sectors={sectors} enhanced={enhanced} ready={drivesReady} />
+                    <Drives
+                        cpu={cpu}
+                        io={io}
+                        sectors={sectors}
+                        enhanced={enhanced}
+                        ready={drivesReady}
+                    />
                 </Inset>
-                <ControlStrip apple2={apple2} e={e} toggleDebugger={toggleDebugger} />
+                <ControlStrip
+                    apple2={apple2}
+                    e={e}
+                    toggleDebugger={toggleDebugger}
+                />
                 <Inset>
                     <Keyboard apple2={apple2} layout={keyboardLayout} />
                 </Inset>

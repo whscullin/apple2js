@@ -7,7 +7,7 @@ export const testDisk: JSONDisk = {
     category: 'Test',
     type: 'dsk',
     encoding: 'base64',
-    data: []
+    data: [],
 };
 
 const sector = new Uint8Array(256);

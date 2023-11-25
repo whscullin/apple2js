@@ -1,4 +1,9 @@
-import { dateToUint32, readFileName, writeFileName, uint32ToDate } from './utils';
+import {
+    dateToUint32,
+    readFileName,
+    writeFileName,
+    uint32ToDate,
+} from './utils';
 import { STORAGE_TYPES, ACCESS_TYPES } from './constants';
 import type { byte, word } from 'js/types';
 import { toHex } from 'js/util';
@@ -20,13 +25,13 @@ const ENTRY_OFFSETS = {
     BLOCKS_USED: 0x13,
     EOF: 0x15,
     CREATION: 0x18,
-    CASE_BITS: 0x1C,
-    VERSION: 0x1C,
-    MIN_VERSION: 0x1D,
-    ACCESS: 0x1E,
-    AUX_TYPE: 0x1F,
+    CASE_BITS: 0x1c,
+    VERSION: 0x1c,
+    MIN_VERSION: 0x1d,
+    ACCESS: 0x1e,
+    AUX_TYPE: 0x1f,
     LAST_MOD: 0x21,
-    HEADER_POINTER: 0x25
+    HEADER_POINTER: 0x25,
 } as const;
 
 export class FileEntry {
@@ -45,28 +50,51 @@ export class FileEntry {
     keyPointer: word = 0;
     headerPointer: word = 0;
 
-    constructor(public volume: ProDOSVolume) { }
+    constructor(public volume: ProDOSVolume) {}
 
     read(block: DataView, offset: word) {
         this.block = block;
         this.offset = offset;
 
-        this.storageType = block.getUint8(offset + ENTRY_OFFSETS.STORAGE_TYPE) >> 4;
-        const nameLength = block.getUint8(offset + ENTRY_OFFSETS.NAME_LENGTH) & 0xF;
-        const caseBits = block.getUint16(offset + ENTRY_OFFSETS.CASE_BITS, true);
-        this.name = readFileName(block, offset + ENTRY_OFFSETS.FILE_NAME, nameLength, caseBits);
+        this.storageType =
+            block.getUint8(offset + ENTRY_OFFSETS.STORAGE_TYPE) >> 4;
+        const nameLength =
+            block.getUint8(offset + ENTRY_OFFSETS.NAME_LENGTH) & 0xf;
+        const caseBits = block.getUint16(
+            offset + ENTRY_OFFSETS.CASE_BITS,
+            true
+        );
+        this.name = readFileName(
+            block,
+            offset + ENTRY_OFFSETS.FILE_NAME,
+            nameLength,
+            caseBits
+        );
         this.fileType = block.getUint8(offset + ENTRY_OFFSETS.FILE_TYPE);
-        this.keyPointer = block.getUint16(offset + ENTRY_OFFSETS.KEY_POINTER, true);
-        this.blocksUsed = block.getUint16(offset + ENTRY_OFFSETS.BLOCKS_USED, true);
+        this.keyPointer = block.getUint16(
+            offset + ENTRY_OFFSETS.KEY_POINTER,
+            true
+        );
+        this.blocksUsed = block.getUint16(
+            offset + ENTRY_OFFSETS.BLOCKS_USED,
+            true
+        );
         this.eof =
             block.getUint8(offset + ENTRY_OFFSETS.EOF) |
-            block.getUint8(offset + ENTRY_OFFSETS.EOF + 1) << 8 |
-            block.getUint8(offset + ENTRY_OFFSETS.EOF + 2) << 16;
-        this.creation = uint32ToDate(block.getUint32(offset + ENTRY_OFFSETS.CREATION, true));
+            (block.getUint8(offset + ENTRY_OFFSETS.EOF + 1) << 8) |
+            (block.getUint8(offset + ENTRY_OFFSETS.EOF + 2) << 16);
+        this.creation = uint32ToDate(
+            block.getUint32(offset + ENTRY_OFFSETS.CREATION, true)
+        );
         this.access = block.getUint8(offset + ENTRY_OFFSETS.ACCESS);
         this.auxType = block.getUint16(offset + ENTRY_OFFSETS.AUX_TYPE, true);
-        this.lastMod = uint32ToDate(block.getUint32(offset + ENTRY_OFFSETS.LAST_MOD, true));
-        this.headerPointer = block.getUint16(offset + ENTRY_OFFSETS.HEADER_POINTER, true);
+        this.lastMod = uint32ToDate(
+            block.getUint32(offset + ENTRY_OFFSETS.LAST_MOD, true)
+        );
+        this.headerPointer = block.getUint16(
+            offset + ENTRY_OFFSETS.HEADER_POINTER,
+            true
+        );
     }
 
     write(block?: DataView, offset?: word) {
@@ -74,20 +102,60 @@ export class FileEntry {
         this.offset = offset ?? this.offset;
 
         const nameLength = this.name.length & 0x0f;
-        this.block.setUint8(this.offset + ENTRY_OFFSETS.STORAGE_TYPE, this.storageType << 4 & nameLength);
-        const caseBits = writeFileName(this.block, this.offset + ENTRY_OFFSETS.FILE_NAME, this.name);
+        this.block.setUint8(
+            this.offset + ENTRY_OFFSETS.STORAGE_TYPE,
+            (this.storageType << 4) & nameLength
+        );
+        const caseBits = writeFileName(
+            this.block,
+            this.offset + ENTRY_OFFSETS.FILE_NAME,
+            this.name
+        );
         this.block.setUint16(this.offset + ENTRY_OFFSETS.CASE_BITS, caseBits);
-        this.block.setUint8(this.offset + ENTRY_OFFSETS.FILE_TYPE, this.fileType);
-        this.block.setUint16(this.offset + ENTRY_OFFSETS.KEY_POINTER, this.keyPointer, true);
-        this.block.setUint16(this.offset + ENTRY_OFFSETS.BLOCKS_USED, this.blocksUsed, true);
+        this.block.setUint8(
+            this.offset + ENTRY_OFFSETS.FILE_TYPE,
+            this.fileType
+        );
+        this.block.setUint16(
+            this.offset + ENTRY_OFFSETS.KEY_POINTER,
+            this.keyPointer,
+            true
+        );
+        this.block.setUint16(
+            this.offset + ENTRY_OFFSETS.BLOCKS_USED,
+            this.blocksUsed,
+            true
+        );
         this.block.setUint8(this.offset + ENTRY_OFFSETS.EOF, this.eof & 0xff);
-        this.block.setUint8(this.offset + ENTRY_OFFSETS.EOF + 1, (this.eof && 0xff00) >> 8);
-        this.block.setUint8(this.offset + ENTRY_OFFSETS.EOF + 2, this.eof >> 16);
-        this.block.setUint32(this.offset + ENTRY_OFFSETS.CREATION, dateToUint32(this.creation), true);
+        this.block.setUint8(
+            this.offset + ENTRY_OFFSETS.EOF + 1,
+            (this.eof && 0xff00) >> 8
+        );
+        this.block.setUint8(
+            this.offset + ENTRY_OFFSETS.EOF + 2,
+            this.eof >> 16
+        );
+        this.block.setUint32(
+            this.offset + ENTRY_OFFSETS.CREATION,
+            dateToUint32(this.creation),
+            true
+        );
         this.block.setUint8(this.offset + ENTRY_OFFSETS.ACCESS, this.access);
-        this.block.setUint16(this.offset + ENTRY_OFFSETS.AUX_TYPE, this.auxType, true);
-        this.block.setUint32(this.offset + ENTRY_OFFSETS.LAST_MOD, dateToUint32(this.lastMod), true);
-        this.block.setUint16(this.offset + ENTRY_OFFSETS.HEADER_POINTER, this.headerPointer, true);
+        this.block.setUint16(
+            this.offset + ENTRY_OFFSETS.AUX_TYPE,
+            this.auxType,
+            true
+        );
+        this.block.setUint32(
+            this.offset + ENTRY_OFFSETS.LAST_MOD,
+            dateToUint32(this.lastMod),
+            true
+        );
+        this.block.setUint16(
+            this.offset + ENTRY_OFFSETS.HEADER_POINTER,
+            this.headerPointer,
+            true
+        );
     }
 
     getFileData() {
@@ -116,10 +184,12 @@ export class FileEntry {
         let address = 0;
 
         if (data) {
-            if (this.fileType === 0xFC) { // BAS
+            if (this.fileType === 0xfc) {
+                // BAS
                 result = new ApplesoftDump(data, 0).decompile();
             } else {
-                if (this.fileType === 0x06) { // BIN
+                if (this.fileType === 0x06) {
+                    // BIN
                     address = this.auxType;
                 }
                 result = '';
@@ -136,7 +206,10 @@ export class FileEntry {
                         result += `${toHex(address + idx, 4)}:`;
                     }
                     hex += ` ${toHex(val)}`;
-                    ascii += (val & 0x7f) >= 0x20 ? String.fromCharCode(val & 0x7f) : '.';
+                    ascii +=
+                        (val & 0x7f) >= 0x20
+                            ? String.fromCharCode(val & 0x7f)
+                            : '.';
                 }
                 result += '\n';
             }
@@ -145,14 +218,18 @@ export class FileEntry {
     }
 }
 
-export function readEntries(volume: ProDOSVolume, block: DataView, header: VDH | Directory) {
+export function readEntries(
+    volume: ProDOSVolume,
+    block: DataView,
+    header: VDH | Directory
+) {
     const blocks = volume.blocks();
     const entries = [];
     let offset = header.entryLength + 0x4;
     let count = 2;
     let next = header.next;
 
-    for (let idx = 0; idx < header.fileCount;) {
+    for (let idx = 0; idx < header.fileCount; ) {
         const fileEntry = new FileEntry(volume);
         fileEntry.read(block, offset);
         entries.push(fileEntry);
@@ -172,7 +249,11 @@ export function readEntries(volume: ProDOSVolume, block: DataView, header: VDH |
     return entries;
 }
 
-export function writeEntries(volume: ProDOSVolume, block: DataView, header: VDH | Directory) {
+export function writeEntries(
+    volume: ProDOSVolume,
+    block: DataView,
+    header: VDH | Directory
+) {
     const blocks = volume.blocks();
     const bitMap = volume.bitMap();
     let offset = header.entryLength + 0x4;

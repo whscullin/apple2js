@@ -10,7 +10,7 @@ function decompileFromMemory(ram: Memory): string {
 
 describe('ApplesoftDecompiler', () => {
     it('decompiles one-line program from memory', () => {
-        const ram = new RAM(0x00, 0xff);  // 64K
+        const ram = new RAM(0x00, 0xff); // 64K
         ApplesoftCompiler.compileToMemory(ram, '10 PRINT "Hello, World!"');
 
         const program = decompileFromMemory(ram);
@@ -18,11 +18,16 @@ describe('ApplesoftDecompiler', () => {
     });
 
     it('decompiles REM statements correctly', () => {
-        const ram = new RAM(0x00, 0xff);  // 64K
-        ApplesoftCompiler.compileToMemory(ram, '10 REMNo space before\n20 REM with space');
+        const ram = new RAM(0x00, 0xff); // 64K
+        ApplesoftCompiler.compileToMemory(
+            ram,
+            '10 REMNo space before\n20 REM with space'
+        );
 
         const program = decompileFromMemory(ram);
-        expect(program).toEqual(' 10  REM No space before\n 20  REM  with space\n');
+        expect(program).toEqual(
+            ' 10  REM No space before\n 20  REM  with space\n'
+        );
     });
 
     it('lists a one-line program', () => {
@@ -45,47 +50,59 @@ describe('ApplesoftDecompiler', () => {
 
     it('lists a program with a long line', () => {
         const compiler = new ApplesoftCompiler();
-        compiler.compile('10 PRINT "Hello, World!"\n'
-            + '20 PRINT "Hello, again, with a much longer line this time."\n'
-            + '30 REM1234567890123456789012345678901234567890');
+        compiler.compile(
+            '10 PRINT "Hello, World!"\n' +
+                '20 PRINT "Hello, again, with a much longer line this time."\n' +
+                '30 REM1234567890123456789012345678901234567890'
+        );
 
         const decompiler = new ApplesoftDecompiler(compiler.program());
         const program = decompiler.list();
-        expect(program).toEqual(' 10  PRINT "Hello, World!"\n'
-            + ' 20  PRINT "Hello, again, with a \n'
-            + '     much longer line this time."\n'
-            + '     \n'
-            + ' 30  REM 123456789012345678901234\n'
-            + '     5678901234567890\n');
+        expect(program).toEqual(
+            ' 10  PRINT "Hello, World!"\n' +
+                ' 20  PRINT "Hello, again, with a \n' +
+                '     much longer line this time."\n' +
+                '     \n' +
+                ' 30  REM 123456789012345678901234\n' +
+                '     5678901234567890\n'
+        );
     });
 
     it('lists a program with a long line Apple ][+-style', () => {
         const compiler = new ApplesoftCompiler();
-        compiler.compile('10 PRINT "Hello, World!"\n'
-            + '20 PRINT "Hello, again, with a much longer line this time."\n'
-            + '30 REM1234567890123456789012345678901234567890');
+        compiler.compile(
+            '10 PRINT "Hello, World!"\n' +
+                '20 PRINT "Hello, again, with a much longer line this time."\n' +
+                '30 REM1234567890123456789012345678901234567890'
+        );
 
         const decompiler = new ApplesoftDecompiler(compiler.program());
         const program = decompiler.list({ apple2: 'plus' });
-        expect(program).toEqual('10  PRINT "Hello, World!"\n'
-            + '20  PRINT "Hello, again, with a m\n'
-            + '     uch longer line this time."\n'
-            + '30  REM 1234567890123456789012345\n'
-            + '     678901234567890\n');
+        expect(program).toEqual(
+            '10  PRINT "Hello, World!"\n' +
+                '20  PRINT "Hello, again, with a m\n' +
+                '     uch longer line this time."\n' +
+                '30  REM 1234567890123456789012345\n' +
+                '     678901234567890\n'
+        );
     });
 
     it('lists a range of lines', () => {
         const compiler = new ApplesoftCompiler();
-        compiler.compile('10 PRINT "Hello, World!"\n'
-            + '20 PRINT "Hello, again, with a much longer line this time."\n'
-            + '30 REM1234567890123456789012345678901234567890');
+        compiler.compile(
+            '10 PRINT "Hello, World!"\n' +
+                '20 PRINT "Hello, again, with a much longer line this time."\n' +
+                '30 REM1234567890123456789012345678901234567890'
+        );
 
         const decompiler = new ApplesoftDecompiler(compiler.program());
         const program = decompiler.list({}, 10, 20);
-        expect(program).toEqual(' 10  PRINT "Hello, World!"\n'
-            + ' 20  PRINT "Hello, again, with a \n'
-            + '     much longer line this time."\n'
-            + '     \n');
+        expect(program).toEqual(
+            ' 10  PRINT "Hello, World!"\n' +
+                ' 20  PRINT "Hello, again, with a \n' +
+                '     much longer line this time."\n' +
+                '     \n'
+        );
     });
 
     it('lists weird code correctly', () => {
@@ -112,10 +129,12 @@ describe('ApplesoftDecompiler', () => {
 
         const decompiler = new ApplesoftDecompiler(compiler.program());
         const program = decompiler.list({ columns: 80 });
-        expect(program).toEqual(' 10  PRINT : PRINT : PRINT : PRINT : '
-            + 'PRINT : PRINT : PRINT : PRINT : PRINT \n'
-            + '     : PRINT : PRINT : PRINT : PRINT : PRINT : PRINT : '
-            + 'PRINT \n');
+        expect(program).toEqual(
+            ' 10  PRINT : PRINT : PRINT : PRINT : ' +
+                'PRINT : PRINT : PRINT : PRINT : PRINT \n' +
+                '     : PRINT : PRINT : PRINT : PRINT : PRINT : PRINT : ' +
+                'PRINT \n'
+        );
     });
 
     it('decompiles compactly', () => {
@@ -165,23 +184,29 @@ describe('ApplesoftDecompiler', () => {
 
     it('when decompiling compactly, adds a space to disambiguate tokens', () => {
         const compiler = new ApplesoftCompiler();
-        compiler.compile([
-            '10 A THEN B',
-            '30 A TO Z',
-            '40 AT N',
-            '50 A TN',
-            '60 N O T R A C E',
-            '70 NOT RACE'].join('\n'));
+        compiler.compile(
+            [
+                '10 A THEN B',
+                '30 A TO Z',
+                '40 AT N',
+                '50 A TN',
+                '60 N O T R A C E',
+                '70 NOT RACE',
+            ].join('\n')
+        );
 
         const decompiler = new ApplesoftDecompiler(compiler.program());
         const program = decompiler.decompile({ style: 'compact' });
-        expect(program).toEqual([
-            '10ATHENB',
-            '30ATOZ',
-            '40AT N',
-            '50ATN',
-            '60NOTRACE',
-            '70NOTRACE'].join('\n'));
+        expect(program).toEqual(
+            [
+                '10ATHENB',
+                '30ATOZ',
+                '40AT N',
+                '50ATN',
+                '60NOTRACE',
+                '70NOTRACE',
+            ].join('\n')
+        );
     });
 
     it('when decompiling prettily, formats reasonably well', () => {
@@ -199,7 +224,9 @@ describe('ApplesoftDecompiler', () => {
 
         const decompiler = new ApplesoftDecompiler(compiler.program());
         const program = decompiler.decompile({ style: 'pretty' });
-        expect(program).toEqual('10 IF A < B OR A >= B OR B <= A OR B = AT HEN');
+        expect(program).toEqual(
+            '10 IF A < B OR A >= B OR B <= A OR B = AT HEN'
+        );
     });
 
     it('when decompiling prettily, decompiles 10ATOZ correctly', () => {

@@ -1,8 +1,18 @@
 import { h, Fragment, JSX } from 'preact';
 import { useCallback, useEffect, useState } from 'preact/hooks';
-import { DiskDescriptor, DriveNumber, FLOPPY_FORMATS, NibbleFormat } from '../formats/types';
+import {
+    DiskDescriptor,
+    DriveNumber,
+    FLOPPY_FORMATS,
+    NibbleFormat,
+} from '../formats/types';
 import { Modal, ModalContent, ModalFooter } from './Modal';
-import { loadLocalNibbleFile, loadJSON, getHashParts, setHashParts } from './util/files';
+import {
+    loadLocalNibbleFile,
+    loadJSON,
+    getHashParts,
+    setHashParts,
+} from './util/files';
 import DiskII from '../cards/disk2';
 import { ErrorModal } from './ErrorModal';
 
@@ -15,8 +25,10 @@ import styles from './css/FileModal.module.scss';
 const DISK_TYPES: FilePickerAcceptType[] = [
     {
         description: 'Disk Images',
-        accept: { 'application/octet-stream': FLOPPY_FORMATS.map(x => '.' + x) },
-    }
+        accept: {
+            'application/octet-stream': FLOPPY_FORMATS.map((x) => '.' + x),
+        },
+    },
 ];
 
 export type NibbleFileCallback = (
@@ -38,7 +50,12 @@ interface IndexEntry {
     category: string;
 }
 
-export const FileModal = ({ disk2, driveNo, onClose, isOpen }: FileModalProps) => {
+export const FileModal = ({
+    disk2,
+    driveNo,
+    onClose,
+    isOpen,
+}: FileModalProps) => {
     const [busy, setBusy] = useState<boolean>(false);
     const [empty, setEmpty] = useState<boolean>(true);
     const [category, setCategory] = useState<string>();
@@ -52,7 +69,7 @@ export const FileModal = ({ disk2, driveNo, onClose, isOpen }: FileModalProps) =
         spawn(async () => {
             try {
                 const indexResponse = await fetch('json/disks/index.json');
-                const index = await indexResponse.json() as IndexEntry[];
+                const index = (await indexResponse.json()) as IndexEntry[];
                 setIndex(index);
             } catch (error) {
                 setIndex([]);
@@ -70,7 +87,11 @@ export const FileModal = ({ disk2, driveNo, onClose, isOpen }: FileModalProps) =
         try {
             if (handles?.length === 1) {
                 hashParts[driveNo] = '';
-                await loadLocalNibbleFile(disk2, driveNo, await handles[0].getFile());
+                await loadLocalNibbleFile(
+                    disk2,
+                    driveNo,
+                    await handles[0].getFile()
+                );
             }
             if (filename) {
                 const name = filename.match(/\/([^/]+).json$/) || ['', ''];
@@ -95,15 +116,16 @@ export const FileModal = ({ disk2, driveNo, onClose, isOpen }: FileModalProps) =
 
     const doSelectCategory = useCallback(
         (event: JSX.TargetedMouseEvent<HTMLSelectElement>) =>
-            setCategory(event.currentTarget.value)
-        , []
+            setCategory(event.currentTarget.value),
+        []
     );
 
     const doSelectFilename = useCallback(
         (event: JSX.TargetedMouseEvent<HTMLSelectElement>) => {
             setEmpty(!event.currentTarget.value);
             setFilename(event.currentTarget.value);
-        }, []
+        },
+        []
     );
 
     if (!index) {
@@ -111,10 +133,7 @@ export const FileModal = ({ disk2, driveNo, onClose, isOpen }: FileModalProps) =
     }
 
     const categories = index.reduce<Record<string, DiskDescriptor[]>>(
-        (
-            acc: Record<string, DiskDescriptor[]>,
-            disk: DiskDescriptor
-        ) => {
+        (acc: Record<string, DiskDescriptor[]>, disk: DiskDescriptor) => {
             const category = disk.category || 'Misc';
             acc[category] = [disk, ...(acc[category] || [])];
 
@@ -138,7 +157,10 @@ export const FileModal = ({ disk2, driveNo, onClose, isOpen }: FileModalProps) =
                         </select>
                         <select multiple onChange={doSelectFilename}>
                             {disks.map((disk) => (
-                                <option key={disk.filename} value={disk.filename}>
+                                <option
+                                    key={disk.filename}
+                                    value={disk.filename}
+                                >
                                     {disk.name}
                                     {disk.disk ? ` - ${disk.disk}` : ''}
                                 </option>
@@ -149,7 +171,9 @@ export const FileModal = ({ disk2, driveNo, onClose, isOpen }: FileModalProps) =
                 </ModalContent>
                 <ModalFooter>
                     <button onClick={doCancel}>Cancel</button>
-                    <button onClick={noAwait(doOpen)} disabled={busy || empty}>Open</button>
+                    <button onClick={noAwait(doOpen)} disabled={busy || empty}>
+                        Open
+                    </button>
                 </ModalFooter>
             </Modal>
             <ErrorModal error={error} setError={setError} />

@@ -25,15 +25,17 @@ const FAKE_FILE_HANDLE = {
 const TEST_FILE_TYPES = [
     {
         description: 'Test description 1',
-        accept: { 'mime1': ['.ext1', '.ext2'] }
+        accept: { mime1: ['.ext1', '.ext2'] },
     },
     {
         description: 'Test description 2',
-        accept: { 'mime2': ['.ext1', '.ext2'] }
-    }];
+        accept: { mime2: ['.ext1', '.ext2'] },
+    },
+];
 
-
-const NOP = () => { /* do nothing */ };
+const NOP = () => {
+    /* do nothing */
+};
 
 // eslint-disable-next-line no-undef
 const EMPTY_FILE_LIST = backdoors.newFileList();
@@ -43,40 +45,59 @@ const FAKE_FILE = new File([], 'fake');
 describe('FileChooser', () => {
     describe('input-based chooser', () => {
         it('should be instantiable', () => {
-            const { container } = render(<FileChooser control='input' onChange={NOP} />);
+            const { container } = render(
+                <FileChooser control="input" onChange={NOP} />
+            );
 
             expect(container).not.toBeNull();
         });
 
         it('should use the file input element', async () => {
-            render(<FileChooser control='input' onChange={NOP} />);
+            render(<FileChooser control="input" onChange={NOP} />);
 
-            const inputElement = await screen.findByRole('button') as HTMLInputElement;
+            const inputElement = (await screen.findByRole(
+                'button'
+            )) as HTMLInputElement;
             expect(inputElement.type).toBe('file');
         });
 
         it('should pass the correct MIME types and file extensions to the picker', async () => {
             const onChange = jest.fn();
-            render(<FileChooser control='input' onChange={onChange} accept={TEST_FILE_TYPES} />);
-            const inputElement = await screen.findByRole('button') as HTMLInputElement;
+            render(
+                <FileChooser
+                    control="input"
+                    onChange={onChange}
+                    accept={TEST_FILE_TYPES}
+                />
+            );
+            const inputElement = (await screen.findByRole(
+                'button'
+            )) as HTMLInputElement;
             expect(inputElement.accept).toBe('.ext1,.ext2');
         });
 
         it('should fire a callback with empty list when no files are selected', async () => {
             const onChange = jest.fn();
-            render(<FileChooser control='input' onChange={onChange} />);
-            const inputElement = await screen.findByRole('button') as HTMLInputElement;
+            render(<FileChooser control="input" onChange={onChange} />);
+            const inputElement = (await screen.findByRole(
+                'button'
+            )) as HTMLInputElement;
             inputElement.files = EMPTY_FILE_LIST;
             fireEvent.change(inputElement);
             await waitFor(() => {
-                expect(onChange).toBeCalledWith([]);
+                expect(onChange).toHaveBeenCalledWith([]);
             });
         });
 
         it('should fire a callback with a file handle when a file is selected', async () => {
-            const onChange = jest.fn<ReturnType<FileChooserProps['onChange']>, Parameters<FileChooserProps['onChange']>>();
-            render(<FileChooser control='input' onChange={onChange} />);
-            const inputElement = await screen.findByRole('button') as HTMLInputElement;
+            const onChange = jest.fn<
+                ReturnType<FileChooserProps['onChange']>,
+                Parameters<FileChooserProps['onChange']>
+            >();
+            render(<FileChooser control="input" onChange={onChange} />);
+            const inputElement = (await screen.findByRole(
+                'button'
+            )) as HTMLInputElement;
             // eslint-disable-next-line no-undef
             inputElement.files = backdoors.newFileList(FAKE_FILE);
             fireEvent.change(inputElement);
@@ -88,29 +109,40 @@ describe('FileChooser', () => {
                 expect(handle.kind).toBe('file');
                 expect(handle.name).toBe(FAKE_FILE.name);
                 await expect(handle.getFile()).resolves.toBe(FAKE_FILE);
-                await expect(handle.createWritable()).rejects.toEqual('File not writable.');
-                await expect(handle.queryPermission({ mode: 'readwrite' })).resolves.toBe('denied');
+                await expect(handle.createWritable()).rejects.toEqual(
+                    'File not writable.'
+                );
+                await expect(
+                    handle.queryPermission({ mode: 'readwrite' })
+                ).resolves.toBe('denied');
             });
         });
     });
 
     describe('picker-base chooser', () => {
-        const mockFilePicker = jest.fn<ReturnType<ShowOpenFilePicker>, Parameters<ShowOpenFilePicker>>();
+        const mockFilePicker = jest.fn<
+            ReturnType<ShowOpenFilePicker>,
+            Parameters<ShowOpenFilePicker>
+        >();
 
         beforeEach(() => {
             if (typeof window.showOpenFilePicker !== 'undefined') {
                 throw new Error('window.showOpenFilePicker not undefined');
             }
-            window.showOpenFilePicker = mockFilePicker as unknown as ShowOpenFilePicker;
+            window.showOpenFilePicker =
+                mockFilePicker as unknown as ShowOpenFilePicker;
             mockFilePicker.mockReset();
         });
 
         afterEach(() => {
-            window.showOpenFilePicker = undefined as unknown as typeof window.showOpenFilePicker;
+            window.showOpenFilePicker =
+                undefined as unknown as typeof window.showOpenFilePicker;
         });
 
         it('should be instantiable', () => {
-            const { container } = render(<FileChooser control='picker' onChange={NOP} />);
+            const { container } = render(
+                <FileChooser control="picker" onChange={NOP} />
+            );
 
             expect(container).not.toBeNull();
         });
@@ -118,42 +150,53 @@ describe('FileChooser', () => {
         it('should pass the correct MIME types and file extensions to the picker', async () => {
             mockFilePicker.mockResolvedValueOnce([]);
             const onChange = jest.fn();
-            render(<FileChooser control='picker' onChange={onChange} accept={TEST_FILE_TYPES} />);
+            render(
+                <FileChooser
+                    control="picker"
+                    onChange={onChange}
+                    accept={TEST_FILE_TYPES}
+                />
+            );
 
             fireEvent.click(await screen.findByText('Choose File'));
 
             await waitFor(() => {
-                expect(mockFilePicker).toBeCalledWith<[OpenFilePickerOptions]>({
-                    'excludeAcceptAllOption': true,
-                    'multiple': false,
-                    'types': TEST_FILE_TYPES
+                expect(mockFilePicker).toHaveBeenCalledWith<
+                    [OpenFilePickerOptions]
+                >({
+                    excludeAcceptAllOption: true,
+                    multiple: false,
+                    types: TEST_FILE_TYPES,
                 });
-                expect(onChange).toBeCalledWith([]);
+                expect(onChange).toHaveBeenCalledWith([]);
             });
         });
 
         it('should fire a callback with empty list when no files are selected', async () => {
             mockFilePicker.mockResolvedValueOnce([]);
             const onChange = jest.fn();
-            render(<FileChooser control='picker' onChange={onChange} />);
+            render(<FileChooser control="picker" onChange={onChange} />);
 
             fireEvent.click(await screen.findByText('Choose File'));
 
             await waitFor(() => {
-                expect(mockFilePicker).toBeCalled();
-                expect(onChange).toBeCalledWith([]);
+                expect(mockFilePicker).toHaveBeenCalled();
+                expect(onChange).toHaveBeenCalledWith([]);
             });
         });
 
         it('should fire a callback with a file handle when a file is selected', async () => {
             mockFilePicker.mockResolvedValueOnce([FAKE_FILE_HANDLE]);
-            const onChange = jest.fn<ReturnType<FileChooserProps['onChange']>, Parameters<FileChooserProps['onChange']>>();
-            render(<FileChooser control='picker' onChange={onChange} />);
+            const onChange = jest.fn<
+                ReturnType<FileChooserProps['onChange']>,
+                Parameters<FileChooserProps['onChange']>
+            >();
+            render(<FileChooser control="picker" onChange={onChange} />);
 
             fireEvent.click(await screen.findByText('Choose File'));
 
             await waitFor(() => {
-                expect(mockFilePicker).toBeCalled();
+                expect(mockFilePicker).toHaveBeenCalled();
                 expect(onChange).toHaveBeenCalled();
                 const handleList = onChange.mock.calls[0][0];
                 expect(handleList).toHaveLength(1);

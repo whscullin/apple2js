@@ -1,13 +1,11 @@
 import { byte } from 'js/types';
-import {
-    numberToBytes,
-    stringToBytes,
-} from '../util';
+import { numberToBytes, stringToBytes } from '../util';
 
 /**
  * Version 1 INFO segment
  */
 
+// prettier-ignore
 const mockInfo1 = [
     0x01, // Version
     0x01, // Disk Type (5.25")
@@ -27,6 +25,7 @@ const mockInfo1 = [
  * Version 2 INFO segment
  */
 
+// prettier-ignore
 const mockInfo2 = [
     0x02, // Version
     0x01, // Disk Type (5.25")
@@ -100,10 +99,7 @@ mockTrackData2[0] = 0xd5;
 mockTrackData2[1] = 0xaa;
 mockTrackData2[2] = 0x96;
 
-const mockTRKS2 = [
-    ...mockTrackMap,
-    ...mockTrackData2,
-];
+const mockTRKS2 = [...mockTrackMap, ...mockTrackData2];
 
 /**
  * META structures
@@ -116,6 +112,7 @@ const mockMETA2 = 'title\tMock Woz 2\nside_name\tB';
  * Woz Version 1
  */
 
+// prettier-ignore
 export const mockWoz1: ArrayBuffer = new Uint8Array([
     // Header
     ...stringToBytes('WOZ1'),
@@ -124,7 +121,7 @@ export const mockWoz1: ArrayBuffer = new Uint8Array([
     0x00, 0x00, 0x00, 0x00,   // CRC
     // Info chunk
     ...stringToBytes('INFO'),
-    ...numberToBytes(60, 4),     // Size
+    ...numberToBytes(60, 4), // Size
     ...mockInfo1,
     // TMAP chunk
     ...stringToBytes('TMAP'),
@@ -144,16 +141,16 @@ export const mockWoz1: ArrayBuffer = new Uint8Array([
  * Woz Version 2
  */
 
+// prettier-ignore
 export const mockWoz2: ArrayBuffer = new Uint8Array([
     // Header
     ...stringToBytes('WOZ2'),
     0xff,                     // 7 bit detection
     0x0a, 0x0d, 0x0a,         // LF detection
     0x00, 0x00, 0x00, 0x00,   // CRC
-
     // Info chunk
     ...stringToBytes('INFO'),
-    ...numberToBytes(mockInfo2.length, 4),     // Size
+    ...numberToBytes(mockInfo2.length, 4), // Size
     ...mockInfo2,
     // TMAP chunk
     ...stringToBytes('TMAP'),

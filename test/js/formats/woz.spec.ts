@@ -1,10 +1,6 @@
 import { ENCODING_BITSTREAM } from 'js/formats/types';
 import createDiskFromWoz from 'js/formats/woz';
-import {
-    mockWoz1,
-    mockWoz2,
-    mockTMAP
-} from './testdata/woz';
+import { mockWoz1, mockWoz2, mockTMAP } from './testdata/woz';
 
 describe('woz', () => {
     beforeEach(() => {
@@ -16,7 +12,7 @@ describe('woz', () => {
             name: 'Unknown',
             volume: 254,
             readOnly: true,
-            rawData: mockWoz1
+            rawData: mockWoz1,
         };
 
         const disk = createDiskFromWoz(options);
@@ -26,6 +22,7 @@ describe('woz', () => {
             encoding: ENCODING_BITSTREAM,
             format: 'woz',
             trackMap: mockTMAP,
+            // prettier-ignore
             rawTracks: [new Uint8Array([
                 1, 1, 0, 1, 0, 1, 0, 1,
                 1, 0, 1, 0, 1, 0, 1, 0,
@@ -43,8 +40,8 @@ describe('woz', () => {
                 sides: 0,
                 synchronized: 1,
                 version: 1,
-                writeProtected: 0
-            }
+                writeProtected: 0,
+            },
         });
     });
 
@@ -53,7 +50,7 @@ describe('woz', () => {
             name: 'Unknown',
             volume: 254,
             readOnly: true,
-            rawData: mockWoz2
+            rawData: mockWoz2,
         };
 
         const disk = createDiskFromWoz(options);
@@ -66,6 +63,7 @@ describe('woz', () => {
             encoding: ENCODING_BITSTREAM,
             format: 'woz',
             trackMap: mockTMAP,
+            // prettier-ignore
             rawTracks: [new Uint8Array([
                 1, 1, 0, 1, 0, 1, 0, 1,
                 1, 0, 1, 0, 1, 0, 1, 0,
@@ -83,8 +81,8 @@ describe('woz', () => {
                 sides: 1,
                 synchronized: 1,
                 version: 2,
-                writeProtected: 0
-            }
+                writeProtected: 0,
+            },
         });
     });
 });

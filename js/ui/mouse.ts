@@ -6,7 +6,7 @@ type TouchEventWithTarget = TouchEvent & { target: HTMLCanvasElement };
 export class MouseUI {
     private mouse: Mouse;
 
-    constructor(private canvas: HTMLCanvasElement)  {
+    constructor(private canvas: HTMLCanvasElement) {
         const updateTouchXY = (event: TouchEventWithTarget) => {
             const { targetTouches, target } = event;
             if (targetTouches.length < 1) {
@@ -22,7 +22,7 @@ export class MouseUI {
                 Math.max(Math.min(xPos, 559), 0),
                 Math.max(Math.min(yPos, 383), 0),
                 560,
-                384,
+                384
             );
         };
 
@@ -63,7 +63,7 @@ export class MouseUI {
         } else {
             this.canvas.addEventListener(
                 'mousemove',
-                (event: MouseEvent & { target: HTMLCanvasElement} ) => {
+                (event: MouseEvent & { target: HTMLCanvasElement }) => {
                     const { offsetX, offsetY, target } = event;
                     this.mouse.setMouseXY(
                         offsetX,

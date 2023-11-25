@@ -7,7 +7,7 @@ import {
     keys2e,
     mapMouseEvent,
     keysAsTuples,
-    mapKeyboardEvent
+    mapKeyboardEvent,
 } from './util/keyboard';
 
 import styles from './css/Keyboard.module.scss';
@@ -58,26 +58,21 @@ export const Key = ({
     active,
     pressed,
     onMouseDown,
-    onMouseUp
+    onMouseUp,
 }: KeyProps) => {
     const keyName = lower.replace(/[&#;]/g, '');
     const center =
         lower === 'LOCK'
             ? styles.vCenter2
-            : (upper === lower && upper.length > 1)
-                ? styles.vCenter
-                : '';
+            : upper === lower && upper.length > 1
+              ? styles.vCenter
+              : '';
     return (
         <div
-            className={cs(
-                styles.key,
-                styles[`key-${keyName}`],
-                center,
-                {
-                    [styles.pressed]: pressed,
-                    [styles.active]: active,
-                },
-            )}
+            className={cs(styles.key, styles[`key-${keyName}`], center, {
+                [styles.pressed]: pressed,
+                [styles.active]: active,
+            })}
             data-key1={lower}
             data-key2={upper}
             onMouseDown={onMouseDown}
@@ -85,7 +80,12 @@ export const Key = ({
         >
             <div>
                 {buildLabel(upper)}
-                {upper !== lower && <><br />{buildLabel(lower)}</>}
+                {upper !== lower && (
+                    <>
+                        <br />
+                        {buildLabel(lower)}
+                    </>
+                )}
             </div>
         </div>
     );
@@ -110,7 +110,10 @@ export interface KeyboardProps {
 export const Keyboard = ({ apple2, layout }: KeyboardProps) => {
     const [pressed, setPressed] = useState<string[]>([]);
     const [active, setActive] = useState<string[]>(['LOCK']);
-    const keys = useMemo(() => keysAsTuples(layout==='apple2e' ? keys2e : keys2), [layout]);
+    const keys = useMemo(
+        () => keysAsTuples(layout === 'apple2e' ? keys2e : keys2),
+        [layout]
+    );
 
     // Set global keystroke handler
     useEffect(() => {
@@ -119,15 +122,22 @@ export const Keyboard = ({ apple2, layout }: KeyboardProps) => {
                 return;
             }
 
-            if (document.activeElement && document.activeElement !== document.body) {
+            if (
+                document.activeElement &&
+                document.activeElement !== document.body
+            ) {
                 return;
             }
 
             event.preventDefault();
 
-            const { key, keyCode, keyLabel } = mapKeyboardEvent(event, active.includes('LOCK'), active.includes('CTRL'));
-            setPressed(pressed => pressed.concat([keyLabel]));
-            setActive(active => active.concat([keyLabel]));
+            const { key, keyCode, keyLabel } = mapKeyboardEvent(
+                event,
+                active.includes('LOCK'),
+                active.includes('CTRL')
+            );
+            setPressed((pressed) => pressed.concat([keyLabel]));
+            setActive((active) => active.concat([keyLabel]));
 
             if (key === 'RESET') {
                 apple2.reset();
@@ -153,8 +163,8 @@ export const Keyboard = ({ apple2, layout }: KeyboardProps) => {
                 return;
             }
             const { key, keyLabel } = mapKeyboardEvent(event);
-            setPressed(pressed => pressed.filter(k => k !== keyLabel));
-            setActive(active => active.filter(k => k !== keyLabel));
+            setPressed((pressed) => pressed.filter((k) => k !== keyLabel));
+            setActive((active) => active.filter((k) => k !== keyLabel));
 
             const io = apple2.getIO();
             if (key === 'OPEN_APPLE') {
@@ -186,7 +196,7 @@ export const Keyboard = ({ apple2, layout }: KeyboardProps) => {
                     setActive([...active, key]);
                     return true;
                 }
-                setActive(active.filter(x => x !== key));
+                setActive(active.filter((x) => x !== key));
                 return false;
             };
 
@@ -237,12 +247,12 @@ export const Keyboard = ({ apple2, layout }: KeyboardProps) => {
                 true
             );
             apple2?.getIO().keyUp();
-            setPressed(pressed.filter(x => x !== keyLabel));
+            setPressed(pressed.filter((x) => x !== keyLabel));
         },
         [apple2, active, pressed]
     );
 
-    const bindKey = ([lower, upper]: [string, string]) =>
+    const bindKey = ([lower, upper]: [string, string]) => (
         <Key
             lower={lower}
             upper={upper}
@@ -250,17 +260,14 @@ export const Keyboard = ({ apple2, layout }: KeyboardProps) => {
             pressed={pressed.includes(lower)}
             onMouseDown={onMouseDown}
             onMouseUp={onMouseUp}
-        />;
+        />
+    );
 
-    const rows = keys.map((row, idx) =>
+    const rows = keys.map((row, idx) => (
         <div key={idx} className={cs(styles.row, styles[`row${idx}`])}>
             {row.map(bindKey)}
         </div>
-    );
+    ));
 
-    return (
-        <div className={styles.keyboard}>
-            {rows}
-        </div>
-    );
+    return <div className={styles.keyboard}>{rows}</div>;
 };

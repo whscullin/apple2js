@@ -11,17 +11,17 @@ export const TXTTAB = 0x67;
 /** Start of variables (word) */
 export const VARTAB = 0x69;
 /** Start of arrays (word) */
-export const ARYTAB = 0x6B;
+export const ARYTAB = 0x6b;
 /** End of strings (word). (Strings are allocated down from HIMEM.) */
-export const STREND = 0x6D;
+export const STREND = 0x6d;
 /** Current line */
 export const CURLINE = 0x75;
 /** Floating Point accumulator (float) */
-export const FAC = 0x9D;
+export const FAC = 0x9d;
 /** Floating Point arguments (float) */
-export const ARG = 0xA5;
+export const ARG = 0xa5;
 /**
  * End of program (word). This is actually 1 or 2 bytes past the three
  * zero bytes that end the program.
  */
-export const PRGEND = 0xAF;
+export const PRGEND = 0xaf;

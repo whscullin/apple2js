@@ -1,7 +1,7 @@
 /**
  * Provide types for the jsdom-with-backdoors testing environment.
  */
-export { };
+export {};
 
 declare global {
     const backdoors: {

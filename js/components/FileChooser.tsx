@@ -1,5 +1,11 @@
 import { h, Fragment } from 'preact';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'preact/hooks';
 import { noAwait } from './util/promises';
 
 export interface FilePickerAcceptType {
@@ -34,7 +40,9 @@ interface ExtraProps {
 
 const InputFileChooser = ({
     disabled = false,
-    onChange = () => { /* do nothing */ },
+    onChange = () => {
+        /* do nothing */
+    },
     accept = [],
 }: InputFileChooserProps) => {
     const inputRef = useRef<HTMLInputElement>(null);
@@ -69,7 +77,9 @@ const InputFileChooser = ({
         // the moment, not adding the MIME type is sufficient.
         const newAccept: string[] = [];
         for (const type of accept) {
-            for (let [/* typeString */, suffixes] of Object.entries(type.accept)) {
+            for (let [, /* typeString */ suffixes] of Object.entries(
+                type.accept
+            )) {
                 // newAccept.push(typeString);
                 if (!Array.isArray(suffixes)) {
                     suffixes = [suffixes];
@@ -91,11 +101,15 @@ const InputFileChooser = ({
     }, [accept]);
 
     return (
-        <input type="file" role='button' aria-label='Open file'
+        <input
+            type="file"
+            role="button"
+            aria-label="Open file"
             ref={inputRef}
             onChange={onChangeInternal}
             disabled={disabled}
-            {...extraProps} />
+            {...extraProps}
+        />
     );
 };
 
@@ -107,8 +121,10 @@ interface FilePickerChooserProps {
 
 const FilePickerChooser = ({
     disabled = false,
-    onChange = () => { /* do nothing */ },
-    accept = [ACCEPT_EVERYTHING_TYPE]
+    onChange = () => {
+        /* do nothing */
+    },
+    accept = [ACCEPT_EVERYTHING_TYPE],
 }: FilePickerChooserProps) => {
     const [busy, setBusy] = useState<boolean>(false);
     const [selectedFilename, setSelectedFilename] = useState<string>();
@@ -138,14 +154,16 @@ const FilePickerChooser = ({
 
     useEffect(() => {
         setSelectedFilename(
-            fileHandles?.length
-                ? fileHandles[0].name
-                : 'No file selected');
+            fileHandles?.length ? fileHandles[0].name : 'No file selected'
+        );
     }, [fileHandles]);
 
     return (
         <>
-            <button onClick={noAwait(onClickInternal)} disabled={disabled || busy}>
+            <button
+                onClick={noAwait(onClickInternal)}
+                disabled={disabled || busy}
+            >
                 Choose File
             </button>
             &nbsp;
@@ -164,7 +182,7 @@ const FilePickerChooser = ({
  * Using `window.showOpenFilePicker` has the advantage of allowing read/write
  * access to the file, whereas the regular input element only gives read
  * access.
- * 
+ *
  * The FileChooser takes an optional `accept` parameter that specifies which
  * types of files can be opened. The parameter is a map of MIME type to file
  * extension. If the MIME type is the empty string, t
@@ -174,38 +192,48 @@ export const FileChooser = ({
     control = controlDefault,
     ...rest
 }: FileChooserProps) => {
-
-    const onChangeForInput = useCallback((files: FileList) => {
-        const handles: FileSystemFileHandle[] = [];
-        for (let i = 0; i < files.length; i++) {
-            const file = files.item(i);
-            if (file === null) {
-                continue;
+    const onChangeForInput = useCallback(
+        (files: FileList) => {
+            const handles: FileSystemFileHandle[] = [];
+            for (let i = 0; i < files.length; i++) {
+                const file = files.item(i);
+                if (file === null) {
+                    continue;
+                }
+                handles.push({
+                    kind: 'file',
+                    name: file.name,
+                    getFile: () => Promise.resolve(file),
+                    createWritable: (_options) =>
+                        Promise.reject('File not writable.'),
+                    queryPermission: (descriptor) =>
+                        Promise.resolve(
+                            descriptor?.mode === 'read' ? 'granted' : 'denied'
+                        ),
+                    requestPermission: (descriptor) =>
+                        Promise.resolve(
+                            descriptor?.mode === 'read' ? 'granted' : 'denied'
+                        ),
+                    isSameEntry: (_unused) => Promise.resolve(false),
+                    isDirectory: false,
+                    isFile: true,
+                });
             }
-            handles.push({
-                kind: 'file',
-                name: file.name,
-                getFile: () => Promise.resolve(file),
-                createWritable: (_options) => Promise.reject('File not writable.'),
-                queryPermission: (descriptor) => Promise.resolve(descriptor?.mode === 'read' ? 'granted' : 'denied'),
-                requestPermission: (descriptor) => Promise.resolve(descriptor?.mode === 'read' ? 'granted' : 'denied'),
-                isSameEntry: (_unused) => Promise.resolve(false),
-                isDirectory: false,
-                isFile: true,
-            });
-        }
-        onChange(handles);
-    }, [onChange]);
+            onChange(handles);
+        },
+        [onChange]
+    );
 
-    const onChangeForPicker = useCallback((fileHandles: FileSystemFileHandle[]) => {
-        onChange(fileHandles);
-    }, [onChange]);
+    const onChangeForPicker = useCallback(
+        (fileHandles: FileSystemFileHandle[]) => {
+            onChange(fileHandles);
+        },
+        [onChange]
+    );
 
-    return control === 'picker'
-        ? (
-            <FilePickerChooser onChange={onChangeForPicker} {...rest} />
-        )
-        : (
-            <InputFileChooser onChange={onChangeForInput} {...rest} />
-        );
+    return control === 'picker' ? (
+        <FilePickerChooser onChange={onChangeForPicker} {...rest} />
+    ) : (
+        <InputFileChooser onChange={onChangeForInput} {...rest} />
+    );
 };

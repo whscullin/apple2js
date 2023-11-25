@@ -7,7 +7,7 @@ export interface ProDOSFileData {
 }
 
 export abstract class ProDOSFile {
-    constructor(public volume: ProDOSVolume) { }
+    constructor(public volume: ProDOSVolume) {}
 
     abstract read(): Uint8Array;
     abstract write(data: Uint8Array): void;

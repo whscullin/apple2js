@@ -1,6 +1,12 @@
 /** @fileoverview Test for utils.ts. */
 
-import { allocMem, allocMemPages, testables, toBinary, toHex } from '../../js/util';
+import {
+    allocMem,
+    allocMemPages,
+    testables,
+    toBinary,
+    toHex,
+} from '../../js/util';
 
 describe('garbage', () => {
     it('returns 0 <= x <= 255', () => {
@@ -13,7 +19,6 @@ describe('garbage', () => {
 describe('allocMem', () => {
     it('returns an array of the correct size', () => {
         expect(allocMem(2048).length).toBe(2048);
-
     });
     it('has 0xff and 0x00 patterns', () => {
         const memory = allocMem(2048);
@@ -27,10 +32,11 @@ describe('allocMem', () => {
         const memory = allocMem(0x800);
         let passed = false;
         for (let i = 0; i < 0x800; i += 0x200) {
-            passed = memory[i + 0x28] !== 0xff
-                && memory[i + 0x29] !== 0xff
-                && memory[i + 0x68] !== 0xff
-                && memory[i + 0x69] !== 0xff;
+            passed =
+                memory[i + 0x28] !== 0xff &&
+                memory[i + 0x29] !== 0xff &&
+                memory[i + 0x68] !== 0xff &&
+                memory[i + 0x69] !== 0xff;
             if (passed) {
                 break;
             }
@@ -79,4 +85,3 @@ describe('gup', () => {
 describe('hup', () => {
     // untestable due to direct reference to window.location
 });
-

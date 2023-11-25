@@ -17,8 +17,10 @@ export type MemberOf<T extends ReadonlyArray<unknown>> =
  */
 export type DeepMemberOf<T extends ReadonlyArray<unknown>> =
     T extends ReadonlyArray<infer E>
-    ? (E extends ReadonlyArray<unknown> ? DeepMemberOf<E> : E)
-    : never;
+        ? E extends ReadonlyArray<unknown>
+            ? DeepMemberOf<E>
+            : E
+        : never;
 
 /**
  * Extracts the declared keys of a type by removing `string` and `number`.
@@ -27,14 +29,19 @@ export type DeepMemberOf<T extends ReadonlyArray<unknown>> =
  * https://github.com/microsoft/TypeScript/issues/25987#issuecomment-408339599
  */
 export type KnownKeys<T> = {
-    [K in keyof T]: string extends K ? never : number extends K ? never : K
-} extends { [_ in keyof T]: infer U } ? U : never;
+    [K in keyof T]: string extends K ? never : number extends K ? never : K;
+} extends { [_ in keyof T]: infer U }
+    ? U
+    : never;
 
 /**
  * Extracts the declared values of a constant object.
  */
 export type KnownValues<T> = T extends {
-    [_ in keyof T]: infer U } ? U : never;
+    [_ in keyof T]: infer U;
+}
+    ? U
+    : never;
 
 /**
  * Replacement for `includes` on constant types that is also a type assertion.
@@ -55,8 +62,22 @@ export type bit = 0 | 1;
 
 /** A nibble. */
 export type nibble =
-    0x0 | 0x1 | 0x2 | 0x3 | 0x4 | 0x5 | 0x6 | 0x7 |
-    0x8 | 0x9 | 0xa | 0xb | 0xc | 0xd | 0xe | 0xf;
+    | 0x0
+    | 0x1
+    | 0x2
+    | 0x3
+    | 0x4
+    | 0x5
+    | 0x6
+    | 0x7
+    | 0x8
+    | 0x9
+    | 0xa
+    | 0xb
+    | 0xc
+    | 0xd
+    | 0xe
+    | 0xf;
 
 /** A byte (0..255). This is not enforced by the compiler. */
 export type byte = number;
@@ -108,8 +129,14 @@ export interface Restorable<T = unknown> {
 }
 
 // Read-only typed arrays for constants
-export type TypedArrayMutableProperties = 'copyWithin' | 'fill' | 'reverse' | 'set' | 'sort';
-export interface ReadonlyUint8Array extends Omit<Uint8Array, TypedArrayMutableProperties> {
+export type TypedArrayMutableProperties =
+    | 'copyWithin'
+    | 'fill'
+    | 'reverse'
+    | 'set'
+    | 'sort';
+export interface ReadonlyUint8Array
+    extends Omit<Uint8Array, TypedArrayMutableProperties> {
     readonly [n: number]: number;
 }
 

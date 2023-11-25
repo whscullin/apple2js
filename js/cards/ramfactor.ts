@@ -12,7 +12,7 @@ const LOC = {
     _RAMMID: 0x85,
     _RAMHI: 0x86,
     _RAMDATA: 0x87,
-    BANK: 0x8F
+    BANK: 0x8f,
 } as const;
 
 export class RAMFactorState {
@@ -41,21 +41,21 @@ export default class RAMFactor implements Card, Restorable<RAMFactorState> {
     }
 
     private sethi(val: byte) {
-        this.ramhi = (val & 0xff);
+        this.ramhi = val & 0xff;
     }
 
     private setmid(val: byte) {
-        if (((this.rammid & 0x80) !== 0) && ((val & 0x80) === 0)) {
+        if ((this.rammid & 0x80) !== 0 && (val & 0x80) === 0) {
             this.sethi(this.ramhi + 1);
         }
-        this.rammid = (val & 0xff);
+        this.rammid = val & 0xff;
     }
 
     private setlo(val: byte) {
-        if (((this.ramlo & 0x80) !== 0) && ((val & 0x80) === 0)) {
+        if ((this.ramlo & 0x80) !== 0 && (val & 0x80) === 0) {
             this.setmid(this.rammid + 1);
         }
-        this.ramlo = (val & 0xff);
+        this.ramlo = val & 0xff;
     }
 
     private access(off: byte, val: byte) {
@@ -105,7 +105,7 @@ export default class RAMFactor implements Card, Restorable<RAMFactorState> {
             default:
                 break;
         }
-        this.loc = (this.ramhi << 16) | (this.rammid << 8) | (this.ramlo);
+        this.loc = (this.ramhi << 16) | (this.rammid << 8) | this.ramlo;
 
         /*
         if (val === undefined) {
@@ -123,7 +123,7 @@ export default class RAMFactor implements Card, Restorable<RAMFactorState> {
     }
 
     read(page: byte, off: byte) {
-        return rom[this.firmware << 12 | (page - 0xC0) << 8 | off];
+        return rom[(this.firmware << 12) | ((page - 0xc0) << 8) | off];
     }
 
     write() {
@@ -138,7 +138,7 @@ export default class RAMFactor implements Card, Restorable<RAMFactorState> {
         return {
             loc: this.loc,
             firmware: this.firmware,
-            mem: new Uint8Array(this.mem)
+            mem: new Uint8Array(this.mem),
         };
     }
 
@@ -149,6 +149,6 @@ export default class RAMFactor implements Card, Restorable<RAMFactorState> {
 
         this.ramhi = (this.loc >> 16) & 0xff;
         this.rammid = (this.loc >> 8) & 0xff;
-        this.ramlo = (this.loc) & 0xff;
+        this.ramlo = this.loc & 0xff;
     }
 }

@@ -1,5 +1,9 @@
-
-import { dateToUint32, readFileName, writeFileName, uint32ToDate } from './utils';
+import {
+    dateToUint32,
+    readFileName,
+    writeFileName,
+    uint32ToDate,
+} from './utils';
 import { FileEntry, readEntries, writeEntries } from './file_entry';
 import { STORAGE_TYPES, ACCESS_TYPES } from './constants';
 import { byte, word } from 'js/types';
@@ -13,7 +17,7 @@ export const DIRECTORY_OFFSETS = {
     NAME_LENGTH: 0x04,
     DIRECTORY_NAME: 0x05,
     RESERVED_1: 0x14,
-    CREATION: 0x1C,
+    CREATION: 0x1c,
     CASE_BITS: 0x20,
     VERSION: 0x20,
     MIN_VERSION: 0x21,
@@ -23,7 +27,7 @@ export const DIRECTORY_OFFSETS = {
     FILE_COUNT: 0x25,
     PARENT: 0x27,
     PARENT_ENTRY_NUMBER: 0x29,
-    PARENT_ENTRY_LENGTH: 0x2A
+    PARENT_ENTRY_LENGTH: 0x2a,
 } as const;
 
 export class Directory {
@@ -44,7 +48,10 @@ export class Directory {
     parentEntryNumber: byte = 0;
     entries: FileEntry[] = [];
 
-    constructor(private volume: ProDOSVolume, private fileEntry: FileEntry) {
+    constructor(
+        private volume: ProDOSVolume,
+        private fileEntry: FileEntry
+    ) {
         this.blocks = this.volume.blocks();
         this.vdh = this.volume.vdh();
         this.read();
@@ -53,41 +60,78 @@ export class Directory {
     read(fileEntry?: FileEntry) {
         this.fileEntry = fileEntry ?? this.fileEntry;
 
-        const block = new DataView(this.blocks[this.fileEntry.keyPointer].buffer);
+        const block = new DataView(
+            this.blocks[this.fileEntry.keyPointer].buffer
+        );
 
         this.prev = block.getUint16(DIRECTORY_OFFSETS.PREV, true);
         this.next = block.getUint16(DIRECTORY_OFFSETS.NEXT, true);
         this.storageType = block.getUint8(DIRECTORY_OFFSETS.STORAGE_TYPE) >> 4;
-        const nameLength = block.getUint8(DIRECTORY_OFFSETS.NAME_LENGTH) & 0xF;
+        const nameLength = block.getUint8(DIRECTORY_OFFSETS.NAME_LENGTH) & 0xf;
         const caseBits = block.getUint8(DIRECTORY_OFFSETS.CASE_BITS);
-        this.name = readFileName(block, DIRECTORY_OFFSETS.DIRECTORY_NAME, nameLength, caseBits);
-        this.creation = uint32ToDate(block.getUint32(DIRECTORY_OFFSETS.CREATION, true));
+        this.name = readFileName(
+            block,
+            DIRECTORY_OFFSETS.DIRECTORY_NAME,
+            nameLength,
+            caseBits
+        );
+        this.creation = uint32ToDate(
+            block.getUint32(DIRECTORY_OFFSETS.CREATION, true)
+        );
         this.access = block.getUint8(DIRECTORY_OFFSETS.ACCESS);
         this.entryLength = block.getUint8(DIRECTORY_OFFSETS.ENTRY_LENGTH);
-        this.entriesPerBlock = block.getUint8(DIRECTORY_OFFSETS.ENTRIES_PER_BLOCK);
+        this.entriesPerBlock = block.getUint8(
+            DIRECTORY_OFFSETS.ENTRIES_PER_BLOCK
+        );
         this.fileCount = block.getUint16(DIRECTORY_OFFSETS.FILE_COUNT, true);
         this.parent = block.getUint16(DIRECTORY_OFFSETS.PARENT, true);
-        this.parentEntryNumber = block.getUint8(DIRECTORY_OFFSETS.PARENT_ENTRY_NUMBER);
-        this.parentEntryLength = block.getUint8(DIRECTORY_OFFSETS.PARENT_ENTRY_LENGTH);
+        this.parentEntryNumber = block.getUint8(
+            DIRECTORY_OFFSETS.PARENT_ENTRY_NUMBER
+        );
+        this.parentEntryLength = block.getUint8(
+            DIRECTORY_OFFSETS.PARENT_ENTRY_LENGTH
+        );
 
         this.entries = readEntries(this.volume, block, this);
     }
 
     write() {
-        const block = new DataView(this.blocks[this.fileEntry.keyPointer].buffer);
+        const block = new DataView(
+            this.blocks[this.fileEntry.keyPointer].buffer
+        );
 
         const nameLength = this.name.length & 0x0f;
-        block.setUint8(DIRECTORY_OFFSETS.STORAGE_TYPE, this.storageType << 4 & nameLength);
-        const caseBits = writeFileName(block, DIRECTORY_OFFSETS.DIRECTORY_NAME, this.name);
-        block.setUint32(DIRECTORY_OFFSETS.CREATION, dateToUint32(this.creation), true);
+        block.setUint8(
+            DIRECTORY_OFFSETS.STORAGE_TYPE,
+            (this.storageType << 4) & nameLength
+        );
+        const caseBits = writeFileName(
+            block,
+            DIRECTORY_OFFSETS.DIRECTORY_NAME,
+            this.name
+        );
+        block.setUint32(
+            DIRECTORY_OFFSETS.CREATION,
+            dateToUint32(this.creation),
+            true
+        );
         block.setUint16(DIRECTORY_OFFSETS.CASE_BITS, caseBits);
         block.setUint8(DIRECTORY_OFFSETS.ACCESS, this.access);
         block.setUint8(DIRECTORY_OFFSETS.ENTRY_LENGTH, this.entryLength);
-        block.setUint8(DIRECTORY_OFFSETS.ENTRIES_PER_BLOCK, this.entriesPerBlock);
+        block.setUint8(
+            DIRECTORY_OFFSETS.ENTRIES_PER_BLOCK,
+            this.entriesPerBlock
+        );
         block.setUint16(DIRECTORY_OFFSETS.FILE_COUNT, this.fileCount, true);
         block.setUint16(DIRECTORY_OFFSETS.PARENT, this.parent, true);
-        block.setUint8(DIRECTORY_OFFSETS.PARENT_ENTRY_NUMBER, this.parentEntryNumber);
-        block.setUint8(DIRECTORY_OFFSETS.PARENT_ENTRY_LENGTH, this.parentEntryLength);
+        block.setUint8(
+            DIRECTORY_OFFSETS.PARENT_ENTRY_NUMBER,
+            this.parentEntryNumber
+        );
+        block.setUint8(
+            DIRECTORY_OFFSETS.PARENT_ENTRY_LENGTH,
+            this.parentEntryLength
+        );
 
         writeEntries(this.volume, block, this.vdh);
     }

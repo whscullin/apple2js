@@ -56,7 +56,14 @@ const HiresPreview = ({ binary }: { binary: Uint8Array }) => {
         vm.blit();
     }
 
-    return <canvas ref={canvasRef} width={560} height={384} className={styles.hiresPreview} />;
+    return (
+        <canvas
+            ref={canvasRef}
+            width={560}
+            height={384}
+            className={styles.hiresPreview}
+        />
+    );
 };
 
 /**
@@ -96,7 +103,14 @@ const DoubleHiresPreview = ({ binary }: { binary: Uint8Array }) => {
         vm.blit();
     }
 
-    return <canvas ref={canvasRef} width={560} height={384} className={styles.hiresPreview} />;
+    return (
+        <canvas
+            ref={canvasRef}
+            width={560}
+            height={384}
+            className={styles.hiresPreview}
+        />
+    );
 };
 
 /**
@@ -114,16 +128,14 @@ export const FileViewer = ({ fileData, onClose }: FileViewerProps) => {
     useEffect(() => {
         if (fileData) {
             const { binary, text } = fileData;
-            const binaryBlob = new Blob(
-                [binary],
-                { type: 'application/octet-stream' }
-            );
+            const binaryBlob = new Blob([binary], {
+                type: 'application/octet-stream',
+            });
             const binaryHref = window.URL.createObjectURL(binaryBlob);
             setBinaryHref(binaryHref);
-            const textBlob = new Blob(
-                [text],
-                { type: 'application/octet-stream' }
-            );
+            const textBlob = new Blob([text], {
+                type: 'application/octet-stream',
+            });
             const textHref = window.URL.createObjectURL(textBlob);
             setTextHref(textHref);
         }
@@ -142,7 +154,7 @@ export const FileViewer = ({ fileData, onClose }: FileViewerProps) => {
                     <div className={styles.fileViewer}>
                         <HiresPreview binary={binary} />
                         <DoubleHiresPreview binary={binary} />
-                        <pre className={styles.textViewer} tabIndex={-1} >
+                        <pre className={styles.textViewer} tabIndex={-1}>
                             {text}
                         </pre>
                     </div>

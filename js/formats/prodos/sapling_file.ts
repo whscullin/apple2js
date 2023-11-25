@@ -8,7 +8,10 @@ export class SaplingFile extends ProDOSFile {
     blocks: Uint8Array[];
     bitMap: BitMap;
 
-    constructor(volume: ProDOSVolume, private fileEntry: FileEntry) {
+    constructor(
+        volume: ProDOSVolume,
+        private fileEntry: FileEntry
+    ) {
         super(volume);
         this.blocks = this.volume.blocks();
         this.bitMap = this.volume.bitMap();
@@ -45,7 +48,10 @@ export class SaplingFile extends ProDOSFile {
                 (seedlingPointers.getUint8(0x100 + idx) << 8);
             if (seedlingPointer) {
                 const seedlingBlock = this.blocks[seedlingPointer];
-                const bytes = seedlingBlock.slice(0, Math.min(BLOCK_SIZE, remainingLength));
+                const bytes = seedlingBlock.slice(
+                    0,
+                    Math.min(BLOCK_SIZE, remainingLength)
+                );
 
                 data.set(bytes, offset);
             }
@@ -72,7 +78,9 @@ export class SaplingFile extends ProDOSFile {
             seedlingPointers.setUint8(idx, seedlingPointer & 0xff);
             seedlingPointers.setUint8(0x100 + idx, seedlingPointer >> 8);
             const seedlingBlock = this.blocks[seedlingPointer];
-            seedlingBlock.set(data.slice(offset, Math.min(BLOCK_SIZE, remainingLength)));
+            seedlingBlock.set(
+                data.slice(offset, Math.min(BLOCK_SIZE, remainingLength))
+            );
             idx++;
             offset += BLOCK_SIZE;
             remainingLength -= BLOCK_SIZE;
@@ -87,4 +95,3 @@ export class SaplingFile extends ProDOSFile {
         }
     }
 }
-

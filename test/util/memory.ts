@@ -1,7 +1,7 @@
 import { MemoryPages, byte, word } from 'js/types';
 import { assertByte } from './asserts';
 
-export type Log = [address: word, value: byte, types: 'read'|'write'];
+export type Log = [address: word, value: byte, types: 'read' | 'write'];
 export class TestMemory implements MemoryPages {
     private data: Buffer;
     private logging: boolean = false;
@@ -25,7 +25,7 @@ export class TestMemory implements MemoryPages {
 
         const val = this.data[(page << 8) | off];
         if (this.logging) {
-            this.log.push([page << 8 | off, val, 'read']);
+            this.log.push([(page << 8) | off, val, 'read']);
         }
         return val;
     }
@@ -36,7 +36,7 @@ export class TestMemory implements MemoryPages {
         assertByte(val);
 
         if (this.logging) {
-            this.log.push([page << 8 | off, val, 'write']);
+            this.log.push([(page << 8) | off, val, 'write']);
         }
         this.data[(page << 8) | off] = val;
     }
@@ -58,4 +58,3 @@ export class TestMemory implements MemoryPages {
         return this.log;
     }
 }
-

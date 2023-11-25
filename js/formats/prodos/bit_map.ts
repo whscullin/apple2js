@@ -29,10 +29,11 @@ export class BitMap {
             if (bitOffset > 7) {
                 bitOffset = 0;
                 byteOffset += 1;
-                if (byteOffset > (BLOCK_ENTRIES >> 3)) {
+                if (byteOffset > BLOCK_ENTRIES >> 3) {
                     byteOffset = 0;
                     blockOffset += 1;
-                    bitMapBlock = this.blocks[this.vdh.bitMapPointer + blockOffset];
+                    bitMapBlock =
+                        this.blocks[this.vdh.bitMapPointer + blockOffset];
                 }
             }
         }
@@ -42,7 +43,8 @@ export class BitMap {
     allocBlock() {
         for (let idx = 0; idx < this.vdh.totalBlocks; idx++) {
             const blockOffset = Math.floor(idx / BLOCK_ENTRIES);
-            const bitMapBlock = this.blocks[this.vdh.bitMapPointer + blockOffset];
+            const bitMapBlock =
+                this.blocks[this.vdh.bitMapPointer + blockOffset];
             const byteOffset = (idx - blockOffset * BLOCK_ENTRIES) >> 8;
             const bits = bitMapBlock[byteOffset];
             if (bits !== 0xff) {

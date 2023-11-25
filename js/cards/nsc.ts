@@ -2,9 +2,7 @@ import ROM from 'js/roms/rom';
 import { bit, byte } from 'js/types';
 import { debug } from '../util';
 
-const PATTERN = [
-    0xC5, 0x3A, 0xA3, 0x5C, 0xC5, 0x3A, 0xA3, 0x5C
-];
+const PATTERN = [0xc5, 0x3a, 0xa3, 0x5c, 0xc5, 0x3a, 0xa3, 0x5c];
 
 const A0 = 0x01;
 const A2 = 0x04;
@@ -17,7 +15,6 @@ export default class NoSlotClock {
     constructor(private rom: ROM) {
         debug('NoSlotClock');
     }
-
 
     private patternMatch() {
         for (let idx = 0; idx < 8; idx++) {
@@ -53,7 +50,7 @@ export default class NoSlotClock {
         const hour = now.getHours();
         const minutes = now.getMinutes();
         const seconds = now.getSeconds();
-        const hundredths = (now.getMilliseconds() / 10);
+        const hundredths = now.getMilliseconds() / 10;
 
         this.bits = [];
 
@@ -113,4 +110,3 @@ export default class NoSlotClock {
         // Setting the state makes no sense.
     }
 }
-

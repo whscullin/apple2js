@@ -5,28 +5,22 @@ import {
     VideoModes,
     VideoModesState,
 } from './videomodes';
-import {
-    HiresPage2D,
-    LoresPage2D,
-    VideoModes2D,
-} from './canvas';
-import {
-    HiresPageGL,
-    LoresPageGL,
-    VideoModesGL,
-} from './gl';
+import { HiresPage2D, LoresPage2D, VideoModes2D } from './canvas';
+import { HiresPageGL, LoresPageGL, VideoModesGL } from './gl';
 import ROM from './roms/rom';
 import { Apple2IOState } from './apple2io';
-import CPU6502, {
+import {
+    CPU6502,
     CpuState,
+    Debugger,
+    DebuggerContainer,
     FLAVOR_6502,
     FLAVOR_ROCKWELL_65C02,
-} from './cpu6502';
+} from '@whscullin/cpu6502';
 import MMU, { MMUState } from './mmu';
 import RAM, { RAMState } from './ram';
 
 import SYMBOLS from './symbols';
-import Debugger, { DebuggerContainer } from './debugger';
 
 import { ReadonlyUint8Array, Restorable, rom } from './types';
 import { processGamepad } from './ui/gamepad';
@@ -81,7 +75,7 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
     private stats: Stats = {
         cycles: 0,
         frames: 0,
-        renderedFrames: 0
+        renderedFrames: 0,
     };
 
     public ready: Promise<void>;
@@ -91,23 +85,30 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
     }
 
     async init(options: Apple2Options) {
-        const romImportPromise = import(`./roms/system/${options.rom}`) as Promise<{ default: new () => ROM }>;
-        const characterRomImportPromise = import(`./roms/character/${options.characterRom}`) as Promise<{ default: ReadonlyUint8Array }>;
+        const romImportPromise = import(
+            `./roms/system/${options.rom}`
+        ) as Promise<{
+            default: new () => ROM;
+        }>;
+        const characterRomImportPromise = import(
+            `./roms/character/${options.characterRom}`
+        ) as Promise<{ default: ReadonlyUint8Array }>;
 
         const LoresPage = options.gl ? LoresPageGL : LoresPage2D;
         const HiresPage = options.gl ? HiresPageGL : HiresPage2D;
         const VideoModes = options.gl ? VideoModesGL : VideoModes2D;
 
         this.cpu = new CPU6502({
-            flavor: options.enhanced ? FLAVOR_ROCKWELL_65C02 : FLAVOR_6502
+            flavor: options.enhanced ? FLAVOR_ROCKWELL_65C02 : FLAVOR_6502,
         });
         this.vm = new VideoModes(options.canvas, options.e);
 
-        const [{ default: Apple2ROM }, { default: characterRom }] = await Promise.all([
-            romImportPromise,
-            characterRomImportPromise,
-            this.vm.ready,
-        ]);
+        const [{ default: Apple2ROM }, { default: characterRom }] =
+            await Promise.all([
+                romImportPromise,
+                characterRomImportPromise,
+                this.vm.ready,
+            ]);
 
         this.rom = new Apple2ROM();
         this.characterRom = characterRom;
@@ -120,13 +121,22 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
         this.tick = options.tick;
 
         if (options.e) {
-            this.mmu = new MMU(this.cpu, this.vm, this.gr, this.gr2, this.hgr, this.hgr2, this.io, this.rom);
+            this.mmu = new MMU(
+                this.cpu,
+                this.vm,
+                this.gr,
+                this.gr2,
+                this.hgr,
+                this.hgr2,
+                this.io,
+                this.rom
+            );
             this.cpu.addPageHandler(this.mmu);
         } else {
             this.ram = [
                 new RAM(0x00, 0x03),
-                new RAM(0x0C, 0x1F),
-                new RAM(0x60, 0xBF)
+                new RAM(0x0c, 0x1f),
+                new RAM(0x60, 0xbf),
             ];
 
             this.cpu.addPageHandler(this.ram[0]);
@@ -157,7 +167,8 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
 
         const interval = 30;
 
-        let now, last = Date.now();
+        let now,
+            last = Date.now();
         const runFn = () => {
             const kHz = this.io.getKHz();
             now = Date.now();
@@ -227,7 +238,7 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
             vm: this.vm.getState(),
             io: this.io.getState(),
             mmu: this.mmu?.getState(),
-            ram: this.ram?.map(bank => bank.getState()),
+            ram: this.ram?.map((bank) => bank.getState()),
         };
 
         return state;

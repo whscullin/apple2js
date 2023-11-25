@@ -1,15 +1,22 @@
 declare global {
     interface AudioWorkletProcessor {
         readonly port: MessagePort;
-        process(inputs: Float32Array[][], outputs: Float32Array[][], parameters: Map<string, Float32Array>): void;
+        process(
+            inputs: Float32Array[][],
+            outputs: Float32Array[][],
+            parameters: Map<string, Float32Array>
+        ): void;
     }
 
     const AudioWorkletProcessor: {
         prototype: AudioWorkletProcessor;
-        new(options?: AudioWorkletNodeOptions): AudioWorkletProcessor;
+        new (options?: AudioWorkletNodeOptions): AudioWorkletProcessor;
     };
 
-    function registerProcessor(name: string, ctor :{ new(): AudioWorkletProcessor }): void;
+    function registerProcessor(
+        name: string,
+        ctor: { new (): AudioWorkletProcessor }
+    ): void;
 }
 
 export interface AppleAudioMessageEvent extends MessageEvent {
@@ -34,7 +41,11 @@ export class AppleAudioProcessor extends AudioWorkletProcessor {
         return [];
     }
 
-    process(_inputList: Float32Array[][], outputList: Float32Array[][], _parameters: Map<string, Float32Array>) {
+    process(
+        _inputList: Float32Array[][],
+        outputList: Float32Array[][],
+        _parameters: Map<string, Float32Array>
+    ) {
         const sample = this.samples.shift();
         const output = outputList[0];
         if (sample) {

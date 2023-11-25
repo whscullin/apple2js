@@ -13,7 +13,6 @@ function checkImageData(page: VideoPage) {
 }
 
 describe('canvas', () => {
-
     describe('LoresPage', () => {
         let canvas: HTMLCanvasElement;
         let lores1: LoresPage2D;
