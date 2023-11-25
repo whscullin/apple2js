@@ -96,7 +96,7 @@ export const Key = ({
  */
 export interface KeyboardProps {
     apple2: Apple2Impl | undefined;
-    e: boolean;
+    layout: string;
 }
 
 /**
@@ -107,10 +107,10 @@ export interface KeyboardProps {
  * @param apple2 Apple2 object
  * @returns Keyboard component
  */
-export const Keyboard = ({ apple2, e }: KeyboardProps) => {
+export const Keyboard = ({ apple2, layout }: KeyboardProps) => {
     const [pressed, setPressed] = useState<string[]>([]);
     const [active, setActive] = useState<string[]>(['LOCK']);
-    const keys = useMemo(() => keysAsTuples(e ? keys2e : keys2), [e]);
+    const keys = useMemo(() => keysAsTuples(layout==='apple2e' ? keys2e : keys2), [layout]);
 
     // Set global keystroke handler
     useEffect(() => {

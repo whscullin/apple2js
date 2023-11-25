@@ -851,7 +851,9 @@ function onLoaded(
     apple2: Apple2,
     disk2: DiskII,
     massStorage: MassStorage<BlockFormat>,
-    printer: Printer, e: boolean
+    printer: Printer,
+    e: boolean,
+    keyboardLayout: string
 ) {
     _apple2 = apple2;
     cpu = _apple2.getCPU();
@@ -881,7 +883,7 @@ function onLoaded(
 
     MicroModal.init();
 
-    keyboard = new KeyBoard(cpu, io, e);
+    keyboard = new KeyBoard(cpu, io, keyboardLayout);
     keyboard.create('#keyboard');
     keyboard.setFunction('F1', () => cpu.reset());
     keyboard.setFunction('F2', (event) => {
@@ -988,8 +990,10 @@ export function initUI(
     apple2: Apple2,
     disk2: DiskII,
     massStorage: MassStorage<BlockFormat>,
-    printer: Printer, e: boolean) {
+    printer: Printer,
+    e: boolean,
+    keyboardLayout: string) {
     window.addEventListener('load', () => {
-        onLoaded(apple2, disk2, massStorage, printer, e);
+        onLoaded(apple2, disk2, massStorage, printer, e, keyboardLayout);
     });
 }

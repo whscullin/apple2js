@@ -200,7 +200,25 @@ const keys2e = [
 
 type Key2e = DeepMemberOf<typeof keys2e>;
 
-type Key = Key2 | Key2e;
+const keyspravetz82 = [
+    [
+        ['!', '"', '#', '¤', '%', '&', '\'', '(', ')', '0', '*', '=', '﹁', 'RST'],
+        ['ОСВ', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '@', 'RPT', 'RETURN'],
+        ['МК', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', '+', '[', ']', '&darr;'],
+        ['ЛАТ', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', '?', 'ЛАТ', 'ЛАТ2'],
+        ['ВКЛ', '&nbsp;']
+    ], [
+        ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', ':', '-', 'Ч', 'RST'],
+        ['ОСВ', 'Я', 'В', 'Е', 'Р', 'Т', 'Ъ', 'У', 'И', 'О', 'П', 'Ю', 'RPT', 'RETURN'],
+        ['МК', 'А', 'С', 'Д', 'Ф', 'Г', 'Х', 'Й', 'К', 'Л', ';', 'Ш', 'Щ', '&darr;'],
+        ['ЛАТ', 'З', 'Ь', 'Ц', 'Ж', 'Б', 'Н', 'М', ',', '.', '/', 'ЛАТ', 'ЛАТ2'],
+        ['ВКЛ', '&nbsp;']
+    ]
+] as const;
+
+type KeyPravetz82 = DeepMemberOf<typeof keyspravetz82>;
+
+type Key = Key2 | Key2e | KeyPravetz82;
 
 type KeyFunction = (key: KeyboardEvent) => void;
 
@@ -220,8 +238,20 @@ export default class KeyBoard {
 
     private functions: Record<string, KeyFunction> = {};
 
-    constructor(private cpu: CPU6502, private io: Apple2IO, private e: boolean) {
-        this.keys = e ? keys2e : keys2;
+    constructor(private cpu: CPU6502, private io: Apple2IO, private layout: string) {
+        switch (this.layout) {
+            case 'apple2e':
+                this.keys = keys2e;
+                break;
+            case 'pravetz82':
+                this.keys = keyspravetz82;
+                this.capslocked = false;    // Pravetz 82 starts with CAPS LOCK off.
+                break;
+            default:
+                this.keys = keys2;
+                break;
+            
+        }
 
         window.addEventListener('keydown', this.keydown);
         window.addEventListener('keyup', this.keyup);
@@ -260,7 +290,7 @@ export default class KeyBoard {
     }
 
     shiftKey(down: boolean) {
-        const shiftKeys = this.kb.querySelectorAll('.key-SHIFT');
+        const shiftKeys = this.kb.querySelectorAll(this.layout !== 'pravetz82' ? '.key-SHIFT' : '.key-ЛАТ');
         this.shifted = down;
         if (down) {
             this.io.buttonUp(2);
@@ -272,7 +302,7 @@ export default class KeyBoard {
     }
 
     controlKey(down: boolean) {
-        const ctrlKey = this.kb.querySelector('.key-CTRL');
+        const ctrlKey = this.kb.querySelector(this.layout !== 'pravetz82' ? '.key-CTRL' : '.key-МК');
         this.controlled = down;
         if (down) {
             ctrlKey!.classList.add('active');
@@ -319,7 +349,7 @@ export default class KeyBoard {
      *     otherwise the used state is set to true.
      */
     capslockKey(down?: boolean | undefined) {
-        const capsLock = this.kb.querySelector('.key-LOCK');
+        const capsLock = this.kb.querySelector(this.layout !== 'pravetz82' ? '.key-LOCK' : '.key-ЛАТ2');
 
         if (arguments.length === 0) {
             if (this.capslockKeyUsed) {
@@ -349,6 +379,7 @@ export default class KeyBoard {
 
     create(el: string) {
         this.kb = document.querySelector(el)!;
+        this.kb.classList.add('layout-' + this.layout);
         let x, y, row, key, label, label1, label2;
 
         const buildLabel = (k: string) => {
@@ -419,7 +450,15 @@ export default class KeyBoard {
             ev.preventDefault();
             target.classList.add('pressed');
 
-            let key: string = this.shifted ? key2 : key1;
+            let key: string;
+            if (this.layout !== 'pravetz82') {
+                key = this.shifted ? key2 : key1;
+            }
+            else {
+                // In Pravetz 82, the operation of the shift key is inverted.
+                //  The top row (cyrillic) is used by default and shift switches to using the bottow row (latin).
+                key = this.shifted ? key1 : key2;
+            }
             switch (key) {
                 case 'BELL':
                     key = 'G';
@@ -440,7 +479,12 @@ export default class KeyBoard {
                     key = '\x15';
                     break;
                 case '&darr;':
-                    key = '\x0A';
+                    if (this.layout !== 'pravetz82') {
+                        key = '\x0A';
+                    }
+                    else {
+                        // On Pravetz 82 this key has no action.
+                    }
                     break;
                 case '&uarr;':
                     key = '\x0B';
@@ -455,24 +499,152 @@ export default class KeyBoard {
                     break;
             }
 
+            if (this.layout === 'pravetz82') {
+                // Pravetz 82 specific remapping.
+                //  Lower-case lattin letters are replaced with cyrillic capital letters.
+                switch (key) {
+                    
+                    // First row.
+                    case 'Ч':
+                        key = '^';
+                        break;
+                    case '﹁':
+                        // FIXME: Which character should this map to?
+                        break;
+    
+                    // Second row.
+                    case 'ОСВ':         // Pravetz 82 ESC key in cyrillic.
+                        key = '\x1B';
+                        break;                   
+                    case 'Я':
+                        key = 'q';
+                        break;
+                    case 'В':
+                        key = 'w';
+                        break;
+                    case 'Е':
+                        key = 'e';
+                        break;
+                    case 'Р':
+                        key = 'r';
+                        break;
+                    case 'Т':
+                        key = 't';
+                        break;
+                    case 'Ъ':
+                        key = 'y';
+                        break;
+                    case 'У':
+                        key = 'u';
+                        break;
+                    case 'И':
+                        key = 'i';
+                        break;
+                    case 'О':
+                        key = 'o';
+                        break;
+                    case 'П':
+                        key = 'p';
+                        break;
+                    case 'Ю':
+                        key = '@';
+                        break;
+                    case '@':
+                        key = '`';
+                        break;
+
+                    // Third row.
+                    case 'А':
+                        key = 'a';
+                        break;
+                    case 'С':
+                        key = 's';
+                        break;
+                    case 'Д':
+                        key = 'd';
+                        break;
+                    case 'Ф':
+                        key = 'f';
+                        break;
+                    case 'Г':
+                        key = 'g';
+                        break;
+                    case 'Х':
+                        key = 'h';
+                        break;
+                    case 'Й':
+                        key = 'j';
+                        break;
+                    case 'К':
+                        key = 'k';
+                        break;
+                    case 'Л':
+                        key = 'l';
+                        break;
+                    case 'Ш':
+                        key = '[';
+                        break;
+                    case 'Щ':
+                        key = ']';
+                        break;
+                    case '[':
+                        key = '{';
+                        break;
+                    case ']':
+                        key = '}';
+                        break;
+        
+                    // Fourth row.
+                    case 'З':
+                        key = 'z';
+                        break;
+                    case 'Ь':
+                        key = 'x';
+                        break;
+                    case 'Ц':
+                        key = 'c';
+                        break;
+                    case 'Ж':
+                        key = 'v';
+                        break;
+                    case 'Б':
+                        key = 'b';
+                        break;
+                    case 'Н':
+                        key = 'n';
+                        break;
+                    case 'М':
+                        key = 'm';
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+
             if (key.length > 1) {
                 switch (key) {
                     case 'SHIFT':
+                    case 'ЛАТ':     // Shift on Pravetz 82 switches to cyrillic.
                         this.shiftKey(!this.shifted);
                         break;
                     case 'CTRL':
+                    case 'МК':      // Pravetz 82 CTRL key in cyrillic.
                         this.controlKey(!this.controlled);
                         break;
                     case 'CAPS':
                     case 'LOCK':
+                    case 'ЛАТ2':    // CAPS LOCK on Pravetz 82 switches between cyrillic and latin.
                         this.capslockKey(undefined);
                         break;
                     case 'POW':
                     case 'POWER':
+                    case 'ВКЛ':     // Pravetz 82 power key in cyrillic.
                         if (window.confirm('Power Cycle?'))
                             window.location.reload();
                         break;
                     case 'RESET':
+                    case 'RST':
                         this.cpu.reset();
                         break;
                     case 'OPEN_APPLE':
@@ -481,15 +653,22 @@ export default class KeyBoard {
                     case 'CLOSED_APPLE':
                         this.optionKey(!this.optioned);
                         break;
+                    case 'RPT':     // Pravetz 82 "repeat" key.
+                        // Do nothing.
+                        break;
                     default:
                         break;
                 }
             } else {
                 if (this.controlled && key >= '@' && key <= '_') {
                     this.io.keyDown(key.charCodeAt(0) - 0x40);
-                } else if (this.e && !this.shifted && !this.capslocked &&
+                } else if (this.layout==='apple2e' && !this.shifted && !this.capslocked &&
                     key >= 'A' && key <= 'Z') {
                     this.io.keyDown(key.charCodeAt(0) + 0x20);
+                } else if (this.layout==='pravetz82' && !this.shifted && this.capslocked &&
+                    key >= 'a' && key <= 'z') {
+                    // CAPS LOCK on Pravetz 82 switches between cyrillic and latin.
+                    this.io.keyDown(key.charCodeAt(0) - 0x20);
                 } else {
                     this.io.keyDown(key.charCodeAt(0));
                 }
@@ -506,7 +685,7 @@ export default class KeyBoard {
     }
 
     private keydown = (evt: KeyboardEvent) => {
-        if (!this.dialogOpen() && (!evt.metaKey || evt.ctrlKey || this.e)) {
+        if (!this.dialogOpen() && (!evt.metaKey || evt.ctrlKey || this.layout==='apple2e')) {
             evt.preventDefault();
 
             const key = this.mapKeyEvent(evt);

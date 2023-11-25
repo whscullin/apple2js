@@ -19,40 +19,49 @@ const romVersion = prefs.readPref('computer_type2');
 let rom: string;
 let characterRom: string;
 let sectors: SupportedSectors = 16;
+let keyboardLayout: string;
 
 switch (romVersion) {
     case 'apple2':
         rom = 'intbasic';
         characterRom = 'apple2_char';
+        keyboardLayout = 'apple2';
         break;
     case 'apple213':
         rom = 'intbasic';
         characterRom = 'apple2_char';
         sectors = 13;
+        keyboardLayout = 'apple2';
         break;
     case 'original':
         rom = 'original';
         characterRom = 'apple2_char';
+        keyboardLayout = 'apple2';
         break;
     case 'apple2jplus':
         rom = 'apple2j';
         characterRom = 'apple2j_char';
+        keyboardLayout = 'apple2';
         break;
     case 'apple2pig':
         rom = 'fpbasic';
         characterRom = 'pigfont_char';
+        keyboardLayout = 'apple2';
         break;
     case 'apple2lc':
         rom = 'fpbasic';
         characterRom = 'apple2lc_char';
+        keyboardLayout = 'apple2';
         break;
     case 'pravetz82':
         rom = 'pravetz82';
         characterRom = 'pravetz82_char';
+        keyboardLayout = 'pravetz82';
         break;
     default:
         rom = 'fpbasic';
         characterRom = 'apple2_char';
+        keyboardLayout = 'apple2';
 }
 
 const options = {
@@ -91,5 +100,5 @@ apple2.ready.then(() => {
 
     cpu.addPageHandler(lc);
 
-    initUI(apple2, disk2, smartport, printer, false);
+    initUI(apple2, disk2, smartport, printer, false, keyboardLayout);
 }).catch(console.error);

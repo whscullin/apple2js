@@ -18,26 +18,31 @@ const romVersion = prefs.readPref('computer_type2e');
 let enhanced = false;
 let rom: string;
 let characterRom: string;
+let keyboardLayout: string;
 
 switch (romVersion) {
     case 'apple2e':
         rom = 'apple2e';
         characterRom = 'apple2e_char';
+        keyboardLayout = 'apple2e';
         break;
     case 'apple2rm':
         rom = 'apple2e';
         characterRom = 'rmfont_char';
         enhanced = true;
+        keyboardLayout = 'apple2e';
         break;
     case 'apple2ex':
         rom = 'apple2ex';
         characterRom = 'apple2enh_char';
         enhanced = true;
+        keyboardLayout = 'apple2e';
         break;
     default:
         rom = 'apple2enh';
         characterRom = 'apple2enh_char';
         enhanced = true;
+        keyboardLayout = 'apple2e';
 }
 
 const options = {
@@ -73,5 +78,5 @@ apple2.ready.then(() => {
     io.setSlot(6, disk2);
     io.setSlot(7, smartport);
 
-    initUI(apple2, disk2, smartport, printer, options.e);
+    initUI(apple2, disk2, smartport, printer, options.e, keyboardLayout);
 }).catch(console.error);
