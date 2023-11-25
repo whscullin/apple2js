@@ -245,7 +245,7 @@ export class SmartStorageBroker implements MassStorage<unknown> {
     constructor(
         private disk2: Disk2,
         private smartPort: SmartPort
-    ) { }
+    ) {}
 
     setBinary(
         driveNo: DriveNumber,
