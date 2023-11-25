@@ -411,7 +411,7 @@ a.button:hover {
 }
 
 #keyboard.layout-pravetz82 .row {
-    width: 598px;
+    width: 610px;
 }
 
 .apple2e #keyboard .row {
@@ -423,11 +423,19 @@ a.button:hover {
 }
 
 #keyboard.layout-pravetz82 .row0 {
-    margin-left: 10px;
+    margin-left: 0px;
+}
+
+#keyboard.layout-pravetz82 .row1 {
+    margin-left: -14px;
 }
 
 #keyboard .row2 {
     margin-left: 10px;
+}
+
+#keyboard.layout-pravetz82 .row2 {
+    margin-left: 0px;
 }
 
 #keyboard .row3 {
@@ -435,11 +443,15 @@ a.button:hover {
 }
 
 #keyboard.layout-pravetz82 .row3 {
-    margin-left: 25px;
+    margin-left: 15px;
 }
 
 #keyboard .row4 {
     margin-left: 10px;
+}
+
+#keyboard.layout-pravetz82 .row4 {
+    margin-left: 0px;
 }
 
 .apple2e #keyboard .row0 {
