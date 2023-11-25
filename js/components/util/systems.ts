@@ -70,7 +70,7 @@ export const systemTypes: Record<string, Partial<SystemType>> = {
     },
     pravetz82: {
         rom: 'pravetz82',
-        characterRom: 'apple2_char',
+        characterRom: 'pravetz82_char',
         e: false,
     }
 } as const;
