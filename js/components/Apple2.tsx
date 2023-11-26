@@ -41,6 +41,7 @@ export interface Apple2Props {
     gl: boolean;
     rom: string;
     sectors: SupportedSectors;
+    keyboardLayout: string;
 }
 
 /**
@@ -53,7 +54,7 @@ export interface Apple2Props {
  * @returns
  */
 export const Apple2 = (props: Apple2Props) => {
-    const { e, enhanced, sectors } = props;
+    const { e, enhanced, sectors, keyboardLayout } = props;
     const screenRef = useRef<HTMLCanvasElement>(null);
     const [apple2, setApple2] = useState<Apple2Impl>();
     const [error, setError] = useState<unknown>();
@@ -192,7 +193,7 @@ export const Apple2 = (props: Apple2Props) => {
                     toggleDebugger={toggleDebugger}
                 />
                 <Inset>
-                    <Keyboard apple2={apple2} e={e} />
+                    <Keyboard apple2={apple2} layout={keyboardLayout} />
                 </Inset>
                 <ErrorModal error={error} setError={setError} />
             </div>
