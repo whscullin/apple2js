@@ -95,6 +95,7 @@ const appConfig = merge(baseConfig, {
         devMiddleware: {
             publicPath: '/dist/',
         },
+        client: false,
     },
 });
 
