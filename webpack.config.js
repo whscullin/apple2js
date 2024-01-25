@@ -96,6 +96,7 @@ const appConfig = merge(baseConfig, {
             publicPath: '/dist/',
         },
     },
+    client: false,
 });
 
 const workletConfig = merge(baseConfig, {
