@@ -621,7 +621,9 @@ export class VideoModesGL implements VideoModes {
         private e: boolean
     ) {
         this._canvas = document.createElement('canvas');
-        const context = this._canvas.getContext('2d');
+        const context = this._canvas.getContext('2d', {
+            willReadFrequently: true,
+        });
         if (!context) {
             throw new Error('no 2d context');
         }
