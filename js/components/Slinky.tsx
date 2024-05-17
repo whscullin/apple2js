@@ -21,7 +21,7 @@ export interface SlinkyProps {
 export const Slinky = ({ io, slot }: SlinkyProps) => {
     useEffect(() => {
         if (io) {
-            const slinky = new RAMFactor(1024 * 1024);
+            const slinky = new RAMFactor(8 * 1024 * 1024);
             io.setSlot(slot, slinky);
         }
     }, [io, slot]);
