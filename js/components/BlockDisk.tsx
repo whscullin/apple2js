@@ -1,5 +1,5 @@
 import { h } from 'preact';
-import { useEffect, useState } from 'preact/hooks';
+import { useState } from 'preact/hooks';
 import cs from 'classnames';
 import { BLOCK_FORMATS } from 'js/formats/types';
 import SmartPort from '../cards/smartport';
