@@ -6,7 +6,6 @@ import {
     HeaderData,
     read2MGHeader,
 } from '../formats/2mg';
-import { ProDOSVolume } from '../formats/prodos';
 import createBlockDisk from '../formats/block';
 import {
     BlockDisk,
@@ -127,7 +126,7 @@ export default class CFFA
 
     // Disk data
 
-    private _partitions: Array<ProDOSVolume | null> = [
+    private _partitions: Array<BlockDisk | null> = [
         // Drive 1
         null,
         // Drive 2
@@ -420,10 +419,9 @@ export default class CFFA
 
     getState() {
         return {
-            disks: this._partitions.map((partition) => {
+            disks: this._partitions.map((disk) => {
                 let result: BlockDisk | null = null;
-                if (partition) {
-                    const disk: BlockDisk = partition.disk();
+                if (disk) {
                     result = {
                         blocks: disk.blocks.map(
                             (block) => new Uint8Array(block)
@@ -479,10 +477,8 @@ export default class CFFA
         this._identity[drive][IDENTITY.SectorCountLow] =
             this._sectors[0].length >> 16;
 
-        const prodos = new ProDOSVolume(disk);
-
         this._name[drive] = disk.metadata.name;
-        this._partitions[drive] = prodos;
+        this._partitions[drive] = disk;
 
         if (drive) {
             rom[SETTINGS.Max32MBPartitionsDev1] = 0x1;
@@ -524,7 +520,7 @@ export default class CFFA
 
     getBinary(drive: number): MassStorageData | null {
         drive = drive - 1;
-        const blockDisk = this._partitions[drive]?.disk();
+        const blockDisk = this._partitions[drive];
         if (!blockDisk) {
             return null;
         }
