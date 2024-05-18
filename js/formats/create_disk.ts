@@ -41,7 +41,7 @@ export function createDisk(
 
     switch (fmt) {
         case '2mg':
-            disk = createDiskFrom2MG(options);
+            disk = createDiskFrom2MG(options) as FloppyDisk;
             break;
         case 'd13':
             disk = createDiskFromD13(options);
@@ -54,7 +54,7 @@ export function createDisk(
             disk = createDiskFromNibble(options);
             break;
         case 'po':
-            disk = createDiskFromProDOS(options);
+            disk = createDiskFromProDOS(options) as FloppyDisk;
             break;
         case 'woz':
             disk = createDiskFromWoz(options);

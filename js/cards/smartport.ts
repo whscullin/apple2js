@@ -17,6 +17,8 @@ import {
 } from '../formats/2mg';
 import createBlockDisk from '../formats/block';
 import { DriveNumber } from '../formats/types';
+import { VDH_BLOCK, VDH_OFFSETS } from 'js/formats/prodos/vdh';
+import { readFileName } from 'js/formats/prodos/utils';
 
 const ID = 'SMARTPORT.J.S';
 
@@ -604,6 +606,7 @@ export default class SmartPort
         } else {
             this.metadata[driveNo] = null;
         }
+
         const options = {
             rawData,
             name,
@@ -613,6 +616,8 @@ export default class SmartPort
 
         this.ext[driveNo] = fmt;
         this.disks[driveNo] = createBlockDisk(fmt, options);
+        name = this.getVolumeName(driveNo) || name;
+
         this.callbacks?.label(driveNo, name);
 
         return true;
@@ -643,5 +648,22 @@ export default class SmartPort
             data,
             readOnly,
         };
+    }
+
+    getVolumeName(driveNo: number): string | null {
+        const buffer = this.disks[driveNo]?.blocks[VDH_BLOCK]?.buffer;
+        if (!buffer) {
+            return null;
+        }
+        const block = new DataView(buffer);
+
+        const nameLength = block.getUint8(VDH_OFFSETS.NAME_LENGTH) & 0xf;
+        const caseBits = block.getUint8(VDH_OFFSETS.CASE_BITS);
+        return readFileName(
+            block,
+            VDH_OFFSETS.VOLUME_NAME,
+            nameLength,
+            caseBits
+        );
     }
 }

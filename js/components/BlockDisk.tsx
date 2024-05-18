@@ -1,5 +1,5 @@
 import { h } from 'preact';
-import { useCallback, useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import cs from 'classnames';
 import { BLOCK_FORMATS } from 'js/formats/types';
 import SmartPort from '../cards/smartport';
@@ -30,35 +30,19 @@ export interface BlockDiskProps extends BlockDiskData {
 /**
  * BlockDisk component
  *
- * Includes drive light, disk name and side, and UI for loading disks.
+ * Includes drive light, disk name and UI for loading disks.
  *
  * @param smartPort SmartPort object
  * @param number Drive 1 or 2
  * @param on Active state
  * @param name Disk name identifier
- * @param side Disk side identifier
+ *
  * @returns BlockDisk component
  */
 export const BlockDisk = ({ smartPort, number, on, name }: BlockDiskProps) => {
     const [modalOpen, setModalOpen] = useState(false);
     const [downloadModalOpen, setDownloadModalOpen] = useState(false);
     const [error, setError] = useState<unknown>();
-
-    const doClose = useCallback(() => {
-        setModalOpen(false);
-    }, []);
-
-    const onOpenModal = useCallback(() => {
-        setModalOpen(true);
-    }, []);
-
-    const doCloseDownload = useCallback(() => {
-        setDownloadModalOpen(false);
-    }, []);
-
-    const onOpenDownloadModal = useCallback(() => {
-        setDownloadModalOpen(true);
-    }, []);
 
     return (
         <DiskDragTarget
@@ -72,14 +56,14 @@ export const BlockDisk = ({ smartPort, number, on, name }: BlockDiskProps) => {
             <BlockFileModal
                 smartPort={smartPort}
                 driveNo={number}
-                onClose={doClose}
+                onClose={() => setModalOpen(false)}
                 isOpen={modalOpen}
             />
             <DownloadModal
                 driveNo={number}
                 massStorage={smartPort}
                 isOpen={downloadModalOpen}
-                onClose={doCloseDownload}
+                onClose={() => setDownloadModalOpen(false)}
             />
             <div
                 id={`disk${number}`}
@@ -87,12 +71,12 @@ export const BlockDisk = ({ smartPort, number, on, name }: BlockDiskProps) => {
             />
             <ControlButton
                 title="Load Disk"
-                onClick={onOpenModal}
+                onClick={() => setModalOpen(true)}
                 icon="folder-open"
             />
             <ControlButton
                 title="Save Disk"
-                onClick={onOpenDownloadModal}
+                onClick={() => setDownloadModalOpen(false)}
                 icon="save"
             />
             <div id={`disk-label${number}`} className={styles.diskLabel}>

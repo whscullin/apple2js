@@ -9,8 +9,8 @@ import { STORAGE_TYPES, ACCESS_TYPES } from './constants';
 import { byte, word } from 'js/types';
 import { ProDOSVolume } from '.';
 
-const VDH_BLOCK = 2;
-const VDH_OFFSETS = {
+export const VDH_BLOCK = 2;
+export const VDH_OFFSETS = {
     PREV: 0x00,
     NEXT: 0x02,
     STORAGE_TYPE: 0x04,
