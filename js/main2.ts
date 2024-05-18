@@ -86,7 +86,7 @@ apple2.ready
         const lc = new LanguageCard(apple2.getROM());
         const parallel = new Parallel(printer);
         const videoTerm = new VideoTerm();
-        const slinky = new RAMFactor(1024 * 1024);
+        const slinky = new RAMFactor(8 * 1024 * 1024);
         const disk2 = new DiskII(io, driveLights, sectors);
         const clock = new Thunderclock();
         const smartport = new SmartPort(cpu, null, { block: true });
