@@ -2,6 +2,7 @@ import ProDOS from 'js/formats/po';
 import { memory } from 'js/types';
 import { BYTES_BY_SECTOR, BYTES_BY_TRACK } from './testdata/16sector';
 import { expectSequence, findBytes, skipGap } from './util';
+import { NibbleDisk } from 'js/formats/types';
 
 describe('ProDOS format', () => {
     it('is callable', () => {
@@ -20,7 +21,8 @@ describe('ProDOS format', () => {
             data: BYTES_BY_TRACK,
             volume: 10,
             readOnly: true,
-        });
+        }) as NibbleDisk;
+        expect(disk.encoding).toEqual('nibble');
         expect(disk.tracks.length).toEqual(35);
     });
 
@@ -30,7 +32,8 @@ describe('ProDOS format', () => {
             data: BYTES_BY_TRACK,
             volume: 10,
             readOnly: true,
-        });
+        }) as NibbleDisk;
+        expect(disk.encoding).toEqual('nibble');
         expect(disk.tracks[0].length).toEqual(6632);
     });
 
@@ -40,7 +43,8 @@ describe('ProDOS format', () => {
             data: BYTES_BY_TRACK,
             volume: 10,
             readOnly: true,
-        });
+        }) as NibbleDisk;
+        expect(disk.encoding).toEqual('nibble');
         // Track 0 is slightly longer for some reason.
         expect(disk.tracks[0].length).toEqual(6632);
         for (let i = 1; i < disk.tracks.length; i++) {
@@ -54,7 +58,8 @@ describe('ProDOS format', () => {
             data: BYTES_BY_TRACK,
             volume: 10,
             readOnly: true,
-        });
+        }) as NibbleDisk;
+        expect(disk.encoding).toEqual('nibble');
         // From Beneith Apple DOS, GAP 1 should have 12-85 0xFF bytes
         const track = disk.tracks[0];
         let numFF = 0;
@@ -72,7 +77,8 @@ describe('ProDOS format', () => {
             data: BYTES_BY_TRACK,
             volume: 10,
             readOnly: true,
-        });
+        }) as NibbleDisk;
+        expect(disk.encoding).toEqual('nibble');
         const track = disk.tracks[0];
         let i = skipGap(track);
         // prologue
@@ -100,7 +106,8 @@ describe('ProDOS format', () => {
             data: BYTES_BY_TRACK,
             volume: 10,
             readOnly: true,
-        });
+        }) as NibbleDisk;
+        expect(disk.encoding).toEqual('nibble');
         const track: memory = disk.tracks[0];
         // skip to the first address epilogue
         let i = findBytes(track, [0xde, 0xaa, 0xeb]);
@@ -125,7 +132,8 @@ describe('ProDOS format', () => {
             data: BYTES_BY_TRACK,
             volume: 10,
             readOnly: true,
-        });
+        }) as NibbleDisk;
+        expect(disk.encoding).toEqual('nibble');
         const track = disk.tracks[0];
         // first sector prologue
         let i = findBytes(track, [0xd5, 0xaa, 0x96]);
@@ -155,7 +163,8 @@ describe('ProDOS format', () => {
             data: BYTES_BY_SECTOR,
             volume: 10,
             readOnly: true,
-        });
+        }) as NibbleDisk;
+        expect(disk.encoding).toEqual('nibble');
         const track: memory = disk.tracks[0];
         // First data field prologue
         let i = findBytes(track, [0xd5, 0xaa, 0xad]);
@@ -190,7 +199,8 @@ describe('ProDOS format', () => {
             data: BYTES_BY_TRACK,
             volume: 10,
             readOnly: true,
-        });
+        }) as NibbleDisk;
+        expect(disk.encoding).toEqual('nibble');
         const track = disk.tracks[1];
         let i = skipGap(track);
         // prologue
@@ -218,7 +228,8 @@ describe('ProDOS format', () => {
             data: BYTES_BY_TRACK,
             volume: 10,
             readOnly: true,
-        });
+        }) as NibbleDisk;
+        expect(disk.encoding).toEqual('nibble');
         const track: memory = disk.tracks[1];
         let i = findBytes(track, [0xde, 0xaa, 0xeb]);
         expect(i).toBeGreaterThan(50);
@@ -253,7 +264,8 @@ describe('ProDOS format', () => {
             data: BYTES_BY_TRACK,
             volume: 10,
             readOnly: true,
-        });
+        }) as NibbleDisk;
+        expect(disk.encoding).toEqual('nibble');
 
         for (let t = 0; t < disk.tracks.length; t++) {
             // We essentially seek through the track for the Address Fields
