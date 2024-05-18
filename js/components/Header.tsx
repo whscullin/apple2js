@@ -20,7 +20,10 @@ export const Header = ({ e }: HeaderProps) => {
     return (
         <div className={styles.header}>
             <a href={README} rel="noreferrer" target="_blank">
-                <img src="img/badge.png" className={styles.badge} />
+                <img
+                    src={e ? 'img/badge2e.png' : 'img/badge.png'}
+                    className={styles.badge}
+                />
             </a>
             <div className={styles.subtitle}>
                 An Apple {e ? '//e' : ']['} Emulator in JavaScript
