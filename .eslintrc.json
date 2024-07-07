@@ -1,9 +1,7 @@
 {
     // Global
     "root": true,
-    "plugins": [
-        "prettier"
-    ],
+    "plugins": ["prettier"],
     "parser": "@typescript-eslint/parser",
     "extends": [
         "eslint:recommended",
@@ -12,38 +10,22 @@
     ],
     "rules": {
         "prettier/prettier": "error",
-        "linebreak-style": [
-            "error",
-            "unix"
-        ],
-        "eqeqeq": [
-            "error",
-            "smart"
-        ],
-        "prefer-const": [
-            "error"
-        ],
+        "linebreak-style": ["error", "unix"],
+        "eqeqeq": ["error", "smart"],
+        "prefer-const": ["error"],
         "no-var": "error",
         "no-use-before-define": "off",
         "no-console": [
             "error",
             {
-                "allow": [
-                    "info",
-                    "warn",
-                    "error"
-                ]
+                "allow": ["info", "warn", "error"]
             }
         ],
         // Jest configuration
         "jest/expect-expect": [
             "error",
             {
-                "assertFunctionNames": [
-                    "expect*",
-                    "checkImageData",
-                    "testCode"
-                ]
+                "assertFunctionNames": ["expect*", "checkImageData", "testCode"]
             }
         ]
     },
@@ -58,13 +40,8 @@
         //
         // TypeScript/TSX-specific configuration
         {
-            "files": [
-                "*.ts",
-                "*.tsx"
-            ],
-            "plugins": [
-                "@typescript-eslint/eslint-plugin"
-            ],
+            "files": ["*.ts", "*.tsx"],
+            "plugins": ["@typescript-eslint/eslint-plugin"],
             "extends": [
                 "plugin:react/recommended",
                 "plugin:react-hooks/recommended",
@@ -106,9 +83,6 @@
                 ],
                 // no redeclaration of classes, members or variables
                 "no-redeclare": "off",
-                "@typescript-eslint/no-redeclare": [
-                    "error"
-                ],
                 // allow empty interface definitions and empty extends
                 "@typescript-eslint/no-empty-interface": "off",
                 // allow explicit type declaration
@@ -132,9 +106,7 @@
         },
         // UI elements
         {
-            "files": [
-                "js/ui/**.ts"
-            ],
+            "files": ["js/ui/**.ts"],
             "rules": {
                 // allow non-null assertions since these classes reference the DOM
                 "@typescript-eslint/no-non-null-assertion": "off"
@@ -142,11 +114,7 @@
         },
         // JS Node configuration
         {
-            "files": [
-                "bin/*",
-                "babel.config.js",
-                "webpack.config.js"
-            ],
+            "files": ["bin/*", "babel.config.js", "webpack.config.js"],
             "rules": {
                 "no-console": 0
             },
@@ -158,9 +126,7 @@
         },
         // Test configuration
         {
-            "files": [
-                "test/**/*"
-            ],
+            "files": ["test/**/*"],
             "env": {
                 "jest": true,
                 "jasmine": true,
@@ -172,28 +138,20 @@
         },
         // Entry point configuration
         {
-            "files": [
-                "js/entry2.ts",
-                "js/entry2e.ts",
-                "jest.config.js"
-            ],
+            "files": ["js/entry2.ts", "js/entry2e.ts", "jest.config.js"],
             "env": {
                 "commonjs": true
             }
         },
         // Worker configuration
         {
-            "files": [
-                "workers/*"
-            ],
+            "files": ["workers/*"],
             "parserOptions": {
                 "project": "workers/tsconfig.json"
             }
         }
     ],
-    "ignorePatterns": [
-        "coverage/**/*"
-    ],
+    "ignorePatterns": ["coverage/**/*"],
     "settings": {
         "react": {
             "pragma": "h",

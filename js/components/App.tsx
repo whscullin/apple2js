@@ -10,6 +10,7 @@ import { defaultSystem, systemTypes } from './util/systems';
 
 import styles from './css/App.module.scss';
 import componentStyles from './css/Components.module.scss';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
 /**
  * Top level application component, provides the parameters
