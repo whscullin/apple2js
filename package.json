@@ -36,6 +36,7 @@
         "@types/jest": "^29.5.2",
         "@types/jest-image-snapshot": "^4.3.1",
         "@types/micromodal": "^0.3.2",
+        "@types/node": "^18.19.39",
         "@types/wicg-file-system-access": "^2020.9.6",
         "@typescript-eslint/eslint-plugin": "^6.12.0",
         "@typescript-eslint/parser": "^6.12.0",
