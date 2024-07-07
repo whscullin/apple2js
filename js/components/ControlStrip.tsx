@@ -8,6 +8,7 @@ import { OptionsModal } from './OptionsModal';
 import { OptionsContext } from './OptionsContext';
 import { Printer } from './Printer';
 import { ControlButton } from './ControlButton';
+import { Cassette } from './Cassette';
 import { Apple2 as Apple2Impl } from '../apple2';
 import { JoyStick } from '../ui/joystick';
 import { Screen, SCREEN_FULL_PAGE } from '../ui/screen';
@@ -92,6 +93,7 @@ export const ControlStrip = ({
                 />
                 <AudioControl apple2={apple2} />
                 <Printer io={io} slot={1} />
+                <Cassette io={io} />
                 <div style={{ flexGrow: 1 }} />
                 <ControlButton onClick={doReadme} title="About" icon="info" />
                 <ControlButton
