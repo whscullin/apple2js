@@ -80,6 +80,6 @@
         "bootstrap-icons": "^1.11.3",
         "classnames": "^2.3.1",
         "micromodal": "^0.4.2",
-        "preact": "^10.7.1"
+        "preact": "^10.22.1"
     }
 }
