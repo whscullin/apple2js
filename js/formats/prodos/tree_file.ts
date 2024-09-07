@@ -19,7 +19,7 @@ export class TreeFile extends ProDOSFile {
 
     getBlockPointers() {
         const treeBlock = this.blocks[this.fileEntry.keyPointer];
-        const saplingPointers = new DataView(treeBlock);
+        const saplingPointers = new DataView(treeBlock.buffer);
         const pointers = [];
         for (let idx = 0; idx < 256; idx++) {
             const saplingPointer =
@@ -28,7 +28,7 @@ export class TreeFile extends ProDOSFile {
             if (saplingPointer) {
                 pointers.push(saplingPointer);
                 const seedlingPointers = new DataView(
-                    this.blocks[saplingPointer]
+                    this.blocks[saplingPointer].buffer
                 );
                 for (let jdx = 0; jdx < 256; jdx++) {
                     const seedlingPointer =
@@ -46,7 +46,7 @@ export class TreeFile extends ProDOSFile {
     // TODO(whscullin): Why did I not use getBlockPointers for these...
     read() {
         const treeBlock = this.blocks[this.fileEntry.keyPointer];
-        const saplingPointers = new DataView(treeBlock);
+        const saplingPointers = new DataView(treeBlock.buffer);
         let remainingLength = this.fileEntry.eof;
         const data = new Uint8Array(remainingLength);
         let offset = 0;
@@ -59,7 +59,7 @@ export class TreeFile extends ProDOSFile {
             let jdx = 0;
             if (saplingPointer) {
                 const saplingBlock = this.blocks[saplingPointer];
-                const seedlingPointers = new DataView(saplingBlock);
+                const seedlingPointers = new DataView(saplingBlock.buffer);
 
                 while (jdx < 256 && remainingLength > 0) {
                     const seedlingPointer =
@@ -92,7 +92,7 @@ export class TreeFile extends ProDOSFile {
         this.fileEntry.eof = data.byteLength;
 
         const treeBlock = this.blocks[this.fileEntry.keyPointer];
-        const saplingPointers = new DataView(treeBlock);
+        const saplingPointers = new DataView(treeBlock.buffer);
 
         let remainingLength = this.fileEntry.eof;
         let offset = 0;
@@ -103,7 +103,7 @@ export class TreeFile extends ProDOSFile {
             const saplingBlock = this.blocks[saplingPointer];
             saplingPointers.setUint8(idx, saplingPointer & 0xff);
             saplingPointers.setUint8(0x100 + idx, saplingPointer >> 8);
-            const seedlingPointers = new DataView(saplingBlock);
+            const seedlingPointers = new DataView(saplingBlock.buffer);
 
             let jdx = 0;
 

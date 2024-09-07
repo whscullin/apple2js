@@ -19,7 +19,7 @@ export class SaplingFile extends ProDOSFile {
 
     getBlockPointers() {
         const saplingBlock = this.blocks[this.fileEntry.keyPointer];
-        const seedlingPointers = new DataView(saplingBlock);
+        const seedlingPointers = new DataView(saplingBlock.buffer);
 
         const pointers = [this.fileEntry.keyPointer];
         for (let idx = 0; idx < 256; idx++) {
@@ -67,7 +67,7 @@ export class SaplingFile extends ProDOSFile {
         this.fileEntry.keyPointer = this.bitMap.allocBlock();
         this.fileEntry.eof = data.byteLength;
         const saplingBlock = this.blocks[this.fileEntry.keyPointer];
-        const seedlingPointers = new DataView(saplingBlock);
+        const seedlingPointers = new DataView(saplingBlock.buffer);
 
         let remainingLength = data.byteLength;
         let offset = 0;
