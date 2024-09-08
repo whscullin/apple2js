@@ -167,7 +167,7 @@ const FilePickerChooser = ({
                 Choose File
             </button>
             &nbsp;
-            <span role="label">{selectedFilename}</span>
+            <label>{selectedFilename}</label>
         </>
     );
 };
