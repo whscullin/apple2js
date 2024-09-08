@@ -10,7 +10,7 @@ First
 
 ```sh
 git submodule init
-sit submodule update
+git submodule update
 npm install
 ```
 
