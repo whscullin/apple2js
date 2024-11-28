@@ -480,7 +480,7 @@ export function doLoadHTTP(driveNo: DriveNumber, url?: string) {
                 }
             })
             .then(function (data) {
-                const urlParts = url!.split('/');
+                const urlParts = url.split('/');
                 const file = urlParts.pop()!;
                 const fileParts = file.split('.');
                 const ext = fileParts.pop()!.toLowerCase();
@@ -860,6 +860,10 @@ export function openPrinterModal() {
 
 export function clearPrinterPaper() {
     _printer.clear();
+}
+
+export function exitFullScreen() {
+    options.setOption(SCREEN_FULL_PAGE, false);
 }
 
 declare global {

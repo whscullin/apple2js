@@ -1,6 +1,9 @@
 import { h, Ref } from 'preact';
 
 import styles from './css/Screen.module.scss';
+import { useContext } from 'preact/hooks';
+import { OptionsContext } from './OptionsContext';
+import { SCREEN_FULL_PAGE } from 'js/ui/screen';
 
 /**
  * Screen properties
@@ -17,8 +20,17 @@ export interface ScreenProps {
  * @returns
  */
 export const Screen = ({ screenRef }: ScreenProps) => {
+    const options = useContext(OptionsContext);
+
     return (
         <div className={styles.display}>
+            <div className={styles.exitFullScreen}>
+                <button
+                    onClick={() => options.setOption(SCREEN_FULL_PAGE, false)}
+                >
+                    Exit Full Page
+                </button>
+            </div>
             <div className={styles.overscan}>
                 <canvas
                     className={styles.screen}
