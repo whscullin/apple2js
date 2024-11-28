@@ -84,3 +84,16 @@
     width: 100%;
     height: 100%;
 }
+
+.exitFullScreen {
+    display: none;
+}
+
+:global(.full-page) .exitFullScreen {
+    width: 100%;
+    position: fixed;
+    top: 0;
+    display: flex;
+    justify-content: center;
+    padding: 5px;
+}

@@ -810,3 +810,17 @@ a.button:hover {
     min-width: 200px;
     min-height: 50px;
 }
+
+#exit-fullscreen {
+    display: none;
+}
+
+.full-page #exit-fullscreen {
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    padding: 5px;
+}

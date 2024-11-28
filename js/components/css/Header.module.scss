@@ -13,6 +13,10 @@
     border: none;
 }
 
+:global(.standalone) .header {
+    display: none;
+}
+
 :global(.full-page) .header {
     display: none;
 }
