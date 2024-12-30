@@ -4,11 +4,11 @@ import Apple2IO from 'js/apple2io';
 
 import styles from './css/ControlButton.module.scss';
 
-export interface PasteToClipboardProps {
+export interface ClipboardPasteProps {
     io: Apple2IO | undefined;
 }
 
-export function ClipboardPaste({ io }: PasteToClipboardProps) {
+export function ClipboardPaste({ io }: ClipboardPasteProps) {
     function doPaste() {
         const asyncPaste = async function () {
             if (io) {

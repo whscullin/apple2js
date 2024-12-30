@@ -4,11 +4,11 @@ import { VideoModes } from 'js/videomodes';
 
 import styles from './css/ControlButton.module.scss';
 
-export interface CopyToClipboardProps {
+export interface ClipboardCopyProps {
     vm: VideoModes | undefined;
 }
 
-export function ClipboardCopy({ vm }: CopyToClipboardProps) {
+export function ClipboardCopy({ vm }: ClipboardCopyProps) {
     const doCopy = function () {
         const asyncCopy = async function () {
             if (vm) {
