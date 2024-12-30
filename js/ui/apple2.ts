@@ -847,6 +847,21 @@ export function openOptions() {
     optionsModal.openModal();
 }
 
+export function copy() {
+    const asyncCopy = async function () {
+        await navigator.clipboard.writeText(vm.getText());
+    };
+    void asyncCopy();
+}
+
+export function paste() {
+    const asyncPaste = async function () {
+        const text = await navigator.clipboard.readText();
+        io.setKeyBuffer(text);
+    };
+    void asyncPaste();
+}
+
 export function openPrinterModal() {
     const mimeType = 'application/octet-stream';
     const data = _printer.getRawOutput();
