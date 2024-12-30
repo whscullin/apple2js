@@ -701,6 +701,11 @@ a.button:hover {
     flex-grow: 1;
 }
 
+.spacer.short {
+    flex-grow: 0;
+    width: 16px;
+}
+
 #reset-row {
     align-items: center;
     display: flex;

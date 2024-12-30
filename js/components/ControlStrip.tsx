@@ -4,6 +4,8 @@ import { CPUMeter } from './CPUMeter';
 import { Inset } from './Inset';
 import { useHotKey } from './hooks/useHotKey';
 import { AudioControl } from './AudioControl';
+import { ClipboardCopy } from './ClipboardCopy';
+import { ClipboardPaste } from './ClipboardPaste';
 import { OptionsModal } from './OptionsModal';
 import { OptionsContext } from './OptionsContext';
 import { Printer } from './Printer';
@@ -14,8 +16,10 @@ import { JoyStick } from '../ui/joystick';
 import { Screen, SCREEN_FULL_PAGE } from '../ui/screen';
 import { System } from '../ui/system';
 
-import styles from './css/ControlStrip.module.scss';
 import Apple2IO from 'js/apple2io';
+import { VideoModes } from 'js/videomodes';
+
+import styles from './css/ControlStrip.module.scss';
 
 const README = 'https://github.com/whscullin/apple2js#readme';
 
@@ -41,6 +45,7 @@ export const ControlStrip = ({
 }: ControlStripProps) => {
     const [showOptions, setShowOptions] = useState(false);
     const [io, setIO] = useState<Apple2IO>();
+    const [vm, setVM] = useState<VideoModes>();
     const options = useContext(OptionsContext);
 
     useEffect(() => {
@@ -48,6 +53,7 @@ export const ControlStrip = ({
             const io = apple2.getIO();
             const vm = apple2.getVideoModes();
             setIO(io);
+            setVM(vm);
 
             const system = new System(io, e);
             options.addOptions(system);
@@ -94,6 +100,9 @@ export const ControlStrip = ({
                 <AudioControl apple2={apple2} />
                 <Printer io={io} slot={1} />
                 <Cassette io={io} />
+                <div style={{ flexGrow: 0, width: 16 }} />
+                <ClipboardCopy vm={vm} />
+                <ClipboardPaste io={io} />
                 <div style={{ flexGrow: 1 }} />
                 <ControlButton onClick={doReadme} title="About" icon="info" />
                 <ControlButton
