@@ -498,7 +498,7 @@ export class LoresPage2D implements LoresPage {
                     line += String.fromCharCode(charCode);
                 }
             }
-            line = line.trimRight();
+            line = line.trimEnd();
             buffer += line + '\n';
         }
         return buffer;
@@ -921,16 +921,16 @@ export class VideoModes2D implements VideoModes {
         private e: boolean
     ) {
         this._canvas = document.createElement('canvas');
+        const { width, height } = { width: 560, height: 384 };
+        this._canvas.width = width;
+        this._canvas.height = height;
+
         const context = this._canvas.getContext('2d');
         const screenContext = this.screen.getContext('2d');
         if (!context || !screenContext) {
             throw new Error('No 2d context');
         }
         this.context = context;
-
-        const { width, height } = { width: 560, height: 192 };
-        this._canvas.width = width;
-        this._canvas.height = height;
 
         this._screenContext = screenContext;
         this._screenContext.imageSmoothingEnabled = false;
@@ -1223,5 +1223,17 @@ export class VideoModes2D implements VideoModes {
 
     getText() {
         return this._grs[this.pageMode - 1].getText();
+    }
+
+    async getCanvasAsBlob() {
+        return new Promise<Blob>((resolve, reject) => {
+            this.screen.toBlob((blob) => {
+                if (blob) {
+                    resolve(blob);
+                } else {
+                    reject(new Error('Could not read canvas'));
+                }
+            });
+        });
     }
 }

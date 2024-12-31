@@ -89,6 +89,32 @@ export interface VideoModes extends Restorable<VideoModesState> {
     scanlines(on: boolean): void;
 
     getText(): string;
+    getCanvasAsBlob(): Promise<Blob>;
 
     ready: Promise<void>;
+}
+
+export async function copyScreenToClipboard(vm: VideoModes) {
+    const text = vm.getText();
+    if (typeof ClipboardItem !== 'undefined') {
+        const data: Record<string, Blob> = {};
+        if (!vm.textMode) {
+            const blob = await vm.getCanvasAsBlob();
+            data[blob.type] = blob;
+        } else {
+            const htmlBlob = new Blob([`<pre>${text}</pre>`], {
+                type: 'text/html',
+            });
+            data[htmlBlob.type] = htmlBlob;
+
+            const textBlob = new Blob([text], {
+                type: 'text/plain',
+            });
+            data[textBlob.type] = textBlob;
+        }
+
+        await navigator.clipboard.write([new ClipboardItem(data)]);
+    } else {
+        await navigator.clipboard.writeText(text);
+    }
 }
