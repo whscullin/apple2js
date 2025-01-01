@@ -1,6 +1,6 @@
 import { h } from 'preact';
 import cs from 'classnames';
-import { VideoModes } from 'js/videomodes';
+import { copyScreenToClipboard, VideoModes } from 'js/videomodes';
 
 import styles from './css/ControlButton.module.scss';
 
@@ -12,7 +12,7 @@ export function ClipboardCopy({ vm }: ClipboardCopyProps) {
     const doCopy = function () {
         const asyncCopy = async function () {
             if (vm) {
-                await navigator.clipboard.writeText(vm.getText());
+                await copyScreenToClipboard(vm);
             }
         };
         void asyncCopy();

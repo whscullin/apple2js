@@ -28,7 +28,7 @@ import { debug } from '../util';
 import { Apple2, Stats, State as Apple2State } from '../apple2';
 import DiskII from '../cards/disk2';
 import { CPU6502 } from '@whscullin/cpu6502';
-import { VideoModes } from '../videomodes';
+import { copyScreenToClipboard, VideoModes } from '../videomodes';
 import Apple2IO from '../apple2io';
 import Printer from './printer';
 
@@ -848,10 +848,7 @@ export function openOptions() {
 }
 
 export function copy() {
-    const asyncCopy = async function () {
-        await navigator.clipboard.writeText(vm.getText());
-    };
-    void asyncCopy();
+    void copyScreenToClipboard(vm);
 }
 
 export function paste() {
@@ -996,8 +993,8 @@ function onLoaded(
     };
 
     const doCopy = (event: Event) => {
-        event.clipboardData!.setData('text/plain', vm.getText());
         event.preventDefault();
+        void copyScreenToClipboard(vm);
     };
 
     window.addEventListener('paste', (event: Event) => {

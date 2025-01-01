@@ -947,4 +947,16 @@ export class VideoModesGL implements VideoModes {
     getText() {
         return this._grs[this.pageMode - 1].getText();
     }
+
+    async getCanvasAsBlob() {
+        return new Promise<Blob>((resolve, reject) => {
+            this.screen.toBlob((blob) => {
+                if (blob) {
+                    resolve(blob);
+                } else {
+                    reject(new Error('Could not read canvas'));
+                }
+            });
+        });
+    }
 }
