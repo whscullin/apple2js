@@ -4,6 +4,7 @@ import { CPU6502 } from '@whscullin/cpu6502';
 import { HiresPage, LoresPage, VideoModes, VideoPage } from 'js/videomodes';
 import Apple2eROM from '../../js/roms/system/apple2e';
 import { MemoryPages } from 'js/types';
+import RAM from 'js/ram';
 
 function newFakeMemoryPages() {
     return {} as unknown as MemoryPages;
@@ -38,6 +39,7 @@ describe('MMU', () => {
     const fakeHiResPage1 = newFakeHiresPage();
     const fakeHiResPage2 = newFakeHiresPage();
     const fakeApple2IO = {} as unknown as Apple2IO;
+    const ram = [new RAM(0x00, 0xbf), new RAM(0x00, 0xbf)];
 
     it('is constructable', () => {
         const mmu = new MMU(
@@ -48,6 +50,7 @@ describe('MMU', () => {
             fakeHiResPage1,
             fakeHiResPage2,
             fakeApple2IO,
+            ram,
             new Apple2eROM()
         );
         expect(mmu).not.toBeNull();
@@ -62,6 +65,7 @@ describe('MMU', () => {
             fakeHiResPage1,
             fakeHiResPage2,
             fakeApple2IO,
+            ram,
             new Apple2eROM()
         );
 
@@ -85,6 +89,7 @@ describe('MMU', () => {
             fakeHiResPage1,
             fakeHiResPage2,
             fakeApple2IO,
+            ram,
             new Apple2eROM()
         );
 
@@ -106,6 +111,7 @@ describe('MMU', () => {
             fakeHiResPage1,
             fakeHiResPage2,
             fakeApple2IO,
+            ram,
             new Apple2eROM()
         );
 

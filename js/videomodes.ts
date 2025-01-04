@@ -1,4 +1,4 @@
-import { MemoryPages, Restorable, memory } from './types';
+import { MemoryPages, Restorable } from './types';
 
 export type bank = 0 | 1;
 export type pageNo = 1 | 2;
@@ -10,13 +10,7 @@ export interface Region {
     right: number;
 }
 
-export interface GraphicsState {
-    buffer: memory[];
-}
-
 export interface VideoModesState {
-    grs: [gr1: GraphicsState, gr2: GraphicsState];
-    hgrs: [hgr1: GraphicsState, hgr2: GraphicsState];
     textMode: boolean;
     mixedMode: boolean;
     hiresMode: boolean;
@@ -27,7 +21,7 @@ export interface VideoModesState {
     flag: number;
 }
 
-export interface VideoPage extends MemoryPages, Restorable<GraphicsState> {
+export interface VideoPage extends MemoryPages {
     imageData: ImageData;
     dirty: Region;
 

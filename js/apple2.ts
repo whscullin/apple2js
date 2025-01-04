@@ -66,7 +66,7 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
 
     private io: Apple2IO;
     private mmu: MMU | undefined;
-    private ram: [RAM, RAM, RAM] | undefined;
+    private ram: RAM[] | undefined;
     private characterRom: rom;
     private rom: ROM;
 
@@ -113,10 +113,26 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
         this.rom = new Apple2ROM();
         this.characterRom = characterRom;
 
-        this.gr = new LoresPage(this.vm, 1, this.characterRom, options.e);
-        this.gr2 = new LoresPage(this.vm, 2, this.characterRom, options.e);
-        this.hgr = new HiresPage(this.vm, 1);
-        this.hgr2 = new HiresPage(this.vm, 2);
+        this.ram = [new RAM(0x00, 0xbf)];
+        if (options.e) {
+            this.ram.push(new RAM(0x00, 0xbf));
+        }
+        this.gr = new LoresPage(
+            this.vm,
+            1,
+            this.ram,
+            this.characterRom,
+            options.e
+        );
+        this.gr2 = new LoresPage(
+            this.vm,
+            2,
+            this.ram,
+            this.characterRom,
+            options.e
+        );
+        this.hgr = new HiresPage(this.vm, 1, this.ram);
+        this.hgr2 = new HiresPage(this.vm, 2, this.ram);
         this.io = new Apple2IO(this.cpu, this.vm);
         this.tick = options.tick;
 
@@ -129,23 +145,16 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
                 this.hgr,
                 this.hgr2,
                 this.io,
+                this.ram,
                 this.rom
             );
             this.cpu.addPageHandler(this.mmu);
         } else {
-            this.ram = [
-                new RAM(0x00, 0x03),
-                new RAM(0x0c, 0x1f),
-                new RAM(0x60, 0xbf),
-            ];
-
             this.cpu.addPageHandler(this.ram[0]);
             this.cpu.addPageHandler(this.gr);
             this.cpu.addPageHandler(this.gr2);
-            this.cpu.addPageHandler(this.ram[1]);
             this.cpu.addPageHandler(this.hgr);
             this.cpu.addPageHandler(this.hgr2);
-            this.cpu.addPageHandler(this.ram[2]);
             this.cpu.addPageHandler(this.io);
             this.cpu.addPageHandler(this.rom);
         }
