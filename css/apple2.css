@@ -828,4 +828,5 @@ a.button:hover {
     display: flex;
     justify-content: center;
     padding: 5px;
+    z-index: 1;
 }
