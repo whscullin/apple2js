@@ -1,7 +1,6 @@
 import { byte, Color, memory, MemoryPages, rom } from './types';
-import { allocMemPages } from './util';
+import RAM from './ram';
 import {
-    GraphicsState,
     HiresPage,
     LoresPage,
     Region,
@@ -106,6 +105,7 @@ export class LoresPage2D implements LoresPage {
     private _buffer: memory[] = [];
     private _refreshing = false;
     private _blink = false;
+    private _blinkInterval: ReturnType<typeof setInterval> | undefined;
 
     private highColorTextMode = false;
 
@@ -115,13 +115,16 @@ export class LoresPage2D implements LoresPage {
     constructor(
         private vm: VideoModes,
         private page: pageNo,
-        private readonly charset: rom,
+        private ram: RAM[],
+        private charset: rom,
         private readonly e: boolean
     ) {
         this.imageData = this.vm.context.createImageData(560, 192);
         this.imageData.data.fill(0xff);
-        this._buffer[0] = allocMemPages(0x4);
-        this._buffer[1] = allocMemPages(0x4);
+        const start = 0x4 * this.page;
+        const end = start + 0x4;
+        this._buffer[0] = this.ram[0].getBuffer(start, end);
+        this._buffer[1] = this.ram[1]?.getBuffer(start, end);
 
         this.vm.setLoresPage(page, this);
     }
@@ -427,7 +430,9 @@ export class LoresPage2D implements LoresPage {
     }
 
     start() {
-        setInterval(() => this.blink(), 267);
+        if (!this._blinkInterval) {
+            this._blinkInterval = setInterval(() => this.blink(), 267);
+        }
         return this._start();
     }
 
@@ -441,22 +446,6 @@ export class LoresPage2D implements LoresPage {
 
     write(page: byte, off: byte, val: byte) {
         return this._write(page, off, val, 0);
-    }
-
-    getState(): GraphicsState {
-        return {
-            buffer: [
-                new Uint8Array(this._buffer[0]),
-                new Uint8Array(this._buffer[1]),
-            ],
-        };
-    }
-
-    setState(state: GraphicsState) {
-        this._buffer[0] = new Uint8Array(state.buffer[0]);
-        this._buffer[1] = new Uint8Array(state.buffer[1]);
-
-        this.refresh();
     }
 
     private rowToBase(row: number) {
@@ -526,12 +515,16 @@ export class HiresPage2D implements HiresPage {
 
     constructor(
         private vm: VideoModes,
-        private page: pageNo
+        private page: pageNo,
+        private ram: RAM[]
     ) {
         this.imageData = this.vm.context.createImageData(560, 192);
         this.imageData.data.fill(0xff);
-        this._buffer[0] = allocMemPages(0x20);
-        this._buffer[1] = allocMemPages(0x20);
+
+        const start = 0x20 * this.page;
+        const end = start + 0x20;
+        this._buffer[0] = this.ram[0].getBuffer(start, end);
+        this._buffer[1] = this.ram[1]?.getBuffer(start, end);
 
         this.vm.setHiresPage(page, this);
     }
@@ -873,22 +866,6 @@ export class HiresPage2D implements HiresPage {
     write(page: byte, off: byte, val: byte) {
         return this._write(page, off, val, 0);
     }
-
-    getState(): GraphicsState {
-        return {
-            buffer: [
-                new Uint8Array(this._buffer[0]),
-                new Uint8Array(this._buffer[1]),
-            ],
-        };
-    }
-
-    setState(state: GraphicsState) {
-        this._buffer[0] = new Uint8Array(state.buffer[0]);
-        this._buffer[1] = new Uint8Array(state.buffer[1]);
-
-        this.refresh();
-    }
 }
 
 export class VideoModes2D implements VideoModes {
@@ -1169,8 +1146,6 @@ export class VideoModes2D implements VideoModes {
 
     getState(): VideoModesState {
         return {
-            grs: [this._grs[0].getState(), this._grs[1].getState()],
-            hgrs: [this._hgrs[0].getState(), this._hgrs[1].getState()],
             textMode: this.textMode,
             mixedMode: this.mixedMode,
             hiresMode: this.hiresMode,
@@ -1192,10 +1167,6 @@ export class VideoModes2D implements VideoModes {
         this.an3State = state.an3State;
         this.flag = state.flag;
 
-        this._grs[0].setState(state.grs[0]);
-        this._grs[1].setState(state.grs[1]);
-        this._hgrs[0].setState(state.hgrs[0]);
-        this._hgrs[1].setState(state.hgrs[1]);
         this._refresh();
     }
 

@@ -1,4 +1,4 @@
-import { CPU6502 } from '@whscullin/cpu6502';
+import { CPU6502, MemoryPages } from '@whscullin/cpu6502';
 import RAM, { RAMState } from './ram';
 import ROM, { ROMState } from './roms/rom';
 import { debug } from './util';
@@ -140,10 +140,7 @@ export interface MMUState {
     page2: boolean;
     hires: boolean;
 
-    mem00_01: [RAMState, RAMState];
-    mem02_03: [RAMState, RAMState];
-    mem0C_1F: [RAMState, RAMState];
-    mem60_BF: [RAMState, RAMState];
+    mem00_BF: [RAMState, RAMState];
     memD0_DF: [ROMState, RAMState, RAMState, RAMState, RAMState];
     memE0_FF: [ROMState, RAMState, RAMState];
 }
@@ -182,14 +179,14 @@ export default class MMU implements Memory, Restorable<MMUState> {
     private auxRom = new AuxRom(this, this.rom);
 
     // These fields represent the bank-switched memory ranges.
-    private mem00_01 = [new RAM(0x0, 0x1), new RAM(0x0, 0x1)];
-    private mem02_03 = [new RAM(0x2, 0x3), new RAM(0x2, 0x3)];
-    private mem04_07 = [this.lores1.bank0(), this.lores1.bank1()];
-    private mem08_0B = [this.lores2.bank0(), this.lores2.bank1()];
-    private mem0C_1F = [new RAM(0xc, 0x1f), new RAM(0xc, 0x1f)];
-    private mem20_3F = [this.hires1.bank0(), this.hires1.bank1()];
-    private mem40_5F = [this.hires2.bank0(), this.hires2.bank1()];
-    private mem60_BF = [new RAM(0x60, 0xbf), new RAM(0x60, 0xbf)];
+    private mem00_01: [MemoryPages, MemoryPages];
+    private mem02_03: [MemoryPages, MemoryPages];
+    private mem04_07: [MemoryPages, MemoryPages];
+    private mem08_0B: [MemoryPages, MemoryPages];
+    private mem0C_1F: [MemoryPages, MemoryPages];
+    private mem20_3F: [MemoryPages, MemoryPages];
+    private mem40_5F: [MemoryPages, MemoryPages];
+    private mem60_BF: [MemoryPages, MemoryPages];
     private memC0_C0 = [this.switches];
     private memC1_CF = [this.io, this.auxRom];
     private memD0_DF: [ROM, RAM, RAM, RAM, RAM] = [
@@ -213,8 +210,18 @@ export default class MMU implements Memory, Restorable<MMUState> {
         private readonly hires1: HiresPage,
         private readonly hires2: HiresPage,
         private readonly io: Apple2IO,
+        private readonly ram: RAM[],
         private readonly rom: ROM
     ) {
+        this.mem00_01 = [this.ram[0], this.ram[1]];
+        this.mem02_03 = [this.ram[0], this.ram[1]];
+        this.mem04_07 = [this.lores1.bank0(), this.lores1.bank1()];
+        this.mem08_0B = [this.lores2.bank0(), this.lores2.bank1()];
+        this.mem0C_1F = [this.ram[0], this.ram[1]];
+        this.mem20_3F = [this.hires1.bank0(), this.hires1.bank1()];
+        this.mem40_5F = [this.hires2.bank0(), this.hires2.bank1()];
+        this.mem60_BF = [this.ram[0], this.ram[1]];
+
         /*
          * Initialize read/write banks
          */
@@ -789,8 +796,6 @@ export default class MMU implements Memory, Restorable<MMUState> {
     }
 
     public start() {
-        this.lores1.start();
-        this.lores2.start();
         return 0x00;
     }
 
@@ -881,22 +886,7 @@ export default class MMU implements Memory, Restorable<MMUState> {
             page2: this._page2,
             hires: this._hires,
 
-            mem00_01: [
-                this.mem00_01[0].getState(),
-                this.mem00_01[1].getState(),
-            ],
-            mem02_03: [
-                this.mem02_03[0].getState(),
-                this.mem02_03[1].getState(),
-            ],
-            mem0C_1F: [
-                this.mem0C_1F[0].getState(),
-                this.mem0C_1F[1].getState(),
-            ],
-            mem60_BF: [
-                this.mem60_BF[0].getState(),
-                this.mem60_BF[1].getState(),
-            ],
+            mem00_BF: [this.ram[0].getState(), this.ram[1].getState()],
             memD0_DF: [
                 this.memD0_DF[0].getState(),
                 this.memD0_DF[1].getState(),
@@ -930,14 +920,8 @@ export default class MMU implements Memory, Restorable<MMUState> {
         this._page2 = state.page2;
         this._hires = state.hires;
 
-        this.mem00_01[0].setState(state.mem00_01[0]);
-        this.mem00_01[1].setState(state.mem00_01[1]);
-        this.mem02_03[0].setState(state.mem02_03[0]);
-        this.mem02_03[1].setState(state.mem02_03[1]);
-        this.mem0C_1F[0].setState(state.mem0C_1F[0]);
-        this.mem0C_1F[1].setState(state.mem0C_1F[1]);
-        this.mem60_BF[0].setState(state.mem60_BF[0]);
-        this.mem60_BF[1].setState(state.mem60_BF[1]);
+        this.ram[0].setState(state.mem00_BF[0]);
+        this.ram[1].setState(state.mem00_BF[1]);
         this.memD0_DF[0].setState(state.memD0_DF[0]);
         this.memD0_DF[1].setState(state.memD0_DF[1]);
         this.memD0_DF[2].setState(state.memD0_DF[2]);

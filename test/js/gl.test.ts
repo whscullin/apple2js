@@ -1,6 +1,7 @@
 /** @jest-environment jsdom */
 /** @fileoverview Test for canvas.ts. */
 
+import RAM from 'js/ram';
 import { VideoPage } from 'js/videomodes';
 import { LoresPageGL, HiresPageGL, VideoModesGL } from 'js/gl';
 import apple2enh_char from 'js/roms/character/apple2enh_char';
@@ -17,12 +18,14 @@ describe('gl', () => {
         let canvas: HTMLCanvasElement;
         let lores1: LoresPageGL;
         let vm: VideoModesGL;
+        let ram: RAM[];
 
         beforeEach(async () => {
             canvas = document.createElement('canvas');
             vm = new VideoModesGL(canvas, true);
             await vm.ready;
-            lores1 = new LoresPageGL(vm, 1, apple2enh_char, true);
+            ram = [new RAM(0x00, 0xbf), new RAM(0x00, 0xbf)];
+            lores1 = new LoresPageGL(vm, 1, ram, apple2enh_char, true);
             vm.reset();
             vm.hires(false);
         });
@@ -153,11 +156,14 @@ describe('gl', () => {
         let canvas: HTMLCanvasElement;
         let hires1: HiresPageGL;
         let vm: VideoModesGL;
+        let ram: RAM[];
 
-        beforeEach(() => {
+        beforeEach(async () => {
             canvas = document.createElement('canvas');
             vm = new VideoModesGL(canvas, true);
-            hires1 = new HiresPageGL(vm, 1);
+            await vm.ready;
+            ram = [new RAM(0x00, 0xbf), new RAM(0x00, 0xbf)];
+            hires1 = new HiresPageGL(vm, 1, ram);
             vm.reset();
             vm.hires(true);
         });

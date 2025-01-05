@@ -47,4 +47,11 @@ export default class RAM implements Memory, Restorable<RAMState> {
     public setState(state: RAMState) {
         this.mem = new Uint8Array(state.mem);
     }
+
+    public getBuffer(start: byte, end: byte): memory {
+        return this.mem.subarray(
+            start << (8 - this.start_page),
+            end << (8 - this.start_page)
+        );
+    }
 }

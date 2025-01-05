@@ -5,6 +5,7 @@ import { VideoPage } from 'js/videomodes';
 import { LoresPage2D, HiresPage2D, VideoModes2D } from 'js/canvas';
 import apple2enh_char from 'js/roms/character/apple2enh_char';
 import { createImageFromImageData } from 'test/util/image';
+import RAM from 'js/ram';
 
 function checkImageData(page: VideoPage) {
     page.refresh();
@@ -17,11 +18,13 @@ describe('canvas', () => {
         let canvas: HTMLCanvasElement;
         let lores1: LoresPage2D;
         let vm: VideoModes2D;
+        let ram: RAM[];
 
         beforeEach(() => {
             canvas = document.createElement('canvas');
             vm = new VideoModes2D(canvas, true);
-            lores1 = new LoresPage2D(vm, 1, apple2enh_char, true);
+            ram = [new RAM(0x00, 0xbf), new RAM(0x00, 0xbf)];
+            lores1 = new LoresPage2D(vm, 1, ram, apple2enh_char, true);
             vm.reset();
             vm.hires(false);
         });
@@ -183,11 +186,13 @@ describe('canvas', () => {
         let canvas: HTMLCanvasElement;
         let hires1: HiresPage2D;
         let vm: VideoModes2D;
+        let ram: RAM[];
 
         beforeEach(() => {
             canvas = document.createElement('canvas');
             vm = new VideoModes2D(canvas, true);
-            hires1 = new HiresPage2D(vm, 1);
+            ram = [new RAM(0x00, 0xbf), new RAM(0x00, 0xbf)];
+            hires1 = new HiresPage2D(vm, 1, ram);
             vm.reset();
             vm.hires(true);
         });

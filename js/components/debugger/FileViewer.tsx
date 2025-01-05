@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { Modal, ModalContent, ModalFooter } from '../Modal';
 
 import styles from './css/FileViewer.module.scss';
+import RAM from 'js/ram';
 
 /**
  * Binary and text representation of file to be previewed
@@ -39,8 +40,14 @@ const HiresPreview = ({ binary }: { binary: Uint8Array }) => {
 
     if (canvasRef.current) {
         const vm = new VideoModes2D(canvasRef.current, true);
-        const lores = new LoresPage2D(vm, 1, new Uint8Array(), false);
-        const hires = new HiresPage2D(vm, 1);
+        const lores = new LoresPage2D(
+            vm,
+            1,
+            [new RAM(0x4, 0x8)],
+            new Uint8Array(),
+            false
+        );
+        const hires = new HiresPage2D(vm, 1, [new RAM(0x2, 0x4)]);
         vm.setLoresPage(1, lores);
         vm.setHiresPage(1, hires);
         vm.text(false);
@@ -80,8 +87,17 @@ const DoubleHiresPreview = ({ binary }: { binary: Uint8Array }) => {
 
     if (canvasRef.current) {
         const vm = new VideoModes2D(canvasRef.current, true);
-        const lores = new LoresPage2D(vm, 1, new Uint8Array(), false);
-        const hires = new HiresPage2D(vm, 1);
+        const lores = new LoresPage2D(
+            vm,
+            1,
+            [new RAM(0x2, 0x4), new RAM(0x2, 0x4)],
+            new Uint8Array(),
+            false
+        );
+        const hires = new HiresPage2D(vm, 1, [
+            new RAM(0x02, 0x04),
+            new RAM(0x02, 0x04),
+        ]);
         vm.setLoresPage(1, lores);
         vm.setHiresPage(1, hires);
         vm.text(false);
