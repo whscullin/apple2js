@@ -1,5 +1,5 @@
 import { h, Fragment } from 'preact';
-import { useMemo } from 'preact/hooks';
+import { useEffect, useMemo } from 'preact/hooks';
 import cs from 'classnames';
 import { Apple2 as Apple2Impl } from 'js/apple2';
 import {
@@ -54,7 +54,7 @@ const formatDate = (date: Date) => {
  * @returns true if is BlockDisk
  */
 function isBlockDisk(disk: FloppyDisk | BlockDisk): disk is BlockDisk {
-    return !!(disk as BlockDisk).blocks;
+    return !!(disk as BlockDisk).blockCount;
 }
 
 /**
@@ -77,16 +77,20 @@ interface FileListingProps {
 const FileListing = ({ depth, fileEntry, setFileData }: FileListingProps) => {
     const deleted = fileEntry.storageType === STORAGE_TYPES.DELETED;
     const doSetFileData = useCallback(() => {
-        const binary = fileEntry.getFileData();
-        const text = fileEntry.getFileText();
-        if (binary && text) {
-            setFileData({
-                binary,
-                text,
-                fileName: fileEntry.name,
-            });
-        }
+        const getData = async () => {
+            const binary = await fileEntry.getFileData();
+            const text = await fileEntry.getFileText();
+            if (binary && text) {
+                setFileData({
+                    binary,
+                    text,
+                    fileName: fileEntry.name,
+                });
+            }
+        };
+        void getData();
     }, [fileEntry, setFileData]);
+
     return (
         <tr>
             <td
@@ -265,6 +269,12 @@ const Catalog = ({ dos, setFileData }: CatalogProps) => {
     );
 };
 
+interface ProDOSData {
+    prodos: ProDOSVolume;
+    freeCount: number;
+    vdh: VDH;
+}
+
 /**
  * Props for DiskInfo component
  */
@@ -286,97 +296,101 @@ interface DiskInfoProps {
  * @returns DiskInfo component
  */
 const DiskInfo = ({ massStorage, driveNo, setFileData }: DiskInfoProps) => {
-    const disk = useMemo(() => {
-        const massStorageData = massStorage.getBinary(driveNo, 'po');
-        if (massStorageData) {
-            const { data, readOnly, ext } = massStorageData;
-            const { name } = massStorageData.metadata;
-            let disk: BlockDisk | FloppyDisk | null = null;
-            if (ext === '2mg') {
-                disk = createDiskFrom2MG({
-                    name,
-                    rawData: data,
-                    readOnly,
-                    volume: 254,
-                });
-            } else if (data.byteLength < 800 * 1024) {
-                const doData = massStorage.getBinary(driveNo, 'do');
-                if (doData) {
-                    if (isMaybeDOS33(doData)) {
-                        disk = createDiskFromDOS({
-                            name,
-                            rawData: doData.data,
-                            readOnly,
-                            volume: 254,
-                        });
+    const [disk, setDisk] = useState<BlockDisk | FloppyDisk | null>();
+    const [proDOSData, setProDOSData] = useState<ProDOSData>();
+    useEffect(() => {
+        const load = async () => {
+            const massStorageData = await massStorage.getBinary(driveNo, 'po');
+            if (massStorageData) {
+                const { data, readOnly, ext } = massStorageData;
+                const { name } = massStorageData.metadata;
+                let disk: BlockDisk | FloppyDisk | null = null;
+                if (ext === '2mg') {
+                    disk = createDiskFrom2MG({
+                        name,
+                        rawData: data,
+                        readOnly,
+                        volume: 254,
+                    });
+                } else if (data.byteLength < 800 * 1024) {
+                    const doData = await massStorage.getBinary(driveNo, 'do');
+                    if (doData) {
+                        if (isMaybeDOS33(doData)) {
+                            disk = createDiskFromDOS({
+                                name,
+                                rawData: doData.data,
+                                readOnly,
+                                volume: 254,
+                            });
+                        }
                     }
                 }
+                if (!disk && isBlockDiskFormat(ext)) {
+                    disk = createBlockDisk(ext, {
+                        name,
+                        rawData: data,
+                        readOnly,
+                        volume: 254,
+                    });
+                }
+                if (disk && isBlockDisk(disk)) {
+                    const prodos = new ProDOSVolume(disk);
+                    const vdh = await prodos.vdh();
+                    const bitMap = await prodos.bitMap();
+                    const freeBlocks = await bitMap.freeBlocks();
+                    const freeCount = freeBlocks.length;
+                    setProDOSData({ freeCount, prodos, vdh });
+                }
+                setDisk(disk);
             }
-            if (!disk && isBlockDiskFormat(ext)) {
-                disk = createBlockDisk(ext, {
-                    name,
-                    rawData: data,
-                    readOnly,
-                    volume: 254,
-                });
-            }
-            return disk;
-        }
-        return null;
+            return null;
+        };
+        void load();
     }, [massStorage, driveNo]);
 
     if (disk) {
         try {
-            if (isBlockDisk(disk)) {
-                if (disk.blocks.length) {
-                    const prodos = new ProDOSVolume(disk);
-                    const { totalBlocks } = prodos.vdh();
-                    const freeCount = prodos.bitMap().freeBlocks().length;
-                    const usedCount = totalBlocks - freeCount;
-                    return (
-                        <div className={styles.volume}>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th className={styles.filename}>
-                                            Filename
-                                        </th>
-                                        <th className={styles.type}>Type</th>
-                                        <th className={styles.aux}>Aux</th>
-                                        <th className={styles.blocks}>
-                                            Blocks
-                                        </th>
-                                        <th className={styles.created}>
-                                            Created
-                                        </th>
-                                        <th className={styles.modified}>
-                                            Modified
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <DirectoryListing
-                                        depth={0}
-                                        volume={prodos}
-                                        dirEntry={prodos.vdh()}
-                                        setFileData={setFileData}
-                                    />
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td colSpan={1}>
-                                            Blocks Free: {freeCount}
-                                        </td>
-                                        <td colSpan={3}>Used: {usedCount}</td>
-                                        <td colSpan={2}>
-                                            Total: {totalBlocks}
-                                        </td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    );
-                }
+            if (proDOSData) {
+                const { totalBlocks } = proDOSData.vdh;
+                const freeCount = proDOSData.freeCount;
+                const usedCount = totalBlocks - freeCount;
+                return (
+                    <div className={styles.volume}>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th className={styles.filename}>
+                                        Filename
+                                    </th>
+                                    <th className={styles.type}>Type</th>
+                                    <th className={styles.aux}>Aux</th>
+                                    <th className={styles.blocks}>Blocks</th>
+                                    <th className={styles.created}>Created</th>
+                                    <th className={styles.modified}>
+                                        Modified
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <DirectoryListing
+                                    depth={0}
+                                    volume={proDOSData.prodos}
+                                    dirEntry={proDOSData.vdh}
+                                    setFileData={setFileData}
+                                />
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colSpan={1}>
+                                        Blocks Free: {freeCount}
+                                    </td>
+                                    <td colSpan={3}>Used: {usedCount}</td>
+                                    <td colSpan={2}>Total: {totalBlocks}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                );
             } else if (isNibbleDisk(disk)) {
                 const dos = new DOS33(disk);
                 return (

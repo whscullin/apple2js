@@ -86,6 +86,8 @@ export interface VideoModes extends Restorable<VideoModesState> {
     getCanvasAsBlob(): Promise<Blob>;
 
     ready: Promise<void>;
+
+    getState(): VideoModesState;
 }
 
 export async function copyScreenToClipboard(vm: VideoModes) {

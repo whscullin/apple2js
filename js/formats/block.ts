@@ -1,4 +1,4 @@
-import { DiskOptions, BlockDisk, ENCODING_BLOCK, BlockFormat } from './types';
+import { DiskOptions, BlockDisk, BlockFormat, MemoryBlockDisk } from './types';
 
 /**
  * Returns a `Disk` object for a block volume with block-ordered data.
@@ -21,13 +21,12 @@ export default function createBlockDisk(
         offset += 0x200;
     }
 
-    const disk: BlockDisk = {
-        encoding: ENCODING_BLOCK,
-        format: fmt,
-        blocks,
-        metadata: { name },
+    const disk: BlockDisk = new MemoryBlockDisk(
+        fmt,
+        { name },
         readOnly,
-    };
+        blocks
+    );
 
     return disk;
 }

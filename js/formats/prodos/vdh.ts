@@ -30,8 +30,6 @@ export const VDH_OFFSETS = {
 } as const;
 
 export class VDH {
-    private blocks: Uint8Array[];
-
     prev: word = 0;
     next: word = 0;
     storageType: byte = STORAGE_TYPES.VDH_HEADER;
@@ -45,12 +43,11 @@ export class VDH {
     totalBlocks: word = 0;
     entries: FileEntry[] = [];
 
-    constructor(private volume: ProDOSVolume) {
-        this.blocks = this.volume.blocks();
-    }
+    constructor(private volume: ProDOSVolume) {}
 
-    read() {
-        const block = new DataView(this.blocks[VDH_BLOCK].buffer);
+    async read() {
+        const vdhBlock = await this.volume.disk().read(VDH_BLOCK);
+        const block = new DataView(vdhBlock.buffer);
 
         this.next = block.getUint16(VDH_OFFSETS.NEXT, true);
         this.storageType = block.getUint8(VDH_OFFSETS.STORAGE_TYPE) >> 4;
@@ -72,11 +69,12 @@ export class VDH {
         this.bitMapPointer = block.getUint16(VDH_OFFSETS.BIT_MAP_POINTER, true);
         this.totalBlocks = block.getUint16(VDH_OFFSETS.TOTAL_BLOCKS, true);
 
-        this.entries = readEntries(this.volume, block, this);
+        this.entries = await readEntries(this.volume, block, this);
     }
 
-    write() {
-        const block = new DataView(this.blocks[VDH_BLOCK].buffer);
+    async write() {
+        const vdhBlock = await this.volume.disk().read(VDH_BLOCK);
+        const block = new DataView(vdhBlock.buffer);
 
         const nameLength = this.name.length & 0x0f;
         block.setUint8(
@@ -101,6 +99,6 @@ export class VDH {
         block.setUint16(VDH_OFFSETS.BIT_MAP_POINTER, this.bitMapPointer, true);
         block.setUint16(VDH_OFFSETS.TOTAL_BLOCKS, this.totalBlocks, true);
 
-        writeEntries(this.volume, block, this);
+        await writeEntries(this.volume, block, this);
     }
 }

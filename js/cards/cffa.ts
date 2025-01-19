@@ -1,4 +1,4 @@
-import type { byte, Card, Restorable } from '../types';
+import type { byte, Card, Restorable, word } from '../types';
 import { debug, toHex } from '../util';
 import { rom as readOnlyRom } from '../roms/cards/cffa';
 import {
@@ -10,9 +10,11 @@ import createBlockDisk from '../formats/block';
 import {
     BlockDisk,
     BlockFormat,
-    ENCODING_BLOCK,
+    Disk,
+    DRIVE_NUMBERS,
     MassStorage,
     MassStorageData,
+    MemoryBlockDisk,
 } from 'js/formats/types';
 
 const rom = new Uint8Array(readOnlyRom);
@@ -84,8 +86,14 @@ const IDENTITY = {
     SectorCountHigh: 57,
 };
 
+export interface CFFADiskState {
+    disk: Disk;
+    format: BlockFormat;
+    blocks: Uint8Array[];
+}
+
 export interface CFFAState {
-    disks: Array<BlockDisk | null>;
+    disks: Array<CFFADiskState | null>;
 }
 
 export default class CFFA
@@ -113,16 +121,20 @@ export default class CFFA
 
     // Current Sector
 
-    private _curSector: Uint16Array | number[];
+    private _curSector: Uint16Array = new Uint16Array(512);
     private _curWord = 0;
 
     // ATA Status registers
 
+    private _status = STATUS.BSY;
     private _interruptsEnabled = false;
     private _altStatus = 0;
     private _error = 0;
 
-    private _identity: number[][] = [[], []];
+    private _identity: Uint16Array[] = [
+        new Uint16Array(512),
+        new Uint16Array(512),
+    ];
 
     // Disk data
 
@@ -133,13 +145,7 @@ export default class CFFA
         null,
     ];
 
-    private _sectors: Uint16Array[][] = [
-        // Drive 1
-        [],
-        // Drive 2
-        [],
-    ];
-
+    private _sectors: Uint16Array[][] = [[], []];
     private _name: string[] = [];
     private _metadata: Array<HeaderData | null> = [];
 
@@ -191,16 +197,23 @@ export default class CFFA
 
     // Dump sector as hex and ascii
 
-    private _dumpSector(sector: number) {
-        if (sector >= this._sectors[this._drive].length) {
+    private async _dumpSector(sector: number) {
+        const partition = this._partitions[this._drive];
+        if (!partition) {
+            this._debug('dump sector volume not mounted');
+            return;
+        }
+        const blockCount = await partition.blockCount();
+        if (sector >= blockCount) {
             this._debug('dump sector out of range', sector);
             return;
         }
+        const readSector = await partition.read(sector);
         for (let idx = 0; idx < 16; idx++) {
             const row = [];
             const charRow = [];
             for (let jdx = 0; jdx < 16; jdx++) {
-                const val = this._sectors[this._drive][sector][idx * 16 + jdx];
+                const val = readSector[idx * 16 + jdx];
                 row.push(toHex(val, 4));
                 const low = val & 0x7f;
                 const hi = (val >> 8) & 0x7f;
@@ -211,12 +224,38 @@ export default class CFFA
         }
     }
 
+    private async readSector(sector: number): Promise<Uint16Array> {
+        const partition = this._partitions[this._drive];
+        if (!partition) {
+            throw new Error('readSector no partition');
+        }
+        if (this._sectors[this._drive][sector] === undefined) {
+            const readSector = await partition.read(sector);
+            this._sectors[this._drive][sector] = new Uint16Array(
+                readSector.buffer
+            );
+        }
+        return this._sectors[this._drive][sector];
+    }
+
+    private handleAsync(fn: () => Promise<number>) {
+        this._status = STATUS.BSY;
+        fn()
+            .then((status) => {
+                this._status = status;
+            })
+            .catch((error) => {
+                this._status = STATUS.ERR;
+                console.error(error);
+            });
+    }
+
     // Card I/O access
 
     private _access(off: byte, val: byte) {
         const readMode = val === undefined;
-        let retVal;
-        let sector;
+        let retVal: byte | undefined = undefined;
+        let sector: word;
 
         if (readMode) {
             retVal = 0;
@@ -269,10 +308,7 @@ export default class CFFA
                         0xa0;
                     break;
                 case LOC.ATAStatus: // 0x0F
-                    retVal =
-                        this._sectors[this._drive].length > 0
-                            ? STATUS.DRDY | STATUS.DSC
-                            : 0;
+                    retVal = this._status;
                     this._debug('returning status', this._statusString(retVal));
                     break;
                 default:
@@ -358,7 +394,7 @@ export default class CFFA
                         (this._cylinderH << 16) |
                         (this._cylinder << 8) |
                         this._sector;
-                    this._dumpSector(sector);
+                    void this._dumpSector(sector);
 
                     switch (val) {
                         case COMMANDS.ATAIdentify:
@@ -367,29 +403,41 @@ export default class CFFA
                             this._curWord = 0;
                             break;
                         case COMMANDS.ATACRead:
-                            this._debug(
-                                'ATA read sector',
-                                toHex(this._cylinderH),
-                                toHex(this._cylinder),
-                                toHex(this._sector),
-                                sector
-                            );
-                            this._curSector =
-                                this._sectors[this._drive][sector];
-                            this._curWord = 0;
+                            this.handleAsync(async () => {
+                                const partition = this._partitions[this._drive];
+                                if (!partition) {
+                                    return STATUS.ERR;
+                                }
+                                this._debug(
+                                    'ATA read sector',
+                                    toHex(this._cylinderH),
+                                    toHex(this._cylinder),
+                                    toHex(this._sector),
+                                    sector
+                                );
+                                this._curSector = await this.readSector(sector);
+                                return STATUS.DSC;
+                            });
                             break;
                         case COMMANDS.ATACWrite:
-                            this._debug(
-                                'ATA write sector',
-                                toHex(this._cylinderH),
-                                toHex(this._cylinder),
-                                toHex(this._sector),
-                                sector
-                            );
-                            this._curSector =
-                                this._sectors[this._drive][sector];
-                            this._curWord = 0;
+                            this.handleAsync(async () => {
+                                const partition = this._partitions[this._drive];
+                                if (!partition) {
+                                    return STATUS.ERR;
+                                }
+                                this._debug(
+                                    'ATA write sector',
+                                    toHex(this._cylinderH),
+                                    toHex(this._cylinder),
+                                    toHex(this._sector),
+                                    sector
+                                );
+                                this._curSector = await this.readSector(sector);
+                                this._curWord = 0;
+                                return STATUS.DSC;
+                            });
                             break;
+
                         default:
                             debug('unknown command', toHex(val));
                     }
@@ -417,40 +465,56 @@ export default class CFFA
         }
     }
 
-    getState() {
-        return {
-            disks: this._partitions.map((disk) => {
-                let result: BlockDisk | null = null;
+    async getState() {
+        const disks = [];
+        for (let diskNo = 0; diskNo < 2; diskNo++) {
+            const diskState = async (disk: BlockDisk | null) => {
+                let result: CFFADiskState | null = null;
                 if (disk) {
+                    const blocks = [];
+                    const blockCount = await disk.blockCount();
+                    for (let idx = 0; idx < blockCount; idx++) {
+                        blocks.push(await disk.read(idx));
+                    }
                     result = {
-                        blocks: disk.blocks.map(
-                            (block) => new Uint8Array(block)
-                        ),
-                        encoding: ENCODING_BLOCK,
+                        blocks,
                         format: disk.format,
-                        readOnly: disk.readOnly,
-                        metadata: { ...disk.metadata },
+                        disk: {
+                            readOnly: disk.readOnly,
+                            metadata: { ...disk.metadata },
+                        },
                     };
                 }
                 return result;
-            }),
+            };
+            const disk = this._partitions[diskNo];
+            disks[diskNo] = await diskState(disk);
+        }
+        return {
+            disks,
         };
     }
 
-    setState(state: CFFAState) {
-        state.disks.forEach((disk, idx) => {
-            if (disk) {
-                this.setBlockVolume(idx + 1, disk);
+    async setState(state: CFFAState) {
+        for (const idx of DRIVE_NUMBERS) {
+            const diskState = state.disks[idx];
+            if (diskState) {
+                const disk = new MemoryBlockDisk(
+                    diskState.format,
+                    diskState.disk.metadata,
+                    diskState.disk.readOnly,
+                    diskState.blocks
+                );
+                await this.setBlockVolume(idx, disk);
             } else {
-                this.resetBlockVolume(idx + 1);
+                this.resetBlockVolume(idx);
             }
-        });
+        }
     }
 
     resetBlockVolume(drive: number) {
         drive = drive - 1;
 
-        this._sectors[drive] = [];
         this._name[drive] = '';
         this._metadata[drive] = null;
 
@@ -464,18 +528,16 @@ export default class CFFA
         }
     }
 
-    setBlockVolume(drive: number, disk: BlockDisk) {
+    async setBlockVolume(drive: number, disk: BlockDisk): Promise<void> {
         drive = drive - 1;
+        const partition = this._partitions[drive];
+        if (!partition) {
+            return;
+        }
 
-        // Convert 512 byte blocks into 256 word sectors
-        this._sectors[drive] = disk.blocks.map(function (block) {
-            return new Uint16Array(block.buffer);
-        });
-
-        this._identity[drive][IDENTITY.SectorCountHigh] =
-            this._sectors[0].length & 0xffff;
-        this._identity[drive][IDENTITY.SectorCountLow] =
-            this._sectors[0].length >> 16;
+        const blockCount = await partition.blockCount();
+        this._identity[drive][IDENTITY.SectorCountHigh] = blockCount & 0xffff;
+        this._identity[drive][IDENTITY.SectorCountLow] = blockCount >> 16;
 
         this._name[drive] = disk.metadata.name;
         this._partitions[drive] = disk;
@@ -485,7 +547,6 @@ export default class CFFA
         } else {
             rom[SETTINGS.Max32MBPartitionsDev0] = 0x1;
         }
-        return true;
     }
 
     // Assign a raw disk image to a drive. Must be 2mg or raw PO image.
@@ -493,13 +554,13 @@ export default class CFFA
     setBinary(
         drive: number,
         name: string,
-        ext: BlockFormat,
+        format: BlockFormat,
         rawData: ArrayBuffer
-    ) {
+    ): Promise<void> {
         const volume = 254;
         const readOnly = false;
 
-        if (ext === '2mg') {
+        if (format === '2mg') {
             const headerData = read2MGHeader(rawData);
             const { bytes, offset } = headerData;
             this._metadata[drive - 1] = headerData;
@@ -513,29 +574,33 @@ export default class CFFA
             volume,
             readOnly,
         };
-        const disk = createBlockDisk(ext, options);
+        const disk = createBlockDisk(format, options);
 
         return this.setBlockVolume(drive, disk);
     }
 
-    getBinary(drive: number): MassStorageData | null {
+    async getBinary(drive: number): Promise<MassStorageData | null> {
         drive = drive - 1;
         const blockDisk = this._partitions[drive];
         if (!blockDisk) {
             return null;
         }
-        const { blocks, readOnly } = blockDisk;
+        const { readOnly } = blockDisk;
         const { name } = blockDisk.metadata;
         let ext: '2mg' | 'po';
         let data: ArrayBuffer;
         if (this._metadata[drive]) {
             ext = '2mg';
-            data = create2MGFromBlockDisk(this._metadata[drive - 1], blockDisk);
+            data = await create2MGFromBlockDisk(
+                this._metadata[drive - 1],
+                blockDisk
+            );
         } else {
             ext = 'po';
-            const dataArray = new Uint8Array(blocks.length * 512);
-            for (let idx = 0; idx < blocks.length; idx++) {
-                dataArray.set(blocks[idx], idx * 512);
+            const blockCount = await blockDisk.blockCount();
+            const dataArray = new Uint8Array(blockCount * 512);
+            for (let idx = 0; idx < blockCount; idx++) {
+                dataArray.set(await blockDisk.read(idx), idx * 512);
             }
             data = dataArray.buffer;
         }

@@ -106,8 +106,8 @@ export function dumpDirectory(
     return str;
 }
 
-export function dump(volume: ProDOSVolume) {
-    const vdh = volume.vdh();
+export async function dump(volume: ProDOSVolume) {
+    const vdh = await volume.vdh();
     let str = vdh.name;
     for (let idx = 0; idx < vdh.entries.length; idx++) {
         const fileEntry = vdh.entries[idx];

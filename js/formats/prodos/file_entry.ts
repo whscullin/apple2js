@@ -158,7 +158,7 @@ export class FileEntry {
         );
     }
 
-    getFileData() {
+    async getFileData() {
         let file: ProDOSFile | null = null;
 
         switch (this.storageType) {
@@ -178,8 +178,8 @@ export class FileEntry {
         }
     }
 
-    getFileText() {
-        const data = this.getFileData();
+    async getFileText() {
+        const data = await this.getFileData();
         let result: string | null = null;
         let address = 0;
 
@@ -218,12 +218,11 @@ export class FileEntry {
     }
 }
 
-export function readEntries(
+export async function readEntries(
     volume: ProDOSVolume,
     block: DataView,
     header: VDH | Directory
 ) {
-    const blocks = volume.blocks();
     const entries = [];
     let offset = header.entryLength + 0x4;
     let count = 2;
@@ -239,7 +238,8 @@ export function readEntries(
         offset += header.entryLength;
         count++;
         if (count > header.entriesPerBlock) {
-            block = new DataView(blocks[next].buffer);
+            const readBlock = await volume.disk().read(next);
+            block = new DataView(readBlock.buffer);
             next = block.getUint16(0x02, true);
             offset = 0x4;
             count = 1;
@@ -249,13 +249,12 @@ export function readEntries(
     return entries;
 }
 
-export function writeEntries(
+export async function writeEntries(
     volume: ProDOSVolume,
     block: DataView,
     header: VDH | Directory
 ) {
-    const blocks = volume.blocks();
-    const bitMap = volume.bitMap();
+    const bitMap = await volume.bitMap();
     let offset = header.entryLength + 0x4;
     let count = 2;
     let next = header.next;
@@ -268,9 +267,10 @@ export function writeEntries(
         if (count >= header.entriesPerBlock) {
             const prev = next;
             if (!next) {
-                next = bitMap.allocBlock();
+                next = await bitMap.allocBlock();
             }
-            block = new DataView(blocks[next].buffer);
+            const readBlock = await volume.disk().read(next);
+            block = new DataView(readBlock.buffer);
             block.setUint16(0x00, prev, true);
             next = block.getUint16(0x02, true);
             offset = 0x4;
@@ -280,8 +280,9 @@ export function writeEntries(
     next = block.getUint16(0x02, true);
     block.setUint16(0x02, 0, true);
     while (next) {
-        block = new DataView(blocks[next].buffer);
-        bitMap.freeBlock(next);
+        const readBlock = await volume.disk().read(next);
+        block = new DataView(readBlock.buffer);
+        await bitMap.freeBlock(next);
         next = block.getUint16(0x02, true);
     }
 }

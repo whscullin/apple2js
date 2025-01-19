@@ -119,30 +119,36 @@ export function openLoad(driveString: string, event: MouseEvent) {
 }
 
 export function openSave(driveString: string, event: MouseEvent) {
-    const driveNo = parseInt(driveString, 10) as DriveNumber;
+    _disk2
+        .getBinary(driveNo)
+        .then((storageData) => {
+            const driveNo = parseInt(driveString, 10) as DriveNumber;
 
-    const mimeType = 'application/octet-stream';
-    const storageData = _disk2.getBinary(driveNo);
-    const a = document.querySelector<HTMLAnchorElement>('#local_save_link')!;
+            const mimeType = 'application/octet-stream';
 
-    if (!storageData) {
-        alert(`No data from drive ${driveNo}`);
-        return;
-    }
+            const a =
+                document.querySelector<HTMLAnchorElement>('#local_save_link')!;
 
-    const { data } = storageData;
-    const blob = new Blob([data], { type: mimeType });
-    a.href = window.URL.createObjectURL(blob);
-    a.download = driveLights.label(driveNo) + '.dsk';
+            if (!storageData) {
+                alert(`No data from drive ${driveNo}`);
+                return;
+            }
 
-    if (event.metaKey) {
-        dumpDisk(driveNo);
-    } else {
-        const saveName =
-            document.querySelector<HTMLInputElement>('#save_name')!;
-        saveName.value = driveLights.label(driveNo);
-        MicroModal.show('save-modal');
-    }
+            const { data } = storageData;
+            const blob = new Blob([data], { type: mimeType });
+            a.href = window.URL.createObjectURL(blob);
+            a.download = driveLights.label(driveNo) + '.dsk';
+
+            if (event.metaKey) {
+                dumpDisk(driveNo);
+            } else {
+                const saveName =
+                    document.querySelector<HTMLInputElement>('#save_name')!;
+                saveName.value = driveLights.label(driveNo);
+                MicroModal.show('save-modal');
+            }
+        })
+        .catch((error) => console.error(error));
 }
 
 export function openAlert(msg: string) {
@@ -402,20 +408,26 @@ function doLoadLocalDisk(driveNo: DriveNumber, file: File) {
 
         if (includes(DISK_FORMATS, ext)) {
             if (result.byteLength >= 800 * 1024) {
-                if (
-                    includes(BLOCK_FORMATS, ext) &&
-                    _massStorage.setBinary(driveNo, name, ext, result)
-                ) {
-                    initGamepad();
+                if (includes(BLOCK_FORMATS, ext)) {
+                    _massStorage
+                        .setBinary(driveNo, name, ext, result)
+                        .then(() => initGamepad())
+                        .catch((error) => {
+                            console.error(error);
+                            openAlert(`Unable to load ${name}`);
+                        });
                 } else {
                     openAlert(`Unable to load ${name}`);
                 }
             } else {
-                if (
-                    includes(FLOPPY_FORMATS, ext) &&
-                    _disk2.setBinary(driveNo, name, ext, result)
-                ) {
-                    initGamepad();
+                if (includes(FLOPPY_FORMATS, ext)) {
+                    _disk2
+                        .setBinary(driveNo, name, ext, result)
+                        .then(() => initGamepad())
+                        .catch((error) => {
+                            console.error(error);
+                            openAlert(`Unable to load ${name}`);
+                        });
                 } else {
                     openAlert(`Unable to load ${name}`);
                 }
@@ -488,15 +500,23 @@ export function doLoadHTTP(driveNo: DriveNumber, url?: string) {
                 if (includes(DISK_FORMATS, ext)) {
                     if (data.byteLength >= 800 * 1024) {
                         if (includes(BLOCK_FORMATS, ext)) {
-                            _massStorage.setBinary(driveNo, name, ext, data);
-                            initGamepad();
+                            _massStorage
+                                .setBinary(driveNo, name, ext, data)
+                                .then(() => initGamepad())
+                                .catch((error) => {
+                                    console.error(error);
+                                    openAlert(`Unable to load ${name}`);
+                                });
                         }
                     } else {
-                        if (
-                            includes(FLOPPY_FORMATS, ext) &&
-                            _disk2.setBinary(driveNo, name, ext, data)
-                        ) {
-                            initGamepad();
+                        if (includes(FLOPPY_FORMATS, ext)) {
+                            _disk2
+                                .setBinary(driveNo, name, ext, data)
+                                .then(() => initGamepad())
+                                .catch((error) => {
+                                    console.error(error);
+                                    openAlert(`Unable to load ${name}`);
+                                });
                         }
                     }
                 } else {

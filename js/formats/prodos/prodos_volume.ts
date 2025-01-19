@@ -3,8 +3,8 @@ import { BitMap } from './bit_map';
 import { BlockDisk } from '../types';
 
 export class ProDOSVolume {
-    _vdh: VDH;
-    _bitMap: BitMap;
+    private _vdh: VDH;
+    private _bitMap: BitMap;
 
     constructor(private _disk: BlockDisk) {}
 
@@ -12,19 +12,15 @@ export class ProDOSVolume {
         return this._disk;
     }
 
-    blocks() {
-        return this._disk.blocks;
-    }
-
-    vdh() {
+    async vdh() {
         if (!this._vdh) {
             this._vdh = new VDH(this);
-            this._vdh.read();
+            await this._vdh.read();
         }
         return this._vdh;
     }
 
-    bitMap() {
+    async bitMap() {
         if (!this._bitMap) {
             this._bitMap = new BitMap(this);
         }

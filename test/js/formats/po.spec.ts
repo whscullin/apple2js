@@ -268,14 +268,15 @@ describe('ProDOS format', () => {
             expect(disk.encoding).toEqual('block');
         });
 
-        it('has the correct block size', () => {
-            expect(disk.blocks).toHaveLength(BLOCK_COUNT);
+        it('has the correct block size', async () => {
+            expect(await disk.blockCount()).toEqual(BLOCK_COUNT);
         });
 
-        it('Has the correct block data', () => {
+        it('Has the correct block data', async () => {
             for (let block = 0; block < BLOCK_COUNT; block++) {
-                expect(disk.blocks[block][0]).toBe(block & 0xff);
-                expect(disk.blocks[block][1]).toBe(block >> 8);
+                const readBlock = await disk.read(block);
+                expect(readBlock[0]).toBe(block & 0xff);
+                expect(readBlock[1]).toBe(block >> 8);
             }
         });
     });

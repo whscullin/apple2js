@@ -8,7 +8,6 @@ import { FileEntry, readEntries, writeEntries } from './file_entry';
 import { STORAGE_TYPES, ACCESS_TYPES } from './constants';
 import { byte, word } from 'js/types';
 import { ProDOSVolume } from '.';
-import { VDH } from './vdh';
 
 export const DIRECTORY_OFFSETS = {
     PREV: 0x00,
@@ -31,9 +30,6 @@ export const DIRECTORY_OFFSETS = {
 } as const;
 
 export class Directory {
-    blocks: Uint8Array[];
-    vdh: VDH;
-
     prev: word = 0;
     next: word = 0;
     storageType: byte = STORAGE_TYPES.DIRECTORY;
@@ -51,18 +47,19 @@ export class Directory {
     constructor(
         private volume: ProDOSVolume,
         private fileEntry: FileEntry
-    ) {
-        this.blocks = this.volume.blocks();
-        this.vdh = this.volume.vdh();
-        this.read();
+    ) {}
+
+    async init() {
+        await this.read();
     }
 
-    read(fileEntry?: FileEntry) {
+    async read(fileEntry?: FileEntry) {
         this.fileEntry = fileEntry ?? this.fileEntry;
 
-        const block = new DataView(
-            this.blocks[this.fileEntry.keyPointer].buffer
-        );
+        const readBlock = await this.volume
+            .disk()
+            .read(this.fileEntry.keyPointer);
+        const block = new DataView(readBlock.buffer);
 
         this.prev = block.getUint16(DIRECTORY_OFFSETS.PREV, true);
         this.next = block.getUint16(DIRECTORY_OFFSETS.NEXT, true);
@@ -92,13 +89,14 @@ export class Directory {
             DIRECTORY_OFFSETS.PARENT_ENTRY_LENGTH
         );
 
-        this.entries = readEntries(this.volume, block, this);
+        this.entries = await readEntries(this.volume, block, this);
     }
 
-    write() {
-        const block = new DataView(
-            this.blocks[this.fileEntry.keyPointer].buffer
-        );
+    async write() {
+        const readBlock = await this.volume
+            .disk()
+            .read(this.fileEntry.keyPointer);
+        const block = new DataView(readBlock.buffer);
 
         const nameLength = this.name.length & 0x0f;
         block.setUint8(
@@ -133,6 +131,7 @@ export class Directory {
             this.parentEntryLength
         );
 
-        writeEntries(this.volume, block, this.vdh);
+        const vdh = await this.volume.vdh();
+        await writeEntries(this.volume, block, vdh);
     }
 }

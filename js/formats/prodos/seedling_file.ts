@@ -1,20 +1,14 @@
 import type { ProDOSVolume } from '.';
 import { ProDOSFile } from './base_file';
-import { BitMap } from './bit_map';
 import { STORAGE_TYPES } from './constants';
 import { FileEntry } from './file_entry';
 
 export class SeedlingFile extends ProDOSFile {
-    blocks: Uint8Array[];
-    bitMap: BitMap;
-
     constructor(
         volume: ProDOSVolume,
         private fileEntry: FileEntry
     ) {
         super(volume);
-        this.blocks = volume.blocks();
-        this.bitMap = volume.bitMap();
     }
 
     getBlockPointers() {
@@ -22,29 +16,35 @@ export class SeedlingFile extends ProDOSFile {
         return pointers;
     }
 
-    read() {
-        const seedlingBlock = this.blocks[this.fileEntry.keyPointer];
+    async read() {
+        const seedlingBlock = await this.volume
+            .disk()
+            .read(this.fileEntry.keyPointer);
         const data = new Uint8Array(this.fileEntry.eof);
         data.set(seedlingBlock.slice(0, this.fileEntry.eof));
         return data;
     }
 
-    write(data: Uint8Array) {
+    async write(data: Uint8Array) {
+        const bitMap = await this.volume.bitMap();
         if (this.fileEntry.keyPointer) {
-            this.delete();
+            await this.delete();
         }
         this.fileEntry.storageType = STORAGE_TYPES.SEEDLING;
-        this.fileEntry.keyPointer = this.bitMap.allocBlock();
+        this.fileEntry.keyPointer = await bitMap.allocBlock();
         this.fileEntry.eof = data.byteLength;
-        const seedlingBlock = this.blocks[this.fileEntry.keyPointer];
+        const seedlingBlock = await this.volume
+            .disk()
+            .read(this.fileEntry.keyPointer);
         seedlingBlock.set(data);
         this.fileEntry.write();
     }
 
-    delete() {
+    async delete() {
+        const bitMap = await this.volume.bitMap();
         const pointers = this.getBlockPointers();
         for (let idx = 0; idx < pointers.length; idx++) {
-            this.bitMap.freeBlock(pointers[idx]);
+            await bitMap.freeBlock(pointers[idx]);
         }
     }
 }

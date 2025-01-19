@@ -663,12 +663,12 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
         return true;
     }
 
-    setBinary(
+    async setBinary(
         driveNo: DriveNumber,
         name: string,
         fmt: FloppyFormat,
         rawData: ArrayBuffer
-    ) {
+    ): Promise<void> {
         const readOnly = false;
         const volume = 254;
         const options = {
@@ -688,16 +688,15 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
                 },
             };
             this.worker.postMessage(message);
-
-            return true;
+            return;
         } else {
             const disk = createDisk(fmt, options);
             if (disk) {
                 this.insertDisk(driveNo, disk);
-                return true;
+                return;
             }
         }
-        return false;
+        throw new Error('Unable to load disk');
     }
 
     initWorker() {
@@ -774,10 +773,10 @@ export default class DiskII implements Card<State>, MassStorage<NibbleFormat> {
      * an error will be thrown. Using `ext == 'nib'` will always return
      * an image.
      */
-    getBinary(
+    async getBinary(
         driveNo: DriveNumber,
         ext?: Exclude<NibbleFormat, 'woz'>
-    ): MassStorageData | null {
+    ): Promise<MassStorageData | null> {
         const curDisk = this.disks[driveNo];
         if (!isNibbleDisk(curDisk)) {
             return null;
