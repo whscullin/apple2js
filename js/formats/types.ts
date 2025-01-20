@@ -1,4 +1,3 @@
-import { BlockDisk } from 'js/components/BlockDisk';
 import type { byte, memory, MemberOf, word } from '../types';
 import type { GamepadConfiguration } from '../ui/types';
 import { InfoChunk } from './woz';
