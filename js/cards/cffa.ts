@@ -10,9 +10,9 @@ import createBlockDisk from '../formats/block';
 import {
     BlockDisk,
     BlockFormat,
+    BlockStorage,
     Disk,
     DRIVE_NUMBERS,
-    MassStorage,
     MassStorageData,
     MemoryBlockDisk,
 } from 'js/formats/types';
@@ -96,9 +96,7 @@ export interface CFFAState {
     disks: Array<CFFADiskState | null>;
 }
 
-export default class CFFA
-    implements Card, MassStorage<BlockFormat>, Restorable<CFFAState>
-{
+export default class CFFA implements Card, BlockStorage, Restorable<CFFAState> {
     // CFFA internal Flags
 
     private _disableSignalling = false;
@@ -505,7 +503,7 @@ export default class CFFA
                     diskState.disk.readOnly,
                     diskState.blocks
                 );
-                await this.setBlockVolume(idx, disk);
+                await this.setBlockDisk(idx, disk);
             } else {
                 this.resetBlockVolume(idx);
             }
@@ -528,7 +526,7 @@ export default class CFFA
         }
     }
 
-    async setBlockVolume(drive: number, disk: BlockDisk): Promise<void> {
+    async setBlockDisk(drive: number, disk: BlockDisk): Promise<void> {
         drive = drive - 1;
         const partition = this._partitions[drive];
         if (!partition) {
@@ -547,6 +545,11 @@ export default class CFFA
         } else {
             rom[SETTINGS.Max32MBPartitionsDev0] = 0x1;
         }
+    }
+
+    async getBlockDisk(drive: number): Promise<BlockDisk | null> {
+        drive = drive - 1;
+        return this._partitions[drive];
     }
 
     // Assign a raw disk image to a drive. Must be 2mg or raw PO image.
@@ -576,7 +579,7 @@ export default class CFFA
         };
         const disk = createBlockDisk(format, options);
 
-        return this.setBlockVolume(drive, disk);
+        return this.setBlockDisk(drive, disk);
     }
 
     async getBinary(drive: number): Promise<MassStorageData | null> {

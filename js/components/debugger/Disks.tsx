@@ -1,4 +1,4 @@
-import { h, Fragment } from 'preact';
+import { h, Fragment, JSX } from 'preact';
 import { useEffect, useMemo } from 'preact/hooks';
 import cs from 'classnames';
 import { Apple2 as Apple2Impl } from 'js/apple2';
@@ -8,6 +8,7 @@ import {
     DriveNumber,
     FloppyDisk,
     isBlockDiskFormat,
+    isBlockStorage,
     isNibbleDisk,
     MassStorage,
 } from 'js/formats/types';
@@ -144,6 +145,41 @@ const DirectoryListing = ({
     setFileData,
 }: DirectoryListingProps) => {
     const [open, setOpen] = useState(depth === 0);
+    const [children, setChildren] = useState<JSX.Element[]>([]);
+    useEffect(() => {
+        const load = async () => {
+            const children: JSX.Element[] = [];
+            for (let idx = 0; idx < dirEntry.entries.length; idx++) {
+                const fileEntry = dirEntry.entries[idx];
+                if (fileEntry.storageType === STORAGE_TYPES.DIRECTORY) {
+                    const dirEntry = new Directory(volume, fileEntry);
+                    await dirEntry.init();
+                    children.push(
+                        <DirectoryListing
+                            key={idx}
+                            depth={depth + 1}
+                            volume={volume}
+                            dirEntry={dirEntry}
+                            setFileData={setFileData}
+                        />
+                    );
+                } else {
+                    children.push(
+                        <FileListing
+                            key={idx}
+                            depth={depth + 1}
+                            volume={volume}
+                            fileEntry={fileEntry}
+                            setFileData={setFileData}
+                        />
+                    );
+                }
+            }
+            setChildren(children);
+        };
+        void load();
+    }, [depth, dirEntry, setFileData, volume]);
+
     return (
         <>
             <tr>
@@ -167,31 +203,7 @@ const DirectoryListing = ({
                 <td>{formatDate(dirEntry.creation)}</td>
                 <td></td>
             </tr>
-            {open &&
-                dirEntry.entries.map((fileEntry, idx) => {
-                    if (fileEntry.storageType === STORAGE_TYPES.DIRECTORY) {
-                        const dirEntry = new Directory(volume, fileEntry);
-                        return (
-                            <DirectoryListing
-                                key={idx}
-                                depth={depth + 1}
-                                volume={volume}
-                                dirEntry={dirEntry}
-                                setFileData={setFileData}
-                            />
-                        );
-                    } else {
-                        return (
-                            <FileListing
-                                key={idx}
-                                depth={depth + 1}
-                                volume={volume}
-                                fileEntry={fileEntry}
-                                setFileData={setFileData}
-                            />
-                        );
-                    }
-                })}
+            {open && children}
         </>
     );
 };
@@ -300,6 +312,21 @@ const DiskInfo = ({ massStorage, driveNo, setFileData }: DiskInfoProps) => {
     const [proDOSData, setProDOSData] = useState<ProDOSData>();
     useEffect(() => {
         const load = async () => {
+            if (isBlockStorage(massStorage)) {
+                const disk = await massStorage.getBlockDisk(driveNo);
+                if (disk) {
+                    const prodos = new ProDOSVolume(disk);
+                    const vdh = await prodos.vdh();
+                    const bitMap = await prodos.bitMap();
+                    const freeBlocks = await bitMap.freeBlocks();
+                    const freeCount = freeBlocks.length;
+                    setProDOSData({ freeCount, prodos, vdh });
+                } else {
+                    setProDOSData(undefined);
+                }
+                setDisk(disk);
+                return;
+            }
             const massStorageData = await massStorage.getBinary(driveNo, 'po');
             if (massStorageData) {
                 const { data, readOnly, ext } = massStorageData;
@@ -343,7 +370,6 @@ const DiskInfo = ({ massStorage, driveNo, setFileData }: DiskInfoProps) => {
                 }
                 setDisk(disk);
             }
-            return null;
         };
         void load();
     }, [massStorage, driveNo]);

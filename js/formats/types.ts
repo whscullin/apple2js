@@ -313,3 +313,14 @@ export interface MassStorage<T> {
     ): Promise<void>;
     getBinary(drive: number, ext?: T): Promise<MassStorageData | null>;
 }
+
+export interface BlockStorage extends MassStorage<BlockFormat> {
+    setBlockDisk(drive: number, blockDisk: BlockDisk): Promise<void>;
+    getBlockDisk(drive: number): Promise<BlockDisk | null>;
+}
+
+export function isBlockStorage(
+    storage: MassStorage<unknown>
+): storage is BlockStorage {
+    return 'getBlockDisk' in storage;
+}

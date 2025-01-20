@@ -2,7 +2,6 @@ import { debug, toHex } from '../util';
 import { rom as smartPortRom } from '../roms/cards/smartport';
 import { Card, Restorable, byte, word, rom } from '../types';
 import {
-    MassStorage,
     BlockDisk,
     BlockFormat,
     MassStorageData,
@@ -10,6 +9,7 @@ import {
     Disk,
     MemoryBlockDisk,
     DRIVE_NUMBERS,
+    BlockStorage,
 } from '../formats/types';
 import { CPU6502, flags } from '@whscullin/cpu6502';
 import {
@@ -154,7 +154,7 @@ const DEVICE_TYPE_SCSI_HD = 0x07;
 // $0E: Clock
 // $0F: Modem
 export default class SmartPort
-    implements Card, MassStorage<BlockFormat>, Restorable<SmartPortState>
+    implements Card, BlockStorage, Restorable<SmartPortState>
 {
     private rom: rom;
     private disks: BlockDisk[] = [];
@@ -662,10 +662,15 @@ export default class SmartPort
 
     async setBlockDisk(driveNo: DriveNumber, disk: BlockDisk) {
         this.disks[driveNo] = disk;
+        this.ext[driveNo] = disk.format;
         const volumeName = await this.getVolumeName(driveNo);
         const name = volumeName || disk.metadata.name;
 
         this.callbacks?.label(driveNo, name);
+    }
+
+    async getBlockDisk(driveNo: DriveNumber): Promise<BlockDisk> {
+        return this.disks[driveNo];
     }
 
     resetBlockDisk(driveNo: DriveNumber) {
@@ -710,7 +715,7 @@ export default class SmartPort
             return null;
         }
         const disk = this.disks[drive];
-        const ext = this.ext[drive];
+        const ext = this.disks[drive].format;
         const { readOnly } = disk;
         const { name } = disk.metadata;
         let data: ArrayBuffer;

@@ -86,12 +86,13 @@ export function writeFileName(block: DataView, offset: word, name: string) {
     return caseBits;
 }
 
-export function dumpDirectory(
+export async function dumpDirectory(
     volume: ProDOSVolume,
     dirEntry: FileEntry,
     depth: string
 ) {
     const dir = new Directory(volume, dirEntry);
+    await dir.init();
     let str = '';
 
     for (let idx = 0; idx < dir.entries.length; idx++) {
@@ -99,7 +100,7 @@ export function dumpDirectory(
         if (fileEntry.storageType !== STORAGE_TYPES.DELETED) {
             str += depth + fileEntry.name + '\n';
             if (fileEntry.storageType === STORAGE_TYPES.DIRECTORY) {
-                str += dumpDirectory(volume, fileEntry, depth + '  ');
+                str += await dumpDirectory(volume, fileEntry, depth + '  ');
             }
         }
     }
@@ -113,7 +114,7 @@ export async function dump(volume: ProDOSVolume) {
         const fileEntry = vdh.entries[idx];
         str += fileEntry.name + '\n';
         if (fileEntry.storageType === STORAGE_TYPES.DIRECTORY) {
-            str += dumpDirectory(volume, fileEntry, '  ');
+            str += await dumpDirectory(volume, fileEntry, '  ');
         }
     }
     return str;
