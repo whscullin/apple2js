@@ -15,6 +15,7 @@ import {
     JSONDisk,
     BlockFormat,
     FLOPPY_FORMATS,
+    isBlockStorage,
 } from '../formats/types';
 import { initGamepad } from './gamepad';
 import KeyBoard from './keyboard';
@@ -37,6 +38,7 @@ import { Screen, SCREEN_FULL_PAGE } from './screen';
 import { JoyStick } from './joystick';
 import { System } from './system';
 import { Options } from '../options';
+import { HttpBlockDisk } from 'js/components/util/http_block_disk';
 
 let paused = false;
 
@@ -447,85 +449,137 @@ export function doLoadHTTP(driveNo: DriveNumber, url?: string) {
     const input = document.querySelector<HTMLInputElement>('#http_url')!;
     url = url || input.value;
     if (url) {
-        fetch(url)
-            .then(function (response) {
-                if (response.ok) {
-                    const reader = response.body!.getReader();
-                    let received = 0;
-                    const chunks: Uint8Array[] = [];
-                    const contentLength = parseInt(
-                        response.headers.get('content-length')!,
-                        10
-                    );
+        const urlParts = url.split('/');
+        const file = urlParts.pop()!;
+        const fileParts = file.split('.');
+        const ext = fileParts.pop()!.toLowerCase();
+        const name = decodeURIComponent(fileParts.join('.'));
+        fetch(url, { method: 'HEAD' })
+            .then((head) => {
+                const contentLength = parseInt(
+                    head.headers.get('content-length') || '0',
+                    10
+                );
+                const hasByteRange =
+                    head.headers.get('accept-ranges') === 'bytes';
+                if (
+                    hasByteRange &&
+                    includes(BLOCK_FORMATS, ext) &&
+                    contentLength >= 800 * 1024 &&
+                    isBlockStorage(_massStorage)
+                ) {
+                    _massStorage
+                        .setBlockDisk(
+                            driveNo,
+                            new HttpBlockDisk(name, contentLength, url)
+                        )
+                        .catch((error: Error) => {
+                            openAlert(error.message);
+                            console.error(error);
+                        });
+                    loadingStop();
+                } else {
+                    fetch(url)
+                        .then(function (response) {
+                            if (response.ok) {
+                                const reader = response.body!.getReader();
+                                let received = 0;
+                                const chunks: Uint8Array[] = [];
+                                const contentLength = parseInt(
+                                    response.headers.get('content-length')!,
+                                    10
+                                );
 
-                    return reader
-                        .read()
-                        .then(
-                            function readChunk(
-                                result
-                            ): Promise<ArrayBufferLike> {
-                                if (result.done) {
-                                    const data = new Uint8Array(received);
-                                    let offset = 0;
-                                    for (
-                                        let idx = 0;
-                                        idx < chunks.length;
-                                        idx++
-                                    ) {
-                                        data.set(chunks[idx], offset);
-                                        offset += chunks[idx].length;
-                                    }
-                                    return Promise.resolve(data.buffer);
-                                }
+                                return reader
+                                    .read()
+                                    .then(
+                                        function readChunk(
+                                            result
+                                        ): Promise<ArrayBufferLike> {
+                                            if (result.done) {
+                                                const data = new Uint8Array(
+                                                    received
+                                                );
+                                                let offset = 0;
+                                                for (
+                                                    let idx = 0;
+                                                    idx < chunks.length;
+                                                    idx++
+                                                ) {
+                                                    data.set(
+                                                        chunks[idx],
+                                                        offset
+                                                    );
+                                                    offset +=
+                                                        chunks[idx].length;
+                                                }
+                                                return Promise.resolve(
+                                                    data.buffer
+                                                );
+                                            }
 
-                                received += result.value.length;
-                                if (contentLength) {
-                                    loadingProgress(received, contentLength);
-                                }
-                                chunks.push(result.value);
+                                            received += result.value.length;
+                                            if (contentLength) {
+                                                loadingProgress(
+                                                    received,
+                                                    contentLength
+                                                );
+                                            }
+                                            chunks.push(result.value);
 
-                                return reader.read().then(readChunk);
+                                            return reader
+                                                .read()
+                                                .then(readChunk);
+                                        }
+                                    );
+                            } else {
+                                throw new Error(
+                                    'Error loading: ' + response.statusText
+                                );
                             }
-                        );
-                } else {
-                    throw new Error('Error loading: ' + response.statusText);
+                        })
+                        .then(function (data) {
+                            if (includes(DISK_FORMATS, ext)) {
+                                if (data.byteLength >= 800 * 1024) {
+                                    if (includes(BLOCK_FORMATS, ext)) {
+                                        _massStorage
+                                            .setBinary(driveNo, name, ext, data)
+                                            .then(() => initGamepad())
+                                            .catch((error) => {
+                                                console.error(error);
+                                                openAlert(
+                                                    `Unable to load ${name}`
+                                                );
+                                            });
+                                    }
+                                } else {
+                                    if (includes(FLOPPY_FORMATS, ext)) {
+                                        _disk2
+                                            .setBinary(driveNo, name, ext, data)
+                                            .then(() => initGamepad())
+                                            .catch((error) => {
+                                                console.error(error);
+                                                openAlert(
+                                                    `Unable to load ${name}`
+                                                );
+                                            });
+                                    }
+                                }
+                            } else {
+                                throw new Error(
+                                    `Extension ${ext} not recognized.`
+                                );
+                            }
+                            loadingStop();
+                        })
+                        .catch((error: Error) => {
+                            loadingStop();
+                            openAlert(error.message);
+                            console.error(error);
+                        });
                 }
-            })
-            .then(function (data) {
-                const urlParts = url.split('/');
-                const file = urlParts.pop()!;
-                const fileParts = file.split('.');
-                const ext = fileParts.pop()!.toLowerCase();
-                const name = decodeURIComponent(fileParts.join('.'));
-                if (includes(DISK_FORMATS, ext)) {
-                    if (data.byteLength >= 800 * 1024) {
-                        if (includes(BLOCK_FORMATS, ext)) {
-                            _massStorage
-                                .setBinary(driveNo, name, ext, data)
-                                .then(() => initGamepad())
-                                .catch((error) => {
-                                    console.error(error);
-                                    openAlert(`Unable to load ${name}`);
-                                });
-                        }
-                    } else {
-                        if (includes(FLOPPY_FORMATS, ext)) {
-                            _disk2
-                                .setBinary(driveNo, name, ext, data)
-                                .then(() => initGamepad())
-                                .catch((error) => {
-                                    console.error(error);
-                                    openAlert(`Unable to load ${name}`);
-                                });
-                        }
-                    }
-                } else {
-                    throw new Error(`Extension ${ext} not recognized.`);
-                }
-                loadingStop();
             })
             .catch((error: Error) => {
-                loadingStop();
                 openAlert(error.message);
                 console.error(error);
             });

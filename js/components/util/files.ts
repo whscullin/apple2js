@@ -203,7 +203,7 @@ export const loadHttpBlockFile = async (
         header.headers.get('content-length') || '0',
         10
     );
-    const hasByteRange = header.headers.get('accept-ranges') === 'byte';
+    const hasByteRange = header.headers.get('accept-ranges') === 'bytes';
     if (hasByteRange) {
         await smartPort.setBlockDisk(
             driveNo,
@@ -255,10 +255,7 @@ export const loadHttpUnknownFile = async (
     signal?: AbortSignal,
     onProgress?: ProgressCallback
 ) => {
-    // const data = await loadHttpFile(url, signal, onProgress);
-    // const { name, ext } = getNameAndExtension(url);
     await smartStorageBroker.setUrl(driveNo, url, signal, onProgress);
-    // await smartStorageBroker.setBinary(driveNo, name, ext, data);
 };
 
 export class SmartStorageBroker implements MassStorage<unknown> {
@@ -274,21 +271,18 @@ export class SmartStorageBroker implements MassStorage<unknown> {
         onProgress?: ProgressCallback
     ) {
         const { name, ext } = getNameAndExtension(url);
-        if (includes(DISK_FORMATS, ext)) {
-            const head = await fetch(url, { method: 'HEAD' });
+        if (includes(BLOCK_FORMATS, ext)) {
+            const head = await fetch(url, { method: 'HEAD', mode: 'cors' });
             const contentLength = parseInt(
                 head.headers.get('content-length') || '0',
                 10
             );
-            if (contentLength >= 800 * 1024) {
-                if (includes(BLOCK_FORMATS, ext)) {
-                    await this.smartPort.setBlockDisk(
-                        driveNo,
-                        new HttpBlockDisk(name, contentLength, url)
-                    );
-                } else {
-                    throw new Error(`Unable to load "${name}"`);
-                }
+            const hasByteRange = head.headers.get('accept-ranges') === 'bytes';
+            if (contentLength >= 800 * 1024 && hasByteRange) {
+                await this.smartPort.setBlockDisk(
+                    driveNo,
+                    new HttpBlockDisk(name, contentLength, url)
+                );
                 initGamepad();
                 return;
             }
