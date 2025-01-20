@@ -38,7 +38,7 @@ import { Screen, SCREEN_FULL_PAGE } from './screen';
 import { JoyStick } from './joystick';
 import { System } from './system';
 import { Options } from '../options';
-import { HttpBlockDisk } from 'js/components/util/http_block_disk';
+import { HttpBlockDisk } from 'js/formats/http_block_disk';
 
 let paused = false;
 

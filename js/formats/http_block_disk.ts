@@ -61,7 +61,7 @@ export class HttpBlockDisk implements BlockDisk {
     }
 
     async read(blockNumber: number): Promise<Uint8Array> {
-        const blockShift = 5;
+        const blockShift = 6;
         if (!this.blocks[blockNumber]) {
             const fetchBlock = blockNumber >> blockShift;
             const deferred = this.fetchMap[fetchBlock];

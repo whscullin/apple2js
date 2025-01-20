@@ -11,9 +11,9 @@ import {
     JSONDisk,
     MassStorage,
 } from 'js/formats/types';
+import { HttpBlockDisk } from 'js/formats/http_block_disk';
 import { includes, word } from 'js/types';
 import { initGamepad } from 'js/ui/gamepad';
-import { HttpBlockDisk } from './http_block_disk';
 
 type ProgressCallback = (current: number, total: number) => void;
 
