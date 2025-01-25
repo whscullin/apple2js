@@ -1,24 +1,20 @@
 import { ProDOSVolume } from '.';
-import type { BitMap } from './bit_map';
 import { BLOCK_SIZE, STORAGE_TYPES } from './constants';
 import { FileEntry } from './file_entry';
 import { ProDOSFile } from './base_file';
 
 export class SaplingFile extends ProDOSFile {
-    blocks: Uint8Array[];
-    bitMap: BitMap;
-
     constructor(
         volume: ProDOSVolume,
         private fileEntry: FileEntry
     ) {
         super(volume);
-        this.blocks = this.volume.blocks();
-        this.bitMap = this.volume.bitMap();
     }
 
-    getBlockPointers() {
-        const saplingBlock = this.blocks[this.fileEntry.keyPointer];
+    async getBlockPointers() {
+        const saplingBlock = await this.volume
+            .disk()
+            .read(this.fileEntry.keyPointer);
         const seedlingPointers = new DataView(saplingBlock.buffer);
 
         const pointers = [this.fileEntry.keyPointer];
@@ -34,8 +30,10 @@ export class SaplingFile extends ProDOSFile {
     }
 
     // TODO(whscullin): Why did I not use getBlockPointers for these...
-    read() {
-        const saplingBlock = this.blocks[this.fileEntry.keyPointer];
+    async read() {
+        const saplingBlock = await this.volume
+            .disk()
+            .read(this.fileEntry.keyPointer);
         const seedlingPointers = new DataView(saplingBlock.buffer);
 
         let remainingLength = this.fileEntry.eof;
@@ -47,7 +45,9 @@ export class SaplingFile extends ProDOSFile {
                 seedlingPointers.getUint8(idx) |
                 (seedlingPointers.getUint8(0x100 + idx) << 8);
             if (seedlingPointer) {
-                const seedlingBlock = this.blocks[seedlingPointer];
+                const seedlingBlock = await this.volume
+                    .disk()
+                    .read(seedlingPointer);
                 const bytes = seedlingBlock.slice(
                     0,
                     Math.min(BLOCK_SIZE, remainingLength)
@@ -62,11 +62,14 @@ export class SaplingFile extends ProDOSFile {
         return data;
     }
 
-    write(data: Uint8Array) {
+    async write(data: Uint8Array) {
+        const bitMap = await this.volume.bitMap();
         this.fileEntry.storageType = STORAGE_TYPES.SAPLING;
-        this.fileEntry.keyPointer = this.bitMap.allocBlock();
+        this.fileEntry.keyPointer = await bitMap.allocBlock();
         this.fileEntry.eof = data.byteLength;
-        const saplingBlock = this.blocks[this.fileEntry.keyPointer];
+        const saplingBlock = await this.volume
+            .disk()
+            .read(this.fileEntry.keyPointer);
         const seedlingPointers = new DataView(saplingBlock.buffer);
 
         let remainingLength = data.byteLength;
@@ -74,10 +77,12 @@ export class SaplingFile extends ProDOSFile {
         let idx = 0;
 
         while (remainingLength > 0) {
-            const seedlingPointer = this.bitMap.allocBlock();
+            const seedlingPointer = await bitMap.allocBlock();
             seedlingPointers.setUint8(idx, seedlingPointer & 0xff);
             seedlingPointers.setUint8(0x100 + idx, seedlingPointer >> 8);
-            const seedlingBlock = this.blocks[seedlingPointer];
+            const seedlingBlock = await this.volume
+                .disk()
+                .read(seedlingPointer);
             seedlingBlock.set(
                 data.slice(offset, Math.min(BLOCK_SIZE, remainingLength))
             );
@@ -88,10 +93,11 @@ export class SaplingFile extends ProDOSFile {
         this.fileEntry.write();
     }
 
-    delete() {
-        const pointers = this.getBlockPointers();
+    async delete() {
+        const bitMap = await this.volume.bitMap();
+        const pointers = await this.getBlockPointers();
         for (let idx = 0; idx < pointers.length; idx++) {
-            this.bitMap.freeBlock(pointers[idx]);
+            await bitMap.freeBlock(pointers[idx]);
         }
     }
 }

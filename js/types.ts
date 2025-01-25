@@ -124,7 +124,7 @@ export interface Card<StateT = unknown> extends Memory, Restorable<StateT> {
 export type TapeData = Array<[duration: number, high: boolean]>;
 
 export interface Restorable<T = unknown> {
-    getState(): T;
+    getState(): T | Promise<T>;
     setState(state: T): void;
 }
 

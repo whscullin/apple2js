@@ -5,7 +5,7 @@ import {
     HeaderData,
     read2MGHeader,
 } from 'js/formats/2mg';
-import { BlockDisk, ENCODING_BLOCK } from 'js/formats/types';
+import { BlockDisk, MemoryBlockDisk } from 'js/formats/types';
 import { concat } from 'js/util';
 import { BYTES_BY_SECTOR_IMAGE } from './testdata/16sector';
 
@@ -198,20 +198,19 @@ describe('2mg format', () => {
     });
 
     describe('create2MGFromBlockDisk', () => {
-        it('can create a 2mg disk', () => {
+        it('can create a 2mg disk', async () => {
             const header = read2MGHeader(VALID_PRODOS_IMAGE.buffer);
             const blocks = [];
             for (let idx = 0; idx < BYTES_BY_SECTOR_IMAGE.length; idx += 512) {
                 blocks.push(BYTES_BY_SECTOR_IMAGE.slice(idx, idx + 512));
             }
-            const disk: BlockDisk = {
-                blocks,
-                metadata: { name: 'Good disk' },
-                readOnly: false,
-                encoding: ENCODING_BLOCK,
-                format: 'hdv',
-            };
-            const image = create2MGFromBlockDisk(header, disk);
+            const disk: BlockDisk = new MemoryBlockDisk(
+                'hdv',
+                { name: 'Good disk' },
+                false,
+                blocks
+            );
+            const image = await create2MGFromBlockDisk(header, disk);
             expect(VALID_PRODOS_IMAGE.buffer).toEqual(image);
         });
     });

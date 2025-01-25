@@ -7,7 +7,7 @@ import {
     ENCODING_NIBBLE,
     BlockDisk,
     FloppyDisk,
-    ENCODING_BLOCK,
+    MemoryBlockDisk,
 } from './types';
 import { BLOCK_SIZE } from './prodos/constants';
 
@@ -22,22 +22,22 @@ export default function createDiskFromProDOS(
     const { data, name, side, rawData, volume, readOnly } = options;
     let disk: BlockDisk | NibbleDisk;
     if (rawData && rawData.byteLength > 140 * 1025) {
-        disk = {
-            format: 'po',
-            encoding: ENCODING_BLOCK,
-            metadata: { name, side },
-            readOnly: readOnly || false,
-            blocks: [],
-        } as BlockDisk;
+        const blocks: Uint8Array[] = [];
         for (
             let offset = 0;
             offset < rawData.byteLength;
             offset += BLOCK_SIZE
         ) {
-            disk.blocks.push(
+            blocks.push(
                 new Uint8Array(rawData.slice(offset, offset + BLOCK_SIZE))
             );
         }
+        disk = new MemoryBlockDisk(
+            'po',
+            { name, side },
+            readOnly || false,
+            blocks
+        );
     } else {
         disk = {
             format: 'po',

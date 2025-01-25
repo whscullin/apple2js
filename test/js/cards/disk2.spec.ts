@@ -54,9 +54,9 @@ describe('DiskII', () => {
         expect(diskII).not.toBeNull();
     });
 
-    it('round-trips the state when there are no changes', () => {
+    it('round-trips the state when there are no changes', async () => {
         const diskII = new DiskII(mockApple2IO, callbacks);
-        diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+        await diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
 
         const state = diskII.getState();
         diskII.setState(state);
@@ -64,10 +64,15 @@ describe('DiskII', () => {
         expect(diskII.getState()).toEqual(state);
     });
 
-    it('round-trips the state when there are changes', () => {
+    it('round-trips the state when there are changes', async () => {
         const diskII = new DiskII(mockApple2IO, callbacks);
-        diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
-        diskII.setBinary(2, 'BYTES_BY_SECTOR', 'po', BYTES_BY_SECTOR_IMAGE);
+        await diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+        await diskII.setBinary(
+            2,
+            'BYTES_BY_SECTOR',
+            'po',
+            BYTES_BY_SECTOR_IMAGE
+        );
 
         const state = diskII.getState();
         // These are just arbitrary changes, not an exhaustive list of fields.
@@ -85,9 +90,9 @@ describe('DiskII', () => {
         expect(diskII.getState()).toEqual(state);
     });
 
-    it('calls all of the callbacks when state is restored', () => {
+    it('calls all of the callbacks when state is restored', async () => {
         const diskII = new DiskII(mockApple2IO, callbacks);
-        diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+        await diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
         jest.resetAllMocks();
 
         const state = diskII.getState();
@@ -173,9 +178,14 @@ describe('DiskII', () => {
     });
 
     describe('head positioning', () => {
-        it('does not allow head positioning when the drive is off', () => {
+        it('does not allow head positioning when the drive is off', async () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+            await diskII.setBinary(
+                1,
+                'BYTES_BY_TRACK',
+                'po',
+                BYTES_BY_TRACK_IMAGE
+            );
 
             diskII.ioSwitch(0x81); // coil 0 on
             diskII.ioSwitch(0x83); // coil 1 on
@@ -189,9 +199,14 @@ describe('DiskII', () => {
             expect(state.drives[1].track).toBe(0);
         });
 
-        it('allows head positioning when the drive is on', () => {
+        it('allows head positioning when the drive is on', async () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+            await diskII.setBinary(
+                1,
+                'BYTES_BY_TRACK',
+                'po',
+                BYTES_BY_TRACK_IMAGE
+            );
 
             diskII.ioSwitch(0x89); // turn on the motor
             diskII.ioSwitch(0x81); // coil 0 on
@@ -206,9 +221,14 @@ describe('DiskII', () => {
             expect(state.drives[1].track).toBe(4);
         });
 
-        it('moves the head to track 2 from track 0 when all phases are cycled', () => {
+        it('moves the head to track 2 from track 0 when all phases are cycled', async () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+            await diskII.setBinary(
+                1,
+                'BYTES_BY_TRACK',
+                'po',
+                BYTES_BY_TRACK_IMAGE
+            );
 
             diskII.ioSwitch(0x89); // turn on the motor
             diskII.ioSwitch(0x81); // coil 0 on
@@ -227,9 +247,14 @@ describe('DiskII', () => {
             expect(state.drives[1].track).toBe(2 * STEPS_PER_TRACK);
         });
 
-        it('moves the head to track 10 from track 8 when all phases are cycled', () => {
+        it('moves the head to track 10 from track 8 when all phases are cycled', async () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+            await diskII.setBinary(
+                1,
+                'BYTES_BY_TRACK',
+                'po',
+                BYTES_BY_TRACK_IMAGE
+            );
             setTrack(diskII, 8);
 
             diskII.ioSwitch(0x89); // turn on the motor
@@ -249,9 +274,14 @@ describe('DiskII', () => {
             expect(state.drives[1].track).toBe(10 * STEPS_PER_TRACK);
         });
 
-        it('stops the head at track 34', () => {
+        it('stops the head at track 34', async () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+            await diskII.setBinary(
+                1,
+                'BYTES_BY_TRACK',
+                'po',
+                BYTES_BY_TRACK_IMAGE
+            );
             setTrack(diskII, 33);
 
             diskII.ioSwitch(0x89); // turn on the motor
@@ -281,9 +311,14 @@ describe('DiskII', () => {
             expect(state.drives[1].track).toBe(35 * STEPS_PER_TRACK - 1);
         });
 
-        it('moves a half track when only one phase is activated', () => {
+        it('moves a half track when only one phase is activated', async () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+            await diskII.setBinary(
+                1,
+                'BYTES_BY_TRACK',
+                'po',
+                BYTES_BY_TRACK_IMAGE
+            );
             setTrack(diskII, 15);
 
             diskII.ioSwitch(0x89); // turn on the motor
@@ -297,9 +332,14 @@ describe('DiskII', () => {
             expect(state.drives[1].track).toBe(15 * STEPS_PER_TRACK + 2);
         });
 
-        it('moves backward one track when phases are cycled in reverse', () => {
+        it('moves backward one track when phases are cycled in reverse', async () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+            await diskII.setBinary(
+                1,
+                'BYTES_BY_TRACK',
+                'po',
+                BYTES_BY_TRACK_IMAGE
+            );
             setTrack(diskII, 15);
 
             diskII.ioSwitch(0x89); // turn on the motor
@@ -315,9 +355,14 @@ describe('DiskII', () => {
             expect(state.drives[1].track).toBe(14 * STEPS_PER_TRACK);
         });
 
-        it('moves backward two tracks when all phases are cycled in reverse', () => {
+        it('moves backward two tracks when all phases are cycled in reverse', async () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+            await diskII.setBinary(
+                1,
+                'BYTES_BY_TRACK',
+                'po',
+                BYTES_BY_TRACK_IMAGE
+            );
             setTrack(diskII, 15);
 
             diskII.ioSwitch(0x89); // turn on the motor
@@ -337,9 +382,14 @@ describe('DiskII', () => {
             expect(state.drives[1].track).toBe(13 * STEPS_PER_TRACK);
         });
 
-        it('does not move backwards past track 0', () => {
+        it('does not move backwards past track 0', async () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+            await diskII.setBinary(
+                1,
+                'BYTES_BY_TRACK',
+                'po',
+                BYTES_BY_TRACK_IMAGE
+            );
             setTrack(diskII, 1);
 
             diskII.ioSwitch(0x89); // turn on the motor
@@ -359,9 +409,14 @@ describe('DiskII', () => {
             expect(state.drives[1].track).toBe(0);
         });
 
-        it('moves backward one half track', () => {
+        it('moves backward one half track', async () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+            await diskII.setBinary(
+                1,
+                'BYTES_BY_TRACK',
+                'po',
+                BYTES_BY_TRACK_IMAGE
+            );
             setTrack(diskII, 15);
 
             diskII.ioSwitch(0x89); // turn on the motor
@@ -378,9 +433,14 @@ describe('DiskII', () => {
         // The emulated Disk II is not able to step quarter tracks because
         // it does not track when phases are turned off.
         // eslint-disable-next-line jest/no-disabled-tests
-        it.skip('moves a quarter track when two neighboring phases are activated and held', () => {
+        it.skip('moves a quarter track when two neighboring phases are activated and held', async () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+            await diskII.setBinary(
+                1,
+                'BYTES_BY_TRACK',
+                'po',
+                BYTES_BY_TRACK_IMAGE
+            );
             setTrack(diskII, 15);
 
             diskII.ioSwitch(0x89); // turn on the motor
@@ -395,9 +455,14 @@ describe('DiskII', () => {
         // The emulated Disk II is not able to step quarter tracks because
         // it does not track when phases are turned off.
         // eslint-disable-next-line jest/no-disabled-tests
-        it.skip('moves backward one quarter track', () => {
+        it.skip('moves backward one quarter track', async () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+            await diskII.setBinary(
+                1,
+                'BYTES_BY_TRACK',
+                'po',
+                BYTES_BY_TRACK_IMAGE
+            );
             setTrack(diskII, 15);
 
             diskII.ioSwitch(0x89); // turn on the motor
@@ -411,9 +476,14 @@ describe('DiskII', () => {
     });
 
     describe('reading nibble-based disks', () => {
-        it('spins the disk', () => {
+        it('spins the disk', async () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+            await diskII.setBinary(
+                1,
+                'BYTES_BY_TRACK',
+                'po',
+                BYTES_BY_TRACK_IMAGE
+            );
 
             diskII.ioSwitch(0x89); // turn on the motor
             diskII.ioSwitch(0x8e); // read mode
@@ -430,9 +500,14 @@ describe('DiskII', () => {
             expect(spinning).toBeTruthy();
         });
 
-        it('after reading the data, the data register is set to zero', () => {
+        it('after reading the data, the data register is set to zero', async () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+            await diskII.setBinary(
+                1,
+                'BYTES_BY_TRACK',
+                'po',
+                BYTES_BY_TRACK_IMAGE
+            );
 
             diskII.ioSwitch(0x89); // turn on the motor
             diskII.ioSwitch(0x8e); // read mode
@@ -449,9 +524,14 @@ describe('DiskII', () => {
             expect(nibble).toBe(0x00);
         });
 
-        it('after reading the data, then zero, there is new data', () => {
+        it('after reading the data, then zero, there is new data', async () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+            await diskII.setBinary(
+                1,
+                'BYTES_BY_TRACK',
+                'po',
+                BYTES_BY_TRACK_IMAGE
+            );
 
             diskII.ioSwitch(0x89); // turn on the motor
             diskII.ioSwitch(0x8e); // read mode
@@ -470,9 +550,14 @@ describe('DiskII', () => {
             expect(nibble).toBe(0xaa);
         });
 
-        it('read write protect status', () => {
+        it('read write protect status', async () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+            await diskII.setBinary(
+                1,
+                'BYTES_BY_TRACK',
+                'po',
+                BYTES_BY_TRACK_IMAGE
+            );
             setWriteProtected(diskII, true);
 
             diskII.ioSwitch(0x89); // turn on the motor
@@ -485,9 +570,14 @@ describe('DiskII', () => {
     });
 
     describe('writing nibble-based disks', () => {
-        it('writes a nibble to the disk', () => {
+        it('writes a nibble to the disk', async () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+            await diskII.setBinary(
+                1,
+                'BYTES_BY_TRACK',
+                'po',
+                BYTES_BY_TRACK_IMAGE
+            );
             let disk1 = diskII.getState().drives[1].disk as NibbleDisk;
             let track0 = disk1.tracks[0];
             expect(track0[0]).toBe(0xff);
@@ -501,9 +591,14 @@ describe('DiskII', () => {
             expect(track0[0]).toBe(0x80);
         });
 
-        it('writes two nibbles to the disk', () => {
+        it('writes two nibbles to the disk', async () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+            await diskII.setBinary(
+                1,
+                'BYTES_BY_TRACK',
+                'po',
+                BYTES_BY_TRACK_IMAGE
+            );
             let disk1 = diskII.getState().drives[1].disk as NibbleDisk;
             let track0 = disk1.tracks[0];
             expect(track0[0]).toBe(0xff);
@@ -520,9 +615,14 @@ describe('DiskII', () => {
             expect(track0[1]).toBe(0x81);
         });
 
-        it('sets disk state to dirty and calls the dirty callback when written', () => {
+        it('sets disk state to dirty and calls the dirty callback when written', async () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+            await diskII.setBinary(
+                1,
+                'BYTES_BY_TRACK',
+                'po',
+                BYTES_BY_TRACK_IMAGE
+            );
             let state = diskII.getState();
             state.drives[1].dirty = false;
             diskII.setState(state);
@@ -545,9 +645,9 @@ describe('DiskII', () => {
             'test/js/cards/data/DOS 3.3 System Master.woz'
         ).buffer;
 
-        it('accepts WOZ-based disks', () => {
+        it('accepts WOZ-based disks', async () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(
+            await diskII.setBinary(
                 1,
                 'DOS 3.3 System Master',
                 'woz',
@@ -557,9 +657,9 @@ describe('DiskII', () => {
             expect(true).toBeTruthy();
         });
 
-        it('stops the head at the end of the image', () => {
+        it('stops the head at the end of the image', async () => {
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(
+            await diskII.setBinary(
                 1,
                 'DOS 3.3 System Master',
                 'woz',
@@ -589,12 +689,12 @@ describe('DiskII', () => {
             expect(state.drives[1].track).toBe(40 * STEPS_PER_TRACK - 1);
         });
 
-        it('spins the disk when motor is on', () => {
+        it('spins the disk when motor is on', async () => {
             let cycles: number = 0;
             (mockApple2IO.cycles as jest.Mock).mockImplementation(() => cycles);
 
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(
+            await diskII.setBinary(
                 1,
                 'DOS 3.3 System Master',
                 'woz',
@@ -612,12 +712,12 @@ describe('DiskII', () => {
             expect(state.drives[1].head).toBeGreaterThan(0);
         });
 
-        it('does not spin the disk when motor is off', () => {
+        it('does not spin the disk when motor is off', async () => {
             let cycles: number = 0;
             (mockApple2IO.cycles as jest.Mock).mockImplementation(() => cycles);
 
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(
+            await diskII.setBinary(
                 1,
                 'DOS 3.3 System Master',
                 'woz',
@@ -634,12 +734,12 @@ describe('DiskII', () => {
             expect(state.drives[1].head).toBe(0);
         });
 
-        it('reads an FF sync byte from the beginning of the image', () => {
+        it('reads an FF sync byte from the beginning of the image', async () => {
             let cycles: number = 0;
             (mockApple2IO.cycles as jest.Mock).mockImplementation(() => cycles);
 
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(
+            await diskII.setBinary(
                 1,
                 'DOS 3.3 System Master',
                 'woz',
@@ -665,12 +765,12 @@ describe('DiskII', () => {
             expect(nibble).toBe(0xff);
         });
 
-        it('reads several FF sync bytes', () => {
+        it('reads several FF sync bytes', async () => {
             let cycles: number = 0;
             (mockApple2IO.cycles as jest.Mock).mockImplementation(() => cycles);
 
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(
+            await diskII.setBinary(
                 1,
                 'DOS 3.3 System Master',
                 'woz',
@@ -704,12 +804,12 @@ describe('DiskII', () => {
         });
 
         // eslint-disable-next-line jest/no-disabled-tests
-        it.skip('reads random garbage on uninitialized tracks', () => {
+        it.skip('reads random garbage on uninitialized tracks', async () => {
             let cycles: number = 0;
             (mockApple2IO.cycles as jest.Mock).mockImplementation(() => cycles);
 
             const diskII = new DiskII(mockApple2IO, callbacks);
-            diskII.setBinary(
+            await diskII.setBinary(
                 1,
                 'DOS 3.3 System Master',
                 'woz',
@@ -755,8 +855,8 @@ describe('DiskII', () => {
             expect(failures).toBeLessThan(2);
         });
 
-        it('disk spins at a consistent speed', () => {
-            const reader = new TestDiskReader(
+        it('disk spins at a consistent speed', async () => {
+            const reader = await TestDiskReader.create(
                 1,
                 'DOS 3.3 System Master',
                 DOS33_SYSTEM_MASTER_IMAGE,
@@ -788,8 +888,8 @@ describe('DiskII', () => {
             'test/js/cards/data/DOS 3.3 System Master.woz'
         ).buffer;
 
-        it('can write something', () => {
-            const reader = new TestDiskReader(
+        it('can write something', async () => {
+            const reader = await TestDiskReader.create(
                 1,
                 'DOS 3.3 System Master',
                 DOS33_SYSTEM_MASTER_IMAGE,
@@ -826,17 +926,30 @@ class TestDiskReader {
     nibbles = 0;
     diskII: DiskII;
 
-    constructor(
+    private constructor(apple2IO: Apple2IO, callbacks: Callbacks) {
+        (apple2IO.cycles as jest.Mock).mockImplementation(() => this.cycles);
+
+        this.diskII = new DiskII(apple2IO, callbacks);
+    }
+
+    private async init(
+        driveNo: DriveNumber,
+        label: string,
+        image: ArrayBufferLike
+    ) {
+        await this.diskII.setBinary(driveNo, label, 'woz', image);
+    }
+
+    static async create(
         driveNo: DriveNumber,
         label: string,
         image: ArrayBufferLike,
         apple2IO: Apple2IO,
         callbacks: Callbacks
-    ) {
-        (apple2IO.cycles as jest.Mock).mockImplementation(() => this.cycles);
-
-        this.diskII = new DiskII(apple2IO, callbacks);
-        this.diskII.setBinary(driveNo, label, 'woz', image);
+    ): Promise<TestDiskReader> {
+        const reader = new TestDiskReader(apple2IO, callbacks);
+        await reader.init(driveNo, label, image);
+        return reader;
     }
 
     readNibble(): byte {

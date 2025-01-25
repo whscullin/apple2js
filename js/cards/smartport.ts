@@ -2,14 +2,16 @@ import { debug, toHex } from '../util';
 import { rom as smartPortRom } from '../roms/cards/smartport';
 import { Card, Restorable, byte, word, rom } from '../types';
 import {
-    MassStorage,
     BlockDisk,
-    ENCODING_BLOCK,
     BlockFormat,
     MassStorageData,
     DiskFormat,
+    Disk,
+    MemoryBlockDisk,
+    DRIVE_NUMBERS,
+    BlockStorage,
 } from '../formats/types';
-import { CPU6502, CpuState, flags } from '@whscullin/cpu6502';
+import { CPU6502, flags } from '@whscullin/cpu6502';
 import {
     create2MGFromBlockDisk,
     HeaderData,
@@ -22,8 +24,14 @@ import { readFileName } from 'js/formats/prodos/utils';
 
 const ID = 'SMARTPORT.J.S';
 
+export interface SmartPortDiskState {
+    disk: Disk;
+    format: BlockFormat;
+    blocks: Uint8Array[];
+}
+
 export interface SmartPortState {
-    disks: BlockDisk[];
+    disks: Array<SmartPortDiskState | null>;
 }
 
 export interface SmartPortOptions {
@@ -115,6 +123,7 @@ const ADDRESS_LO = 0x44;
 const BLOCK_LO = 0x46;
 // const BLOCK_HI = 0x47;
 
+const OK = 0x00;
 // const IO_ERROR = 0x27;
 const NO_DEVICE_CONNECTED = 0x28;
 const WRITE_PROTECTED = 0x2b;
@@ -124,6 +133,7 @@ const DEVICE_OFFLINE = 0x2f;
 // const VOLUME_CONTROL_BLOCK_FULL = 0x55;
 // const BAD_BUFFER_ADDRESS = 0x56;
 // const DUPLICATE_VOLUME_ONLINE = 0x57;
+const BUSY = 0x80;
 
 // Type: Device
 // $00: Memory Expansion Card (RAM disk)
@@ -144,7 +154,7 @@ const DEVICE_TYPE_SCSI_HD = 0x07;
 // $0E: Clock
 // $0F: Modem
 export default class SmartPort
-    implements Card, MassStorage<BlockFormat>, Restorable<SmartPortState>
+    implements Card, BlockStorage, Restorable<SmartPortState>
 {
     private rom: rom;
     private disks: BlockDisk[] = [];
@@ -152,6 +162,9 @@ export default class SmartPort
     private busyTimeout: ReturnType<typeof setTimeout>[] = [];
     private ext: DiskFormat[] = [];
     private metadata: Array<HeaderData | null> = [];
+    private statusByte = 0x80;
+    private xReg = 0x00;
+    private yReg = 0x00;
 
     constructor(
         private cpu: CPU6502,
@@ -189,15 +202,17 @@ export default class SmartPort
      * dumpBlock
      */
 
-    dumpBlock(driveNo: DriveNumber, block: number) {
+    async dumpBlock(driveNo: DriveNumber, blockNumber: number) {
         let result = '';
         let b;
         let jdx;
 
+        const block = await this.disks[driveNo].read(blockNumber);
+
         for (let idx = 0; idx < 32; idx++) {
             result += toHex(idx << 4, 4) + ': ';
             for (jdx = 0; jdx < 16; jdx++) {
-                b = this.disks[driveNo].blocks[block][idx * 16 + jdx];
+                b = block[idx * 16 + jdx];
                 if (jdx === 8) {
                     result += ' ';
                 }
@@ -205,7 +220,7 @@ export default class SmartPort
             }
             result += '        ';
             for (jdx = 0; jdx < 16; jdx++) {
-                b = this.disks[driveNo].blocks[block][idx * 16 + jdx] & 0x7f;
+                b = block[idx * 16 + jdx] & 0x7f;
                 if (jdx === 8) {
                     result += ' ';
                 }
@@ -224,17 +239,15 @@ export default class SmartPort
      * getDeviceInfo
      */
 
-    getDeviceInfo(state: CpuState, driveNo: DriveNumber) {
+    async getDeviceInfo(driveNo: DriveNumber): Promise<number> {
         if (this.disks[driveNo]) {
-            const blocks = this.disks[driveNo].blocks.length;
-            state.x = blocks & 0xff;
-            state.y = blocks >> 8;
+            const blocks = await this.disks[driveNo].blockCount();
+            this.xReg = blocks & 0xff;
+            this.yReg = blocks >> 8;
 
-            state.a = 0;
-            state.s &= ~flags.C;
+            return OK;
         } else {
-            state.a = NO_DEVICE_CONNECTED;
-            state.s |= flags.C;
+            return NO_DEVICE_CONNECTED;
         }
     }
 
@@ -242,106 +255,112 @@ export default class SmartPort
      * readBlock
      */
 
-    readBlock(
-        state: CpuState,
+    async readBlock(
         driveNo: DriveNumber,
-        block: number,
+        blockNUmber: number,
         buffer: Address
-    ) {
+    ): Promise<number> {
         this.debug(`read drive=${driveNo}`);
         this.debug(`read buffer=${buffer.toString()}`);
-        this.debug(`read block=$${toHex(block)}`);
+        this.debug(`read block=$${toHex(blockNUmber)}`);
 
-        if (!this.disks[driveNo]?.blocks.length) {
+        const blockCount = await this.disks[driveNo]?.blockCount();
+        if (!blockCount) {
             debug('Drive', driveNo, 'is empty');
-            state.a = DEVICE_OFFLINE;
-            state.s |= flags.C;
-            return;
+            return DEVICE_OFFLINE;
         }
 
         // debug('read', '\n' + dumpBlock(drive, block));
         this.driveLight(driveNo);
 
+        const block = await this.disks[driveNo].read(blockNUmber);
         for (let idx = 0; idx < 512; idx++) {
-            buffer.writeByte(this.disks[driveNo].blocks[block][idx]);
+            buffer.writeByte(block[idx]);
             buffer = buffer.inc(1);
         }
 
-        state.a = 0;
-        state.s &= ~flags.C;
+        return OK;
     }
 
     /*
      * writeBlock
      */
 
-    writeBlock(
-        state: CpuState,
+    async writeBlock(
         driveNo: DriveNumber,
-        block: number,
+        blockNUmber: number,
         buffer: Address
-    ) {
+    ): Promise<number> {
         this.debug(`write drive=${driveNo}`);
         this.debug(`write buffer=${buffer.toString()}`);
-        this.debug(`write block=$${toHex(block)}`);
+        this.debug(`write block=$${toHex(blockNUmber)}`);
 
-        if (!this.disks[driveNo]?.blocks.length) {
+        if (!this.disks[driveNo]) {
             debug('Drive', driveNo, 'is empty');
-            state.a = DEVICE_OFFLINE;
-            state.s |= flags.C;
-            return;
+            return DEVICE_OFFLINE;
         }
 
         if (this.disks[driveNo].readOnly) {
             debug('Drive', driveNo, 'is write protected');
-            state.a = WRITE_PROTECTED;
-            state.s |= flags.C;
-            return;
+            return WRITE_PROTECTED;
         }
 
         // debug('write', '\n' + dumpBlock(drive, block));
         this.driveLight(driveNo);
 
+        const block = new Uint8Array(512);
         for (let idx = 0; idx < 512; idx++) {
-            this.disks[driveNo].blocks[block][idx] = buffer.readByte();
+            block[idx] = buffer.readByte();
             buffer = buffer.inc(1);
         }
-        state.a = 0;
-        state.s &= ~flags.C;
+        await this.disks[driveNo].write(blockNUmber, block);
+        return 0;
     }
 
     /*
      * formatDevice
      */
 
-    formatDevice(state: CpuState, driveNo: DriveNumber) {
-        if (!this.disks[driveNo]?.blocks.length) {
+    async formatDevice(driveNo: DriveNumber): Promise<number> {
+        if (!this.disks[driveNo]) {
             debug('Drive', driveNo, 'is empty');
-            state.a = DEVICE_OFFLINE;
-            state.s |= flags.C;
-            return;
+            return DEVICE_OFFLINE;
         }
 
         if (this.disks[driveNo].readOnly) {
             debug('Drive', driveNo, 'is write protected');
-            state.a = WRITE_PROTECTED;
-            state.s |= flags.C;
-            return;
+            return WRITE_PROTECTED;
         }
 
-        for (let idx = 0; idx < this.disks[driveNo].blocks.length; idx++) {
-            this.disks[driveNo].blocks[idx] = new Uint8Array();
+        const blockCount = await this.disks[driveNo].blockCount();
+
+        for (let idx = 0; idx < blockCount; idx++) {
+            const block = new Uint8Array(512);
             for (let jdx = 0; jdx < 512; jdx++) {
-                this.disks[driveNo].blocks[idx][jdx] = 0;
+                block[jdx] = 0;
             }
+            await this.disks[driveNo].write(idx, block);
         }
 
-        state.a = 0;
-        state.s &= flags.C;
+        return 0;
+    }
+
+    handleAsync(fn: () => Promise<number>): void {
+        this.statusByte = BUSY;
+        this.xReg = 0x00;
+        this.yReg = 0x00;
+        fn()
+            .then((statusByte) => {
+                this.statusByte = statusByte;
+            })
+            .catch((error) => {
+                console.error(error);
+                this.statusByte = DEVICE_OFFLINE;
+            });
     }
 
     private access(off: byte, val: byte) {
-        let result;
+        let result = 0x00;
         const readMode = val === undefined;
 
         switch (off & 0x8f) {
@@ -355,6 +374,18 @@ export default class SmartPort
                         }
                     }
                 }
+                break;
+            case 0x81:
+                result = this.statusByte;
+                break;
+            case 0x82:
+                result = this.xReg;
+                break;
+            case 0x83:
+                result = this.yReg;
+                break;
+            case 0x84:
+                result = this.statusByte ? 0x01 : 0x00;
                 break;
         }
 
@@ -371,10 +402,10 @@ export default class SmartPort
 
     read(_page: byte, off: byte) {
         const state = this.cpu.getState();
-        let cmd;
-        let unit;
-        let buffer;
-        let block;
+        let cmd: number;
+        let unit: number;
+        let buffer: Address;
+        let block: number;
         const blockOff = this.rom[0xff];
         const smartOff = blockOff + 3;
 
@@ -399,19 +430,23 @@ export default class SmartPort
 
             switch (cmd) {
                 case 0: // INFO
-                    this.getDeviceInfo(state, drive);
+                    this.handleAsync(() => this.getDeviceInfo(drive));
                     break;
 
                 case 1: // READ
-                    this.readBlock(state, drive, block, buffer);
+                    this.handleAsync(() =>
+                        this.readBlock(drive, block, buffer)
+                    );
                     break;
 
                 case 2: // WRITE
-                    this.writeBlock(state, drive, block, buffer);
+                    this.handleAsync(() =>
+                        this.writeBlock(drive, block, buffer)
+                    );
                     break;
 
                 case 3: // FORMAT
-                    this.formatDevice(state, drive);
+                    this.handleAsync(() => this.formatDevice(drive));
                     break;
             }
         } else if (off === smartOff && this.cpu.getSync()) {
@@ -449,67 +484,81 @@ export default class SmartPort
                         case 0:
                             switch (status) {
                                 case 0:
-                                    buffer.writeByte(2); // two devices
-                                    buffer.inc(1).writeByte(1 << 6); // no interrupts
-                                    buffer.inc(2).writeByte(0x2); // Other vendor
-                                    buffer.inc(3).writeByte(0x0); // Other vendor
-                                    buffer.inc(4).writeByte(0); // reserved
-                                    buffer.inc(5).writeByte(0); // reserved
-                                    buffer.inc(6).writeByte(0); // reserved
-                                    buffer.inc(7).writeByte(0); // reserved
-                                    state.x = 8;
-                                    state.y = 0;
-                                    state.a = 0;
-                                    state.s &= ~flags.C;
+                                    this.handleAsync(async () => {
+                                        buffer.writeByte(2); // two devices
+                                        buffer.inc(1).writeByte(1 << 6); // no interrupts
+                                        buffer.inc(2).writeByte(0x2); // Other vendor
+                                        buffer.inc(3).writeByte(0x0); // Other vendor
+                                        buffer.inc(4).writeByte(0); // reserved
+                                        buffer.inc(5).writeByte(0); // reserved
+                                        buffer.inc(6).writeByte(0); // reserved
+                                        buffer.inc(7).writeByte(0); // reserved
+                                        this.xReg = 8;
+                                        this.yReg = 0;
+                                        return 0;
+                                    });
                                     break;
                             }
                             break;
                         default: // Unit 1
                             switch (status) {
                                 case 0:
-                                    blocks =
-                                        this.disks[unit]?.blocks.length ?? 0;
-                                    buffer.writeByte(0xf0); // W/R Block device in drive
-                                    buffer.inc(1).writeByte(blocks & 0xff); // 1600 blocks
-                                    buffer
-                                        .inc(2)
-                                        .writeByte((blocks & 0xff00) >> 8);
-                                    buffer
-                                        .inc(3)
-                                        .writeByte((blocks & 0xff0000) >> 16);
-                                    state.x = 4;
-                                    state.y = 0;
-                                    state.a = 0;
-                                    state.s &= ~flags.C;
+                                    this.handleAsync(async () => {
+                                        blocks =
+                                            (await this.disks[
+                                                unit
+                                            ]?.blockCount()) ?? 0;
+                                        buffer.writeByte(0xf0); // W/R Block device in drive
+                                        buffer.inc(1).writeByte(blocks & 0xff); // 1600 blocks
+                                        buffer
+                                            .inc(2)
+                                            .writeByte((blocks & 0xff00) >> 8);
+                                        buffer
+                                            .inc(3)
+                                            .writeByte(
+                                                (blocks & 0xff0000) >> 16
+                                            );
+                                        this.xReg = 4;
+                                        this.yReg = 0;
+                                        return 0;
+                                    });
                                     break;
                                 case 3:
-                                    blocks =
-                                        this.disks[unit]?.blocks.length ?? 0;
-                                    buffer.writeByte(0xf0); // W/R Block device in drive
-                                    buffer.inc(1).writeByte(blocks & 0xff); // Blocks low byte
-                                    buffer
-                                        .inc(2)
-                                        .writeByte((blocks & 0xff00) >> 8); // Blocks middle byte
-                                    buffer
-                                        .inc(3)
-                                        .writeByte((blocks & 0xff0000) >> 16); // Blocks high byte
-                                    buffer.inc(4).writeByte(ID.length); // Vendor ID length
-                                    for (let idx = 0; idx < ID.length; idx++) {
-                                        // Vendor ID
+                                    this.handleAsync(async () => {
+                                        blocks =
+                                            (await this.disks[
+                                                unit
+                                            ]?.blockCount()) ?? 0;
+                                        buffer.writeByte(0xf0); // W/R Block device in drive
+                                        buffer.inc(1).writeByte(blocks & 0xff); // Blocks low byte
                                         buffer
-                                            .inc(5 + idx)
-                                            .writeByte(ID.charCodeAt(idx));
-                                    }
-                                    buffer
-                                        .inc(21)
-                                        .writeByte(DEVICE_TYPE_SCSI_HD); // Device Type
-                                    buffer.inc(22).writeByte(0x0); // Device Subtype
-                                    buffer.inc(23).writeWord(0x0101); // Version
-                                    state.x = 24;
-                                    state.y = 0;
-                                    state.a = 0;
-                                    state.s &= ~flags.C;
-                                    break;
+                                            .inc(2)
+                                            .writeByte((blocks & 0xff00) >> 8); // Blocks middle byte
+                                        buffer
+                                            .inc(3)
+                                            .writeByte(
+                                                (blocks & 0xff0000) >> 16
+                                            ); // Blocks high byte
+                                        buffer.inc(4).writeByte(ID.length); // Vendor ID length
+                                        for (
+                                            let idx = 0;
+                                            idx < ID.length;
+                                            idx++
+                                        ) {
+                                            // Vendor ID
+                                            buffer
+                                                .inc(5 + idx)
+                                                .writeByte(ID.charCodeAt(idx));
+                                        }
+                                        buffer
+                                            .inc(21)
+                                            .writeByte(DEVICE_TYPE_SCSI_HD); // Device Type
+                                        buffer.inc(22).writeByte(0x0); // Device Subtype
+                                        buffer.inc(23).writeWord(0x0101); // Version
+                                        this.xReg = 24;
+                                        this.yReg = 0;
+                                        return OK;
+                                    });
                             }
                             break;
                     }
@@ -519,16 +568,20 @@ export default class SmartPort
 
                 case 0x01: // READ BLOCK
                     block = cmdListAddr.inc(4).readWord();
-                    this.readBlock(state, drive, block, buffer);
+                    this.handleAsync(() =>
+                        this.readBlock(drive, block, buffer)
+                    );
                     break;
 
                 case 0x02: // WRITE BLOCK
                     block = cmdListAddr.inc(4).readWord();
-                    this.writeBlock(state, drive, block, buffer);
+                    this.handleAsync(() =>
+                        this.writeBlock(drive, block, buffer)
+                    );
                     break;
 
                 case 0x03: // FORMAT
-                    this.formatDevice(state, drive);
+                    this.handleAsync(() => this.formatDevice(drive));
                     break;
 
                 case 0x04: // CONTROL
@@ -560,40 +613,76 @@ export default class SmartPort
         // not writable
     }
 
-    getState() {
-        return {
-            disks: this.disks.map((disk) => {
-                const result: BlockDisk = {
-                    blocks: disk.blocks.map((block) => new Uint8Array(block)),
-                    encoding: ENCODING_BLOCK,
-                    format: disk.format,
-                    readOnly: disk.readOnly,
-                    metadata: { ...disk.metadata },
-                };
+    async getState(): Promise<SmartPortState> {
+        const disks = [];
+        for (let diskNo = 0; diskNo < 2; diskNo++) {
+            const diskState = async (disk: BlockDisk | null) => {
+                let result: SmartPortDiskState | null = null;
+                if (disk) {
+                    const blocks = [];
+                    const blockCount = await disk.blockCount();
+                    for (let idx = 0; idx < blockCount; idx++) {
+                        blocks.push(await disk.read(idx));
+                    }
+                    result = {
+                        blocks,
+                        format: disk.format,
+                        disk: {
+                            readOnly: disk.readOnly,
+                            metadata: { ...disk.metadata },
+                        },
+                    };
+                }
                 return result;
-            }),
+            };
+            const disk = this.disks[diskNo];
+            disks[diskNo] = await diskState(disk);
+        }
+        return {
+            disks,
         };
     }
 
-    setState(state: SmartPortState) {
-        this.disks = state.disks.map((disk) => {
-            const result: BlockDisk = {
-                blocks: disk.blocks.map((block) => new Uint8Array(block)),
-                encoding: ENCODING_BLOCK,
-                format: disk.format,
-                readOnly: disk.readOnly,
-                metadata: { ...disk.metadata },
-            };
-            return result;
-        });
+    async setState(state: SmartPortState) {
+        for (const idx of DRIVE_NUMBERS) {
+            const diskState = state.disks[idx];
+            if (diskState) {
+                const disk = new MemoryBlockDisk(
+                    diskState.format,
+                    diskState.disk.metadata,
+                    diskState.disk.readOnly,
+                    diskState.blocks
+                );
+                await this.setBlockDisk(idx, disk);
+            } else {
+                this.resetBlockDisk(idx);
+            }
+        }
     }
 
-    setBinary(
+    async setBlockDisk(driveNo: DriveNumber, disk: BlockDisk) {
+        this.disks[driveNo] = disk;
+        this.ext[driveNo] = disk.format;
+        const volumeName = await this.getVolumeName(driveNo);
+        const name = volumeName || disk.metadata.name;
+
+        this.callbacks?.label(driveNo, name);
+    }
+
+    async getBlockDisk(driveNo: DriveNumber): Promise<BlockDisk> {
+        return this.disks[driveNo];
+    }
+
+    resetBlockDisk(driveNo: DriveNumber) {
+        delete this.disks[driveNo];
+    }
+
+    async setBinary(
         driveNo: DriveNumber,
         name: string,
         fmt: BlockFormat,
         rawData: ArrayBuffer
-    ) {
+    ): Promise<void> {
         let volume = 254;
         let readOnly = false;
         if (fmt === '2mg') {
@@ -616,29 +705,28 @@ export default class SmartPort
 
         this.ext[driveNo] = fmt;
         this.disks[driveNo] = createBlockDisk(fmt, options);
-        name = this.getVolumeName(driveNo) || name;
+        name = (await this.getVolumeName(driveNo)) || name;
 
         this.callbacks?.label(driveNo, name);
-
-        return true;
     }
 
-    getBinary(drive: number): MassStorageData | null {
+    async getBinary(drive: DriveNumber): Promise<MassStorageData | null> {
         if (!this.disks[drive]) {
             return null;
         }
         const disk = this.disks[drive];
-        const ext = this.ext[drive];
+        const ext = this.disks[drive].format;
         const { readOnly } = disk;
         const { name } = disk.metadata;
         let data: ArrayBuffer;
         if (ext === '2mg') {
-            data = create2MGFromBlockDisk(this.metadata[drive], disk);
+            data = await create2MGFromBlockDisk(this.metadata[drive], disk);
         } else {
-            const { blocks } = disk;
-            const byteArray = new Uint8Array(blocks.length * 512);
-            for (let idx = 0; idx < blocks.length; idx++) {
-                byteArray.set(blocks[idx], idx * 512);
+            const blockCount = await disk.blockCount();
+            const byteArray = new Uint8Array(blockCount * 512);
+            for (let idx = 0; idx < blockCount; idx++) {
+                const block = await disk.read(idx);
+                byteArray.set(block, idx * 512);
             }
             data = byteArray.buffer;
         }
@@ -650,17 +738,17 @@ export default class SmartPort
         };
     }
 
-    getVolumeName(driveNo: number): string | null {
-        const buffer = this.disks[driveNo]?.blocks[VDH_BLOCK]?.buffer;
-        if (!buffer) {
+    async getVolumeName(driveNo: number): Promise<string | null> {
+        const vdhBlock = await this.disks[driveNo]?.read(VDH_BLOCK);
+        if (!vdhBlock?.buffer) {
             return null;
         }
-        const block = new DataView(buffer);
+        const dataView = new DataView(vdhBlock.buffer);
 
-        const nameLength = block.getUint8(VDH_OFFSETS.NAME_LENGTH) & 0xf;
-        const caseBits = block.getUint8(VDH_OFFSETS.CASE_BITS);
+        const nameLength = dataView.getUint8(VDH_OFFSETS.NAME_LENGTH) & 0xf;
+        const caseBits = dataView.getUint8(VDH_OFFSETS.CASE_BITS);
         return readFileName(
-            block,
+            dataView,
             VDH_OFFSETS.VOLUME_NAME,
             nameLength,
             caseBits

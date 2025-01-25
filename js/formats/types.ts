@@ -98,7 +98,33 @@ export interface WozDisk extends FloppyDisk {
 export interface BlockDisk extends Disk {
     encoding: typeof ENCODING_BLOCK;
     format: BlockFormat;
-    blocks: Uint8Array[];
+
+    blockCount(): Promise<number>;
+    read(block: number): Promise<Uint8Array>;
+    write(block: number, data: Uint8Array): Promise<void>;
+}
+
+export class MemoryBlockDisk implements BlockDisk {
+    encoding: typeof ENCODING_BLOCK = ENCODING_BLOCK;
+
+    constructor(
+        readonly format: BlockFormat,
+        readonly metadata: DiskMetadata,
+        readonly readOnly = false,
+        private blocks: Uint8Array[]
+    ) {}
+
+    async blockCount(): Promise<number> {
+        return this.blocks.length;
+    }
+
+    async read(block: number): Promise<Uint8Array> {
+        return this.blocks[block];
+    }
+
+    async write(block: number, data: Uint8Array): Promise<void> {
+        this.blocks[block] = data;
+    }
 }
 
 /**
@@ -278,6 +304,22 @@ export interface MassStorageData {
  * Block device common interface
  */
 export interface MassStorage<T> {
-    setBinary(drive: number, name: string, ext: T, data: ArrayBuffer): boolean;
-    getBinary(drive: number, ext?: T): MassStorageData | null;
+    setBinary(
+        drive: number,
+        name: string,
+        ext: T,
+        data: ArrayBuffer
+    ): Promise<void>;
+    getBinary(drive: number, ext?: T): Promise<MassStorageData | null>;
+}
+
+export interface BlockStorage extends MassStorage<BlockFormat> {
+    setBlockDisk(drive: number, blockDisk: BlockDisk): Promise<void>;
+    getBlockDisk(drive: number): Promise<BlockDisk | null>;
+}
+
+export function isBlockStorage(
+    storage: MassStorage<unknown>
+): storage is BlockStorage {
+    return 'getBlockDisk' in storage;
 }

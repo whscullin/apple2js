@@ -287,21 +287,23 @@ export const create2MGFragments = (
  * @returns 2MS
  */
 
-export const create2MGFromBlockDisk = (
+export const create2MGFromBlockDisk = async (
     headerData: HeaderData | null,
-    { blocks }: BlockDisk
-): ArrayBuffer => {
+    disk: BlockDisk
+): Promise<ArrayBuffer> => {
+    const blockCount = await disk.blockCount();
     const { prefix, suffix } = create2MGFragments(headerData, {
-        blocks: blocks.length,
+        blocks: blockCount,
     });
 
-    const imageLength = prefix.length + blocks.length * 512 + suffix.length;
+    const imageLength = prefix.length + blockCount * 512 + suffix.length;
     const byteArray = new Uint8Array(imageLength);
     byteArray.set(prefix);
-    for (let idx = 0; idx < blocks.length; idx++) {
-        byteArray.set(blocks[idx], prefix.length + idx * 512);
+    for (let idx = 0; idx < blockCount; idx++) {
+        const block = await disk.read(idx);
+        byteArray.set(block, prefix.length + idx * 512);
     }
-    byteArray.set(suffix, prefix.length + blocks.length * 512);
+    byteArray.set(suffix, prefix.length + blockCount * 512);
 
     return byteArray.buffer;
 };

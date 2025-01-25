@@ -11,6 +11,7 @@ import {
     JSONDisk,
     MassStorage,
 } from 'js/formats/types';
+import { HttpBlockDisk } from 'js/formats/http_block_disk';
 import { includes, word } from 'js/types';
 import { initGamepad } from 'js/ui/gamepad';
 
@@ -53,14 +54,16 @@ export const loadLocalFile = (
 ) => {
     return new Promise((resolve, reject) => {
         const fileReader = new FileReader();
-        fileReader.onload = function () {
+        fileReader.onload = async function () {
             const result = this.result as ArrayBuffer;
             const { name, ext } = getNameAndExtension(file.name);
             if (includes(formats, ext)) {
                 initGamepad();
-                if (storage.setBinary(driveNo, name, ext, result)) {
+                try {
+                    await storage.setBinary(driveNo, name, ext, result);
                     resolve(true);
-                } else {
+                } catch (error) {
+                    console.error(error);
                     reject(`Unable to load ${name}`);
                 }
             } else {
@@ -192,9 +195,25 @@ export const loadHttpBlockFile = async (
     if (!includes(BLOCK_FORMATS, ext)) {
         throw new Error(`Extension "${ext}" not recognized.`);
     }
-    const data = await loadHttpFile(url, signal, onProgress);
-    smartPort.setBinary(driveNo, name, ext, data);
-    initGamepad();
+    const header = await fetch(url, { method: 'HEAD' });
+    if (!header.ok) {
+        throw new Error(`Error loading: ${header.statusText}`);
+    }
+    const contentLength = parseInt(
+        header.headers.get('content-length') || '0',
+        10
+    );
+    const hasByteRange = header.headers.get('accept-ranges') === 'bytes';
+    if (hasByteRange) {
+        await smartPort.setBlockDisk(
+            driveNo,
+            new HttpBlockDisk(name, contentLength, url)
+        );
+    } else {
+        const data = await loadHttpFile(url, signal, onProgress);
+        await smartPort.setBinary(driveNo, name, ext, data);
+        initGamepad();
+    }
 
     return true;
 };
@@ -224,7 +243,7 @@ export const loadHttpNibbleFile = async (
         throw new Error(`Extension "${ext}" not recognized.`);
     }
     const data = await loadHttpFile(url, signal, onProgress);
-    disk2.setBinary(driveNo, name, ext, data);
+    await disk2.setBinary(driveNo, name, ext, data);
     initGamepad();
     return loadHttpFile(url, signal, onProgress);
 };
@@ -236,9 +255,7 @@ export const loadHttpUnknownFile = async (
     signal?: AbortSignal,
     onProgress?: ProgressCallback
 ) => {
-    const data = await loadHttpFile(url, signal, onProgress);
-    const { name, ext } = getNameAndExtension(url);
-    smartStorageBroker.setBinary(driveNo, name, ext, data);
+    await smartStorageBroker.setUrl(driveNo, url, signal, onProgress);
 };
 
 export class SmartStorageBroker implements MassStorage<unknown> {
@@ -247,31 +264,57 @@ export class SmartStorageBroker implements MassStorage<unknown> {
         private smartPort: SmartPort
     ) {}
 
-    setBinary(
+    async setUrl(
+        driveNo: DriveNumber,
+        url: string,
+        signal?: AbortSignal,
+        onProgress?: ProgressCallback
+    ) {
+        const { name, ext } = getNameAndExtension(url);
+        if (includes(BLOCK_FORMATS, ext)) {
+            const head = await fetch(url, { method: 'HEAD', mode: 'cors' });
+            const contentLength = parseInt(
+                head.headers.get('content-length') || '0',
+                10
+            );
+            const hasByteRange = head.headers.get('accept-ranges') === 'bytes';
+            if (contentLength >= 800 * 1024 && hasByteRange) {
+                await this.smartPort.setBlockDisk(
+                    driveNo,
+                    new HttpBlockDisk(name, contentLength, url)
+                );
+                initGamepad();
+                return;
+            }
+        }
+        const data = await loadHttpFile(url, signal, onProgress);
+        await this.setBinary(driveNo, name, ext, data);
+    }
+
+    async setBinary(
         driveNo: DriveNumber,
         name: string,
         ext: string,
         data: ArrayBuffer
-    ): boolean {
+    ): Promise<void> {
         if (includes(DISK_FORMATS, ext)) {
             if (data.byteLength >= 800 * 1024) {
                 if (includes(BLOCK_FORMATS, ext)) {
-                    this.smartPort.setBinary(driveNo, name, ext, data);
+                    await this.smartPort.setBinary(driveNo, name, ext, data);
                 } else {
                     throw new Error(`Unable to load "${name}"`);
                 }
             } else if (includes(FLOPPY_FORMATS, ext)) {
-                this.disk2.setBinary(driveNo, name, ext, data);
+                await this.disk2.setBinary(driveNo, name, ext, data);
             } else {
                 throw new Error(`Unable to load "${name}"`);
             }
         } else {
             throw new Error(`Extension "${ext}" not recognized.`);
         }
-        return true;
     }
 
-    getBinary(_drive: number) {
+    async getBinary(_drive: number) {
         return null;
     }
 }

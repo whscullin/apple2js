@@ -23,24 +23,27 @@ export const DownloadModal = ({
     const doCancel = useCallback(() => onClose(true), [onClose]);
 
     useEffect(() => {
-        if (isOpen) {
-            const storageData = massStorage.getBinary(driveNo);
-            if (storageData) {
-                const { ext, data } = storageData;
-                const { name } = storageData.metadata;
-                if (data.byteLength) {
-                    const blob = new Blob([data], {
-                        type: 'application/octet-stream',
-                    });
-                    const href = window.URL.createObjectURL(blob);
-                    setHref(href);
-                    setDownloadName(`${name}.${ext}`);
-                    return;
+        const loadDisk = async () => {
+            if (isOpen) {
+                const storageData = await massStorage.getBinary(driveNo);
+                if (storageData) {
+                    const { ext, data } = storageData;
+                    const { name } = storageData.metadata;
+                    if (data.byteLength) {
+                        const blob = new Blob([data], {
+                            type: 'application/octet-stream',
+                        });
+                        const href = window.URL.createObjectURL(blob);
+                        setHref(href);
+                        setDownloadName(`${name}.${ext}`);
+                        return;
+                    }
                 }
+                setHref('');
+                setDownloadName('');
             }
-            setHref('');
-            setDownloadName('');
-        }
+        };
+        void loadDisk();
     }, [isOpen, driveNo, massStorage]);
 
     return (

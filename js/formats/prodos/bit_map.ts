@@ -1,25 +1,21 @@
 import { word } from 'js/types';
 import { ProDOSVolume } from '.';
-import type { VDH } from './vdh';
 
 const BLOCK_ENTRIES = 4096;
 
 export class BitMap {
-    private vdh: VDH;
-    private blocks: Uint8Array[];
+    constructor(private volume: ProDOSVolume) {}
 
-    constructor(volume: ProDOSVolume) {
-        this.vdh = volume.vdh();
-        this.blocks = volume.blocks();
-    }
-
-    freeBlocks() {
+    async freeBlocks() {
+        const vdh = await this.volume.vdh();
         const free: word[] = [];
         let blockOffset = 0;
         let byteOffset = 0;
         let bitOffset = 0;
-        let bitMapBlock = this.blocks[this.vdh.bitMapPointer + blockOffset];
-        for (let idx = 0; idx < this.vdh.totalBlocks; idx++) {
+        let bitMapBlock = await this.volume
+            .disk()
+            .read(vdh.bitMapPointer + blockOffset);
+        for (let idx = 0; idx < vdh.totalBlocks; idx++) {
             const currentByte = bitMapBlock[byteOffset];
             const mask = 1 << bitOffset;
             if (currentByte & mask) {
@@ -32,19 +28,22 @@ export class BitMap {
                 if (byteOffset > BLOCK_ENTRIES >> 3) {
                     byteOffset = 0;
                     blockOffset += 1;
-                    bitMapBlock =
-                        this.blocks[this.vdh.bitMapPointer + blockOffset];
+                    bitMapBlock = await this.volume
+                        .disk()
+                        .read(vdh.bitMapPointer + blockOffset);
                 }
             }
         }
         return free;
     }
 
-    allocBlock() {
-        for (let idx = 0; idx < this.vdh.totalBlocks; idx++) {
+    async allocBlock() {
+        const vdh = await this.volume.vdh();
+        for (let idx = 0; idx < vdh.totalBlocks; idx++) {
             const blockOffset = Math.floor(idx / BLOCK_ENTRIES);
-            const bitMapBlock =
-                this.blocks[this.vdh.bitMapPointer + blockOffset];
+            const bitMapBlock = await this.volume
+                .disk()
+                .read(vdh.bitMapPointer + blockOffset);
             const byteOffset = (idx - blockOffset * BLOCK_ENTRIES) >> 8;
             const bits = bitMapBlock[byteOffset];
             if (bits !== 0xff) {
@@ -61,15 +60,19 @@ export class BitMap {
         throw new Error('Disk full');
     }
 
-    freeBlock(block: word) {
-        if (block >= this.vdh.totalBlocks) {
+    async freeBlock(block: word) {
+        const vdh = await this.volume.vdh();
+
+        if (block >= vdh.totalBlocks) {
             throw new Error('Block out of range');
         }
         const blockOffset = Math.floor(block / BLOCK_ENTRIES);
         const byteOffset = (block - blockOffset * BLOCK_ENTRIES) >> 8;
         const bitOffset = block & 0x7;
 
-        const bitMapBlock = this.blocks[this.vdh.bitMapPointer + blockOffset];
+        const bitMapBlock = await this.volume
+            .disk()
+            .read(vdh.bitMapPointer + blockOffset);
 
         bitMapBlock[byteOffset] &= 0xff ^ (0x01 << bitOffset);
     }

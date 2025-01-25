@@ -16,6 +16,10 @@ MSLOT		EQU	$7F8
 
 ; Slot I/O addresses
 STATUS		EQU	$C080
+READY           EQU     $C081
+XREG            EQU     $C082
+YREG            EQU     $C083
+CARRY		EQU     $C084
 
 ; ROM addresses
 BASIC		EQU	$E000
@@ -72,9 +76,35 @@ REENTRY		PLA			; Restore slot address
 		TAX
 		JMP	BOOT
 		DS	2
-BLOCK_ENT	RTS
-		DS	2
-SMARTPOINT_ENT	RTS
+BLOCK_ENT	JMP	COMMON_ENT
+SMARTPORT_ENT	JMP	COMMON_ENT
+COMMON_ENT      LDA	$00	; Save $00
+		PHA
+		LDA	#$60	; Create a known RTS because ROM may be unavailable
+		STA	$00
+		JSR	$0000
+		TSX
+		LDA	$0100,X	; Load ROM high byte
+		ASL		; Convert to index for I/O register
+		ASL
+		ASL
+		ASL
+		TAX
+		PLA		; Restore $00
+		STA	$00
+BUSY_LOOP	LDA	READY,X	; STATUS will return $80 until ready
+		BMI	BUSY_LOOP
+		PHA             ; Save A
+		LDA	XREG,X  ; Read X register
+		PHA             ; Save X
+		LDA	YREG,X  ; Read Y register
+		PHA             ; Save Y
+		LDA     CARRY,X ; Get Carry status
+		ROR     A       ; Set or clear carry
+		PLY		; Restore Y
+		PLX		; Restore X
+		PLA             ; Restore A
+		RTS
 PADDING		DS	$C7FE - PADDING
 		ORG	$C7FE
 FLAGS		DFB	$D7
