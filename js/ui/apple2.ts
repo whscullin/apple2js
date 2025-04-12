@@ -440,6 +440,78 @@ function doLoadLocalDisk(driveNo: DriveNumber, file: File) {
     fileReader.readAsArrayBuffer(file);
 }
 
+function defaultLoadHttp(url: string, name: string, ext: string) {
+    fetch(url)
+        .then(function (response) {
+            if (response.ok) {
+                const reader = response.body!.getReader();
+                let received = 0;
+                const chunks: Uint8Array[] = [];
+                const contentLength = parseInt(
+                    response.headers.get('content-length')!,
+                    10
+                );
+
+                return reader
+                    .read()
+                    .then(function readChunk(result): Promise<ArrayBufferLike> {
+                        if (result.done) {
+                            const data = new Uint8Array(received);
+                            let offset = 0;
+                            for (let idx = 0; idx < chunks.length; idx++) {
+                                data.set(chunks[idx], offset);
+                                offset += chunks[idx].length;
+                            }
+                            return Promise.resolve(data.buffer);
+                        }
+
+                        received += result.value.length;
+                        if (contentLength) {
+                            loadingProgress(received, contentLength);
+                        }
+                        chunks.push(result.value);
+
+                        return reader.read().then(readChunk);
+                    });
+            } else {
+                throw new Error('Error loading: ' + response.statusText);
+            }
+        })
+        .then(function (data) {
+            if (includes(DISK_FORMATS, ext)) {
+                if (data.byteLength >= 800 * 1024) {
+                    if (includes(BLOCK_FORMATS, ext)) {
+                        _massStorage
+                            .setBinary(driveNo, name, ext, data)
+                            .then(() => initGamepad())
+                            .catch((error) => {
+                                console.error(error);
+                                openAlert(`Unable to load ${name}`);
+                            });
+                    }
+                } else {
+                    if (includes(FLOPPY_FORMATS, ext)) {
+                        _disk2
+                            .setBinary(driveNo, name, ext, data)
+                            .then(() => initGamepad())
+                            .catch((error) => {
+                                console.error(error);
+                                openAlert(`Unable to load ${name}`);
+                            });
+                    }
+                }
+            } else {
+                throw new Error(`Extension ${ext} not recognized.`);
+            }
+            loadingStop();
+        })
+        .catch((error: Error) => {
+            loadingStop();
+            openAlert(error.message);
+            console.error(error);
+        });
+}
+
 export function doLoadHTTP(driveNo: DriveNumber, url?: string) {
     if (!url) {
         MicroModal.close('http-modal');
@@ -479,109 +551,12 @@ export function doLoadHTTP(driveNo: DriveNumber, url?: string) {
                         });
                     loadingStop();
                 } else {
-                    fetch(url)
-                        .then(function (response) {
-                            if (response.ok) {
-                                const reader = response.body!.getReader();
-                                let received = 0;
-                                const chunks: Uint8Array[] = [];
-                                const contentLength = parseInt(
-                                    response.headers.get('content-length')!,
-                                    10
-                                );
-
-                                return reader
-                                    .read()
-                                    .then(
-                                        function readChunk(
-                                            result
-                                        ): Promise<ArrayBufferLike> {
-                                            if (result.done) {
-                                                const data = new Uint8Array(
-                                                    received
-                                                );
-                                                let offset = 0;
-                                                for (
-                                                    let idx = 0;
-                                                    idx < chunks.length;
-                                                    idx++
-                                                ) {
-                                                    data.set(
-                                                        chunks[idx],
-                                                        offset
-                                                    );
-                                                    offset +=
-                                                        chunks[idx].length;
-                                                }
-                                                return Promise.resolve(
-                                                    data.buffer
-                                                );
-                                            }
-
-                                            received += result.value.length;
-                                            if (contentLength) {
-                                                loadingProgress(
-                                                    received,
-                                                    contentLength
-                                                );
-                                            }
-                                            chunks.push(result.value);
-
-                                            return reader
-                                                .read()
-                                                .then(readChunk);
-                                        }
-                                    );
-                            } else {
-                                throw new Error(
-                                    'Error loading: ' + response.statusText
-                                );
-                            }
-                        })
-                        .then(function (data) {
-                            if (includes(DISK_FORMATS, ext)) {
-                                if (data.byteLength >= 800 * 1024) {
-                                    if (includes(BLOCK_FORMATS, ext)) {
-                                        _massStorage
-                                            .setBinary(driveNo, name, ext, data)
-                                            .then(() => initGamepad())
-                                            .catch((error) => {
-                                                console.error(error);
-                                                openAlert(
-                                                    `Unable to load ${name}`
-                                                );
-                                            });
-                                    }
-                                } else {
-                                    if (includes(FLOPPY_FORMATS, ext)) {
-                                        _disk2
-                                            .setBinary(driveNo, name, ext, data)
-                                            .then(() => initGamepad())
-                                            .catch((error) => {
-                                                console.error(error);
-                                                openAlert(
-                                                    `Unable to load ${name}`
-                                                );
-                                            });
-                                    }
-                                }
-                            } else {
-                                throw new Error(
-                                    `Extension ${ext} not recognized.`
-                                );
-                            }
-                            loadingStop();
-                        })
-                        .catch((error: Error) => {
-                            loadingStop();
-                            openAlert(error.message);
-                            console.error(error);
-                        });
+                    defaultLoadHttp(url, name, ext);
                 }
             })
             .catch((error: Error) => {
-                openAlert(error.message);
-                console.error(error);
+                console.warn('HEAD failed', error);
+                defaultLoadHttp(url, name, ext);
             });
     }
 }

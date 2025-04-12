@@ -272,19 +272,24 @@ export class SmartStorageBroker implements MassStorage<unknown> {
     ) {
         const { name, ext } = getNameAndExtension(url);
         if (includes(BLOCK_FORMATS, ext)) {
-            const head = await fetch(url, { method: 'HEAD', mode: 'cors' });
-            const contentLength = parseInt(
-                head.headers.get('content-length') || '0',
-                10
-            );
-            const hasByteRange = head.headers.get('accept-ranges') === 'bytes';
-            if (contentLength >= 800 * 1024 && hasByteRange) {
-                await this.smartPort.setBlockDisk(
-                    driveNo,
-                    new HttpBlockDisk(name, contentLength, url)
+            try {
+                const head = await fetch(url, { method: 'HEAD', mode: 'cors' });
+                const contentLength = parseInt(
+                    head.headers.get('content-length') || '0',
+                    10
                 );
-                initGamepad();
-                return;
+                const hasByteRange =
+                    head.headers.get('accept-ranges') === 'bytes';
+                if (contentLength >= 800 * 1024 && hasByteRange) {
+                    await this.smartPort.setBlockDisk(
+                        driveNo,
+                        new HttpBlockDisk(name, contentLength, url)
+                    );
+                    initGamepad();
+                    return;
+                }
+            } catch (error) {
+                console.warn('HEAD failed', error);
             }
         }
         const data = await loadHttpFile(url, signal, onProgress);
