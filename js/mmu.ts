@@ -148,7 +148,13 @@ export interface MMUState {
 export default class MMU implements Memory, Restorable<MMUState> {
     private _readPages = new Array<Memory>(0x100);
     private _writePages = new Array<Memory>(0x100);
-    private _pages = new Array<Memory[]>(0x100);
+    private _pages: Memory[][] = [
+        new Array<Memory>(0x100),
+        new Array<Memory>(0x100),
+        new Array<Memory>(0x100),
+        new Array<Memory>(0x100),
+        new Array<Memory>(0x100),
+    ];
 
     // Language Card RAM Softswitches
     private _bank1: boolean;
@@ -228,76 +234,92 @@ export default class MMU implements Memory, Restorable<MMUState> {
 
         // Zero Page/Stack
         for (let idx = 0x0; idx < 0x2; idx++) {
-            this._pages[idx] = this.mem00_01;
-            this._readPages[idx] = this._pages[idx][0];
-            this._writePages[idx] = this._pages[idx][0];
+            this._pages[0][idx] = this.mem00_01[0];
+            this._pages[1][idx] = this.mem00_01[1];
+            this._readPages[idx] = this._pages[0][idx];
+            this._writePages[idx] = this._pages[0][idx];
         }
         // 0x300-0x400
         for (let idx = 0x2; idx < 0x4; idx++) {
-            this._pages[idx] = this.mem02_03;
-            this._readPages[idx] = this._pages[idx][0];
-            this._writePages[idx] = this._pages[idx][0];
+            this._pages[0][idx] = this.mem02_03[0];
+            this._pages[1][idx] = this.mem02_03[1];
+            this._readPages[idx] = this._pages[0][idx];
+            this._writePages[idx] = this._pages[0][idx];
         }
         // Text Page 1
         for (let idx = 0x4; idx < 0x8; idx++) {
-            this._pages[idx] = this.mem04_07;
-            this._readPages[idx] = this._pages[idx][0];
-            this._writePages[idx] = this._pages[idx][0];
+            this._pages[0][idx] = this.mem04_07[0];
+            this._pages[1][idx] = this.mem04_07[1];
+            this._readPages[idx] = this._pages[0][idx];
+            this._writePages[idx] = this._pages[0][idx];
         }
         // Text Page 2
         for (let idx = 0x8; idx < 0xc; idx++) {
-            this._pages[idx] = this.mem08_0B;
-            this._readPages[idx] = this._pages[idx][0];
-            this._writePages[idx] = this._pages[idx][0];
+            this._pages[0][idx] = this.mem08_0B[0];
+            this._pages[1][idx] = this.mem08_0B[1];
+            this._readPages[idx] = this._pages[0][idx];
+            this._writePages[idx] = this._pages[0][idx];
         }
         // 0xC00-0x2000
         for (let idx = 0xc; idx < 0x20; idx++) {
-            this._pages[idx] = this.mem0C_1F;
-            this._readPages[idx] = this._pages[idx][0];
-            this._writePages[idx] = this._pages[idx][0];
+            this._pages[0][idx] = this.mem0C_1F[0];
+            this._pages[1][idx] = this.mem0C_1F[1];
+            this._readPages[idx] = this._pages[0][idx];
+            this._writePages[idx] = this._pages[0][idx];
         }
         // Hires Page 1
         for (let idx = 0x20; idx < 0x40; idx++) {
-            this._pages[idx] = this.mem20_3F;
-            this._readPages[idx] = this._pages[idx][0];
-            this._writePages[idx] = this._pages[idx][0];
+            this._pages[0][idx] = this.mem20_3F[0];
+            this._pages[1][idx] = this.mem20_3F[1];
+            this._readPages[idx] = this._pages[0][idx];
+            this._writePages[idx] = this._pages[0][idx];
         }
         // Hires Page 2
         for (let idx = 0x40; idx < 0x60; idx++) {
-            this._pages[idx] = this.mem40_5F;
-            this._readPages[idx] = this._pages[idx][0];
-            this._writePages[idx] = this._pages[idx][0];
+            this._pages[0][idx] = this.mem40_5F[0];
+            this._pages[1][idx] = this.mem40_5F[1];
+            this._readPages[idx] = this._pages[0][idx];
+            this._writePages[idx] = this._pages[0][idx];
         }
         // 0x6000-0xc000
         for (let idx = 0x60; idx < 0xc0; idx++) {
-            this._pages[idx] = this.mem60_BF;
-            this._readPages[idx] = this._pages[idx][0];
-            this._writePages[idx] = this._pages[idx][0];
+            this._pages[0][idx] = this.mem60_BF[0];
+            this._pages[1][idx] = this.mem60_BF[1];
+            this._readPages[idx] = this._pages[0][idx];
+            this._writePages[idx] = this._pages[0][idx];
         }
         // I/O Switches
         {
             const idx = 0xc0;
-            this._pages[idx] = this.memC0_C0;
-            this._readPages[idx] = this._pages[idx][0];
-            this._writePages[idx] = this._pages[idx][0];
+            this._pages[0][idx] = this.memC0_C0[0];
+            this._pages[1][idx] = this.memC0_C0[0];
+            this._readPages[idx] = this._pages[0][idx];
+            this._writePages[idx] = this._pages[0][idx];
         }
         // Slots
         for (let idx = 0xc1; idx < 0xd0; idx++) {
-            this._pages[idx] = this.memC1_CF;
-            this._readPages[idx] = this._pages[idx][0];
-            this._writePages[idx] = this._pages[idx][0];
+            this._pages[0][idx] = this.memC1_CF[0];
+            this._pages[1][idx] = this.memC1_CF[1];
+            this._readPages[idx] = this._pages[0][idx];
+            this._writePages[idx] = this._pages[0][idx];
         }
         // Basic ROM
         for (let idx = 0xd0; idx < 0xe0; idx++) {
-            this._pages[idx] = this.memD0_DF;
-            this._readPages[idx] = this._pages[idx][0];
-            this._writePages[idx] = this._pages[idx][0];
+            this._pages[0][idx] = this.memD0_DF[0];
+            this._pages[1][idx] = this.memD0_DF[1];
+            this._pages[2][idx] = this.memD0_DF[2];
+            this._pages[3][idx] = this.memD0_DF[3];
+            this._pages[4][idx] = this.memD0_DF[4];
+            this._readPages[idx] = this._pages[0][idx];
+            this._writePages[idx] = this._pages[0][idx];
         }
         // Monitor ROM
         for (let idx = 0xe0; idx < 0x100; idx++) {
-            this._pages[idx] = this.memE0_FF;
-            this._readPages[idx] = this._pages[idx][0];
-            this._writePages[idx] = this._pages[idx][0];
+            this._pages[0][idx] = this.memE0_FF[0];
+            this._pages[1][idx] = this.memE0_FF[1];
+            this._pages[2][idx] = this.memE0_FF[2];
+            this._readPages[idx] = this._pages[0][idx];
+            this._writePages[idx] = this._pages[0][idx];
         }
     }
 
@@ -331,125 +353,109 @@ export default class MMU implements Memory, Restorable<MMUState> {
     }
 
     _updateBanks() {
-        if (this._auxRamRead) {
-            for (let idx = 0x02; idx < 0xc0; idx++) {
-                this._readPages[idx] = this._pages[idx][1];
-            }
-        } else {
-            for (let idx = 0x02; idx < 0xc0; idx++) {
-                this._readPages[idx] = this._pages[idx][0];
-            }
-        }
+        let readPages: Memory[];
+        let writePages: Memory[];
 
-        if (this._auxRamWrite) {
-            for (let idx = 0x02; idx < 0xc0; idx++) {
-                this._writePages[idx] = this._pages[idx][1];
-            }
-        } else {
-            for (let idx = 0x02; idx < 0xc0; idx++) {
-                this._writePages[idx] = this._pages[idx][0];
-            }
-        }
+        readPages = this._auxRamRead ? this._pages[1] : this._pages[0];
+        writePages = this._auxRamWrite ? this._pages[1] : this._pages[0];
+
+        this._readPages = readPages.slice();
+        this._writePages = writePages.slice();
 
         if (this.__80store) {
-            if (this._page2) {
-                for (let idx = 0x4; idx < 0x8; idx++) {
-                    this._readPages[idx] = this._pages[idx][1];
-                    this._writePages[idx] = this._pages[idx][1];
-                }
-                if (this._hires) {
-                    for (let idx = 0x20; idx < 0x40; idx++) {
-                        this._readPages[idx] = this._pages[idx][1];
-                        this._writePages[idx] = this._pages[idx][1];
-                    }
-                }
-            } else {
-                for (let idx = 0x4; idx < 0x8; idx++) {
-                    this._readPages[idx] = this._pages[idx][0];
-                    this._writePages[idx] = this._pages[idx][0];
-                }
-                if (this._hires) {
-                    for (let idx = 0x20; idx < 0x40; idx++) {
-                        this._readPages[idx] = this._pages[idx][0];
-                        this._writePages[idx] = this._pages[idx][0];
-                    }
+            readPages = this._page2 ? this._pages[1] : this._pages[0];
+            writePages = this._page2 ? this._pages[1] : this._pages[0];
+            for (let idx = 0x4; idx < 0x8; idx++) {
+                this._readPages[idx] = readPages[idx];
+                this._writePages[idx] = writePages[idx];
+            }
+            if (this._hires) {
+                for (let idx = 0x20; idx < 0x40; idx++) {
+                    this._readPages[idx] = readPages[idx];
+                    this._writePages[idx] = writePages[idx];
                 }
             }
         }
 
         if (this._intcxrom) {
+            readPages = this._pages[1];
+            writePages = this._pages[1];
             for (let idx = 0xc1; idx < 0xd0; idx++) {
-                this._readPages[idx] = this._pages[idx][1];
-                this._writePages[idx] = this._pages[idx][1];
+                this._readPages[idx] = readPages[idx];
+                this._writePages[idx] = writePages[idx];
             }
         } else {
+            readPages = this._pages[0];
+            writePages = this._pages[0];
             for (let idx = 0xc1; idx < 0xd0; idx++) {
-                this._readPages[idx] = this._pages[idx][0];
-                this._writePages[idx] = this._pages[idx][0];
+                this._readPages[idx] = readPages[idx];
+                this._writePages[idx] = writePages[idx];
             }
             if (!this._slot3rom) {
-                this._readPages[0xc3] = this._pages[0xc3][1];
-                this._writePages[0xc3] = this._pages[0xc3][1];
+                readPages = this._pages[1];
+                writePages = this._pages[1];
+                this._readPages[0xc3] = readPages[0xc3];
+                this._writePages[0xc3] = writePages[0xc3];
             }
             if (this._intc8rom) {
+                readPages = this._pages[1];
+                writePages = this._pages[1];
                 for (let idx = 0xc8; idx < 0xd0; idx++) {
-                    this._readPages[idx] = this._pages[idx][1];
-                    this._writePages[idx] = this._pages[idx][1];
+                    this._readPages[idx] = readPages[idx];
+                    this._writePages[idx] = readPages[idx];
                 }
             }
         }
 
-        if (this._altzp) {
-            for (let idx = 0x0; idx < 0x2; idx++) {
-                this._readPages[idx] = this._pages[idx][1];
-                this._writePages[idx] = this._pages[idx][1];
-            }
-        } else {
-            for (let idx = 0x0; idx < 0x2; idx++) {
-                this._readPages[idx] = this._pages[idx][0];
-                this._writePages[idx] = this._pages[idx][0];
-            }
+        readPages = this._altzp ? this._pages[1] : this._pages[0];
+        writePages = this._altzp ? this._pages[1] : this._pages[0];
+        for (let idx = 0x0; idx < 0x2; idx++) {
+            this._readPages[idx] = readPages[idx];
+            this._writePages[idx] = writePages[idx];
         }
 
         if (this._readbsr) {
-            if (this._bank1) {
-                for (let idx = 0xd0; idx < 0xe0; idx++) {
-                    this._readPages[idx] =
-                        this._pages[idx][this._altzp ? 2 : 1];
-                }
-            } else {
-                for (let idx = 0xd0; idx < 0xe0; idx++) {
-                    this._readPages[idx] =
-                        this._pages[idx][this._altzp ? 4 : 3];
-                }
+            readPages = this._bank1
+                ? this._altzp
+                    ? this._pages[2]
+                    : this._pages[1]
+                : this._altzp
+                  ? this._pages[4]
+                  : this._pages[3];
+            for (let idx = 0xd0; idx < 0xe0; idx++) {
+                this._readPages[idx] = readPages[idx];
             }
+            readPages = this._altzp ? this._pages[2] : this._pages[1];
             for (let idx = 0xe0; idx < 0x100; idx++) {
-                this._readPages[idx] = this._pages[idx][this._altzp ? 2 : 1];
+                this._readPages[idx] = readPages[idx];
             }
         } else {
+            readPages = this._pages[0];
             for (let idx = 0xd0; idx < 0x100; idx++) {
-                this._readPages[idx] = this._pages[idx][0];
+                this._readPages[idx] = readPages[idx];
             }
         }
 
         if (this._writebsr) {
-            if (this._bank1) {
-                for (let idx = 0xd0; idx < 0xe0; idx++) {
-                    this._writePages[idx] =
-                        this._pages[idx][this._altzp ? 2 : 1];
-                }
-            } else {
-                for (let idx = 0xd0; idx < 0xe0; idx++) {
-                    this._writePages[idx] =
-                        this._pages[idx][this._altzp ? 4 : 3];
-                }
+            writePages = this._bank1
+                ? this._altzp
+                    ? this._pages[2]
+                    : this._pages[1]
+                : this._altzp
+                  ? this._pages[4]
+                  : this._pages[3];
+
+            for (let idx = 0xd0; idx < 0xe0; idx++) {
+                this._writePages[idx] = writePages[idx];
             }
+            writePages = this._altzp ? this._pages[2] : this._pages[1];
             for (let idx = 0xe0; idx < 0x100; idx++) {
-                this._writePages[idx] = this._pages[idx][this._altzp ? 2 : 1];
+                this._writePages[idx] = writePages[idx];
             }
         } else {
+            writePages = this._pages[0];
             for (let idx = 0xd0; idx < 0x100; idx++) {
-                this._writePages[idx] = this._pages[idx][0];
+                this._writePages[idx] = writePages[idx];
             }
         }
     }
