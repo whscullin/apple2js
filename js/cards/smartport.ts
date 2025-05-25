@@ -746,7 +746,7 @@ export default class SmartPort
         const dataView = new DataView(vdhBlock.buffer);
 
         const nameLength = dataView.getUint8(VDH_OFFSETS.NAME_LENGTH) & 0xf;
-        const caseBits = dataView.getUint8(VDH_OFFSETS.CASE_BITS);
+        const caseBits = dataView.getUint16(VDH_OFFSETS.CASE_BITS, true);
         return readFileName(
             dataView,
             VDH_OFFSETS.VOLUME_NAME,
