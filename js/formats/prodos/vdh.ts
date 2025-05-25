@@ -52,7 +52,7 @@ export class VDH {
         this.next = block.getUint16(VDH_OFFSETS.NEXT, true);
         this.storageType = block.getUint8(VDH_OFFSETS.STORAGE_TYPE) >> 4;
         const nameLength = block.getUint8(VDH_OFFSETS.NAME_LENGTH) & 0xf;
-        const caseBits = block.getUint8(VDH_OFFSETS.CASE_BITS);
+        const caseBits = block.getUint16(VDH_OFFSETS.CASE_BITS, true);
         this.name = readFileName(
             block,
             VDH_OFFSETS.VOLUME_NAME,
@@ -91,7 +91,7 @@ export class VDH {
             dateToUint32(this.creation),
             true
         );
-        block.setUint16(VDH_OFFSETS.CASE_BITS, caseBits);
+        block.setUint16(, caseBits);
         block.setUint8(VDH_OFFSETS.ACCESS, this.access);
         block.setUint8(VDH_OFFSETS.ENTRY_LENGTH, this.entryLength);
         block.setUint8(VDH_OFFSETS.ENTRIES_PER_BLOCK, this.entriesPerBlock);
