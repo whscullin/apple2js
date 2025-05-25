@@ -91,7 +91,7 @@ export class VDH {
             dateToUint32(this.creation),
             true
         );
-        block.setUint16(, caseBits);
+        block.setUint16(VDH_OFFSETS.CASE_BITS, caseBits);
         block.setUint8(VDH_OFFSETS.ACCESS, this.access);
         block.setUint8(VDH_OFFSETS.ENTRY_LENGTH, this.entryLength);
         block.setUint8(VDH_OFFSETS.ENTRIES_PER_BLOCK, this.entriesPerBlock);
