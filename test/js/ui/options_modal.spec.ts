@@ -86,20 +86,20 @@ describe('OptionsModal', () => {
             expect(content).toMatchSnapshot();
         });
 
-        it('toggles booleans', () => {
+        it('toggles booleans', async () => {
             modal.openModal();
             const toggle = screen.getByText('Option 3');
-            userEvent.click(toggle);
+            await userEvent.click(toggle);
             expect(mockOptionHandler.setOption).toHaveBeenCalledWith(
                 'option_3',
                 false
             );
         });
 
-        it('selects', () => {
+        it('selects', async () => {
             modal.openModal();
             const combobox = screen.getByRole('combobox');
-            userEvent.selectOptions(combobox, 'select_2');
+            await userEvent.selectOptions(combobox, 'select_2');
 
             expect(mockOptionHandler.setOption).toHaveBeenCalledWith(
                 'option_2',

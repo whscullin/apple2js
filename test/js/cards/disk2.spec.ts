@@ -13,6 +13,10 @@ import {
     BYTES_BY_TRACK_IMAGE,
 } from '../formats/testdata/16sector';
 
+// Convert Uint8Array test data to ArrayBuffer for setBinary()
+const BYTES_BY_TRACK_AB = BYTES_BY_TRACK_IMAGE.buffer;
+const BYTES_BY_SECTOR_AB = BYTES_BY_SECTOR_IMAGE.buffer;
+
 jest.mock('js/apple2io');
 jest.mock('js/videomodes');
 
@@ -56,7 +60,7 @@ describe('DiskII', () => {
 
     it('round-trips the state when there are no changes', async () => {
         const diskII = new DiskII(mockApple2IO, callbacks);
-        await diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+        await diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_AB);
 
         const state = diskII.getState();
         diskII.setState(state);
@@ -66,13 +70,8 @@ describe('DiskII', () => {
 
     it('round-trips the state when there are changes', async () => {
         const diskII = new DiskII(mockApple2IO, callbacks);
-        await diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
-        await diskII.setBinary(
-            2,
-            'BYTES_BY_SECTOR',
-            'po',
-            BYTES_BY_SECTOR_IMAGE
-        );
+        await diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_AB);
+        await diskII.setBinary(2, 'BYTES_BY_SECTOR', 'po', BYTES_BY_SECTOR_AB);
 
         const state = diskII.getState();
         // These are just arbitrary changes, not an exhaustive list of fields.
@@ -92,7 +91,7 @@ describe('DiskII', () => {
 
     it('calls all of the callbacks when state is restored', async () => {
         const diskII = new DiskII(mockApple2IO, callbacks);
-        await diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_IMAGE);
+        await diskII.setBinary(1, 'BYTES_BY_TRACK', 'po', BYTES_BY_TRACK_AB);
         jest.resetAllMocks();
 
         const state = diskII.getState();
@@ -184,7 +183,7 @@ describe('DiskII', () => {
                 1,
                 'BYTES_BY_TRACK',
                 'po',
-                BYTES_BY_TRACK_IMAGE
+                BYTES_BY_TRACK_AB
             );
 
             diskII.ioSwitch(0x81); // coil 0 on
@@ -205,7 +204,7 @@ describe('DiskII', () => {
                 1,
                 'BYTES_BY_TRACK',
                 'po',
-                BYTES_BY_TRACK_IMAGE
+                BYTES_BY_TRACK_AB
             );
 
             diskII.ioSwitch(0x89); // turn on the motor
@@ -227,7 +226,7 @@ describe('DiskII', () => {
                 1,
                 'BYTES_BY_TRACK',
                 'po',
-                BYTES_BY_TRACK_IMAGE
+                BYTES_BY_TRACK_AB
             );
 
             diskII.ioSwitch(0x89); // turn on the motor
@@ -253,7 +252,7 @@ describe('DiskII', () => {
                 1,
                 'BYTES_BY_TRACK',
                 'po',
-                BYTES_BY_TRACK_IMAGE
+                BYTES_BY_TRACK_AB
             );
             setTrack(diskII, 8);
 
@@ -280,7 +279,7 @@ describe('DiskII', () => {
                 1,
                 'BYTES_BY_TRACK',
                 'po',
-                BYTES_BY_TRACK_IMAGE
+                BYTES_BY_TRACK_AB
             );
             setTrack(diskII, 33);
 
@@ -317,7 +316,7 @@ describe('DiskII', () => {
                 1,
                 'BYTES_BY_TRACK',
                 'po',
-                BYTES_BY_TRACK_IMAGE
+                BYTES_BY_TRACK_AB
             );
             setTrack(diskII, 15);
 
@@ -338,7 +337,7 @@ describe('DiskII', () => {
                 1,
                 'BYTES_BY_TRACK',
                 'po',
-                BYTES_BY_TRACK_IMAGE
+                BYTES_BY_TRACK_AB
             );
             setTrack(diskII, 15);
 
@@ -361,7 +360,7 @@ describe('DiskII', () => {
                 1,
                 'BYTES_BY_TRACK',
                 'po',
-                BYTES_BY_TRACK_IMAGE
+                BYTES_BY_TRACK_AB
             );
             setTrack(diskII, 15);
 
@@ -388,7 +387,7 @@ describe('DiskII', () => {
                 1,
                 'BYTES_BY_TRACK',
                 'po',
-                BYTES_BY_TRACK_IMAGE
+                BYTES_BY_TRACK_AB
             );
             setTrack(diskII, 1);
 
@@ -415,7 +414,7 @@ describe('DiskII', () => {
                 1,
                 'BYTES_BY_TRACK',
                 'po',
-                BYTES_BY_TRACK_IMAGE
+                BYTES_BY_TRACK_AB
             );
             setTrack(diskII, 15);
 
@@ -439,7 +438,7 @@ describe('DiskII', () => {
                 1,
                 'BYTES_BY_TRACK',
                 'po',
-                BYTES_BY_TRACK_IMAGE
+                BYTES_BY_TRACK_AB
             );
             setTrack(diskII, 15);
 
@@ -461,7 +460,7 @@ describe('DiskII', () => {
                 1,
                 'BYTES_BY_TRACK',
                 'po',
-                BYTES_BY_TRACK_IMAGE
+                BYTES_BY_TRACK_AB
             );
             setTrack(diskII, 15);
 
@@ -482,7 +481,7 @@ describe('DiskII', () => {
                 1,
                 'BYTES_BY_TRACK',
                 'po',
-                BYTES_BY_TRACK_IMAGE
+                BYTES_BY_TRACK_AB
             );
 
             diskII.ioSwitch(0x89); // turn on the motor
@@ -506,7 +505,7 @@ describe('DiskII', () => {
                 1,
                 'BYTES_BY_TRACK',
                 'po',
-                BYTES_BY_TRACK_IMAGE
+                BYTES_BY_TRACK_AB
             );
 
             diskII.ioSwitch(0x89); // turn on the motor
@@ -530,7 +529,7 @@ describe('DiskII', () => {
                 1,
                 'BYTES_BY_TRACK',
                 'po',
-                BYTES_BY_TRACK_IMAGE
+                BYTES_BY_TRACK_AB
             );
 
             diskII.ioSwitch(0x89); // turn on the motor
@@ -556,7 +555,7 @@ describe('DiskII', () => {
                 1,
                 'BYTES_BY_TRACK',
                 'po',
-                BYTES_BY_TRACK_IMAGE
+                BYTES_BY_TRACK_AB
             );
             setWriteProtected(diskII, true);
 
@@ -576,7 +575,7 @@ describe('DiskII', () => {
                 1,
                 'BYTES_BY_TRACK',
                 'po',
-                BYTES_BY_TRACK_IMAGE
+                BYTES_BY_TRACK_AB
             );
             let disk1 = diskII.getState().drives[1].disk as NibbleDisk;
             let track0 = disk1.tracks[0];
@@ -597,7 +596,7 @@ describe('DiskII', () => {
                 1,
                 'BYTES_BY_TRACK',
                 'po',
-                BYTES_BY_TRACK_IMAGE
+                BYTES_BY_TRACK_AB
             );
             let disk1 = diskII.getState().drives[1].disk as NibbleDisk;
             let track0 = disk1.tracks[0];
@@ -621,7 +620,7 @@ describe('DiskII', () => {
                 1,
                 'BYTES_BY_TRACK',
                 'po',
-                BYTES_BY_TRACK_IMAGE
+                BYTES_BY_TRACK_AB
             );
             let state = diskII.getState();
             state.drives[1].dirty = false;
@@ -935,7 +934,7 @@ class TestDiskReader {
     private async init(
         driveNo: DriveNumber,
         label: string,
-        image: ArrayBufferLike
+        image: ArrayBuffer
     ) {
         await this.diskII.setBinary(driveNo, label, 'woz', image);
     }
@@ -943,7 +942,7 @@ class TestDiskReader {
     static async create(
         driveNo: DriveNumber,
         label: string,
-        image: ArrayBufferLike,
+        image: ArrayBuffer,
         apple2IO: Apple2IO,
         callbacks: Callbacks
     ): Promise<TestDiskReader> {

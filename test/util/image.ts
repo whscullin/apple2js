@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 export const createImageFromImageData = (data: ImageData) => {
     const canvas = document.createElement('canvas');
     canvas.width = data.width;

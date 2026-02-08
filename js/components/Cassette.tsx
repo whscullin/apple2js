@@ -8,14 +8,16 @@ import Tape, { TAPE_TYPES } from 'js/ui/tape';
 import { debug } from 'js/util';
 import { noAwait } from './util/promises';
 
-import { FileChooser } from './FileChooser';
+import { FileChooser, FilePickerAcceptType } from './FileChooser';
 import { Modal, ModalContent } from './Modal';
 
 const CASSETTE_TYPES: FilePickerAcceptType[] = [
     {
         description: 'Audio Files',
         accept: {
-            'application/octet-stream': TAPE_TYPES.map((x) => '.' + x),
+            'application/octet-stream': TAPE_TYPES.map(
+                (x): `.${string}` => `.${x}`
+            ),
         },
     },
 ];

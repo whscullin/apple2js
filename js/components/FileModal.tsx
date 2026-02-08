@@ -26,7 +26,9 @@ const DISK_TYPES: FilePickerAcceptType[] = [
     {
         description: 'Disk Images',
         accept: {
-            'application/octet-stream': FLOPPY_FORMATS.map((x) => '.' + x),
+            'application/octet-stream': FLOPPY_FORMATS.map(
+                (x): `.${string}` => `.${x}`
+            ),
         },
     },
 ];

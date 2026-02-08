@@ -37,7 +37,6 @@ const NOP = () => {
     /* do nothing */
 };
 
-// eslint-disable-next-line no-undef
 const EMPTY_FILE_LIST = backdoors.newFileList();
 
 const FAKE_FILE = new File([], 'fake');
@@ -55,9 +54,8 @@ describe('FileChooser', () => {
         it('should use the file input element', async () => {
             render(<FileChooser control="input" onChange={NOP} />);
 
-            const inputElement = (await screen.findByRole(
-                'button'
-            )) as HTMLInputElement;
+            const inputElement: HTMLInputElement =
+                await screen.findByRole('button');
             expect(inputElement.type).toBe('file');
         });
 
@@ -70,18 +68,16 @@ describe('FileChooser', () => {
                     accept={TEST_FILE_TYPES}
                 />
             );
-            const inputElement = (await screen.findByRole(
-                'button'
-            )) as HTMLInputElement;
+            const inputElement: HTMLInputElement =
+                await screen.findByRole('button');
             expect(inputElement.accept).toBe('.ext1,.ext2');
         });
 
         it('should fire a callback with empty list when no files are selected', async () => {
             const onChange = jest.fn();
             render(<FileChooser control="input" onChange={onChange} />);
-            const inputElement = (await screen.findByRole(
-                'button'
-            )) as HTMLInputElement;
+            const inputElement: HTMLInputElement =
+                await screen.findByRole('button');
             inputElement.files = EMPTY_FILE_LIST;
             fireEvent.change(inputElement);
             await waitFor(() => {
@@ -95,10 +91,9 @@ describe('FileChooser', () => {
                 Parameters<FileChooserProps['onChange']>
             >();
             render(<FileChooser control="input" onChange={onChange} />);
-            const inputElement = (await screen.findByRole(
-                'button'
-            )) as HTMLInputElement;
-            // eslint-disable-next-line no-undef
+            const inputElement: HTMLInputElement =
+                await screen.findByRole('button');
+
             inputElement.files = backdoors.newFileList(FAKE_FILE);
             fireEvent.change(inputElement);
             await waitFor(async () => {
