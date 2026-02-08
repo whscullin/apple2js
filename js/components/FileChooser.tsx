@@ -10,7 +10,7 @@ import { noAwait } from './util/promises';
 
 export interface FilePickerAcceptType {
     description?: string | undefined;
-    accept: Record<string, string | string[]>;
+    accept: Record<`${string}/${string}`, `.${string}` | `.${string}`[]>;
 }
 
 const ACCEPT_EVERYTHING_TYPE: FilePickerAcceptType = {

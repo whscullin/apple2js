@@ -144,7 +144,7 @@ export const FileViewer = ({ fileData, onClose }: FileViewerProps) => {
     useEffect(() => {
         if (fileData) {
             const { binary, text } = fileData;
-            const binaryBlob = new Blob([binary], {
+            const binaryBlob = new Blob([binary as BlobPart], {
                 type: 'application/octet-stream',
             });
             const binaryHref = window.URL.createObjectURL(binaryBlob);

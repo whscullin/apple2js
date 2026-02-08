@@ -2,7 +2,7 @@ import { h, Fragment } from 'preact';
 import { useCallback, useState } from 'preact/hooks';
 import { DriveNumber, BLOCK_FORMATS } from '../formats/types';
 import { ErrorModal } from './ErrorModal';
-import { FileChooser } from './FileChooser';
+import { FileChooser, FilePickerAcceptType } from './FileChooser';
 import { Modal, ModalContent, ModalFooter } from './Modal';
 import { loadLocalBlockFile, getHashParts, setHashParts } from './util/files';
 import SmartPort from 'js/cards/smartport';
@@ -15,7 +15,9 @@ const DISK_TYPES: FilePickerAcceptType[] = [
     {
         description: 'Disk Images',
         accept: {
-            'application/octet-stream': BLOCK_FORMATS.map((x) => '.' + x),
+            'application/octet-stream': BLOCK_FORMATS.map(
+                (x): `.${string}` => `.${x}`
+            ),
         },
     },
 ];

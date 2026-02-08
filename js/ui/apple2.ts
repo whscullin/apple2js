@@ -454,7 +454,7 @@ function defaultLoadHttp(url: string, name: string, ext: string) {
 
                 return reader
                     .read()
-                    .then(function readChunk(result): Promise<ArrayBufferLike> {
+                    .then(function readChunk(result): Promise<ArrayBuffer> {
                         if (result.done) {
                             const data = new Uint8Array(received);
                             let offset = 0;
