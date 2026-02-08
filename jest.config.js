@@ -17,7 +17,7 @@ module.exports = {
         '^.*\\.tsx$': 'ts-jest',
     },
     transformIgnorePatterns: [
-        '/node_modules/(?!(@testing-library/preact/dist/esm)/)',
+        '/node_modules/(?!(preact|@testing-library/preact)/)',
     ],
     setupFilesAfterEnv: ['<rootDir>/test/jest-setup.ts'],
     coveragePathIgnorePatterns: ['/node_modules/', '/js/roms/', '/test/'],
