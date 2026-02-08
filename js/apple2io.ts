@@ -66,7 +66,7 @@ export default class Apple2IO
     private _buffer: string[] = [];
     private _key = 0;
     private _keyDown = false;
-    private _button = [false, false, false];
+    private _button = [false, false, true];
     private _paddle = [0.0, 0.0, 0.0, 0.0];
     private _phase = -1;
     private _sample: number[] = [];
