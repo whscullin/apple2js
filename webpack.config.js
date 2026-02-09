@@ -25,6 +25,7 @@ const baseConfig = {
                             import: false,
                             modules: {
                                 localIdentName: '[path][name]__[local]',
+                                namedExport: false,
                             },
                         },
                     },
@@ -46,6 +47,7 @@ const baseConfig = {
                             import: false,
                             modules: {
                                 localIdentName: '[path][name]__[local]',
+                                namedExport: false,
                             },
                         },
                     },
