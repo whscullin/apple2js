@@ -1,6 +1,6 @@
 import { CPU6502 } from '@whscullin/cpu6502';
 import { Memory } from 'js/types';
-import { useEffect } from 'preact/hooks';
+import { useEffect } from 'react';
 import Apple2IO, { slot } from '../apple2io';
 import LanguageCardImpl from '../cards/langcard';
 

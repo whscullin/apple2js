@@ -1,5 +1,5 @@
-import { h, Fragment, JSX } from 'preact';
-import { useCallback, useContext } from 'preact/hooks';
+import React from 'react';
+import { useCallback, useContext } from 'react';
 import { Modal, ModalContent, ModalFooter } from './Modal';
 import { OptionsContext } from './OptionsContext';
 import {
@@ -32,7 +32,7 @@ interface BooleanProps {
 const Boolean = ({ option, value, setValue }: BooleanProps) => {
     const { label, name } = option;
     const onChange = useCallback(
-        (event: JSX.TargetedMouseEvent<HTMLInputElement>) =>
+        (event: React.ChangeEvent<HTMLInputElement>) =>
             setValue(name, event.currentTarget.checked),
         [name, setValue]
     );
@@ -66,21 +66,21 @@ interface SelectProps {
 const Select = ({ option, value, setValue }: SelectProps) => {
     const { label, name } = option;
     const onChange = useCallback(
-        (event: JSX.TargetedMouseEvent<HTMLSelectElement>) => {
+        (event: React.ChangeEvent<HTMLSelectElement>) => {
             setValue(name, event.currentTarget.value);
         },
         [name, setValue]
     );
 
     const makeOption = (option: { name: string; value: string }) => (
-        <option selected={option.value === value} value={option.value}>
-            {option.name}
-        </option>
+        <option value={option.value}>{option.name}</option>
     );
 
     return (
         <li>
-            <select onChange={onChange}>{option.values.map(makeOption)}</select>
+            <select onChange={onChange} value={value}>
+                {option.values.map(makeOption)}
+            </select>
             <label>{label}</label>
         </li>
     );

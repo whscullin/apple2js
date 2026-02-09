@@ -1,12 +1,5 @@
-import { h } from 'preact';
 import cs from 'classnames';
-import {
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'preact/hooks';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Apple2 as Apple2Impl } from '../apple2';
 import { ControlStrip } from './ControlStrip';
 import { Debugger } from './debugger/Debugger';

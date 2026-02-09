@@ -1,5 +1,4 @@
-import { h, Fragment } from 'preact';
-import { useMemo, useState } from 'preact/hooks';
+import { useMemo, useState } from 'react';
 import styles from './css/ControlButton.module.scss';
 import cs from 'classnames';
 

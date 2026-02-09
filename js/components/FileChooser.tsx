@@ -1,11 +1,4 @@
-import { h, Fragment } from 'preact';
-import {
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'preact/hooks';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { noAwait } from './util/promises';
 
 export interface FilePickerAcceptType {

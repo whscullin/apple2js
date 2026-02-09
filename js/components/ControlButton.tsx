@@ -1,4 +1,4 @@
-import { h, JSX } from 'preact';
+import React from 'react';
 import cs from 'classnames';
 
 import styles from './css/ControlButton.module.scss';
@@ -11,7 +11,7 @@ export interface ControlButtonProps {
     title: string;
     disabled?: boolean;
     active?: boolean;
-    onClick: JSX.MouseEventHandler<HTMLButtonElement>;
+    onClick: React.MouseEventHandler<HTMLButtonElement>;
 }
 
 /**

@@ -1,5 +1,4 @@
-import { h } from 'preact';
-import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Disk2, { Callbacks } from '../cards/disk2';
 import Apple2IO from '../apple2io';
 import { DiskII, DiskIIData } from './DiskII';

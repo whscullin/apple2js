@@ -1,6 +1,6 @@
-import { h, JSX } from 'preact';
+import React from 'react';
 import cs from 'classnames';
-import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Apple2 as Apple2Impl } from '../../apple2';
 import { ControlButton } from '../ControlButton';
 import { FileChooser } from '../FileChooser';
@@ -84,20 +84,20 @@ export const CPU = ({ apple2 }: CPUProps) => {
     }, [debug]);
 
     const doLoadAddress = useCallback(
-        (event: JSX.TargetedEvent<HTMLInputElement>) => {
+        (event: React.ChangeEvent<HTMLInputElement>) => {
             setLoadAddress(event.currentTarget.value);
         },
         []
     );
     const doRunCheck = useCallback(
-        (event: JSX.TargetedEvent<HTMLInputElement>) => {
+        (event: React.ChangeEvent<HTMLInputElement>) => {
             setRun(event.currentTarget.checked);
         },
         []
     );
 
     const doMemoryPage = useCallback(
-        (event: JSX.TargetedEvent<HTMLInputElement>) => {
+        (event: React.ChangeEvent<HTMLInputElement>) => {
             setMemoryPage(event.currentTarget.value);
         },
         []

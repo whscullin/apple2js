@@ -1,6 +1,5 @@
 /** @jest-environment jsdom */
-import { h } from 'preact';
-import { fireEvent, render, screen } from '@testing-library/preact';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { Modal, ModalContent, ModalFooter } from 'js/components/Modal';
 
 describe('Modal', () => {

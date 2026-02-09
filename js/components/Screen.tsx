@@ -1,7 +1,7 @@
-import { h, Ref } from 'preact';
+import { type Ref } from 'react';
 
 import styles from './css/Screen.module.scss';
-import { useContext } from 'preact/hooks';
+import { useContext } from 'react';
 import { OptionsContext } from './OptionsContext';
 import { SCREEN_FULL_PAGE } from 'js/ui/screen';
 

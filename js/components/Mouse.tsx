@@ -1,9 +1,9 @@
-import { RefObject } from 'preact';
+import { type RefObject } from 'react';
 import Apple2IO, { slot } from '../apple2io';
 import { MouseUI } from '../ui/mouse';
 import MouseCard from '../cards/mouse';
 import { CPU6502 } from '@whscullin/cpu6502';
-import { useEffect } from 'preact/hooks';
+import { useEffect } from 'react';
 
 /**
  * Mouse component properties.

@@ -12,7 +12,8 @@ module.exports = {
         [
             '@babel/typescript',
             {
-                jsxPragma: 'h',
+                isTSX: true,
+                allExtensions: true,
             },
         ],
     ],
@@ -20,8 +21,7 @@ module.exports = {
         [
             '@babel/plugin-transform-react-jsx',
             {
-                pragma: 'h',
-                pragmaFrag: 'Fragment',
+                runtime: 'automatic',
             },
         ],
     ],

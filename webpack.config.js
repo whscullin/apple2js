@@ -77,7 +77,7 @@ const appConfig = merge(baseConfig, {
     entry: {
         main2: path.resolve('js/entry2.ts'),
         main2e: path.resolve('js/entry2e.ts'),
-        preact: path.resolve('js/entry.tsx'),
+        app: path.resolve('js/entry.tsx'),
     },
     output: {
         library: {

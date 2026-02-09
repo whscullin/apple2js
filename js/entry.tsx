@@ -1,8 +1,8 @@
-import { h, render } from 'preact';
+import { createRoot } from 'react-dom/client';
 import { App } from './components/App';
 
 if (navigator.standalone) {
     document.body.classList.add('standalone');
 }
 
-render(<App />, document.getElementById('app')!);
+createRoot(document.getElementById('app')!).render(<App />);

@@ -1,11 +1,4 @@
-import { h, Fragment } from 'preact';
-import {
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'preact/hooks';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Apple2IO, { slot } from 'js/apple2io';
 import Parallel, { ParallelOptions } from 'js/cards/parallel';
 import { Modal, ModalContent, ModalFooter } from './Modal';

@@ -1,4 +1,4 @@
-import { useEffect } from 'preact/hooks';
+import { useEffect } from 'react';
 
 /**
  * Hook to allow registering hotkey that will automatically

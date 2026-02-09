@@ -1,5 +1,4 @@
-import { h } from 'preact';
-import { useCallback, useContext, useEffect, useState } from 'preact/hooks';
+import { useCallback, useContext, useEffect, useState } from 'react';
 import { CPUMeter } from './CPUMeter';
 import { Inset } from './Inset';
 import { useHotKey } from './hooks/useHotKey';

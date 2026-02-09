@@ -59,8 +59,7 @@ export default tseslint.config(
         },
         settings: {
             react: {
-                pragma: 'h',
-                version: '16',
+                version: 'detect',
             },
         },
         rules: {
@@ -102,6 +101,7 @@ export default tseslint.config(
                 { checksVoidReturn: false },
             ],
             // react rules
+            'react/react-in-jsx-scope': 'off',
             'react-hooks/rules-of-hooks': 'error',
             'react-hooks/exhaustive-deps': 'error',
         },

@@ -1,5 +1,4 @@
-import { h } from 'preact';
-import { useCallback, useContext, useEffect, useState } from 'preact/hooks';
+import { useCallback, useContext, useEffect, useState } from 'react';
 import { ControlButton } from './ControlButton';
 import { OptionsContext } from './OptionsContext';
 import { Audio, SOUND_ENABLED_OPTION } from '../ui/audio';

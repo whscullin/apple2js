@@ -1,4 +1,4 @@
-import { useEffect } from 'preact/hooks';
+import { useEffect } from 'react';
 import Apple2IO, { slot } from '../apple2io';
 import ThunderClockCard from '../cards/thunderclock';
 

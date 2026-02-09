@@ -2,8 +2,7 @@
  * @jest-environment ./test/env/jsdom-with-backdoors
  */
 
-import { h } from 'preact';
-import { fireEvent, render, screen, waitFor } from '@testing-library/preact';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import 'test/env/jsdom-with-backdoors';
 import { FileChooser, FileChooserProps } from '../../js/components/FileChooser';

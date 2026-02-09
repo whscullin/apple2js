@@ -1,5 +1,4 @@
-import { h } from 'preact';
-import { useCallback } from 'preact/hooks';
+import { useCallback } from 'react';
 import { Modal, ModalContent, ModalFooter } from './Modal';
 
 import styles from './css/ErrorModal.module.scss';

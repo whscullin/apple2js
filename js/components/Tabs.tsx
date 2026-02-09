@@ -1,11 +1,11 @@
-import { ComponentChild, ComponentChildren, h } from 'preact';
-import { useCallback, useState } from 'preact/hooks';
+import { type ReactNode } from 'react';
+import { useCallback, useState } from 'react';
 import cs from 'classnames';
 
 import styles from './css/Tabs.module.scss';
 
 export interface TabProps {
-    children: ComponentChildren;
+    children: ReactNode;
 }
 
 export const Tab = ({ children }: TabProps) => {
@@ -13,7 +13,7 @@ export const Tab = ({ children }: TabProps) => {
 };
 
 interface TabWrapperProps {
-    children: ComponentChild;
+    children: ReactNode;
     onClick: () => void;
     selected: boolean;
 }
@@ -30,7 +30,7 @@ const TabWrapper = ({ children, onClick, selected }: TabWrapperProps) => {
 };
 
 export interface TabsProps {
-    children: ComponentChildren;
+    children: ReactNode;
     setSelected: (selected: number) => void;
 }
 

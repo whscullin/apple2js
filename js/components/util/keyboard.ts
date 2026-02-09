@@ -1,4 +1,4 @@
-import { JSX } from 'preact';
+import React from 'react';
 import { DeepMemberOf, KnownKeys } from '../../types';
 
 export const SPECIAL_KEY_MAP = {
@@ -186,7 +186,7 @@ export const mapKeyboardEvent = (
  * @returns ASCII character
  */
 export const mapMouseEvent = (
-    event: JSX.TargetedMouseEvent<HTMLElement>,
+    event: React.MouseEvent<HTMLElement>,
     shifted: boolean,
     controlled: boolean,
     caps: boolean,
