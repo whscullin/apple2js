@@ -37,7 +37,7 @@ import { OptionsModal } from './options_modal';
 import { Screen, SCREEN_FULL_PAGE } from './screen';
 import { JoyStick } from './joystick';
 import { System } from './system';
-import { Options } from '../options';
+import { OptionsStore } from '../options';
 import { HttpBlockDisk } from 'js/formats/http_block_disk';
 
 let paused = false;
@@ -50,7 +50,7 @@ let lastRenderedFrames = 0;
 let hashtag = document.location.hash;
 let oldHashFiles: string[] = [];
 
-const options = new Options();
+const options = new OptionsStore();
 const optionsModal = new OptionsModal(options);
 
 type DiskCollection = {

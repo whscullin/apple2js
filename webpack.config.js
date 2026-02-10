@@ -26,6 +26,7 @@ const baseConfig = {
                             modules: {
                                 localIdentName: '[path][name]__[local]',
                                 namedExport: false,
+                                exportLocalsConvention: 'as-is',
                             },
                         },
                     },
@@ -48,6 +49,7 @@ const baseConfig = {
                             modules: {
                                 localIdentName: '[path][name]__[local]',
                                 namedExport: false,
+                                exportLocalsConvention: 'as-is',
                             },
                         },
                     },

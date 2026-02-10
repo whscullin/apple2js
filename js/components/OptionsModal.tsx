@@ -1,7 +1,7 @@
 import React from 'react';
-import { useCallback, useContext } from 'react';
+import { useCallback } from 'react';
 import { Modal, ModalContent, ModalFooter } from './Modal';
-import { OptionsContext } from './OptionsContext';
+import { useOptions } from './hooks/useOptions';
 import {
     BOOLEAN_OPTION,
     SELECT_OPTION,
@@ -31,12 +31,8 @@ interface BooleanProps {
  */
 const Boolean = ({ option, value, setValue }: BooleanProps) => {
     const { label, name } = option;
-    const onChange = useCallback(
-        (event: React.ChangeEvent<HTMLInputElement>) =>
-            setValue(name, event.currentTarget.checked),
-        [name, setValue]
-    );
-
+    const onChange = (event: React.ChangeEvent<HTMLInputElement>) =>
+        setValue(name, event.currentTarget.checked);
     return (
         <li>
             <input type="checkbox" checked={value} onChange={onChange} />
@@ -65,15 +61,14 @@ interface SelectProps {
  */
 const Select = ({ option, value, setValue }: SelectProps) => {
     const { label, name } = option;
-    const onChange = useCallback(
-        (event: React.ChangeEvent<HTMLSelectElement>) => {
-            setValue(name, event.currentTarget.value);
-        },
-        [name, setValue]
-    );
+    const onChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        setValue(name, event.currentTarget.value);
+    };
 
     const makeOption = (option: { name: string; value: string }) => (
-        <option value={option.value}>{option.name}</option>
+        <option key={option.value} value={option.value}>
+            {option.name}
+        </option>
     );
 
     return (
@@ -102,22 +97,19 @@ export interface OptionsModalProps {
  * @returns OptionsModal component
  */
 export const OptionsModal = ({ isOpen, onClose }: OptionsModalProps) => {
-    const options = useContext(OptionsContext);
-    const sections = options.getSections();
-    const setValue = useCallback(
-        (name: string, value: string | boolean) => {
-            options.setOption(name, value);
-        },
-        [options]
-    );
+    const { getSections, setOption, getOption } = useOptions();
+    const setValue = (name: string, value: string | boolean) => {
+        setOption(name, value);
+    };
 
     const makeOption = (option: Option) => {
         const { name, type } = option;
-        const value = options.getOption(name);
+        const value = getOption(name);
         switch (type) {
             case BOOLEAN_OPTION:
                 return (
                     <Boolean
+                        key={name}
                         option={option as BooleanOption}
                         value={value as boolean}
                         setValue={setValue}
@@ -126,6 +118,7 @@ export const OptionsModal = ({ isOpen, onClose }: OptionsModalProps) => {
             case SELECT_OPTION:
                 return (
                     <Select
+                        key={name}
                         option={option as SelectOption}
                         value={value as string}
                         setValue={setValue}
@@ -138,10 +131,10 @@ export const OptionsModal = ({ isOpen, onClose }: OptionsModalProps) => {
 
     const makeSection = (section: OptionSection) => {
         return (
-            <>
+            <div key={section.name}>
                 <h3>{section.name}</h3>
                 <ul>{section.options.map(makeOption)}</ul>
-            </>
+            </div>
         );
     };
 
@@ -151,7 +144,7 @@ export const OptionsModal = ({ isOpen, onClose }: OptionsModalProps) => {
         <Modal title="Options" isOpen={isOpen} onClose={onClose}>
             <ModalContent>
                 <div className={styles.optionsModal}>
-                    {sections.map(makeSection)}
+                    {getSections().map(makeSection)}
                 </div>
                 <i>* Reload page to take effect</i>
             </ModalContent>

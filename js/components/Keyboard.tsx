@@ -252,8 +252,9 @@ export const Keyboard = ({ apple2, layout }: KeyboardProps) => {
         [apple2, active, pressed]
     );
 
-    const bindKey = ([lower, upper]: [string, string]) => (
+    const bindKey = ([lower, upper]: [string, string], index: number) => (
         <Key
+            key={`${lower}-${upper}-${index}`}
             lower={lower}
             upper={upper}
             active={active.includes(lower)}
