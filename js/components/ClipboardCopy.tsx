@@ -1,4 +1,3 @@
-import { h } from 'preact';
 import cs from 'classnames';
 import { copyScreenToClipboard, VideoModes } from 'js/videomodes';
 

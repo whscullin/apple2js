@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useState } from 'react';
 
 export const useHash = () => {
     const [hash, setHash] = useState(window.location.hash);

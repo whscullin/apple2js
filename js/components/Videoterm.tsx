@@ -1,4 +1,4 @@
-import { useEffect } from 'preact/hooks';
+import { useEffect } from 'react';
 import Apple2IO, { slot } from 'js/apple2io';
 import VideotermImpl from 'js/cards/videoterm';
 /**

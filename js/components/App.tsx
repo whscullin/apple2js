@@ -1,6 +1,4 @@
-import 'preact/debug';
 import cs from 'classnames';
-import { h } from 'preact';
 import { Header } from './Header';
 import { Apple2 } from './Apple2';
 import { usePrefs } from './hooks/usePrefs';

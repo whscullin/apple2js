@@ -1,5 +1,5 @@
-import { h, Fragment, JSX } from 'preact';
-import { useCallback, useEffect, useState } from 'preact/hooks';
+import React from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
     DiskDescriptor,
     DriveNumber,
@@ -117,13 +117,13 @@ export const FileModal = ({
     }, []);
 
     const doSelectCategory = useCallback(
-        (event: JSX.TargetedMouseEvent<HTMLSelectElement>) =>
+        (event: React.ChangeEvent<HTMLSelectElement>) =>
             setCategory(event.currentTarget.value),
         []
     );
 
     const doSelectFilename = useCallback(
-        (event: JSX.TargetedMouseEvent<HTMLSelectElement>) => {
+        (event: React.ChangeEvent<HTMLSelectElement>) => {
             setEmpty(!event.currentTarget.value);
             setFilename(event.currentTarget.value);
         },

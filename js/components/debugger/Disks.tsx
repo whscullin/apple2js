@@ -1,5 +1,4 @@
-import { h, Fragment, JSX } from 'preact';
-import { useEffect, useMemo } from 'preact/hooks';
+import { useEffect, useMemo } from 'react';
 import cs from 'classnames';
 import { Apple2 as Apple2Impl } from 'js/apple2';
 import {
@@ -26,7 +25,7 @@ import { toHex } from 'js/util';
 
 import styles from './css/Disks.module.scss';
 import debuggerStyles from './css/Debugger.module.scss';
-import { useCallback, useState } from 'preact/hooks';
+import { useCallback, useState } from 'react';
 import {
     DOS33,
     FileEntry as DOSEntry,

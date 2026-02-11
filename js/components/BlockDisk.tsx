@@ -1,5 +1,4 @@
-import { h } from 'preact';
-import { useState } from 'preact/hooks';
+import { useState } from 'react';
 import cs from 'classnames';
 import { BLOCK_FORMATS } from 'js/formats/types';
 import SmartPort from '../cards/smartport';

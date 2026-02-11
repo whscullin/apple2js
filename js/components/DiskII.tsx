@@ -1,5 +1,4 @@
-import { h } from 'preact';
-import { useCallback, useState } from 'preact/hooks';
+import { useCallback, useState } from 'react';
 import cs from 'classnames';
 import Disk2 from '../cards/disk2';
 import { ErrorModal } from './ErrorModal';

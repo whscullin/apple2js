@@ -31,31 +31,41 @@ export interface OptionHandler {
     setOption: (name: string, value: string | boolean) => void;
 }
 
-export class Options {
-    private prefs: Prefs = new Prefs();
-    private options: Record<string, Option> = {};
-    private handlers: Record<string, OptionHandler> = {};
-    private sections: OptionSection[] = [];
+export interface Options {
+    addOptions: (handler: OptionHandler) => void;
+    getOption: (name: string) => string | boolean | undefined;
+    setOption: (name: string, value: string | boolean) => void;
+    getOptions: () => Record<string, Option>;
+    getSections: () => OptionSection[];
+}
 
-    addOptions(handler: OptionHandler) {
+export class OptionsStore extends EventTarget implements Options {
+    private prefs: Prefs = new Prefs();
+    private _options: Record<string, Option> = {};
+    private _handlers: Record<string, OptionHandler> = {};
+    private _sections: OptionSection[] = [];
+
+    addOptions: (handler: OptionHandler) => void = (handler: OptionHandler) => {
         const sections = handler.getOptions();
         for (const section of sections) {
             const { options } = section;
             for (const option of options) {
                 const { name } = option;
-                this.handlers[name] = handler;
-                this.options[name] = option;
+                this._handlers[name] = handler;
+                this._options[name] = option;
                 const value = this.getOption(name);
                 if (value != null) {
                     handler.setOption(name, value);
                 }
             }
-            this.sections.push(section);
+            this._sections.push(section);
         }
-    }
+    };
 
-    getOption(name: string): string | boolean | undefined {
-        const option = this.options[name];
+    getOption: (name: string) => string | boolean | undefined = (
+        name: string
+    ) => {
+        const option = this._options[name];
         if (option) {
             const { name, defaultVal, type } = option;
             const stringVal = String(defaultVal);
@@ -67,12 +77,15 @@ export class Options {
                     return prefVal;
             }
         }
-    }
+    };
 
-    setOption(name: string, value: string | boolean) {
-        if (name in this.options) {
-            const handler = this.handlers[name];
-            const option = this.options[name];
+    setOption: (name: string, value: string | boolean) => void = (
+        name: string,
+        value: string | boolean
+    ) => {
+        if (name in this._options) {
+            const handler = this._handlers[name];
+            const option = this._options[name];
             this.prefs.writePref(name, String(value));
             switch (option.type) {
                 case BOOLEAN_OPTION:
@@ -81,14 +94,15 @@ export class Options {
                 default:
                     handler.setOption(name, String(value));
             }
+            this.dispatchEvent(new Event('change'));
         }
-    }
+    };
 
-    getOptions() {
-        return this.options;
-    }
+    getOptions: () => Record<string, Option> = () => {
+        return { ...this._options };
+    };
 
-    getSections() {
-        return this.sections;
-    }
+    getSections: () => OptionSection[] = () => {
+        return this._sections;
+    };
 }

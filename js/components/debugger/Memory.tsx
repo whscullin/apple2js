@@ -1,5 +1,5 @@
-import { ComponentChildren, h } from 'preact';
-import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
+import { type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import cs from 'classnames';
 
 import { Apple2 as Apple2Impl } from 'js/apple2';
@@ -193,7 +193,7 @@ const rw = (rw: ReadWrite) => {
  */
 interface LanguageCardMapProps {
     lc: LC;
-    children?: ComponentChildren;
+    children?: ReactNode;
 }
 
 /**

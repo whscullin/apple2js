@@ -1,7 +1,7 @@
 /** @jest-environment jsdom */
 import { screen } from '@testing-library/dom';
 import userEvent from '@testing-library/user-event';
-import { Options } from 'js/options';
+import { type Options, OptionsStore } from 'js/options';
 
 import { BOOLEAN_OPTION, SELECT_OPTION, OptionHandler } from 'js/options';
 import { OptionsModal } from 'js/ui/options_modal';
@@ -59,7 +59,7 @@ describe('OptionsModal', () => {
     let options: Options;
     let modal: OptionsModal;
     beforeEach(() => {
-        options = new Options();
+        options = new OptionsStore();
         options.addOptions(mockOptionHandler);
         modal = new OptionsModal(options);
     });
@@ -110,7 +110,7 @@ describe('OptionsModal', () => {
 
     describe('getOption', () => {
         beforeEach(() => {
-            options = new Options();
+            options = new OptionsStore();
             options.addOptions(mockOptionHandler);
             modal = new OptionsModal(options);
         });

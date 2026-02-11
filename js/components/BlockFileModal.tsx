@@ -1,5 +1,4 @@
-import { h, Fragment } from 'preact';
-import { useCallback, useState } from 'preact/hooks';
+import { useCallback, useState } from 'react';
 import { DriveNumber, BLOCK_FORMATS } from '../formats/types';
 import { ErrorModal } from './ErrorModal';
 import { FileChooser, FilePickerAcceptType } from './FileChooser';

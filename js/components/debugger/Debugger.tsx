@@ -1,5 +1,4 @@
-import { h } from 'preact';
-import { useState } from 'preact/hooks';
+import { useState } from 'react';
 import { Inset } from '../Inset';
 import { Tab, Tabs } from '../Tabs';
 import { Apple2 } from 'js/apple2';

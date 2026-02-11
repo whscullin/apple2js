@@ -1,5 +1,4 @@
-import { h, Fragment } from 'preact';
-import { useCallback, useEffect, useState } from 'preact/hooks';
+import { useCallback, useEffect, useState } from 'react';
 import { DriveNumber, MassStorage } from '../formats/types';
 import { Modal, ModalContent, ModalFooter } from './Modal';
 

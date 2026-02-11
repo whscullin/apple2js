@@ -1,8 +1,7 @@
-import { h, Ref } from 'preact';
+import { type Ref } from 'react';
 
 import styles from './css/Screen.module.scss';
-import { useContext } from 'preact/hooks';
-import { OptionsContext } from './OptionsContext';
+import { useOptions } from './hooks/useOptions';
 import { SCREEN_FULL_PAGE } from 'js/ui/screen';
 
 /**
@@ -20,14 +19,12 @@ export interface ScreenProps {
  * @returns
  */
 export const Screen = ({ screenRef }: ScreenProps) => {
-    const options = useContext(OptionsContext);
+    const { setOption } = useOptions();
 
     return (
         <div className={styles.display}>
             <div className={styles.exitFullScreen}>
-                <button
-                    onClick={() => options.setOption(SCREEN_FULL_PAGE, false)}
-                >
+                <button onClick={() => setOption(SCREEN_FULL_PAGE, false)}>
                     Exit Full Page
                 </button>
             </div>

@@ -32,7 +32,9 @@
         "@eslint/js": "^9.0.0",
         "@testing-library/dom": "^10.4.0",
         "@testing-library/jest-dom": "^6.6.3",
-        "@testing-library/preact": "^3.0.1",
+        "@testing-library/react": "^14.0.0",
+        "@types/react": "^18.2.0",
+        "@types/react-dom": "^18.2.0",
         "@testing-library/user-event": "^14.0.0",
         "@types/jest": "^30.0.0",
         "@types/jest-image-snapshot": "^6.4.0",
@@ -89,6 +91,7 @@
         "bootstrap-icons": "^1.11.3",
         "classnames": "^2.3.1",
         "micromodal": "^0.4.2",
-        "preact": "^10.22.1"
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0"
     }
 }

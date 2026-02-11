@@ -1,4 +1,3 @@
-import { h } from 'preact';
 import { Modal, ModalContent } from './Modal';
 
 import styles from './css/ProgressModal.module.scss';

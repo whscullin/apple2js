@@ -1,6 +1,6 @@
-import { h, Fragment, JSX } from 'preact';
+import React from 'react';
 import cs from 'classnames';
-import { useCallback, useEffect, useMemo, useState } from 'preact/hooks';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Apple2 as Apple2Impl } from '../apple2';
 import {
     keys2,
@@ -37,8 +37,8 @@ interface KeyProps {
     upper: string;
     active: boolean;
     pressed: boolean;
-    onMouseDown: (event: MouseEvent) => void;
-    onMouseUp: (event: MouseEvent) => void;
+    onMouseDown: (event: React.MouseEvent<HTMLElement>) => void;
+    onMouseUp: (event: React.MouseEvent<HTMLElement>) => void;
 }
 
 /**
@@ -185,7 +185,7 @@ export const Keyboard = ({ apple2, layout }: KeyboardProps) => {
     }, [apple2, active]);
 
     const onMouseDown = useCallback(
-        (event: JSX.TargetedMouseEvent<HTMLElement>) => {
+        (event: React.MouseEvent<HTMLElement>) => {
             if (!apple2) {
                 return;
             }
@@ -238,7 +238,7 @@ export const Keyboard = ({ apple2, layout }: KeyboardProps) => {
     );
 
     const onMouseUp = useCallback(
-        (event: JSX.TargetedMouseEvent<HTMLElement>) => {
+        (event: React.MouseEvent<HTMLElement>) => {
             const { keyLabel } = mapMouseEvent(
                 event,
                 active.includes('SHIFT'),
@@ -252,8 +252,9 @@ export const Keyboard = ({ apple2, layout }: KeyboardProps) => {
         [apple2, active, pressed]
     );
 
-    const bindKey = ([lower, upper]: [string, string]) => (
+    const bindKey = ([lower, upper]: [string, string], index: number) => (
         <Key
+            key={`${lower}-${upper}-${index}`}
             lower={lower}
             upper={upper}
             active={active.includes(lower)}

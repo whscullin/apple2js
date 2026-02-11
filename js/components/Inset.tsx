@@ -1,10 +1,10 @@
-import { h, ComponentChildren, JSX } from 'preact';
+import React, { type ReactNode } from 'react';
 import cs from 'classnames';
 
 import styles from './css/Inset.module.scss';
 
-interface InsetProps extends JSX.HTMLAttributes<HTMLDivElement> {
-    children: ComponentChildren;
+interface InsetProps extends React.HTMLAttributes<HTMLDivElement> {
+    children: ReactNode;
 }
 
 /**

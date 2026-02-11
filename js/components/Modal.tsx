@@ -1,7 +1,7 @@
-import { h, ComponentChildren } from 'preact';
+import { type ReactNode } from 'react';
 import cs from 'classnames';
-import { createPortal } from 'preact/compat';
-import { useCallback } from 'preact/hooks';
+import { createPortal } from 'react-dom';
+import { useCallback } from 'react';
 import { useHotKey } from './hooks/useHotKey';
 
 import styles from './css/Modal.module.scss';
@@ -14,7 +14,7 @@ import { ControlButton } from './ControlButton';
  *
  * @returns ModalOverlay component
  */
-export const ModalOverlay = ({ children }: { children: ComponentChildren }) => {
+export const ModalOverlay = ({ children }: { children: ReactNode }) => {
     return <div className={styles.modalOverlay}>{children}</div>;
 };
 
@@ -23,7 +23,7 @@ export const ModalOverlay = ({ children }: { children: ComponentChildren }) => {
  *
  * @returns ModalContent component
  */
-export const ModalContent = ({ children }: { children: ComponentChildren }) => {
+export const ModalContent = ({ children }: { children: ReactNode }) => {
     return <div className={styles.modalContent}>{children}</div>;
 };
 
@@ -32,7 +32,7 @@ export const ModalContent = ({ children }: { children: ComponentChildren }) => {
  *
  * @returns ModalFooter component
  */
-export const ModalFooter = ({ children }: { children: ComponentChildren }) => {
+export const ModalFooter = ({ children }: { children: ReactNode }) => {
     return (
         <div role="contentinfo" className={styles.modalFooter}>
             {children}
@@ -99,7 +99,7 @@ export interface ModalProps {
     onClose?: (closeBox?: boolean) => void;
     isOpen: boolean;
     title: string;
-    children: ComponentChildren;
+    children: ReactNode;
     icon?: string;
 }
 

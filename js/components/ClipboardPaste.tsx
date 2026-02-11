@@ -1,4 +1,3 @@
-import { h } from 'preact';
 import cs from 'classnames';
 import Apple2IO from 'js/apple2io';
 

@@ -1,5 +1,4 @@
-import { h } from 'preact';
-import { useCallback, useContext, useEffect, useState } from 'preact/hooks';
+import { useCallback, useEffect, useState } from 'react';
 import { CPUMeter } from './CPUMeter';
 import { Inset } from './Inset';
 import { useHotKey } from './hooks/useHotKey';
@@ -7,7 +6,7 @@ import { AudioControl } from './AudioControl';
 import { ClipboardCopy } from './ClipboardCopy';
 import { ClipboardPaste } from './ClipboardPaste';
 import { OptionsModal } from './OptionsModal';
-import { OptionsContext } from './OptionsContext';
+import { useOptions } from './hooks/useOptions';
 import { Printer } from './Printer';
 import { ControlButton } from './ControlButton';
 import { Cassette } from './Cassette';
@@ -46,7 +45,7 @@ export const ControlStrip = ({
     const [showOptions, setShowOptions] = useState(false);
     const [io, setIO] = useState<Apple2IO>();
     const [vm, setVM] = useState<VideoModes>();
-    const options = useContext(OptionsContext);
+    const { addOptions, getOption, setOption } = useOptions();
 
     useEffect(() => {
         if (apple2) {
@@ -56,15 +55,15 @@ export const ControlStrip = ({
             setVM(vm);
 
             const system = new System(io, e);
-            options.addOptions(system);
+            addOptions(system);
 
             const joystick = new JoyStick(io);
-            options.addOptions(joystick);
+            addOptions(joystick);
 
             const screen = new Screen(vm);
-            options.addOptions(screen);
+            addOptions(screen);
         }
-    }, [apple2, e, options]);
+    }, [apple2, e, addOptions]);
 
     const doReset = useCallback(() => apple2?.reset(), [apple2]);
 
@@ -75,12 +74,8 @@ export const ControlStrip = ({
     const doCloseOptions = useCallback(() => setShowOptions(false), []);
 
     const doToggleFullPage = useCallback(
-        () =>
-            options.setOption(
-                SCREEN_FULL_PAGE,
-                !options.getOption(SCREEN_FULL_PAGE)
-            ),
-        [options]
+        () => setOption(SCREEN_FULL_PAGE, !getOption(SCREEN_FULL_PAGE)),
+        [setOption, getOption]
     );
 
     useHotKey('F2', doToggleFullPage);

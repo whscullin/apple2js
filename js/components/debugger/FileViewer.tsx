@@ -1,6 +1,5 @@
 import { HiresPage2D, LoresPage2D, VideoModes2D } from 'js/canvas';
-import { h, Fragment } from 'preact';
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'react';
 import { Modal, ModalContent, ModalFooter } from '../Modal';
 
 import styles from './css/FileViewer.module.scss';

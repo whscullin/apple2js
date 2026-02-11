@@ -5,13 +5,13 @@ import {
     FLOPPY_FORMATS,
     MassStorage,
 } from 'js/formats/types';
-import { h, JSX, RefObject } from 'preact';
-import { useEffect, useRef } from 'preact/hooks';
+import React, { type RefObject } from 'react';
+import { useEffect, useRef } from 'react';
 import { loadLocalFile } from './util/files';
 import { spawn } from './util/promises';
 
 export interface DiskDragTargetProps<T>
-    extends JSX.HTMLAttributes<HTMLDivElement> {
+    extends React.HTMLAttributes<HTMLDivElement> {
     storage: MassStorage<T> | undefined;
     driveNo?: DriveNumber;
     formats: typeof FLOPPY_FORMATS | typeof BLOCK_FORMATS | typeof DISK_FORMATS;

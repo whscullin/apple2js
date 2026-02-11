@@ -1,5 +1,4 @@
-import { h } from 'preact';
-import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Apple2 as Apple2Impl } from '../apple2';
 import type { Stats } from '../apple2';
 
