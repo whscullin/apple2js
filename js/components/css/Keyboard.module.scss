@@ -1,4 +1,6 @@
 .keyboard {
+    display: flex;
+    flex-direction: column;
     margin-left: 15px;
     user-select: none;
 }
@@ -8,7 +10,8 @@
 }
 
 .row {
-    display: block;
+    display: flex;
+    flex-direction: row;
     margin: 0;
     padding: 0;
     height: 42px;
@@ -53,21 +56,24 @@
 }
 
 .key {
-    display: inline-block;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: end;
+
     margin: 0;
     padding: 0;
     width: 32px;
     height: 32px;
     background-color: #44372c;
     color: white;
-    text-align: center;
-    position: relative;
+
+    /* border: 5px outset #66594E; */
     border-left: 5px solid #65594d;
     border-top: 5px solid #65594d;
     border-right: 5px solid #110e0d;
     border-bottom: 5px solid #110e0d;
 
-    /* border: 5px outset #66594E; */
     border-radius: 5px;
     cursor: pointer;
 
@@ -78,18 +84,14 @@
     .small {
         font-size: 7px;
     }
+}
 
-    div {
-        border-radius: 3px;
-        position: absolute;
-        bottom: 0;
-        width: 100%;
-        text-align: center;
-    }
+.twoSymbol {
+    justify-content: space-between;
+}
 
-    span {
-        font-size: 13px;
-    }
+.center {
+    justify-content: center;
 }
 
 .pressed {
@@ -100,15 +102,6 @@
     border-bottom: 5px solid #000;
 
     /* border: 5px outset #44372C; */
-}
-
-.vCenter div {
-    bottom: 10px;
-}
-
-.vCenter2 div {
-    bottom: 5px;
-    line-height: 10px;
 }
 
 .key-RETURN {
@@ -130,10 +123,6 @@
     background-color: #ffd;
     color: black;
     border-radius: 2px;
-
-    div {
-        bottom: 15px;
-    }
 }
 
 .key-nbsp {
@@ -165,45 +154,38 @@
     background-color: #ffd;
     color: black;
     border-radius: 2px;
+    justify-content: center;
+
+    div {
+        background: #4f4;
+        color: #4f4;
+    }
 }
 
-.key-POW div {
-    bottom: 15px;
-}
-
-.key-POW span {
-    background: #4f4;
-    color: #4f4;
-}
-
-.key-OPEN_APPLE div {
+.key-OPEN_APPLE {
     background-image: url('../../../img/open-apple24.png');
-    width: 24px;
-    height: 24px;
-    bottom: 1px;
-    left: 4px;
+    background-position: center;
+    background-repeat: no-repeat;
+
+    div {
+        display: none;
+    }
+
+    &.active {
+        background-image: url('../../../img/open-apple24-green.png');
+    }
 }
 
-.key-CLOSED_APPLE div {
+.key-CLOSED_APPLE {
     background-image: url('../../../img/closed-apple24.png');
-    width: 24px;
-    height: 24px;
-    bottom: 1px;
-    left: 4px;
-}
+    background-position: center;
+    background-repeat: no-repeat;
 
-.key-OPEN_APPLE span {
-    display: none;
-}
+    div {
+        display: none;
+    }
 
-.key-CLOSED_APPLE span {
-    display: none;
-}
-
-.key-OPEN_APPLE.active div {
-    background-image: url('../../../img/open-apple24-green.png');
-}
-
-.key-CLOSED_APPLE.active div {
-    background-image: url('../../../img/closed-apple24-green.png');
+    &.active {
+        background-image: url('../../../img/closed-apple24-green.png');
+    }
 }

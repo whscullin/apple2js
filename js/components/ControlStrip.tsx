@@ -54,7 +54,7 @@ export const ControlStrip = ({
             setIO(io);
             setVM(vm);
 
-            const system = new System(io, e);
+            const system = new System(io);
             addOptions(system);
 
             const joystick = new JoyStick(io);

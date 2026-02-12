@@ -19,12 +19,12 @@ import styles from './css/Keyboard.module.scss';
  * @param key Raw key label
  * @returns Span representing that label
  */
-const buildLabel = (key: string) => {
-    const small = key.length > 1 && !key.startsWith('&');
+const Label = ({ symbol }: { symbol: string }) => {
+    const small = symbol.length > 1 && !symbol.startsWith('&');
     return (
-        <span
-            className={cs({ [styles.small]: small })}
-            dangerouslySetInnerHTML={{ __html: key }}
+        <div
+            className={cs(styles.symbol, { [styles.small]: small })}
+            dangerouslySetInnerHTML={{ __html: symbol }}
         />
     );
 };
@@ -61,15 +61,12 @@ export const Key = ({
     onMouseUp,
 }: KeyProps) => {
     const keyName = lower.replace(/[&#;]/g, '');
-    const center =
-        lower === 'LOCK'
-            ? styles.vCenter2
-            : upper === lower && upper.length > 1
-              ? styles.vCenter
-              : '';
+    const twoSymbol = upper !== lower;
+    const center = upper.length > 1;
     return (
         <div
-            className={cs(styles.key, styles[`key-${keyName}`], center, {
+            className={cs(styles.key, styles[`key-${keyName}`], {
+                [styles.center]: center,
                 [styles.pressed]: pressed,
                 [styles.active]: active,
             })}
@@ -77,16 +74,10 @@ export const Key = ({
             data-key2={upper}
             onMouseDown={onMouseDown}
             onMouseUp={onMouseUp}
+            onMouseLeave={onMouseUp}
         >
-            <div>
-                {buildLabel(upper)}
-                {upper !== lower && (
-                    <>
-                        <br />
-                        {buildLabel(lower)}
-                    </>
-                )}
-            </div>
+            <Label symbol={upper} />
+            {twoSymbol && <Label symbol={lower} />}
         </div>
     );
 };
@@ -97,6 +88,7 @@ export const Key = ({
 export interface KeyboardProps {
     apple2: Apple2Impl | undefined;
     layout: string;
+    screenRef: React.RefObject<HTMLCanvasElement>;
 }
 
 /**
@@ -107,8 +99,9 @@ export interface KeyboardProps {
  * @param apple2 Apple2 object
  * @returns Keyboard component
  */
-export const Keyboard = ({ apple2, layout }: KeyboardProps) => {
+export const Keyboard = ({ apple2, layout, screenRef }: KeyboardProps) => {
     const [pressed, setPressed] = useState<string[]>([]);
+    const keyboardRef = React.useRef<HTMLDivElement>(null);
     const [active, setActive] = useState<string[]>(['LOCK']);
     const keys = useMemo(
         () => keysAsTuples(layout === 'apple2e' ? keys2e : keys2),
@@ -122,9 +115,13 @@ export const Keyboard = ({ apple2, layout }: KeyboardProps) => {
                 return;
             }
 
+            const targetElements: Array<Element | null> = [
+                screenRef.current,
+                keyboardRef.current,
+            ];
             if (
                 document.activeElement &&
-                document.activeElement !== document.body
+                !targetElements.includes(document.activeElement)
             ) {
                 return;
             }
@@ -182,7 +179,7 @@ export const Keyboard = ({ apple2, layout }: KeyboardProps) => {
             document.removeEventListener('keydown', keyDown);
             document.removeEventListener('keyup', keyUp);
         };
-    }, [apple2, active]);
+    }, [apple2, active, screenRef]);
 
     const onMouseDown = useCallback(
         (event: React.MouseEvent<HTMLElement>) => {
@@ -270,5 +267,9 @@ export const Keyboard = ({ apple2, layout }: KeyboardProps) => {
         </div>
     ));
 
-    return <div className={styles.keyboard}>{rows}</div>;
+    return (
+        <div className={styles.keyboard} tabIndex={0} ref={keyboardRef}>
+            {rows}
+        </div>
+    );
 };

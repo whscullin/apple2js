@@ -192,7 +192,7 @@ export const mapMouseEvent = (
     caps: boolean,
     e: boolean
 ) => {
-    const keyLabel = event.currentTarget?.dataset.key2 ?? '';
+    const keyLabel = event.currentTarget?.dataset.key1 ?? '';
     let key = event.currentTarget?.dataset[shifted ? 'key2' : 'key1'] ?? '';
     let keyCode = 0xff;
 
