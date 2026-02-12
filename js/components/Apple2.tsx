@@ -186,7 +186,11 @@ export const Apple2 = (props: Apple2Props) => {
                     toggleDebugger={toggleDebugger}
                 />
                 <Inset>
-                    <Keyboard apple2={apple2} layout={keyboardLayout} />
+                    <Keyboard
+                        apple2={apple2}
+                        layout={keyboardLayout}
+                        screenRef={screenRef}
+                    />
                 </Inset>
                 <ErrorModal error={error} setError={setError} />
             </div>

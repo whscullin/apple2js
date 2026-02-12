@@ -5,86 +5,110 @@ export const SYSTEM_TYPE_APPLE2E = 'computer_type2e';
 export const SYSTEM_TYPE_APPLE2 = 'computer_type2';
 export const SYSTEM_CPU_ACCELERATED = 'accelerator_toggle';
 
+const apple2eOptions = [
+    {
+        value: 'apple2enh',
+        name: 'Enhanced Apple //e',
+    },
+    {
+        value: 'apple2e',
+        name: 'Apple //e',
+    },
+    {
+        value: 'apple2rm',
+        name: 'Enhanced Apple //e (Reactive Micro)',
+    },
+    {
+        value: 'apple2ex',
+        name: 'Apple //e Extended Debugging',
+    },
+];
+
+const apple2Options = [
+    {
+        value: 'apple2plus',
+        name: 'Apple ][+',
+    },
+    {
+        value: 'apple2',
+        name: 'Autostart Apple ][',
+    },
+    {
+        value: 'apple213',
+        name: '13 Sector Apple ][',
+    },
+    {
+        value: 'original',
+        name: 'Apple ][',
+    },
+    {
+        value: 'apple2j',
+        name: 'Apple ][j+',
+    },
+    {
+        value: 'apple2lc',
+        name: 'Apple ][+ (lowercase font)',
+    },
+    {
+        value: 'apple2pig',
+        name: 'Apple ][+ (pig font)',
+    },
+    {
+        value: 'pravetz82',
+        name: 'Pravetz 82',
+    },
+];
+
 export class System implements OptionHandler {
     constructor(
         private io: Apple2IO,
-        private e: boolean
+        private e?: boolean
     ) {}
 
     getOptions() {
+        let systemOptions;
+        if (this.e === true) {
+            systemOptions = {
+                name: 'System',
+                options: [
+                    {
+                        name: SYSTEM_TYPE_APPLE2E,
+                        label: ' *',
+                        type: SELECT_OPTION,
+                        defaultVal: 'apple2enh',
+                        values: apple2eOptions,
+                    },
+                ],
+            };
+        } else if (this.e === false) {
+            systemOptions = {
+                name: 'System',
+                options: [
+                    {
+                        name: SYSTEM_TYPE_APPLE2,
+                        label: ' *',
+                        type: SELECT_OPTION,
+                        defaultVal: 'apple2plus',
+                        values: apple2Options,
+                    },
+                ],
+            };
+        } else {
+            systemOptions = {
+                name: 'System',
+                options: [
+                    {
+                        name: SYSTEM_TYPE_APPLE2E,
+                        label: ' *',
+                        type: SELECT_OPTION,
+                        defaultVal: 'apple2plus',
+                        values: [...apple2Options, ...apple2eOptions],
+                    },
+                ],
+            };
+        }
         return [
-            {
-                name: 'Type',
-                options: this.e
-                    ? [
-                          {
-                              name: SYSTEM_TYPE_APPLE2E,
-                              label: ' *',
-                              type: SELECT_OPTION,
-                              defaultVal: 'apple2enh',
-                              values: [
-                                  {
-                                      value: 'apple2enh',
-                                      name: 'Enhanced Apple //e',
-                                  },
-                                  {
-                                      value: 'apple2e',
-                                      name: 'Apple //e',
-                                  },
-                                  {
-                                      value: 'apple2rm',
-                                      name: 'Enhanced Apple //e (Reactive Micro)',
-                                  },
-                                  {
-                                      value: 'apple2ex',
-                                      name: 'Apple //e Extended Debugging',
-                                  },
-                              ],
-                          },
-                      ]
-                    : [
-                          {
-                              name: SYSTEM_TYPE_APPLE2,
-                              label: ' *',
-                              type: SELECT_OPTION,
-                              defaultVal: 'apple2plus',
-                              values: [
-                                  {
-                                      value: 'apple2plus',
-                                      name: 'Apple ][+',
-                                  },
-                                  {
-                                      value: 'apple2',
-                                      name: 'Autostart Apple ][',
-                                  },
-                                  {
-                                      value: 'apple213',
-                                      name: '13 Sector Apple ][',
-                                  },
-                                  {
-                                      value: 'original',
-                                      name: 'Apple ][',
-                                  },
-                                  {
-                                      value: 'apple2j',
-                                      name: 'Apple ][j+',
-                                  },
-                                  {
-                                      value: 'apple2lc',
-                                      name: 'Apple ][+ (lowercase font)',
-                                  },
-                                  {
-                                      value: 'apple2pig',
-                                      name: 'Apple ][+ (pig font)',
-                                  },
-                                  {
-                                      value: 'pravetz82',
-                                      name: 'Pravetz 82',
-                                  },
-                              ],
-                          },
-                      ],
-            },
+            systemOptions,
             {
                 name: 'CPU',
                 options: [
