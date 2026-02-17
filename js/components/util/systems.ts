@@ -81,6 +81,6 @@ export const systemTypes: Record<string, Partial<SystemType>> = {
         rom: 'pravetz82',
         characterRom: 'pravetz82_char',
         e: false,
-        keyboardLayout: 'apple2',
+        keyboardLayout: 'pravetz82',
     },
 } as const;

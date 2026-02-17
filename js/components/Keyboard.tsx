@@ -5,6 +5,7 @@ import { Apple2 as Apple2Impl } from '../apple2';
 import {
     keys2,
     keys2e,
+    keyspravetz82,
     mapMouseEvent,
     keysAsTuples,
     mapKeyboardEvent,
@@ -62,7 +63,7 @@ export const Key = ({
 }: KeyProps) => {
     const keyName = lower.replace(/[&#;]/g, '');
     const twoSymbol = upper !== lower;
-    const center = upper.length > 1;
+    const center = upper.length > 1 && upper !== 'BELL';
     return (
         <div
             className={cs(styles.key, styles[`key-${keyName}`], {
@@ -87,7 +88,7 @@ export const Key = ({
  */
 export interface KeyboardProps {
     apple2: Apple2Impl | undefined;
-    layout: string;
+    layout: 'apple2' | 'apple2e' | 'pravetz82';
     screenRef: React.RefObject<HTMLCanvasElement>;
 }
 
@@ -103,10 +104,16 @@ export const Keyboard = ({ apple2, layout, screenRef }: KeyboardProps) => {
     const [pressed, setPressed] = useState<string[]>([]);
     const keyboardRef = React.useRef<HTMLDivElement>(null);
     const [active, setActive] = useState<string[]>(['LOCK']);
-    const keys = useMemo(
-        () => keysAsTuples(layout === 'apple2e' ? keys2e : keys2),
-        [layout]
-    );
+    const keys = useMemo(() => {
+        switch (layout) {
+            case 'apple2e':
+                return keysAsTuples(keys2e);
+            case 'pravetz82':
+                return keysAsTuples(keyspravetz82);
+            default:
+                return keysAsTuples(keys2);
+        }
+    }, [layout]);
 
     // Set global keystroke handler
     useEffect(() => {
@@ -130,6 +137,7 @@ export const Keyboard = ({ apple2, layout, screenRef }: KeyboardProps) => {
 
             const { key, keyCode, keyLabel } = mapKeyboardEvent(
                 event,
+                layout,
                 active.includes('LOCK'),
                 active.includes('CTRL')
             );
@@ -159,7 +167,7 @@ export const Keyboard = ({ apple2, layout, screenRef }: KeyboardProps) => {
             if (!apple2) {
                 return;
             }
-            const { key, keyLabel } = mapKeyboardEvent(event);
+            const { key, keyLabel } = mapKeyboardEvent(event, layout);
             setPressed((pressed) => pressed.filter((k) => k !== keyLabel));
             setActive((active) => active.filter((k) => k !== keyLabel));
 
@@ -179,7 +187,7 @@ export const Keyboard = ({ apple2, layout, screenRef }: KeyboardProps) => {
             document.removeEventListener('keydown', keyDown);
             document.removeEventListener('keyup', keyUp);
         };
-    }, [apple2, active, screenRef]);
+    }, [apple2, layout, active, screenRef]);
 
     const onMouseDown = useCallback(
         (event: React.MouseEvent<HTMLElement>) => {
@@ -200,21 +208,23 @@ export const Keyboard = ({ apple2, layout, screenRef }: KeyboardProps) => {
             const io = apple2.getIO();
             const { keyCode, key, keyLabel } = mapMouseEvent(
                 event,
-                active.includes('SHIFT'),
+                layout,
+                active.includes('SHIFT') || active.includes('ЛАТ'),
                 active.includes('CTRL'),
-                active.includes('LOCK'),
-                true
+                active.includes('LOCK')
             );
             if (keyCode !== 0xff) {
                 io.keyDown(keyCode);
             } else if (key) {
                 switch (key) {
                     case 'SHIFT':
+                    case 'ЛАТ': // Shift on Pravetz 82 switches to cyrillic.'
                     case 'CTRL':
                     case 'LOCK':
                         toggleActive(key);
                         break;
                     case 'RESET':
+                    case 'RST':
                         apple2.reset();
                         break;
                     case 'OPEN_APPLE':
@@ -231,22 +241,22 @@ export const Keyboard = ({ apple2, layout, screenRef }: KeyboardProps) => {
             }
             setPressed([...pressed, keyLabel]);
         },
-        [apple2, active, pressed]
+        [apple2, layout, active, pressed]
     );
 
     const onMouseUp = useCallback(
         (event: React.MouseEvent<HTMLElement>) => {
             const { keyLabel } = mapMouseEvent(
                 event,
-                active.includes('SHIFT'),
+                layout,
+                active.includes('SHIFT') || active.includes('ЛАТ'),
                 active.includes('CTRL'),
-                active.includes('LOCK'),
-                true
+                active.includes('LOCK')
             );
             apple2?.getIO().keyUp();
             setPressed(pressed.filter((x) => x !== keyLabel));
         },
-        [apple2, active, pressed]
+        [apple2, layout, active, pressed]
     );
 
     const bindKey = ([lower, upper]: [string, string], index: number) => (
