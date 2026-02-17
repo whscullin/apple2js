@@ -55,6 +55,26 @@
     margin-left: 0;
 }
 
+:global(.pravetz82) .row0 {
+    margin-left: 0px;
+}
+
+:global(.pravetz82) .row1 {
+    margin-left: -14px;
+}
+
+:global(.pravetz82) .row2 {
+    margin-left: 0px;
+}
+
+:global(.pravetz82) .row3 {
+    margin-left: 15px;
+}
+
+:global(.pravetz82) .row4 {
+    margin-left: 0px;
+}
+
 .key {
     display: flex;
     flex-direction: column;
@@ -138,6 +158,10 @@
     width: 60px;
 }
 
+.key-SHIFT {
+    width: 53px
+}
+
 :global(.apple2e) .key-SHIFT {
     width: 81px;
 }
@@ -145,6 +169,72 @@
 :global(.apple2e) .key-nbsp {
     margin-left: 0;
     width: 215px;
+}
+
+:global(.pravetz82) .key-RST {
+    border-left-color: #d00;
+    border-top-color: #d00;
+    border-right-color: #700;
+    border-bottom-color: #700;
+    background-color: #a00;
+}
+
+:global(.pravetz82) .key-RST:active {
+    border-left-color: #800;
+    border-top-color: #800;
+    border-right-color: #000;
+    border-bottom-color: #000;
+    background-color: #500;
+}
+
+:global(.pravetz82) .key-ОСВ,
+:global(.pravetz82) .key-МК {
+    border-left-color: #aaa;
+    border-top-color: #aaa;
+    border-right-color: #444;
+    border-bottom-color: #444;
+    background-color: #777;
+}
+
+:global(.pravetz82) .key-ОСВ:active,
+:global(.pravetz82) .key-МК:active {
+    border-left-color: #777;
+    border-top-color: #777;
+    border-right-color: #000;
+    border-bottom-color: #000;
+    background-color: #333;
+}
+
+:global(.pravetz82) .key-ЛАТ {
+    border-left-color: #ddd;
+    border-top-color: #ddd;
+    border-right-color: #888;
+    border-bottom-color: #888;
+    background-color: #bbb;
+}
+
+:global(.pravetz82) .key-ЛАТ:active {
+    border-left-color: #888;
+    border-top-color: #888;
+    border-right-color: #222;
+    border-bottom-color: #222;
+    background-color: #999;
+}
+
+:global(.pravetz82) .key-ЛАТ2 {
+    border-left-color: #dd0;
+    border-top-color: #dd0;
+    border-right-color: #880;
+    border-bottom-color: #880;
+    background-color: #aa0;
+}
+
+:global(.pravetz82) .key-ЛАТ2:active {
+    border-left-color: #770;
+    border-top-color: #770;
+    border-right-color: #000;
+    border-bottom-color: #000;
+    background-color: #550;
 }
 
 .key-POW {

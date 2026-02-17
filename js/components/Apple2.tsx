@@ -17,6 +17,7 @@ import { spawn, Ready } from './util/promises';
 
 import styles from './css/Apple2.module.scss';
 import { SupportedSectors } from 'js/formats/types';
+import { SystemType } from './util/systems';
 
 declare global {
     interface Window {
@@ -27,14 +28,10 @@ declare global {
 /**
  * Interface for the Apple2 component.
  */
-export interface Apple2Props {
-    characterRom: string;
-    enhanced: boolean;
-    e: boolean;
+export interface Apple2Props extends SystemType {
+    systemType: string;
     gl: boolean;
-    rom: string;
     sectors: SupportedSectors;
-    keyboardLayout: string;
 }
 
 /**
@@ -47,7 +44,7 @@ export interface Apple2Props {
  * @returns
  */
 export const Apple2 = (props: Apple2Props) => {
-    const { e, enhanced, sectors, keyboardLayout } = props;
+    const { e, enhanced, sectors, keyboardLayout, systemType } = props;
     const screenRef = useRef<HTMLCanvasElement>(null);
     const [apple2, setApple2] = useState<Apple2Impl>();
     const [error, setError] = useState<unknown>();
@@ -160,6 +157,7 @@ export const Apple2 = (props: Apple2Props) => {
             <div
                 className={cs(styles.outer, {
                     apple2e: e,
+                    [systemType]: true,
                     [styles.ready]: ready,
                 })}
             >

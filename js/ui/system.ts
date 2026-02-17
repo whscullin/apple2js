@@ -3,6 +3,7 @@ import Apple2IO from '../apple2io';
 
 export const SYSTEM_TYPE_APPLE2E = 'computer_type2e';
 export const SYSTEM_TYPE_APPLE2 = 'computer_type2';
+export const SYSTEM_TYPE = 'computer_type';
 export const SYSTEM_CPU_ACCELERATED = 'accelerator_toggle';
 
 const apple2eOptions = [
@@ -98,7 +99,7 @@ export class System implements OptionHandler {
                 name: 'System',
                 options: [
                     {
-                        name: SYSTEM_TYPE_APPLE2E,
+                        name: SYSTEM_TYPE,
                         label: ' *',
                         type: SELECT_OPTION,
                         defaultVal: 'apple2plus',

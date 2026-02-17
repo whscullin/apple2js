@@ -32,6 +32,7 @@ export const SPECIAL_KEY_CODE = {
     TAB: 9,
     RETURN: 13,
     ESC: 27,
+    ОСВ: 27, // Pravetz 82 ESC key in cyrillic.
     '&uarr;': 11,
     '&darr;': 10,
     '&rarr;': 21,
@@ -89,8 +90,49 @@ export const keys2e = [
     ],
 ] as const;
 
+/**
+ * Keyboaord for the Pravetz 82, a Bulgarian Apple II clone
+ */
+// prettier-ignore
+export const keyspravetz82 = [
+    [
+        ['!', '"', '#', '¤', '%', '&', '\'', '(', ')', '0', '*', '=', '﹁', 'RST'],
+        ['ОСВ', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '@', 'RPT', 'RETURN'],
+        ['МК', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', '+', '[', ']', '&darr;'],
+        ['ЛАТ', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', '?', 'ЛАТ', 'ЛАТ2'],
+        ['ВКЛ', '&nbsp;']
+    ], [
+        ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', ':', '-', 'Ч', 'RST'],
+        ['ОСВ', 'Я', 'В', 'Е', 'Р', 'Т', 'Ъ', 'У', 'И', 'О', 'П', 'Ю', 'RPT', 'RETURN'],
+        ['МК', 'А', 'С', 'Д', 'Ф', 'Г', 'Х', 'Й', 'К', 'Л', ';', 'Ш', 'Щ', '&darr;'],
+        ['ЛАТ', 'З', 'Ь', 'Ц', 'Ж', 'Б', 'Н', 'М', ',', '.', '/', 'ЛАТ', 'ЛАТ2'],
+        ['ВКЛ', '&nbsp;']
+    ]
+] as const;
+
+const SHIFTED2: Record<string, string> = {
+    '!': '1',
+    '"': '2',
+    '#': '3',
+    $: '4',
+    '%': '5',
+    '&': '6',
+    "'": '7',
+    '(': '8',
+    ')': '9',
+    '*': ':',
+    '=': '-',
+    '@': 'P',
+    '+': ';',
+    '^': 'N',
+    ']': 'M',
+    '<': ',',
+    '>': '.',
+    '?': '/',
+} as const;
+
 /** Shifted */
-const SHIFTED = {
+const SHIFTED2E: Record<string, string> = {
     '!': '1',
     '@': '2',
     '#': '3',
@@ -114,8 +156,58 @@ const SHIFTED = {
     '~': '`',
 } as const;
 
-export const isShiftyKey = (k: string): k is KnownKeys<typeof SHIFTED> => {
-    return k in SHIFTED;
+const SHIFTED_PRAVETZ: Record<string, string> = {
+    // Pravetz 82 specific shifted keys.
+    Ч: '^',
+    '﹁': '', // FIXME: Which character should this map to?
+    // Second row.
+    Я: 'q',
+    В: 'w',
+    Е: 'e',
+    Р: 'r',
+    Т: 't',
+    Ъ: 'y',
+    У: 'u',
+    И: 'i',
+    О: 'o',
+    П: 'p',
+    Ю: '@',
+    '@': '`',
+    // Third row.
+    А: 'a',
+    С: 's',
+    Д: 'd',
+    Ф: 'f',
+    Г: 'g',
+    Х: 'h',
+    Й: 'j',
+    К: 'k',
+    Л: 'l',
+    Ш: '[',
+    Щ: ']',
+    '[': '{',
+    ']': '}',
+    // Fourth row.
+    З: 'z',
+    Ь: 'x',
+    Ц: 'c',
+    Ж: 'v',
+    Б: 'b',
+    Н: 'n',
+    М: 'm',
+} as const;
+
+const shiftedKeys = {
+    apple2e: SHIFTED2E,
+    apple2: SHIFTED2,
+    pravetz82: SHIFTED_PRAVETZ,
+} as const;
+
+export const isShiftyKey = (
+    k: string,
+    keyboard: 'apple2' | 'apple2e' | 'pravetz82'
+): k is KnownKeys<typeof SHIFTED2E> => {
+    return k in shiftedKeys[keyboard];
 };
 
 export type Key2e = DeepMemberOf<typeof keys2e>;
@@ -137,6 +229,7 @@ export type KeyFunction = (key: KeyboardEvent) => void;
  */
 export const mapKeyboardEvent = (
     event: KeyboardEvent,
+    layout: 'apple2' | 'apple2e' | 'pravetz82',
     caps: boolean = false,
     control: boolean = false
 ) => {
@@ -151,8 +244,8 @@ export const mapKeyboardEvent = (
 
     let keyLabel = key;
     if (key.length === 1) {
-        if (isShiftyKey(key)) {
-            keyLabel = SHIFTED[key];
+        if (isShiftyKey(key, layout)) {
+            keyLabel = shiftedKeys[layout][key];
         } else {
             keyLabel = key.toUpperCase();
         }
@@ -185,56 +278,49 @@ export const mapKeyboardEvent = (
  * @param e //e status
  * @returns ASCII character
  */
+const MOUSE_EVENT_KEY_MAP = {
+    BELL: 'G',
+    RETURN: '\r',
+    TAB: '\t',
+    DELETE: '\x7F',
+    '&larr;': '\x08',
+    '&rarr;': '\x15',
+    '&darr;': '\x0A',
+    '&uarr;': '\x0B',
+    '&nbsp;': ' ',
+    ESC: '\x1B',
+    ОСВ: '\x1B', // Pravetz 82 ESC key in cyrillic.
+} as const;
+
 export const mapMouseEvent = (
     event: React.MouseEvent<HTMLElement>,
+    layout: 'apple2' | 'apple2e' | 'pravetz82',
     shifted: boolean,
     controlled: boolean,
-    caps: boolean,
-    e: boolean
+    caps: boolean
 ) => {
     const keyLabel = event.currentTarget?.dataset.key1 ?? '';
     let key = event.currentTarget?.dataset[shifted ? 'key2' : 'key1'] ?? '';
     let keyCode = 0xff;
 
-    switch (key) {
-        case 'BELL':
-            key = 'G';
-            break;
-        case 'RETURN':
-            key = '\r';
-            break;
-        case 'TAB':
-            key = '\t';
-            break;
-        case 'DELETE':
-            key = '\x7F';
-            break;
-        case '&larr;':
-            key = '\x08';
-            break;
-        case '&rarr;':
-            key = '\x15';
-            break;
-        case '&darr;':
-            key = '\x0A';
-            break;
-        case '&uarr;':
-            key = '\x0B';
-            break;
-        case '&nbsp;':
-            key = ' ';
-            break;
-        case 'ESC':
-            key = '\x1B';
-            break;
-        default:
-            break;
+    if (key in MOUSE_EVENT_KEY_MAP) {
+        key = MOUSE_EVENT_KEY_MAP[key as keyof typeof MOUSE_EVENT_KEY_MAP];
+    }
+
+    if (key in SHIFTED_PRAVETZ) {
+        key = SHIFTED_PRAVETZ[key];
     }
 
     if (key.length === 1) {
         if (controlled && key >= '@' && key <= '_') {
             keyCode = key.charCodeAt(0) - 0x40;
-        } else if (e && !shifted && !caps && key >= 'A' && key <= 'Z') {
+        } else if (
+            layout === 'apple2e' &&
+            !shifted &&
+            !caps &&
+            key >= 'A' &&
+            key <= 'Z'
+        ) {
             keyCode = key.charCodeAt(0) + 0x20;
         } else {
             keyCode = key.charCodeAt(0);
@@ -251,7 +337,7 @@ export const mapMouseEvent = (
  * @returns Keys remapped
  */
 export const keysAsTuples = (
-    inKeys: typeof keys2e | typeof keys2
+    inKeys: typeof keys2e | typeof keys2 | typeof keyspravetz82
 ): string[][][] => {
     const rows = [];
     for (let idx = 0; idx < inKeys[0].length; idx++) {
