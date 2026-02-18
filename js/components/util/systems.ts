@@ -4,7 +4,7 @@ export interface SystemType {
     e: boolean;
     enhanced: boolean;
     sectors: 13 | 16;
-    keyboardLayout: string;
+    keyboardLayout: 'apple2' | 'apple2e' | 'pravetz82';
 }
 
 // Enhanced Apple //e

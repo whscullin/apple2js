@@ -90,6 +90,8 @@ export const keys2e = [
     ],
 ] as const;
 
+export type Key2e = DeepMemberOf<typeof keys2e>;
+
 /**
  * Keyboaord for the Pravetz 82, a Bulgarian Apple II clone
  */
@@ -109,6 +111,8 @@ export const keyspravetz82 = [
         ['ВКЛ', '&nbsp;']
     ]
 ] as const;
+
+export type KeyPravetz82 = DeepMemberOf<typeof keyspravetz82>;
 
 const SHIFTED2: Record<string, string> = {
     '!': '1',
@@ -210,9 +214,7 @@ export const isShiftyKey = (
     return k in shiftedKeys[keyboard];
 };
 
-export type Key2e = DeepMemberOf<typeof keys2e>;
-
-export type Key = Key2 | Key2e;
+export type Key = Key2 | Key2e | KeyPravetz82;
 
 export type KeyFunction = (key: KeyboardEvent) => void;
 
@@ -233,21 +235,21 @@ export const mapKeyboardEvent = (
     caps: boolean = false,
     control: boolean = false
 ) => {
-    let key: string;
+    let key: Key;
     if (isSpecialKey(event.key)) {
         key = SPECIAL_KEY_MAP[event.key];
     } else if (event.key === 'Alt') {
         key = event.location === 1 ? 'OPEN_APPLE' : 'CLOSED_APPLE';
     } else {
-        key = event.key;
+        key = event.key as Key;
     }
 
     let keyLabel = key;
     if (key.length === 1) {
         if (isShiftyKey(key, layout)) {
-            keyLabel = shiftedKeys[layout][key];
+            keyLabel = shiftedKeys[layout][key] as Key;
         } else {
-            keyLabel = key.toUpperCase();
+            keyLabel = key.toUpperCase() as Key;
         }
     }
 
