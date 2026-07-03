@@ -4,7 +4,7 @@ export interface SystemType {
     e: boolean;
     enhanced: boolean;
     sectors: 13 | 16;
-    keyboardLayout: string;
+    keyboardLayout: 'apple2' | 'apple2e' | 'pravetz82';
 }
 
 // Enhanced Apple //e
@@ -81,6 +81,6 @@ export const systemTypes: Record<string, Partial<SystemType>> = {
         rom: 'pravetz82',
         characterRom: 'pravetz82_char',
         e: false,
-        keyboardLayout: 'apple2',
+        keyboardLayout: 'pravetz82',
     },
 } as const;
