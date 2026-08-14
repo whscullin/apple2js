@@ -34,6 +34,7 @@ export const Screen = ({ screenRef }: ScreenProps) => {
                     width="592"
                     height="416"
                     ref={screenRef}
+                    tabIndex={0}
                 />
             </div>
         </div>

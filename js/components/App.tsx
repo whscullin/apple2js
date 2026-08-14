@@ -2,7 +2,7 @@ import cs from 'classnames';
 import { Header } from './Header';
 import { Apple2 } from './Apple2';
 import { usePrefs } from './hooks/usePrefs';
-import { SYSTEM_TYPE_APPLE2E } from '../ui/system';
+import { SYSTEM_TYPE } from '../ui/system';
 import { SCREEN_GL } from '../ui/screen';
 import { defaultSystem, systemTypes } from './util/systems';
 
@@ -18,7 +18,7 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
  */
 export const App = () => {
     const prefs = usePrefs();
-    const systemType = prefs.readPref(SYSTEM_TYPE_APPLE2E, 'apple2enh');
+    const systemType = prefs.readPref(SYSTEM_TYPE, 'apple2enh');
     const gl = prefs.readPref(SCREEN_GL, 'true') === 'true';
 
     const system = {
@@ -29,7 +29,7 @@ export const App = () => {
     return (
         <div className={cs(styles.container, componentStyles.components)}>
             <Header e={system.e} />
-            <Apple2 gl={gl} {...system} />
+            <Apple2 gl={gl} {...system} systemType={systemType} />
         </div>
     );
 };
