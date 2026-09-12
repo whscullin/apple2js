@@ -407,18 +407,32 @@ export default class Apple2IO
         }
     }
 
-    getState(): Apple2IOState {
+    async getState(): Promise<Apple2IOState> {
         // TODO vet more potential state
+        // Some cards (e.g. SmartPort) have an async getState() -- Promise.all
+        // resolves those and passes plain (already-resolved) values for
+        // everything else straight through, so every slot's real state ends
+        // up in the result instead of an unawaited, unserializable Promise.
+        const cards = await Promise.all(
+            this._slot.map((card) => (card ? card.getState() : null))
+        );
         return {
             annunciators: this._annunciators,
-            cards: this._slot.map((card) => (card ? card.getState() : null)),
+            cards,
         };
     }
 
-    setState(state: Apple2IOState) {
+    async setState(state: Apple2IOState) {
         this._annunciators = state.annunciators;
-        state.cards.map(
-            (cardState, idx) => this._slot[idx]?.setState(cardState)
+        // Await every card's setState() (Promise.all also awaits the
+        // synchronous cards trivially) so an async card's rejection surfaces
+        // to our own caller instead of becoming an unhandled rejection that
+        // silently leaves that card -- and every later slot with no
+        // dependency on it -- unrestored.
+        await Promise.all(
+            state.cards.map(async (cardState, idx) => {
+                await this._slot[idx]?.setState(cardState);
+            })
         );
     }
 

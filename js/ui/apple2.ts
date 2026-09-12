@@ -1012,16 +1012,18 @@ function onLoaded(
     });
     keyboard.setFunction('F3', () => io.keyDown(0x1b)); // Escape
     keyboard.setFunction('F4', optionsModal.openModal);
-    keyboard.setFunction('F6', () => {
+    keyboard.setFunction('F6', async () => {
         window.localStorage.setItem(
             'state',
-            base64_json_stringify(_apple2.getState())
+            base64_json_stringify(await _apple2.getState())
         );
     });
-    keyboard.setFunction('F9', () => {
+    keyboard.setFunction('F9', async () => {
         const localState = window.localStorage.getItem('state');
         if (localState) {
-            _apple2.setState(base64_json_parse(localState) as Apple2State);
+            await _apple2.setState(
+                base64_json_parse(localState) as Apple2State
+            );
         }
     });
 

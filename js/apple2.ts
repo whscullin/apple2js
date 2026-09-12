@@ -241,11 +241,11 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
         return !this.paused;
     }
 
-    getState(): State {
+    async getState(): Promise<State> {
         const state: State = {
             cpu: this.cpu.getState(),
             vm: this.vm.getState(),
-            io: this.io.getState(),
+            io: await this.io.getState(),
             mmu: this.mmu?.getState(),
             ram: this.ram?.map((bank) => bank.getState()),
         };
@@ -253,10 +253,10 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
         return state;
     }
 
-    setState(state: State) {
+    async setState(state: State) {
         this.cpu.setState(state.cpu);
-        this.vm.setState(state.vm);
-        this.io.setState(state.io);
+        await this.vm.setState(state.vm);
+        await this.io.setState(state.io);
         if (this.mmu && state.mmu) {
             this.mmu.setState(state.mmu);
         }

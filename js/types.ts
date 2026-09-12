@@ -125,7 +125,7 @@ export type TapeData = Array<[duration: number, high: boolean]>;
 
 export interface Restorable<T = unknown> {
     getState(): T | Promise<T>;
-    setState(state: T): void;
+    setState(state: T): void | Promise<void>;
 }
 
 // Read-only typed arrays for constants
