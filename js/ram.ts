@@ -45,7 +45,15 @@ export default class RAM implements Memory, Restorable<RAMState> {
     }
 
     public setState(state: RAMState) {
-        this.mem = new Uint8Array(state.mem);
+        // Copy into the existing buffer rather than replacing it: getBuffer()
+        // callers (e.g. LoresPage2D/HiresPage2D, js/canvas.ts) cache the
+        // Uint8Array subarray view they get back at construction time and
+        // read/write it directly on every access, never re-fetching it from
+        // this RAM instance. Reassigning `this.mem` to a new Uint8Array would
+        // silently detach every such cached view from the restored data,
+        // leaving whatever was in memory before setState() visible (and
+        // writable) through that view instead.
+        this.mem.set(state.mem);
     }
 
     public getBuffer(start: byte, end: byte): memory {
