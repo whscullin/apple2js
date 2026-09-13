@@ -56,7 +56,12 @@ describe('machine state operations', () => {
         const state = await saved;
         expect(state.ram?.[0].mem[0x400]).toBe(0xab);
         expect(machine.getDebugger()).toBe(debuggerBefore);
+        expect(state.io.cards[7]).toMatchObject({ statusByte: 0 });
         expect(machine.isRunning()).toBe(true);
+        machine.stop();
+        await machine.setState(state);
+        expect((disk as Card).ioSwitch(0x81)).toBe(0);
+        expect(machine.isRunning()).toBe(false);
     });
 
     it('keeps paused machines paused and respects an explicit stop', async () => {

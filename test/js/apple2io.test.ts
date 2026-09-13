@@ -28,7 +28,12 @@ describe('Apple2IO getState()/setState() with an async card (SmartPort)', () => 
         const io = newIOWithSmartPort();
         const state = await io.getState();
         expect(state.cards[7]).not.toBeInstanceOf(Promise);
-        expect(state.cards[7]).toEqual({ disks: [null, null] });
+        expect(state.cards[7]).toEqual({
+            disks: [null, null, null],
+            statusByte: 0x80,
+            xReg: 0,
+            yReg: 0,
+        });
     });
 
     it('round-trips through JSON (the real F6/F9 save/restore path) without an unhandled rejection', async () => {
