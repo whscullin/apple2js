@@ -1,6 +1,6 @@
 import MicroModal from 'micromodal';
+import { stateShortcuts } from './state_shortcuts';
 
-import { base64_json_parse, base64_json_stringify } from '../base64';
 import { Audio, SOUND_ENABLED_OPTION } from './audio';
 import DriveLights from './drive_lights';
 import { includes, word } from '../types';
@@ -26,7 +26,7 @@ import ApplesoftCompiler from '../applesoft/compiler';
 import { TXTTAB } from 'js/applesoft/zeropage';
 
 import { debug } from '../util';
-import { Apple2, Stats, State as Apple2State } from '../apple2';
+import { Apple2, Stats } from '../apple2';
 import DiskII from '../cards/disk2';
 import { CPU6502 } from '@whscullin/cpu6502';
 import { copyScreenToClipboard, VideoModes } from '../videomodes';
@@ -1012,18 +1012,13 @@ function onLoaded(
     });
     keyboard.setFunction('F3', () => io.keyDown(0x1b)); // Escape
     keyboard.setFunction('F4', optionsModal.openModal);
-    keyboard.setFunction('F6', () => {
-        window.localStorage.setItem(
-            'state',
-            base64_json_stringify(_apple2.getState())
-        );
-    });
-    keyboard.setFunction('F9', () => {
-        const localState = window.localStorage.getItem('state');
-        if (localState) {
-            _apple2.setState(base64_json_parse(localState) as Apple2State);
-        }
-    });
+    const shortcuts = stateShortcuts(
+        _apple2,
+        () => window.localStorage,
+        openAlert
+    );
+    keyboard.setFunction('F6', shortcuts.save);
+    keyboard.setFunction('F9', shortcuts.restore);
 
     buildDiskIndex();
 

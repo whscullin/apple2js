@@ -31,6 +31,10 @@ export interface SmartPortDiskState {
 }
 
 export interface SmartPortState {
+    // Optional for snapshots saved before command registers were persisted.
+    statusByte?: byte;
+    xReg?: byte;
+    yReg?: byte;
     disks: Array<SmartPortDiskState | null>;
 }
 
@@ -162,6 +166,7 @@ export default class SmartPort
     private busyTimeout: ReturnType<typeof setTimeout>[] = [];
     private ext: DiskFormat[] = [];
     private metadata: Array<HeaderData | null> = [];
+    private pendingCommands = new Set<Promise<void>>();
     private statusByte = 0x80;
     private xReg = 0x00;
     private yReg = 0x00;
@@ -349,7 +354,7 @@ export default class SmartPort
         this.statusByte = BUSY;
         this.xReg = 0x00;
         this.yReg = 0x00;
-        fn()
+        const command = (async () => fn())()
             .then((statusByte) => {
                 this.statusByte = statusByte;
             })
@@ -357,6 +362,14 @@ export default class SmartPort
                 console.error(error);
                 this.statusByte = DEVICE_OFFLINE;
             });
+        this.pendingCommands.add(command);
+        void command.then(() => this.pendingCommands.delete(command));
+    }
+
+    async waitForIdle(): Promise<void> {
+        while (this.pendingCommands.size) {
+            await Promise.all(this.pendingCommands);
+        }
     }
 
     private access(off: byte, val: byte) {
@@ -614,8 +627,8 @@ export default class SmartPort
     }
 
     async getState(): Promise<SmartPortState> {
-        const disks = [];
-        for (let diskNo = 0; diskNo < 2; diskNo++) {
+        const disks: Array<SmartPortDiskState | null> = [null];
+        for (const diskNo of DRIVE_NUMBERS) {
             const diskState = async (disk: BlockDisk | null) => {
                 let result: SmartPortDiskState | null = null;
                 if (disk) {
@@ -640,6 +653,9 @@ export default class SmartPort
         }
         return {
             disks,
+            statusByte: this.statusByte,
+            xReg: this.xReg,
+            yReg: this.yReg,
         };
     }
 
@@ -658,6 +674,9 @@ export default class SmartPort
                 this.resetBlockDisk(idx);
             }
         }
+        this.statusByte = state.statusByte ?? 0x80;
+        this.xReg = state.xReg ?? 0;
+        this.yReg = state.yReg ?? 0;
     }
 
     async setBlockDisk(driveNo: DriveNumber, disk: BlockDisk) {

@@ -108,6 +108,9 @@ export interface MemoryPages extends Memory {
 
 /* An interface card */
 export interface Card<StateT = unknown> extends Memory, Restorable<StateT> {
+    /* Wait for outstanding commands before a machine snapshot or restore. */
+    waitForIdle?(): Promise<void>;
+
     /* Reset the card */
     reset?(): void;
 
@@ -125,7 +128,7 @@ export type TapeData = Array<[duration: number, high: boolean]>;
 
 export interface Restorable<T = unknown> {
     getState(): T | Promise<T>;
-    setState(state: T): void;
+    setState(state: T): void | Promise<void>;
 }
 
 // Read-only typed arrays for constants

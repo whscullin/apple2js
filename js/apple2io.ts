@@ -407,18 +407,41 @@ export default class Apple2IO
         }
     }
 
-    getState(): Apple2IOState {
-        // TODO vet more potential state
-        return {
-            annunciators: this._annunciators,
-            cards: this._slot.map((card) => (card ? card.getState() : null)),
-        };
+    // Invoke all slots even if one throws, and do not return while another
+    // slot can still mutate state. Promise.all alone rejects too early.
+    private async settleCards<T>(
+        operations: Array<() => T | Promise<T>>
+    ): Promise<T[]> {
+        const results = await Promise.allSettled(
+            operations.map(async (operation) => operation())
+        );
+        return results.map((result) => {
+            if (result.status === 'rejected') {
+                throw result.reason;
+            }
+            return result.value;
+        });
     }
 
-    setState(state: Apple2IOState) {
+    async waitForIdle(): Promise<void> {
+        await this.settleCards(
+            this._slot.map((card) => () => card?.waitForIdle?.())
+        );
+    }
+
+    async getState(): Promise<Apple2IOState> {
+        const cards = await this.settleCards(
+            this._slot.map((card) => () => (card ? card.getState() : null))
+        );
+        return { annunciators: this._annunciators, cards };
+    }
+
+    async setState(state: Apple2IOState): Promise<void> {
         this._annunciators = state.annunciators;
-        state.cards.map(
-            (cardState, idx) => this._slot[idx]?.setState(cardState)
+        await this.settleCards(
+            state.cards.map(
+                (cardState, idx) => () => this._slot[idx]?.setState(cardState)
+            )
         );
     }
 
