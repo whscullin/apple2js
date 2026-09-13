@@ -162,6 +162,7 @@ export default class SmartPort
     private busyTimeout: ReturnType<typeof setTimeout>[] = [];
     private ext: DiskFormat[] = [];
     private metadata: Array<HeaderData | null> = [];
+    private pendingCommands = new Set<Promise<void>>();
     private statusByte = 0x80;
     private xReg = 0x00;
     private yReg = 0x00;
@@ -349,7 +350,7 @@ export default class SmartPort
         this.statusByte = BUSY;
         this.xReg = 0x00;
         this.yReg = 0x00;
-        fn()
+        const command = (async () => fn())()
             .then((statusByte) => {
                 this.statusByte = statusByte;
             })
@@ -357,6 +358,14 @@ export default class SmartPort
                 console.error(error);
                 this.statusByte = DEVICE_OFFLINE;
             });
+        this.pendingCommands.add(command);
+        void command.then(() => this.pendingCommands.delete(command));
+    }
+
+    async waitForIdle(): Promise<void> {
+        while (this.pendingCommands.size) {
+            await Promise.all(this.pendingCommands);
+        }
     }
 
     private access(off: byte, val: byte) {

@@ -108,6 +108,9 @@ export interface MemoryPages extends Memory {
 
 /* An interface card */
 export interface Card<StateT = unknown> extends Memory, Restorable<StateT> {
+    /* Wait for outstanding commands before a machine snapshot or restore. */
+    waitForIdle?(): Promise<void>;
+
     /* Reset the card */
     reset?(): void;
 

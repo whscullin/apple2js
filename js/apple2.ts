@@ -51,6 +51,8 @@ export interface State {
 
 export class Apple2 implements Restorable<State>, DebuggerContainer {
     private paused = false;
+    private stateOperation = false;
+    private resumeAfterState = false;
 
     private theDebugger: Debugger | undefined;
 
@@ -166,13 +168,19 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
      * `runAnimationFrame` will be non-null.
      */
     run() {
+        if (this.stateOperation) {
+            return;
+        }
         this.paused = false;
         if (this.runTimer || this.runAnimationFrame) {
             return; // already running
         }
 
-        this.theDebugger = new Debugger(this.cpu, this);
-        this.theDebugger.addSymbols(SYMBOLS);
+        // A temporary state-operation pause must not discard breakpoints.
+        if (!this.theDebugger) {
+            this.theDebugger = new Debugger(this.cpu, this);
+            this.theDebugger.addSymbols(SYMBOLS);
+        }
 
         const interval = 30;
 
@@ -226,6 +234,7 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
     }
 
     stop() {
+        this.resumeAfterState = false;
         this.paused = true;
         if (this.runTimer) {
             clearInterval(this.runTimer);
@@ -241,32 +250,58 @@ export class Apple2 implements Restorable<State>, DebuggerContainer {
         return !this.paused;
     }
 
+    private async withStateOperation<T>(
+        restoring: boolean,
+        operation: () => Promise<T>
+    ): Promise<T> {
+        if (this.stateOperation) {
+            throw new Error('A save or restore is already in progress');
+        }
+        const running = this.isRunning();
+        this.stop();
+        this.stateOperation = true;
+        this.resumeAfterState = running;
+        let succeeded = false;
+        try {
+            await this.ready;
+            // A stopped CPU does not cancel disk reads that can still write RAM.
+            await this.io.waitForIdle();
+            const result = await operation();
+            succeeded = true;
+            return result;
+        } finally {
+            const resume = this.resumeAfterState && (!restoring || succeeded);
+            this.stateOperation = false;
+            this.resumeAfterState = false;
+            if (resume) {
+                this.run();
+            }
+        }
+    }
+
     async getState(): Promise<State> {
-        const state: State = {
+        return this.withStateOperation(false, async () => ({
             cpu: this.cpu.getState(),
             vm: this.vm.getState(),
             io: await this.io.getState(),
             mmu: this.mmu?.getState(),
             ram: this.ram?.map((bank) => bank.getState()),
-        };
-
-        return state;
+        }));
     }
 
-    async setState(state: State) {
-        this.cpu.setState(state.cpu);
-        await this.vm.setState(state.vm);
-        await this.io.setState(state.io);
-        if (this.mmu && state.mmu) {
-            this.mmu.setState(state.mmu);
-        }
-        if (this.ram) {
-            this.ram.forEach((bank, idx) => {
-                if (state.ram) {
-                    bank.setState(state.ram[idx]);
-                }
-            });
-        }
+    async setState(state: State): Promise<void> {
+        await this.withStateOperation(true, async () => {
+            this.cpu.setState(state.cpu);
+            await this.vm.setState(state.vm);
+            await this.io.setState(state.io);
+            if (this.mmu && state.mmu) {
+                this.mmu.setState(state.mmu);
+            }
+            const ram = state.ram;
+            if (this.ram && ram) {
+                this.ram.forEach((bank, idx) => bank.setState(ram[idx]));
+            }
+        });
     }
 
     reset() {

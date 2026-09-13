@@ -407,32 +407,41 @@ export default class Apple2IO
         }
     }
 
-    async getState(): Promise<Apple2IOState> {
-        // TODO vet more potential state
-        // Some cards (e.g. SmartPort) have an async getState() -- Promise.all
-        // resolves those and passes plain (already-resolved) values for
-        // everything else straight through, so every slot's real state ends
-        // up in the result instead of an unawaited, unserializable Promise.
-        const cards = await Promise.all(
-            this._slot.map((card) => (card ? card.getState() : null))
+    // Invoke all slots even if one throws, and do not return while another
+    // slot can still mutate state. Promise.all alone rejects too early.
+    private async settleCards<T>(
+        operations: Array<() => T | Promise<T>>
+    ): Promise<T[]> {
+        const results = await Promise.allSettled(
+            operations.map(async (operation) => operation())
         );
-        return {
-            annunciators: this._annunciators,
-            cards,
-        };
+        return results.map((result) => {
+            if (result.status === 'rejected') {
+                throw result.reason;
+            }
+            return result.value;
+        });
     }
 
-    async setState(state: Apple2IOState) {
+    async waitForIdle(): Promise<void> {
+        await this.settleCards(
+            this._slot.map((card) => () => card?.waitForIdle?.())
+        );
+    }
+
+    async getState(): Promise<Apple2IOState> {
+        const cards = await this.settleCards(
+            this._slot.map((card) => () => (card ? card.getState() : null))
+        );
+        return { annunciators: this._annunciators, cards };
+    }
+
+    async setState(state: Apple2IOState): Promise<void> {
         this._annunciators = state.annunciators;
-        // Await every card's setState() (Promise.all also awaits the
-        // synchronous cards trivially) so an async card's rejection surfaces
-        // to our own caller instead of becoming an unhandled rejection that
-        // silently leaves that card -- and every later slot with no
-        // dependency on it -- unrestored.
-        await Promise.all(
-            state.cards.map(async (cardState, idx) => {
-                await this._slot[idx]?.setState(cardState);
-            })
+        await this.settleCards(
+            state.cards.map(
+                (cardState, idx) => () => this._slot[idx]?.setState(cardState)
+            )
         );
     }
 
